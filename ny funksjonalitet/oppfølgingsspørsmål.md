@@ -1,8 +1,6 @@
 
-
 | **Relatert til**            | [oppstartsspørsmål](oppstartsspørsmål.md) |
 | --------------------------- | ----------------------------------------- |
-| **Link til arbeid i Figma** |                                           |
 | **Status**                  | not started                               |
 
 ## Formål

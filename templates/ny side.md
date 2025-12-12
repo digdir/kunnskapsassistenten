@@ -1,8 +1,7 @@
 
-
-| **Relatert til**            | [Oppfølgingspørsmål (som brukeren kan velge mellom)](https://digdir.atlassian.net/wiki/spaces/SK/pages/3521511426/Oppf+lgingsp+rsm+l+som+brukeren+kan+velge+mellom?atlOrigin=eyJpIjoiNzdmOWVmODI3ZjQ1NDIwY2JlNjZmODIzNzBlZmZmNTUiLCJwIjoiYyJ9) |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                  | not started / in progress / complete                                                                                                                                                                                                           |
+| **Relatert til** |                                      |
+| ---------------- | ------------------------------------ |
+| **Status**       | not started / in progress / complete |
 ## Linker til arbeid
 
 
