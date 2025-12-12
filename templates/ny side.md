@@ -1,3 +1,7 @@
+---
+dato:
+---
+
 
 | **Relatert til**            | [Oppfølgingspørsmål (som brukeren kan velge mellom)](https://digdir.atlassian.net/wiki/spaces/SK/pages/3521511426/Oppf+lgingsp+rsm+l+som+brukeren+kan+velge+mellom?atlOrigin=eyJpIjoiNzdmOWVmODI3ZjQ1NDIwY2JlNjZmODIzNzBlZmZmNTUiLCJwIjoiYyJ9) |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -5,7 +9,6 @@
 | **Status**                  | not started / in progress / complete                                                                                                                                                                                                           |
 
 ## Formål
-
 ## Kjappe tanker
 
 Skriv ned stikkord som kan være relevant å utdype seinere
@@ -15,9 +18,9 @@ Skriv ned stikkord som kan være relevant å utdype seinere
 
 ## Åpne spørsmål
 
-| **Spørsmål** | **Svar** |
-| ------------ | -------- |
-|              |          |
+| **Spørsmål** | **Svar** | **Dato besvart** |
+| ------------ | -------- | ---------------- |
+|              |          |                  |
 
 ## Omfang
 
@@ -28,11 +31,12 @@ Skriv ned stikkord som kan være relevant å utdype seinere
 
 ## Krav eller spesifikasjoner for funksjonaliteten
 
-| **Requirement** | **User Story** | **Importance** | **Notes** |
-| --------------- | -------------- | -------------- | --------- |
-|                 |                | HIGH           |           |
-|                 |                |                |           |
+| Krav | Prioritet | Notater |
+| ---- | --------- | ------- |
+|      |           |         |
+|      |           |         |
 
 ## Interaksjon og design
+
 
 ## Referanser
