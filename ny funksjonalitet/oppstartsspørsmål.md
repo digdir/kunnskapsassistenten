@@ -3,7 +3,7 @@
 | ---------------- | --------------------------------------------- |
 | **Status**       | not started                                   |
 ## Linker til arbeid
-
+- Arbeid i fi
 
 ## Formål
 
@@ -38,3 +38,5 @@ Skriv ned stikkord som kan være relevant å utdype seinere
 ## Interaksjon og design
 
 ## Referanser
+
+![Designskisse](Pasted%20image%2020251212160538.png)
