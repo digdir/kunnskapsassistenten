@@ -11,9 +11,12 @@ Vi snakker om begrepet "blackbox" fordi det er vanskelig eller umulig for bruker
 
 ## Utforskende skisse
 
-En måte å gjøre dette på er å bruke en et element fra [Simons prototype](Simons%20prototype.md), hvor vi kan skjule informasjonen (gjennom en accordion)
+En måte å gjøre dette på er å bruke en et element fra [Simons prototype](Simons%20prototype.md), hvor vi kan skjule informasjonen (gjennom [en sammenleggbar komponent](https://designsystemet.no/no/components/docs/details/overview)).
+
 
 ![Skisse på blackbox](skisse-blackbox.png)
+
+Dette vil sannsynligvis også forenkle leseropplevelsen siden det løfter sekundær informasjon ut
 
 ## Kjappe tanker
 
