@@ -6,7 +6,7 @@ Koden til prototypen er det KI-laben i Digdir som har ansvaret for.
 
 ### Tabeller
 
-![Tabeller](Pasted%20image%2020251215065138.png)
+![Tabeller](tabeller-simons-protype.png)
 
 ### Fleksibelt grensesnitt
 
@@ -14,23 +14,23 @@ Koden til prototypen er det KI-laben i Digdir som har ansvaret for.
 
 ### Blackbox
 
-![Blackbox](Pasted%20image%2020251215065235.png)
+![Blackbox](blackbox-simons-protype.png)
 
 ### Dokumentvisning
 
-![Dokumentvisning](Pasted%20image%2020251215065246.png)
+![Dokumentvisning](dokumentvisning-simons-protype.png)
 
 ### Laste opp egne dokumenter
 I dette tilfelle kunne du både laste opp dokumenter enkeltvis, men også i bulk, gjennom en [Zotero](https://www.zotero.org/)-integrasjon.
-![Laste opp egne dokumenter](Pasted%20image%2020251215065312.png)
+![Laste opp egne dokumenter](egne-dokumenter-simons-protype.png)
 
 ### Definere kontekst og justere prompt
 
-![Definere kontekst (justere prompt)](Pasted%20image%2020251215065331.png)
+![Definere kontekst](definere-kontekst-simons-prototype.png)
 
 ### Nettsøk
 
-![Nettsøk](Pasted%20image%2020251215065350.png)
+![Nettsøk](nettsøk-simons-prototype.png)
 ### Bytte av språkmodell
 
-![Bytte av språkmodell](Pasted%20image%2020251215065431.png)
+![Bytte av språkmodell](bytte-språkmodell-simons-prototype.png)
