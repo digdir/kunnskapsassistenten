@@ -1,4 +1,7 @@
 
+> [!NOTE] Verdt å merke seg
+> Disse retningslinjene ble skrevet rundt november 2024. På dette punktet var det begrenset funksjonalitet, og ingen testbrukere i produksjonsmiljøet.
+
 1. Du skal ikke lure på hva som foregår, og hvis det er noe som har gått skeis, eller tar unormalt lang tid, skal du få beskjed om det
 2. Det er bedre at Kunnskapsassistenten sier “Jeg vet ikke”, i stedet for noe som kan være feil
 3. Du må ikke være god til å “prompte” for å få gode og relevante svar
