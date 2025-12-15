@@ -17,7 +17,9 @@ La brukeren laste opp dokumenter som tilleggskilder til det vi får fra Kudos.
 
 ## Kjappe tanker
 
-Skriv ned stikkord som kan være relevant å utdype seinere
+- Dette vil henge sammen med muligheten til å bruke andre kilder med åpne data (APIer som ..)
+	- OECD-kilder
+	- 
 
 ## Antagelser
 
@@ -27,8 +29,6 @@ Skriv ned stikkord som kan være relevant å utdype seinere
 Dette er et forslag på hvordan en stegvis utvikling av det å laste opp egne dokumenter kan se ut. Hvor vi prøver å ta høyde for både sikkerhet og brukeropplevelse samtidig, og hva som kan gi verdi fra starten av.
 
 Her tar vi høyde for at ingen tråder er åpne, men alle er private og lukkede.
-
-Dette vil henge sammen med muligheten til å bruke andre kilder med åpne data (APIer som ..)
 
 For å ha alt på det rene måtte vi vel i så fall slettet tråden i sin helhet og, siden innholdet i dokumentet gjenspeiles i svaret du får i tråden.
 
@@ -78,11 +78,6 @@ Deling av tråder er ny funksjonalitet som vi må vurdere som en separat greie. 
 | Er det en fordel eller ulempe dersom dokumentet automatisk slettes etter 30 dager med inaktivitet?                                                                                                                     | Ref punktet under lagring i steg 2 “Opplastede dokumenter slettes automatisk etter 30/60/90 dager med inaktivitet (hvis sikkerhetskrav krever dette)” |                                                                      |                       |
 | Burde vi også tilrettelegge for at man kan legge ved dokumenter i chatboksen?                                                                                                                                          |                                                                                                                                                       |                                                                      |                       |
 ![Vedlegg i chatboksen](Pasted%20image%2020251215094350.png)
-
-| **Spørsmål** | **Svar** | **Dato besvart** |
-| ------------ | -------- | ---------------- |
-|              |          |                  |
-
 
 ##  Interaksjon og design
 
