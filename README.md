@@ -24,4 +24,14 @@ Med andre ord, i denne mappa finner du kunnskap som er nødvendig for prosjektet
 
 [Hva tenker brukerne våre om dokumentvisningen](dokumentvisning.md)? Svaret finner du i denne mappa.
 
-Hva veit vi egentlig om brukerne våre, hvis vi ser litt overordnet på det? Svaret finner du i [personas](personas.md). 
+Hva veit vi egentlig om brukerne våre, hvis vi ser litt overordnet på det? Svaret finner du i [personas](personas.md).
+
+Hva menes med en "ambisiøs bestilling", og hvorfor er det så kritisk? [Svaret finner du her](fullstendige%20oversikter.md).
+
+### Eksisterende funksjonalitet
+
+Med det lille teamet vårt har vi fått på plass mye på kort tid, men det er fremdeles masse rom for forbedring. Den type ting finner du i denne mappa.
+
+### Ny funksjonalitet
+
+Alt det vi 
