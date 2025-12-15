@@ -2,14 +2,15 @@ Her og der kommer du til å se referanser til "Simons prototype". Denne ble lagd
 
 Det ligger i navnet at prototypen ikke var spesielt *stabil*, men fokuset var heller på å eksperimentere med funksjonalitet. Noe som var veldig nyttig, også for vår del med å teste hva som kan bli relevant for Kunnskapsassistenten på sikt, men også gjøre det tydeligere hva det *ikke* er behov for, spesielt for våre brukere.
 
-Koden til prototypen er det 
+Koden til prototypen er det KI-laben i Digdir som har ansvaret for.
+
 ### Tabeller
 
 ![Tabeller](Pasted%20image%2020251215065138.png)
 
 ### Fleksibelt grensesnitt
 
-![Fleksibelt grensesnitt](Pasted%20image%2020251215065214.png)
+![Fleksibelt grensesnitt](fleksibelt-grensesnitt.png)
 
 ### Blackbox
 
