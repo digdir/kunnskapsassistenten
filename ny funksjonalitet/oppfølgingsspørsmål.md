@@ -9,6 +9,8 @@
 
 ## Formål
 
+Som et pedadogisk grep for at brukeren skal få mest mulig ut av Kunnskapsassistenten kan vi tilby oppfølgingsspørsmål. Disse tre spørsmålene er basert på testing vi gjorde 
+
 ## Kjappe tanker
 
 Skriv ned stikkord som kan være relevant å utdype seinere
@@ -34,8 +36,14 @@ Skriv ned stikkord som kan være relevant å utdype seinere
 
 ## Referanser
 
+### Inspirasjon til en senere iterasjon
+
 Når du markerer tekst i [Perplexity](https://www.perplexity.ai/) får du muligheten til å legge til det som kontekst i spørsmålsstillingen din. 
 
+#### Steg 1
+
 ![Eksempel på oppfølgingsspørsmål i Perplexity](Pasted%20image%2020251215054940.png)
+
+#### Steg 2
 
 ![kontekst til spørsmål i Perplexity](Pasted%20image%2020251215055109.png)

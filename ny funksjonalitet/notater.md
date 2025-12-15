@@ -4,7 +4,7 @@
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Status**                  | not started / in progress / complete                                                                                                                                                                                                           |
 ## Linker til arbeid
-
+- [På dette området i figma](https://www.figma.com/board/0PYFzVoMxWSNoCZaWcOwog/Utforskende-arbeid?node-id=182-9721&t=KpkJNbYhAbM9OdCt-11) har vi dokumentert hva vi lærte fra testing, inspirasjon fra andre tjenester, og skissering på sammenhengen mellom tråder og notater
 
 ## Formål
 
