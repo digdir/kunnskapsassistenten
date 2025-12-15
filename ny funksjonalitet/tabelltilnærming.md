@@ -10,7 +10,6 @@
 
 ## Kjappe tanker
 
-Skriv ned stikkord som kan være relevant å utdype seinere
 
 ## Antagelser
 
