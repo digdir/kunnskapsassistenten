@@ -11,8 +11,8 @@
 ## Kjappe tanker
 
 - Olav har jobba med dette allerede (i retrieval-fanen i admin-grensesnittet)
-- Simon har også sett nærmere på dette i prototypen sin
-	- ![Skjermbilde fra Simons prototype](Pasted%20image%2020251212160412.png)
+- Simon har også sett nærmere på dette i [Simons prototype](Simons%20prototype.md)prototypen sin
+![blackbox-simons-protype](blackbox-simons-protype.png)
 
 ## Antagelser
 
