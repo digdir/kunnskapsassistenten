@@ -1,4 +1,17 @@
-## Utfordringen
+
+| **Relatert til** |             |
+| ---------------- | ----------- |
+| **Status**       | not started |
+## Linker til arbeid
+
+- [Eksempel på hvordan filteret kan brukes (i figma)](https://www.figma.com/design/dD3Xs8rJe1TYU5fb65VKEY/Kunnskapsassistenten?node-id=1083-28727&t=4AJfWvXcDmz9BIfr-11) i sammenheng med [dokumentvisning](dokumentvisning.md)
+- [Link til arbeidet i Figma](https://www.figma.com/design/dD3Xs8rJe1TYU5fb65VKEY/Kunnskapsassistenten?node-id=1041-12633&p=f&t=4AJfWvXcDmz9BIfr-11)
+
+## Formål
+
+Tilrettelegge for at filteret 
+
+## Bakgrunnen
 
 ### Hvorfor horisontal filtrering ikke fungerer i lengden
 
@@ -13,8 +26,11 @@ Når vi får filtrering på årstall på plass vil vi møte på et annet problem
 Når vi får filtrering på årstall på plass vil vi møte på et annet problem. For hvis Kunnskapsassistenten brukes på mindre skjermer må filteret dermed stables i høyden, når det ikke er mer bredde å hente. I så fall virker filtreringen rotete, og dytter alt innholdet såpass langt ned på sida at du må scrolle for å få med deg noe som helst.
 
 ---
-
 ## Løsningen
+
+![](Pasted%20image%2020251215093426.png)
+
+![](Pasted%20image%2020251215093412.png)
 
 ## Bør utforskes videre
 
@@ -22,13 +38,7 @@ Når vi får filtrering på årstall på plass vil vi møte på et annet problem
     
     - Kan være relevant å filtrere på departement
 
-| **Relatert til** |                                      |
-| ---------------- | ------------------------------------ |
-| **Status**       | not started / in progress / complete |
-## Linker til arbeid
 
-
-## Formål
 
 
 ## Kjappe tanker
