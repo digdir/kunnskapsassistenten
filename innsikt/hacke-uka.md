@@ -23,11 +23,8 @@ Hacke-uka ble arrangert for å utforske hvordan vi kan møte brukernes stadig me
 ### Demoene fra de ulike gruppene
 
 1. [https://vimeo.com/1119042810/8c79f54690?share=copy](https://vimeo.com/1119042810/8c79f54690?share=copy)
-    
 2. [https://vimeo.com/1119042753/dd5c9d9c82?share=copy](https://vimeo.com/1119042753/dd5c9d9c82?share=copy)
-    
 3. [https://vimeo.com/1119042862/671adccd4f?share=copy](https://vimeo.com/1119042862/671adccd4f?share=copy)
-    
 
 
 ---
@@ -109,7 +106,8 @@ Brukeren trener modellen med egne faglige vurderinger over tid — og bygger gra
 - La brukeren søke opp et tema i dokumentet, og vurdere svarene som bra eller dårlig
 - Eksponere brukeren for grunnlaget for vurderingene underveis
 
-Det er et ønske fra behovseierne å finne bearbeidingene/trådene som andre har gjort, så de kan bruke det arbeidet seinere. Med tanke på sikkerhet, personvern og lagring vil dette være relevant for deling av tråder, som vi har diskutert rundt det å [https://digdir.atlassian.net/wiki/spaces/SK/pages/3268149334](https://digdir.atlassian.net/wiki/spaces/SK/pages/3268149334).
+> [!info] Verdt å merke seg
+> Det er et ønske fra behovseierne å finne bearbeidingene/trådene som andre har gjort, så de kan bruke det arbeidet seinere. Med tanke på sikkerhet, personvern og lagring vil dette være relevant for deling av tråder, som vi har diskutert rundt det å [laste opp egne dokumenter](Last%20opp%20egne%20dokumenter.md).
 
 | **Hva fungerte bra?**                                                                                  | **Hva var utfordringene?**                                                                                           |
 | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
@@ -117,6 +115,16 @@ Det er et ønske fra behovseierne å finne bearbeidingene/trådene som andre har
 | Bygge egne kategorier                                                                                  | Krever mye av brukeren                                                                                               |
 | Mulighet for å søke, vurdere og samle relevante tekst-chunker                                          | Ikke en eksakt vitenskap                                                                                             |
 | Reduserer drastisk hvor mye innhold brukeren må lese gjennom, samtidig som vi bevarer læringsprosessen | Siden språkmodellen henter ut informasjon for deg må brukeren ha høy tillit til fremgangsmåten å stole på resultatet |
+
+![](Pasted%20image%2020251215115152.png)
+
+![](Pasted%20image%2020251215115145.png)
+
+![](Pasted%20image%2020251215115138.png)
+
+![](Pasted%20image%2020251215115129.png)
+
+![](Pasted%20image%2020251215115119.png)
 
 ---
 
@@ -177,6 +185,9 @@ Det som står i den blå boksen under Sammenstilling på høyre side, “Rapport
 
 ### Digitaliseringstiltak
 
+**Skisse av grensesnittet for en tabelltilnærming**, basert på [Simons prototype](Simons%20prototype.md):
+
+![Skisse av grensesnittet for en tabelltilnærming](Skisse-tabelltilnærming-hacke-uka.png)
 
 > [!important] **Beskrivelse av konseptet**  
 > 
@@ -226,12 +237,13 @@ Det som står i den blå boksen under Sammenstilling på høyre side, “Rapport
 | Forhåndsdefinerte forslag brukeren kan gjøre                                     | Digitaliseringstiltak kan ha ulike navn i ulike dokumenter                                                                                           |
 | Kan knekke koden på det å knytte sammen data fra forskjellige kilder             | KI kan gi falske positiver (som å tolke et tiltak som har endret navn f. eks som to ulike tiltak, eller at den finner på nye tiltak som ikke finnes) |
 | Tanken om en dedikert agent for kvalitetssikring                                 | Vanskelig å kvalitetssikre automatisk                                                                                                                |
-![Trappetrinnsmodellen](Trappetrinnsmodellen.png)
 - Trappetrinnsmodell for å skaffe en fullstendig oversikt over digitaliseringstiltak i offentlig sektor
     - Søke i Kudos-databasen
     - Supplere informasjon fra virksomhetens nettside
     - Tabellen fylles ut ved at man sender ut en epost f. eks til deltagere, som selv kan fylle ut en forhåndsutfylt data i tabellen
         - identifiser manglende informasjon (gjennom skjema eller epost)
+
+![Trappetrinnsmodellen](Trappetrinnsmodellen.png)
 
 Det legges vekt på dette med å inkludere virksomhetene som står bak digitaliseringsprosjektene. Hvor f. eks man viser til ferdigutfylt informasjon som virksomheten deretter kan selv redigere, for å nyansere informasjonen i større grad.
 
