@@ -1,12 +1,15 @@
 ## Kort oppsummert
 
 Generativ kunstig intelligens kan absolutt gjøre kunnskapsarbeidet raskere og mer effektivt, men menneskelig innsikt og kvalitetssikring. Som en av behovseierne sa etter demoene:  
-  
-”_Kunnskapsarbeid som en læringsprosess er så viktig å ha med oss. Hvis folk har en forestilling om at vi skal trykke på en knapp for å lage et kunnskapsgrunnlag, også får vi ut et dokument, og deretter er det en annen KI-agent i andre enden som leser dokumentet etterpå. Så har vi hoppet over den delen som er som er hele poenget! Nemlig den menneskelige innsikten i hva vi driver med.”_  
+
+> [!quote] Sitat
+> >_Kunnskapsarbeid som en læringsprosess er så viktig å ha med oss. Hvis folk har en forestilling om at vi skal trykke på en knapp for å lage et kunnskapsgrunnlag, også får vi ut et dokument, og deretter er det en annen KI-agent i andre enden som leser dokumentet etterpå. Så har vi hoppet over den delen som er som er hele poenget! Nemlig den menneskelige innsikten i hva vi driver med._
   
 Sagt på en annen måte – “Vi er ikke ferdige når vi lager et verktøy” (sitat, utvikler)
 
 ## Kort om hacke-uka
+
+I september 2025 arrangerte vi i Kunn
 
 Etter demoene på slutten av uka ble det sagt fra den ene behovseieren til gruppa om digitaliseringstiltak:
 
@@ -22,10 +25,9 @@ Hacke-uka ble arrangert for å utforske hvordan vi kan møte brukernes stadig me
 
 ### Demoene fra de ulike gruppene
 
-1. [https://vimeo.com/1119042810/8c79f54690?share=copy](https://vimeo.com/1119042810/8c79f54690?share=copy)
-2. [https://vimeo.com/1119042753/dd5c9d9c82?share=copy](https://vimeo.com/1119042753/dd5c9d9c82?share=copy)
-3. [https://vimeo.com/1119042862/671adccd4f?share=copy](https://vimeo.com/1119042862/671adccd4f?share=copy)
-
+1. [Demo av løsningen om konsulentbruk](https://vimeo.com/1119042810?fl=tl&fe=ec)
+2. [Demo av løsningen om etatstyring](https://vimeo.com/1119042753?share=copy&fl=sv&fe=ci)
+3. [Demo av løsningen om digitaliseringstiltak](https://vimeo.com/1119042862?fl=tl&fe=ec)
 
 ---
 
