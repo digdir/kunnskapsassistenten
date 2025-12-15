@@ -9,9 +9,8 @@
 
 Informere brukeren om hvordan få mest mulig ut av Kunnskapsassistenten.
 
-
-> [!info] Henger sammen med ambisjonen om at "ikke alle trenger å være en prompt-engineer"
-
+> [!info] Sammenheng
+> Henger sammen med ambisjonen om at "ikke alle trenger å være en prompt-engineer"
 
 
 ## Kjappe tanker
