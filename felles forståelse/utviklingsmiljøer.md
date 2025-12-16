@@ -21,4 +21,4 @@ Kun for teamet, for å se en en oversikt over antall dokumenter som er importert
 
 ### [Agentmiljøet](https://test.kunnskapsassistenten.kamal.digdir.cloud/)
 
-For utforsking av agentisk RAG
+Kun for teamet, hvor vi utforsker Kunnskapsassistenten basert på agentisk RAG.
