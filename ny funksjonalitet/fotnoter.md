@@ -37,22 +37,22 @@ Skriv ned stikkord som kan være relevant å utdype seinere
 
 ### Raycast
 
-![Fotnoter i Raycast](Pasted%20image%2020251215061630.png)
+![Fotnoter i Raycast](../images/Pasted%20image%2020251215061630.png)
 
 ### Kagi Assistant
 
-![Fotnoter i Kagi Assistant](Pasted%20image%2020251215061449.png)
+![Fotnoter i Kagi Assistant](../images/Pasted%20image%2020251215061449.png)
 
 ### Perplexity
 
-![Fotnoter i Perplexity](Pasted%20image%2020251215061519.png)
+![Fotnoter i Perplexity](../images/Pasted%20image%2020251215061519.png)
 
-![kilder i Perplexity](Pasted%20image%2020251215061645.png)
+![kilder i Perplexity](../images/Pasted%20image%2020251215061645.png)
 
 ### Co-pilot
 
-![Fotnoter i Co-pilot](Pasted%20image%2020251215061727.png)
+![Fotnoter i Co-pilot](../images/Pasted%20image%2020251215061727.png)
 
 ### Riksrevisjonen
 
-![Fotnoter på Riksrevisjonen](Pasted%20image%2020251215061749.png)
+![Fotnoter på Riksrevisjonen](../images/Pasted%20image%2020251215061749.png)

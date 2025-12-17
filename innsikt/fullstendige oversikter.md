@@ -20,4 +20,4 @@ Dette er ikke et unntak fra én person, men heller en trend vi har sett over tid
 
 Sammen med 10-15 av pilotdeltagerne diskuterte vi dette behovet for fullstendige oversikter, i en workshop i juni 2025. For å illustrere hva svaret på spørsmålet ovenfor ville innebært lagde vi et utkast i Excel, som tar høyde for alt som nevnes (samtlige virksomheter, i tillegg til de ulike faktorene de skulle vurderes på som her er fordelt på ulike faner).
 
-![Eksempel få resultatet fra en ambisiøs bestilling](Pasted%20image%2020251215062931.png)
+![Eksempel få resultatet fra en ambisiøs bestilling](../images/Pasted%20image%2020251215062931.png)

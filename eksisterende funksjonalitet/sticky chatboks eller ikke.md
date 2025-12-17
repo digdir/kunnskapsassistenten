@@ -19,12 +19,12 @@ Spørsmålet er om vi skal la chatboksen være “sticky”, altså at den konst
 ### Skjermbilde fra produksjonsmiljøet
 I eksempelet under, fra produksjonsmiljøet, flyter chatboksen over innholdet:
 
-![chatboks flytende over svaret](Pasted%20image%2020251215092016.png)
+![chatboks flytende over svaret](../images/Pasted%20image%2020251215092016.png)
 
 ### Eksempel fra skissene
 I eksempelet under ligger chatboksen plassert under svaret, konstant. Slik at du må scrolle til bunnen for å finne den.
 
-![chatboks i bunnen av svaret](Pasted%20image%2020251215092038.png)
+![chatboks i bunnen av svaret](../images/Pasted%20image%2020251215092038.png)
 
 ## Antagelser
 

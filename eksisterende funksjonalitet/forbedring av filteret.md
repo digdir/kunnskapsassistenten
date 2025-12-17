@@ -19,18 +19,18 @@ Når du velger mange filtre påvirker det hvordan layouten ser ut. Enten plasser
 
 Når vi får filtrering på årstall på plass vil vi møte på et annet problem. For hvis Kunnskapsassistenten brukes på mindre skjermer må filteret dermed stables i høyden, når det ikke er mer bredde å hente. I så fall virker filtreringen rotete, og dytter alt innholdet såpass langt ned på sida at du må scrolle for å få med deg noe som helst.
 
-![](Pasted%20image%2020251215093028.png)
-![](Pasted%20image%2020251215093045.png)
-![](Pasted%20image%2020251215093054.png)
+![](../images/Pasted%20image%2020251215093028.png)
+![](../images/Pasted%20image%2020251215093045.png)
+![](../images/Pasted%20image%2020251215093054.png)
 
 Når vi får filtrering på årstall på plass vil vi møte på et annet problem. For hvis Kunnskapsassistenten brukes på mindre skjermer må filteret dermed stables i høyden, når det ikke er mer bredde å hente. I så fall virker filtreringen rotete, og dytter alt innholdet såpass langt ned på sida at du må scrolle for å få med deg noe som helst.
 
 ---
 ## Løsningen
 
-![](Pasted%20image%2020251215093426.png)
+![](../images/Pasted%20image%2020251215093426.png)
 
-![](Pasted%20image%2020251215093412.png)
+![](../images/Pasted%20image%2020251215093412.png)
 
 ## Bør utforskes videre
 

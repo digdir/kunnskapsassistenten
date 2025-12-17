@@ -8,7 +8,7 @@
 
 ## Skisse
 
-![Designskisse](skisser-oppstartsspm.png)
+![Designskisse](../images/skisser-oppstartsspm.png)
 
 ## Formål
 

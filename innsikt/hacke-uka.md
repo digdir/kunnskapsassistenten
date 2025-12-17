@@ -53,7 +53,7 @@ Prakt-eksempelet på en ambisiøs bestilling er som følger
 
 Dagens versjon av Kunnskapsassistenten er ikke i stand til å gjennomføre den jobben. Av flere årsaker. Resultatet du får vil være noe sånt som dette:
 
-![](Pasted%20image%2020251215113638.png)
+![](../images/Pasted%20image%2020251215113638.png)
 
 I eksempelet gir Kunnskapsassistenten svar på 7 virksomheter, men det skulle vært nærmere 170-190 totalt
 
@@ -90,7 +90,7 @@ En viktig ting å merke seg er at disse “ambisiøse bestillingene” ikke er u
 
 ### Konsulentbruk
 
-![Skisse av konseptet om konsulentbruk](Pasted%20image%2020251215113707.png)
+![Skisse av konseptet om konsulentbruk](../images/Pasted%20image%2020251215113707.png)
 
 
 > [!important] Beskrivelse av konseptet
@@ -118,15 +118,15 @@ Brukeren trener modellen med egne faglige vurderinger over tid — og bygger gra
 | Mulighet for å søke, vurdere og samle relevante tekst-chunker                                          | Ikke en eksakt vitenskap                                                                                             |
 | Reduserer drastisk hvor mye innhold brukeren må lese gjennom, samtidig som vi bevarer læringsprosessen | Siden språkmodellen henter ut informasjon for deg må brukeren ha høy tillit til fremgangsmåten å stole på resultatet |
 
-![](Pasted%20image%2020251215115152.png)
+![](../images/Pasted%20image%2020251215115152.png)
 
-![](Pasted%20image%2020251215115145.png)
+![](../images/Pasted%20image%2020251215115145.png)
 
-![](Pasted%20image%2020251215115138.png)
+![](../images/Pasted%20image%2020251215115138.png)
 
-![](Pasted%20image%2020251215115129.png)
+![](../images/Pasted%20image%2020251215115129.png)
 
-![](Pasted%20image%2020251215115119.png)
+![](../images/Pasted%20image%2020251215115119.png)
 
 ---
 
@@ -138,7 +138,7 @@ Brukeren trener modellen med egne faglige vurderinger over tid — og bygger gra
 > 
 > Hvert departement fyller det ut tre ganger for hver statlige virksomhet som de har ansvar for. I DFD sitt tilfelle er det 7 virksomheter, om jeg ikke husker feil.
 
-![Skisse av etatstyringskonseptet](Pasted%20image%2020251215113822.png)
+![Skisse av etatstyringskonseptet](../images/Pasted%20image%2020251215113822.png)
 
 Det som står i den blå boksen under Sammenstilling på høyre side, “Rapportering på vesentlig avvik fra nasjonal strategi for info..” er da den informasjonen fra årsrapporten som er relevant fra styringsparameter 3.
 
@@ -189,7 +189,7 @@ Det som står i den blå boksen under Sammenstilling på høyre side, “Rapport
 
 **Skisse av grensesnittet for en tabelltilnærming**, basert på [Simons prototype](Simons%20prototype.md):
 
-![Skisse av grensesnittet for en tabelltilnærming](Skisse-tabelltilnærming-hacke-uka.png)
+![Skisse av grensesnittet for en tabelltilnærming](../images/Skisse-tabelltilnærming-hacke-uka.png)
 
 > [!important] **Beskrivelse av konseptet**  
 > 
@@ -245,7 +245,7 @@ Det som står i den blå boksen under Sammenstilling på høyre side, “Rapport
     - Tabellen fylles ut ved at man sender ut en epost f. eks til deltagere, som selv kan fylle ut en forhåndsutfylt data i tabellen
         - identifiser manglende informasjon (gjennom skjema eller epost)
 
-![Trappetrinnsmodellen](Trappetrinnsmodellen.png)
+![Trappetrinnsmodellen](../images/Trappetrinnsmodellen.png)
 
 Det legges vekt på dette med å inkludere virksomhetene som står bak digitaliseringsprosjektene. Hvor f. eks man viser til ferdigutfylt informasjon som virksomheten deretter kan selv redigere, for å nyansere informasjonen i større grad.
 
@@ -254,11 +254,11 @@ Det legges vekt på dette med å inkludere virksomhetene som står bak digitalis
 
 **Strukturert tabellvisning over digitaliseringstiltak:**
 
-![Strukturert tabellvisning over digitaliseringstiltak](Pasted%20image%2020251215114633.png)
+![Strukturert tabellvisning over digitaliseringstiltak](../images/Pasted%20image%2020251215114633.png)
 
 **Forhåndsdefinerte forslag brukeren kan benytte seg av:**
 
-![Forhåndsdefinerte forslag brukeren kan benytte seg av](Pasted%20image%2020251215114658.png)
+![Forhåndsdefinerte forslag brukeren kan benytte seg av](../images/Pasted%20image%2020251215114658.png)
 
 > [!NOTE] Framtidig mulighet
 > Til en kvalitetssikrende agent kan man velge en språkmodell som er sterk på tallforståelse. I tillegg til å gi agenten tilgang på et programmeringsspråk eller kalkulator som verktøy.

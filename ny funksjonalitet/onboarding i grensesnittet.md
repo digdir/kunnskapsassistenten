@@ -21,11 +21,11 @@ Ambisjonen her er å lære opp brukeren i å bruke løsningen der hvor de trenge
 
 Her kan vi lære fra folk som har gjort dette før vårs. Theresa Harmanen og Kim René Teigen er designere i team Arbeidsflate, i Digdir, som har jobbet med sånt tidligere. Og Mateusz var utvikleren som implementerte det. Theresa har nevnt tidligere at vi kan booke inn en prat om det når vi ønsker det.
 
-![onboardings-eksempler fra team Arbeidsflate](Pasted%20image%2020251215053930.png)
+![onboardings-eksempler fra team Arbeidsflate](../images/Pasted%20image%2020251215053930.png)
 
 Første steget i denne retningen var å publisere [onboardings-informasjon som en underside i grensesnittet](https://kunnskap.digdir.cloud/onboarding "https://kunnskap.digdir.cloud/onboarding"):
 
-![nåværende onboarding i Kunnskapsassistenten](Pasted%20image%2020251215054027.png)
+![nåværende onboarding i Kunnskapsassistenten](../images/Pasted%20image%2020251215054027.png)
 
 ## Antagelser
 

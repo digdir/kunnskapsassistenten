@@ -15,7 +15,7 @@ Sørge for at brukeren blir informert om at det finnes søkeresultater, og at ma
 
 Søket på høyresiden her er det vi jobber med å forbedre. Til å starte med var det ingen indikasjon på om du hadde fått treff på søket ditt, siden du selv måtte scrolle ned for å finne markerte ord blant kildene.
 
-![Før forbedringer kildesøk](Pasted%20image%2020251215092401.png)
+![Før forbedringer kildesøk](../images/Pasted%20image%2020251215092401.png)
 Om du følger nøye med kan du se et eksempel på det i demofilmen fra seminaret vi hadde på Mesh:
 
 <div style="padding:56.25% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/1144800912?h=5fa0bc9cba&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" referrerpolicy="strict-origin-when-cross-origin" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="Demo av Kunnskapsassistenten 16-09-2025"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script>

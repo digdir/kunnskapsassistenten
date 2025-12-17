@@ -13,7 +13,7 @@ La brukeren laste opp dokumenter som tilleggskilder til det vi får fra Kudos.
 
 ## Skisser
 
-![](Pasted%20image%2020251215094330.png)
+![](../images/Pasted%20image%2020251215094330.png)
 
 ## Kjappe tanker
 
@@ -77,7 +77,7 @@ For å ha alt på det rene måtte vi vel i så fall slettet tråden i sin helhet
 | Hvor viktig er det egentlig for brukeren å dele tråder i det hele tatt?<br><br>Eller sagt på en annen måte:<br><br>Hvor stort savn ville det vært for brukeren hvis vi ikke tilrettelegger for deling i det hele tatt? |                                                                                                                                                       | e.g., We'll announce the feature with a blog post and a presentation | Type // to add a date |
 | Er det en fordel eller ulempe dersom dokumentet automatisk slettes etter 30 dager med inaktivitet?                                                                                                                     | Ref punktet under lagring i steg 2 “Opplastede dokumenter slettes automatisk etter 30/60/90 dager med inaktivitet (hvis sikkerhetskrav krever dette)” |                                                                      |                       |
 | Burde vi også tilrettelegge for at man kan legge ved dokumenter i chatboksen?                                                                                                                                          |                                                                                                                                                       |                                                                      |                       |
-![Vedlegg i chatboksen](Pasted%20image%2020251215094350.png)
+![Vedlegg i chatboksen](../images/Pasted%20image%2020251215094350.png)
 
 ##  Interaksjon og design
 
@@ -85,7 +85,7 @@ Dette er utforsket fra et designståsted i sammenheng med [forbedring av filtere
 
 Gitt at vi hadde gått videre med Sharepoint-integrasjon ville det vel vært naturlig å åpne native-menyen der, som man får i andre Sharepoint-sammenhenger, som i Powerpoint for eksempel:
 
-![sharepoint-eksempel](sharepoint-eksempel.webp)
+![sharepoint-eksempel](../images/sharepoint-eksempel.webp)
 
 ##  Referanser
 

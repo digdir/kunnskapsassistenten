@@ -2,7 +2,7 @@
 | **Relatert til** | [oppstartsspørsmål](oppstartsspørsmål.md) |
 | ---------------- | ----------------------------------------- |
 | **Status**       | ferdig design                             |
-![skisse på oppfølgingsspørsmål](CleanShot%202025-12-12%20at%2016.14.39@2x.jpg)
+![skisse på oppfølgingsspørsmål](../images/CleanShot%202025-12-12%20at%2016.14.39@2x.jpg)
 ## Linker
 
 - [Arbeid i figma](https://www.figma.com/design/dD3Xs8rJe1TYU5fb65VKEY/Kunnskapsassistenten?node-id=351-42157&t=4AJfWvXcDmz9BIfr-11)
@@ -42,8 +42,8 @@ Når du markerer tekst i [Perplexity](https://www.perplexity.ai/) får du muligh
 
 #### Steg 1
 
-![Eksempel på oppfølgingsspørsmål i Perplexity](Pasted%20image%2020251215054940.png)
+![Eksempel på oppfølgingsspørsmål i Perplexity](../images/Pasted%20image%2020251215054940.png)
 
 #### Steg 2
 
-![kontekst til spørsmål i Perplexity](Pasted%20image%2020251215055109.png)
+![kontekst til spørsmål i Perplexity](../images/Pasted%20image%2020251215055109.png)
