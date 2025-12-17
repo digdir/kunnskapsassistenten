@@ -41,29 +41,19 @@ Dette er snakk om én kunnskapsarbeider i staten. Og det er konservative vurderi
 
 Med andre ord, Digdir bruker rundt 60 000 000 kr i året på å **leite etter kunnskap**.
 
-For departementet sin del (DFD), og deres 176 ansatte, vil det samme anslaget resultere i 26 400 000 kr på en årlig basis.
+For departementet sin del (DFD), og deres 176 ansatte, vil det samme anslaget resultere i 26 400 000 kr på årlig basis.
+
+Det å leite etter kunnskap er kun en liten del av en større prosess, og kostnaden bør derfor sees i en større sammenheng, men vi holder det enkelt for denne gangen, og ser på kostnaden av en isolert oppgave. Ikke verdien av å utvikle ny kunnskap i sin helhet.
 
 ---
 
-## Hvor mye penger kan vi spare?
+## Hvor mye penger kan spares?
 
-En av gevinstene ved å bruke Kunnskapsassistenten vil være redusert tid på å lete etter kunnskap. Rett og slett fordi språkmodellen vil kunne lete gjennom informasjon langt fortere enn et menneske kan. Gitt at den klarer å finne den _riktige informasjonen._ Og at det kan stoles på.
-
-Estimatene handler kun om det å **lete etter kunnskap**, som en isolert oppgave. Ikke verdien av å utvikle ny kunnskap.
+En av de store gevinstene ved å bruke Kunnskapsassistenten vil være redusert tid på å lete etter kunnskap. Rett og slett fordi språkmodellen leter gjennom informasjon langt fortere enn et menneske kan. Gitt at den klarer å finne den _riktige informasjonen._ Og at det kan stoles på. Som såklart er en helt essensiell påstand.
 
 Det er vanskelig å si nøyaktig hvor mye tid man sparer på bruke Kunnskapsassistenten for å lete etter kunnskap, sammenlignet med å gjøre det manuelt. Samtidig kan vi gjøre noen antagelser på konservativ eller optimistisk effektivisering.
 
 Med bakgrunn i gjennomsnittstallene fra SSB, som vi nevnte tidligere, og antall ansatte, får vi følgende oversikt:
-
-### DFD
-
-176 ansatte.
-
-| **Vurdering**         | **Konservativt** | **Realistisk** | **Optimistisk** |
-| --------------------- | ---------------- | -------------- | --------------- |
-| Arbeidstid spart      | 40%              | 60%            | 80%             |
-| Personalkostnad spart | 10 560 000 kr    | 15 840 000 kr  | 21 120 000 kr   |
-
 ### Digdir
 
 Ca 400 ansatte.
@@ -72,6 +62,14 @@ Ca 400 ansatte.
 | --------------------- | ---------------- | -------------- | --------------- |
 | Arbeidstid spart      | 40%              | 60%            | 80%             |
 | Personalkostnad spart | 24 000 000 kr    | 36 000 000 kr  | 48 000 000 kr   |
+### DFD
+
+176 ansatte.
+
+| **Vurdering**         | **Konservativt** | **Realistisk** | **Optimistisk** |
+| --------------------- | ---------------- | -------------- | --------------- |
+| Arbeidstid spart      | 40%              | 60%            | 80%             |
+| Personalkostnad spart | 10 560 000 kr    | 15 840 000 kr  | 21 120 000 kr   |
 
 Samtidig presenterer dette bare én del av bilde. For hva med de pengene som _allerede_ brukes på kommersielle KI-tjenester?
 
