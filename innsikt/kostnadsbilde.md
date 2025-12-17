@@ -98,7 +98,7 @@ Vi har fargekodet summene basert på et “educated guess”. Ut fra hva som vir
     - Kanskje litt for lite eller litt for mye
 - Veldig sannsynlig (grønn)
 
-![kostnadsbilde-fargekodet](/images/kostnadsbilde-fargekodet.webp)
+![kostnadsbilde-fargekodet](../images/kostnadsbilde-fargekodet.webp)
 
 Da ser vi at det er sannsynlig at Departementfellesskapet bruker et sted mellom 10-23,5 millioner kroner på lisenser til kommersielle KI-tjenester på en årlig basis. Og dette kommer da i tillegg til kostnadene av å leite etter kunnskap som vi snakket om tidligere.
 
