@@ -2,4 +2,4 @@ Brukerne må kunne stole på svarene man får, og se hvilke kilder svarene er ba
 
 > For at jeg skal kunne stole på KI trenger jeg også forståelse for hvordan den fungerer.
 
-Brukeren stoler 
+Brukeren stoler også på informasjonen er oppdatert til enhver tid. Som legger krav på importrutinene våre til [Kudos](https://kudos.dfo.no/).
