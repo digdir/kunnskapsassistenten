@@ -1,0 +1,1 @@
+The project is creating evals for Kunnskapsassistenten RAG system in Norweegian public sector.

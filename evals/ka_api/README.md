@@ -1,0 +1,1 @@
+The ka_api project fetches and analyzes threads from Kunnskapsassistenten API

@@ -1,0 +1,17 @@
+[project]
+name = "kua-shared"
+version = "0.1.0"
+description = "Shared code for Kunnskapsassistenten evaluation projects"
+requires-python = ">=3.13"
+dependencies = [
+    "diskcache>=5.6.3",
+    "langfuse>=3.11.0",
+    "pydantic>=2.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agents"]

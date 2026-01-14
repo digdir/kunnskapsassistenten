@@ -1,0 +1,36 @@
+# Output files
+output/
+
+# Production data (contains PII)
+prod_*
+
+# Cache
+.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environment
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+*.DS_Store
+
+# data
+*.db

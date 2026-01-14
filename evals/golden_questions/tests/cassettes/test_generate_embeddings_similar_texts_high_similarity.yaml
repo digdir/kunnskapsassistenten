@@ -1,0 +1,110 @@
+interactions:
+- request:
+    body: '{"input":"Hva er budsjettet til Digdir?","model":"nomic-embed-text","encoding_format":"base64"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '95'
+      Content-Type:
+      - application/json
+      Host:
+      - localhost:11434
+      User-Agent:
+      - OpenAI/Python 2.9.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.9.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.3
+      authorization:
+      - REDACTED
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: http://localhost:11434/v1/embeddings
+  response:
+    body:
+      string: '{"object":"list","data":[{"object":"embedding","embedding":"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","index":0}],"model":"nomic-embed-text","usage":{"prompt_tokens":8,"total_tokens":8}}
+
+        '
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 11 Dec 2025 13:33:39 GMT
+      Transfer-Encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"input":"Hvilket budsjett har Digdir?","model":"nomic-embed-text","encoding_format":"base64"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '94'
+      Content-Type:
+      - application/json
+      Host:
+      - localhost:11434
+      User-Agent:
+      - OpenAI/Python 2.9.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.9.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.3
+      authorization:
+      - REDACTED
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: http://localhost:11434/v1/embeddings
+  response:
+    body:
+      string: '{"object":"list","data":[{"object":"embedding","embedding":"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","index":0}],"model":"nomic-embed-text","usage":{"prompt_tokens":8,"total_tokens":8}}
+
+        '
+    headers:
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 11 Dec 2025 13:33:39 GMT
+      Transfer-Encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1
