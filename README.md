@@ -35,5 +35,3 @@ Med det lille teamet vårt har vi fått på plass mye på kort tid, men det er f
 ### Ny funksjonalitet
 
 Alt det vi har måtte sette på vent av ulike grunner finner du her. Noe av det er basert på forslag fra brukerne som har blitt nevnt i et intervjue. Andre ting kan være testa fra et designståsted, enten som en prototype (som f. eks [notater](notater.md)) eller skisser som stillbilde (som [testing av dokumentvisning](testing%20av%20dokumentvisning.md)), men ikke prioritert i utviklingen med det første.
-
-test.
