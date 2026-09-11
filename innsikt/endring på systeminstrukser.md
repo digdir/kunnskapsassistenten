@@ -1,3 +1,5 @@
+*[Utdrag fra rapporten](https://www.digdir.no/media/6756/download) skrevet av Marie Berntsen (Digdir) og Sigrid Nafstad (DIO).*
+
 ## Bakgrunnen for arbeidet
 
 Vi har lært at det å innta rollen som en sparringspartner er det mest fornuftige i arbeidsflyten til kunnskapsarbeidere. For å oppnå det er det flere grep vi må utforske, deriblant en [agentisk flyt](agentisk%20flyt.md), men også systeminstruksene vi har definert. Siden de i stor grad påvirker måten språkmodellen svarer på spørsmålene til brukeren.
