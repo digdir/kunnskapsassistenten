@@ -1,0 +1,21 @@
+{
+  "name": "@ka/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --watch src/server.ts",
+    "start": "node --env-file-if-exists=.env src/server.ts",
+    "doctor": "node --env-file-if-exists=.env src/doctor.ts",
+    "test": "node --test src/*.test.ts"
+  },
+  "dependencies": {
+    "@azure/msal-node": "^6.0.1",
+    "@hono/node-server": "^1.13.8",
+    "@ka/contract": "*",
+    "hono": "^4.13.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2"
+  }
+}

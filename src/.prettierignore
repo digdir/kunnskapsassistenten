@@ -1,0 +1,4 @@
+dist/
+package-lock.json
+docs/fixtures/*.sse
+docs/backend-patches/*.patch
