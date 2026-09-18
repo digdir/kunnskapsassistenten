@@ -155,3 +155,29 @@ describe('toSources', () => {
     assert.deepEqual(await mcp.toSources([], noExcerpts), []);
   });
 });
+
+describe('documentUrl safety', () => {
+  test('a javascript: url from an indexed document never becomes a link', async () => {
+    const sources = await mcp.toSources(
+      [{ chunk_id: 'c1', doc_num: '42', url: 'javascript:alert(document.cookie)' }],
+      async () => new Map(),
+    );
+    assert.ok(!sources[0]?.url.startsWith('javascript:'));
+  });
+
+  test('a data: url is refused too', async () => {
+    const sources = await mcp.toSources(
+      [{ chunk_id: 'c1', doc_num: '42', url: 'data:text/html,<script>alert(1)</script>' }],
+      async () => new Map(),
+    );
+    assert.ok(!sources[0]?.url.startsWith('data:'));
+  });
+
+  test('an ordinary https url is kept', async () => {
+    const sources = await mcp.toSources(
+      [{ chunk_id: 'c1', doc_num: '42', url: 'https://kudos.dfo.no/documents/42' }],
+      async () => new Map(),
+    );
+    assert.equal(sources[0]?.url, 'https://kudos.dfo.no/documents/42');
+  });
+});

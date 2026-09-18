@@ -122,10 +122,11 @@ export function page(body: string): string {
 
 /** The stock template returns the session in the URL fragment. */
 function fragmentHandoff(next: string): string {
-  return page(`<h1>Logger inn…</h1>
+  return page(`<h1 data-next="${esc(next)}">Logger inn…</h1>
   <p class="note">Et øyeblikk.</p>
   <script>
     (function () {
+      var next = document.querySelector('h1').dataset.next || '/';
       var h = new URLSearchParams(location.hash.slice(1));
       var t = h.get('access_token');
       if (!t) { location.replace('/auth/login'); return; }
@@ -134,7 +135,7 @@ function fragmentHandoff(next: string): string {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ access_token: t }),
       }).then(function (r) {
-        location.replace(r.ok ? ${JSON.stringify(next)} : '/auth/login');
+        location.replace(r.ok ? next : '/auth/login');
       }).catch(function () { location.replace('/auth/login'); });
     })();
   </script>`);

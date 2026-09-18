@@ -12,9 +12,9 @@ param digdirApiBase string = 'https://test.rag.digdir.cloud'
 @description('Hosted uses `kudos`; a local backend uses `default`.')
 param digdirDatasetConfigKey string = 'kudos'
 
-@description('entra, supabase or off. Empty infers it from what is configured.')
-@allowed(['', 'entra', 'supabase', 'off'])
-param authMode string = ''
+@description('Which sign-in to deploy. `off` is local development only and is not deployable.')
+@allowed(['entra', 'supabase'])
+param authMode string
 
 @description('AUTH_MODE=supabase only: the project URL and its anon key.')
 param supabaseUrl string = ''

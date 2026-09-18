@@ -143,6 +143,15 @@ app.post('/api/ask', async (c) => {
   let conversationId =
     typeof body.conversationId === 'string' ? body.conversationId : undefined;
 
+  // Discarded on purpose: detail() is the ownership check.
+  if (conversationId) {
+    try {
+      await convos.detail(userId, conversationId);
+    } catch {
+      return c.json({ error: 'Fant ikke samtalen.' }, 404);
+    }
+  }
+
   let created: { id: string; topic: string } | null = null;
   if (!conversationId) {
     try {
@@ -166,6 +175,7 @@ app.post('/api/ask', async (c) => {
         if (created) send({ type: 'conversation', ...created });
         for await (const event of ask(
           query,
+          userId,
           conversationId,
           upstreamAbort.signal,
           model,

@@ -7,6 +7,6 @@ docs
 decisions
 **/*.test.ts
 **/*.test.tsx
-.env
-.env.*
-!.env.example
+**/.env
+**/.env.*
+!**/.env.example

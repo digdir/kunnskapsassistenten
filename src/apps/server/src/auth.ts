@@ -47,7 +47,7 @@ const msal =
       })
     : null;
 
-const secure = () => config.auth.redirectUri.startsWith('https://');
+const secure = () => !config.auth.origin.startsWith('http://localhost');
 
 function cookieOptions() {
   return {
@@ -86,8 +86,12 @@ export async function writeUser(c: Context, user: User): Promise<void> {
   );
 }
 
+const UNSAFE_IN_PATH = /[\u0000-\u001f\u007f<>"'`\\]/;
+
 export function safeReturnTo(value: string | undefined): string {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) return '/';
+  if (!value || !value.startsWith('/')) return '/';
+  if (UNSAFE_IN_PATH.test(value)) return '/';
+  if (value.startsWith('//')) return '/';
   if (value.startsWith('/auth/')) return '/';
   return value;
 }

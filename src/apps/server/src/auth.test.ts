@@ -62,3 +62,18 @@ describe('safeReturnTo', () => {
     assert.equal(safeReturnTo(''), '/');
   });
 });
+
+describe('safeReturnTo hardening', () => {
+  test('a script-breaking path cannot reach a page', () => {
+    assert.equal(safeReturnTo('/</script><script>alert(1)</script>'), '/');
+  });
+
+  test('a backslash cannot be used to leave the origin', () => {
+    assert.equal(safeReturnTo('/\\evil.com'), '/');
+    assert.equal(safeReturnTo('/\\/evil.com'), '/');
+  });
+
+  test('a newline cannot be smuggled into a header', () => {
+    assert.equal(safeReturnTo('/\r\nX-Evil: 1'), '/');
+  });
+});

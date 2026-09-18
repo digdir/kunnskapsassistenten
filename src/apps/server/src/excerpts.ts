@@ -4,7 +4,7 @@ const chunksCollection = () => config.docsCollection.replace('_documents_', '_ch
 
 export async function excerpts(chunkIds: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
-  const ids = [...new Set(chunkIds.filter(Boolean))];
+  const ids = [...new Set(chunkIds.filter((id) => /^[A-Za-z0-9._:-]+$/.test(id)))];
   if (!ids.length || !config.typesenseHost || !config.typesenseKey || !config.docsCollection) {
     return out;
   }

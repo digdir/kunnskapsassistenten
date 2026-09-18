@@ -12,10 +12,11 @@ export function setAllowedTools(ids: string[]): void {
 }
 
 /** Derived from the body: a disagreeing header is rejected with -32020. */
-function headers(method: string, toolName?: string): Record<string, string> {
+function headers(method: string, userId: string, toolName?: string): Record<string, string> {
   const h: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-API-Key': config.apiKey,
+    'X-User-Id': userId,
     'MCP-Protocol-Version': PROTOCOL_VERSION,
     'Mcp-Method': method,
   };
@@ -101,9 +102,21 @@ export interface ResultChunk {
   url?: string;
 }
 
+function safeHttpUrl(value: string): string {
+  try {
+    const u = new URL(value);
+    return u.protocol === 'https:' || u.protocol === 'http:' ? value : '';
+  } catch {
+    return '';
+  }
+}
+
 /** `/documents/<n>`, not `/files/` — the latter 404s. */
 function documentUrl(chunk: ResultChunk): string {
-  if (chunk.url) return chunk.url;
+  if (chunk.url) {
+    const safe = safeHttpUrl(chunk.url);
+    if (safe) return safe;
+  }
   if (chunk.doc_num) return `${config.kudosBase}/documents/${chunk.doc_num}`;
   return '';
 }
@@ -142,6 +155,7 @@ export async function toSources(
 /** Never accumulates the upstream body: that would stall the stream. */
 export async function* ask(
   query: string,
+  userId: string,
   conversationId: string | undefined,
   signal: AbortSignal,
   requestedTool?: string,
@@ -168,7 +182,7 @@ export async function* ask(
 
   const upstream = await fetch(`${config.apiBase}/api/mcp`, {
     method: 'POST',
-    headers: { ...headers('tools/call', tool), Accept: 'text/event-stream' },
+    headers: { ...headers('tools/call', userId, tool), Accept: 'text/event-stream' },
     body: JSON.stringify(body),
     signal,
   });
