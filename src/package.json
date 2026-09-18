@@ -1,0 +1,28 @@
+{
+  "name": "kunnskapsassistenten",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/server & npm run dev --workspace apps/web",
+    "dev:server": "npm run dev --workspace apps/server",
+    "dev:web": "npm run dev --workspace apps/web",
+    "doctor": "npm run doctor --workspace apps/server",
+    "build": "npm run build --workspace apps/web",
+    "start": "npm run start --workspace apps/server",
+    "test": "npm run test --workspace apps/server && npm run test --workspace apps/web",
+    "typecheck": "tsc -p packages/contract && tsc -p apps/server && tsc -p apps/web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6",
+    "typescript": "^5.7.2"
+  }
+}
