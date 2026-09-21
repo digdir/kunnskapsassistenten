@@ -2,6 +2,7 @@
 
 | Mappe | Innhold |
 | --- | --- |
+| [`src/`](src/) | Applikasjonen: frontend, server og kontrakt, bygd på `digdir-headless-rag`. Se [`src/README.md`](src/README.md). |
 | [`docs/`](docs/) | Dokumentasjon av designarbeidet. |
 | [`evals/`](evals/) | Evalueringer og golden questions. |
 
