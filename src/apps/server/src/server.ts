@@ -49,7 +49,7 @@ app.use('/api/*', async (c, next) =>
   c.req.path === '/api/health' ? next() : requireAuth(c, next),
 );
 
-app.get('/api/health', (c) => c.json({ ok: true, backend: config.apiBase, tool: config.tool }));
+app.get('/api/health', (c) => c.json({ ok: true }));
 
 app.get('/api/me', (c) =>
   c.json({
@@ -57,6 +57,8 @@ app.get('/api/me', (c) =>
     user: c.get('user'),
     authenticated: !config.auth.enabled || Boolean(c.get('user')),
     authEnabled: config.auth.enabled,
+    backend: config.apiBase,
+    tool: config.tool,
   }),
 );
 

@@ -94,7 +94,6 @@ export const config = {
 
   kudosBase: (process.env.KUDOS_BASE ?? 'https://kudos.dfo.no').replace(/\/$/, ''),
 
-  /** Read-only, despite the name. */
   typesenseHost: process.env.TYPESENSE_API_HOST ?? '',
   typesenseKey: process.env.TYPESENSE_API_KEY_ADMIN ?? '',
   docsCollection: process.env.KUDOS_DOCS_COLLECTION ?? '',
