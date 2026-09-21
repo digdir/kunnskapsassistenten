@@ -3,11 +3,33 @@ import { config } from './config.ts';
 import { domainAllowed, type User } from './auth.ts';
 
 const SEND_LIMIT_MS = 60_000;
+const VERIFY_LIMIT = 5;
+const VERIFY_WINDOW_MS = 10 * 60_000;
 const sent = new Map<string, number>();
+const failed = new Map<string, { count: number; expires: number }>();
 
 export function throttled(email: string, now = Date.now()): boolean {
   const last = sent.get(email);
   return Boolean(last && now - last < SEND_LIMIT_MS);
+}
+
+export function verifyBlocked(email: string, now = Date.now()): boolean {
+  const f = failed.get(email);
+  return Boolean(f && now < f.expires && f.count >= VERIFY_LIMIT);
+}
+
+export function recordFailure(email: string, now = Date.now()): void {
+  for (const [k, v] of failed) if (now >= v.expires) failed.delete(k);
+  const f = failed.get(email);
+  const open = f && now < f.expires ? f : undefined;
+  failed.set(email, {
+    count: (open?.count ?? 0) + 1,
+    expires: open?.expires ?? now + VERIFY_WINDOW_MS,
+  });
+}
+
+export function clearFailures(email: string): void {
+  failed.delete(email);
 }
 
 function api(path: string): string {
@@ -120,25 +142,25 @@ export function page(body: string): string {
 <body><div class="card">${body}</div></body></html>`;
 }
 
+export const HANDOFF_SCRIPT = `(function () {
+  var next = document.querySelector('h1').dataset.next || '/';
+  var h = new URLSearchParams(location.hash.slice(1));
+  var t = h.get('access_token');
+  if (!t) { location.replace('/auth/login'); return; }
+  fetch('/auth/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ access_token: t }),
+  }).then(function (r) {
+    location.replace(r.ok ? next : '/auth/login');
+  }).catch(function () { location.replace('/auth/login'); });
+})();`;
+
 /** The stock template returns the session in the URL fragment. */
 function fragmentHandoff(next: string): string {
   return page(`<h1 data-next="${esc(next)}">Logger inn…</h1>
   <p class="note">Et øyeblikk.</p>
-  <script>
-    (function () {
-      var next = document.querySelector('h1').dataset.next || '/';
-      var h = new URLSearchParams(location.hash.slice(1));
-      var t = h.get('access_token');
-      if (!t) { location.replace('/auth/login'); return; }
-      fetch('/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ access_token: t }),
-      }).then(function (r) {
-        location.replace(r.ok ? next : '/auth/login');
-      }).catch(function () { location.replace('/auth/login'); });
-    })();
-  </script>`);
+  <script src="/auth/handoff.js"></script>`);
 }
 
 export async function userFromAccessToken(token: string): Promise<User | null> {
@@ -233,11 +255,22 @@ export function mountSupabaseAuth(
     if (!domainAllowed({ email })) {
       return c.html(loginPage(next, `Bare adresser på ${domains} har tilgang.`), 403);
     }
+    if (verifyBlocked(email)) {
+      return c.html(codePage(email, next, 'For mange forsøk. Vent ti minutter.'), 429);
+    }
     const user = await verifyCode(email, code);
-    if (!user) return c.html(codePage(email, next, 'Feil eller utløpt kode.'), 401);
+    if (!user) {
+      recordFailure(email);
+      return c.html(codePage(email, next, 'Feil eller utløpt kode.'), 401);
+    }
+    clearFailures(email);
     await deps.writeUser(c, user);
     return c.redirect(next);
   });
+
+  app.get('/auth/handoff.js', (c) =>
+    c.body(HANDOFF_SCRIPT, 200, { 'Content-Type': 'text/javascript; charset=utf-8' }),
+  );
 
   app.get('/auth/callback', async (c) => {
     const tokenHash = c.req.query('token_hash');

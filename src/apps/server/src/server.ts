@@ -1,6 +1,8 @@
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
+import { csrf } from 'hono/csrf';
+import { secureHeaders } from 'hono/secure-headers';
 import type { AskRequest } from '@ka/contract';
 import { mountAuth, readUser, requireAuth } from './auth.ts';
 import { capabilities, probe, probeComplete } from './capabilities.ts';
@@ -14,6 +16,34 @@ import * as sourceStore from './sourceStore.ts';
 const app = new Hono<{ Variables: SessionVars }>();
 
 app.use('*', sessionMiddleware);
+
+const CDN = 'https://altinncdn.no';
+
+app.use(
+  '*',
+  secureHeaders({
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'none'"],
+      objectSrc: ["'none'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", CDN],
+      fontSrc: ["'self'", 'data:', CDN],
+      imgSrc: ["'self'", 'data:'],
+      connectSrc: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+    },
+    strictTransportSecurity: config.auth.origin.startsWith('https://')
+      ? 'max-age=31536000; includeSubDomains'
+      : false,
+    xFrameOptions: 'DENY',
+  }),
+);
+
+// Only form-encoded posts are checked, so the JSON API keeps working.
+app.use('*', csrf({ origin: config.auth.origin }));
+
 mountAuth(app);
 app.use('/api/*', async (c, next) =>
   c.req.path === '/api/health' ? next() : requireAuth(c, next),

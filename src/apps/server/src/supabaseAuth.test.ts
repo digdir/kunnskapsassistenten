@@ -16,6 +16,41 @@ describe('throttled', () => {
   });
 });
 
+describe('verifyBlocked', () => {
+  test('an address that has not guessed is not blocked', () => {
+    assert.equal(mod.verifyBlocked('rolig@digdir.no'), false);
+  });
+
+  test('five wrong codes block the sixth attempt', () => {
+    const now = Date.now();
+    for (let i = 0; i < 4; i++) mod.recordFailure('gjetter@digdir.no', now);
+    assert.equal(mod.verifyBlocked('gjetter@digdir.no', now), false);
+    mod.recordFailure('gjetter@digdir.no', now);
+    assert.equal(mod.verifyBlocked('gjetter@digdir.no', now), true);
+  });
+
+  test('the block lifts once the window has passed', () => {
+    const now = Date.now();
+    for (let i = 0; i < 5; i++) mod.recordFailure('venter@digdir.no', now);
+    assert.equal(mod.verifyBlocked('venter@digdir.no', now + 10 * 60_000), false);
+  });
+
+  test('a correct code clears the count', () => {
+    const now = Date.now();
+    for (let i = 0; i < 5; i++) mod.recordFailure('klarert@digdir.no', now);
+    mod.clearFailures('klarert@digdir.no');
+    assert.equal(mod.verifyBlocked('klarert@digdir.no', now), false);
+  });
+});
+
+describe('inline scripts', () => {
+  test('the pages carry no inline script for a CSP to allow', () => {
+    for (const html of [mod.loginPage('/'), mod.codePage('a@digdir.no', '/')]) {
+      assert.ok(!/<script(?![^>]*\bsrc=)/.test(html));
+    }
+  });
+});
+
 describe('loginPage', () => {
   test('the return path is escaped rather than interpolated raw', () => {
     const html = mod.loginPage('/"><script>alert(1)</script>');
