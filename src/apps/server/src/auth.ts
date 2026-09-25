@@ -54,7 +54,7 @@ export async function readUser(c: Context): Promise<User | null> {
 }
 
 export function clearUser(c: Context): void {
-  deleteCookie(c, SESSION, { path: '/' });
+  deleteCookie(c, SESSION, { path: '/', secure: secure() });
 }
 
 export async function writeUser(c: Context, user: User): Promise<void> {
@@ -117,7 +117,7 @@ export function mountAuth(app: {
     if (!code) return c.html(entraLoginPage('/', 'Innloggingen feilet. Prøv igjen.'), 400);
 
     const pendingRaw = await getSignedCookie(c, config.auth.sessionSecret, RETURN_TO);
-    deleteCookie(c, RETURN_TO, { path: '/' });
+    deleteCookie(c, RETURN_TO, { path: '/', secure: secure() });
     let pending: { state?: string; next?: string } = {};
     try {
       pending = typeof pendingRaw === 'string' ? JSON.parse(pendingRaw) : {};
@@ -156,7 +156,7 @@ export function mountAuth(app: {
   });
 
   app.get('/auth/logout', (c) => {
-    deleteCookie(c, SESSION, { path: '/' });
+    deleteCookie(c, SESSION, { path: '/', secure: secure() });
     const post = encodeURIComponent(new URL('/', config.auth.redirectUri).toString());
     return c.redirect(
       `https://login.microsoftonline.com/${config.auth.tenantId}/oauth2/v2.0/logout` +
