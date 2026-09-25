@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import type { AskRequest } from '@ka/contract';
@@ -10,7 +11,7 @@ import { config, typesenseConfigured } from './config.ts';
 import { ask, setAllowedTools } from './mcp.ts';
 import { toAgents } from './models.ts';
 import * as convos from './conversations.ts';
-import { facets, toFilterBy } from './facets.ts';
+import { cleanFilter, facets, toFilterBy } from './facets.ts';
 import { sessionMiddleware, type SessionVars } from './session.ts';
 import * as sourceStore from './sourceStore.ts';
 import * as threadFilters from './threadFilters.ts';
@@ -47,6 +48,13 @@ app.use(
 app.use('*', csrf({ origin: config.auth.origin }));
 
 mountAuth(app);
+app.use(
+  '/api/*',
+  bodyLimit({
+    maxSize: 64 * 1024,
+    onError: (c) => c.json({ error: 'Forespørselen er for stor.' }, 413),
+  }),
+);
 app.use('/api/*', async (c, next) =>
   c.req.path === '/api/health' ? next() : requireAuth(c, next),
 );
@@ -158,7 +166,7 @@ app.post('/api/ask', async (c) => {
     );
   }
 
-  const requested = (body as { filter?: Record<string, string[]> }).filter ?? {};
+  const requested = cleanFilter((body as { filter?: unknown }).filter);
   const model =
     typeof (body as { model?: unknown }).model === 'string'
       ? (body as { model: string }).model
@@ -188,9 +196,7 @@ app.post('/api/ask', async (c) => {
     }
   }
 
-  const filterBy = toFilterBy(
-    threadFilters.recall(conversationId) ?? (created ? requested : {}),
-  );
+  const filterBy = toFilterBy(threadFilters.recall(conversationId) ?? requested);
 
   // Accumulating, compressing or dropping X-Accel-Buffering re-buffers the stream.
   const encoder = new TextEncoder();

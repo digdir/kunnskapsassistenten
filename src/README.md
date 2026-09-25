@@ -16,10 +16,9 @@ backendens offentlige kontrakt, og noe for [`../evals`](../evals) å kjøre mot.
 
 ## Utrullet
 
-<https://ka-app.thankfulpebble-9bb35590.norwayeast.azurecontainerapps.io>
+<https://qa.kunnskap.digdir.cloud>
 
-Logg inn med @digdir.no-adressen din. Du får en engangskode på e-post, ingen
-passord å opprette. Andre domener slipper ikke inn.
+Logg inn med Entra ID. Kontoer som finnes i tenanten slipper inn.
 
 To ting er ikke på plass i det utrullede miljøet, og begge ligger i backenden,
 ikke her:
@@ -139,9 +138,9 @@ Utelater du `AUTH_MODE` utledes den: `entra` hvis Azure-variablene er satt,
 ellers `off`. Serveren skriver hvilken modus den kjører i ved hver oppstart.
 
 Ingen token når nettleseren, bare en signert informasjonskapsel. `/api/*`
-svarer 401 uten innlogging, `/api/health` er åpen, og `ALLOWED_EMAIL_DOMAINS`
-begrenser hvilke kontoer som slipper inn. Oppsett i
-[`deploy/README.md`](deploy/README.md).
+svarer 401 uten innlogging, og `/api/health` er åpen. Hvem som slipper inn,
+bestemmes av Entra ID og ikke av appen. `AUTH_MODE=off` nekter å starte hvis
+`APP_ORIGIN` ikke er localhost. Oppsett i [`deploy/README.md`](deploy/README.md).
 
 ## Dokumentasjon
 

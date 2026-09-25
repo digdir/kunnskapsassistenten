@@ -15,13 +15,6 @@ function required(name: string): string {
   return v;
 }
 
-function allowedDomainsOf(): string[] {
-  return (process.env.ALLOWED_EMAIL_DOMAINS ?? '')
-    .split(/[,\s]+/)
-    .map((d) => d.trim().toLowerCase().replace(/^@/, ''))
-    .filter(Boolean);
-}
-
 function authMode(entraReady: boolean): 'entra' | 'off' {
   const asked = (process.env.AUTH_MODE ?? '').trim().toLowerCase();
   if (asked === 'entra' || asked === 'off') return asked;
@@ -50,11 +43,16 @@ function authConfig() {
     );
     process.exit(1);
   }
+  if (!enabled && !origin.startsWith('http://localhost')) {
+    console.error(
+      `Innlogging er av, men APP_ORIGIN er ${origin}. AUTH_MODE=off er bare for localhost.`,
+    );
+    process.exit(1);
+  }
   if (enabled && sessionSecret.length < 32) {
     console.error('SESSION_SECRET må være minst 32 tegn når innlogging er slått på.');
     process.exit(1);
   }
-  const allowedDomains = allowedDomainsOf();
   return {
     enabled,
     mode,
@@ -64,7 +62,6 @@ function authConfig() {
     redirectUri,
     origin,
     sessionSecret,
-    allowedDomains,
   };
 }
 

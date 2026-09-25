@@ -5,8 +5,6 @@ import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie';
 import { config } from './config.ts';
 import { entraLoginPage } from './authPages.ts';
 
-const SESSION = 'ka_session';
-const RETURN_TO = 'ka_return_to';
 const MAX_AGE = 60 * 60 * 8;
 const SCOPES = ['openid', 'profile', 'email'];
 
@@ -14,26 +12,6 @@ export interface User {
   id: string;
   name: string;
   email: string;
-}
-
-/** A guest's UPN is `navn_digdir.no#EXT#@tenant`. */
-export function domainsOf(claims: { email?: string; upn?: string }): string[] {
-  const out = new Set<string>();
-  const add = (d?: string) => {
-    if (d) out.add(d.toLowerCase());
-  };
-  add(claims.email?.split('@').pop());
-  const upn = claims.upn ?? '';
-  const ext = upn.indexOf('#EXT#');
-  if (ext === -1) add(upn.split('@').pop());
-  else add(upn.slice(0, ext).split('_').pop());
-  return [...out].filter(Boolean);
-}
-
-export function domainAllowed(claims: { email?: string; upn?: string }): boolean {
-  const allowed = config.auth.allowedDomains;
-  if (allowed.length === 0) return true;
-  return domainsOf(claims).some((d) => allowed.includes(d));
 }
 
 const msal =
@@ -48,6 +26,9 @@ const msal =
     : null;
 
 const secure = () => !config.auth.origin.startsWith('http://localhost');
+// __Host- needs Secure, which a plain-http localhost cannot have.
+const SESSION = secure() ? '__Host-ka_session' : 'ka_session';
+const RETURN_TO = secure() ? '__Host-ka_return_to' : 'ka_return_to';
 
 function cookieOptions() {
   return {
@@ -92,7 +73,14 @@ export function safeReturnTo(value: string | undefined): string {
   if (!value || !value.startsWith('/')) return '/';
   if (UNSAFE_IN_PATH.test(value)) return '/';
   if (value.startsWith('//')) return '/';
-  if (value.startsWith('/auth/')) return '/';
+  let url: URL;
+  try {
+    url = new URL(value, 'http://ka.invalid');
+  } catch {
+    return '/';
+  }
+  if (url.origin !== 'http://ka.invalid') return '/';
+  if (url.pathname.startsWith('/auth/')) return '/';
   return value;
 }
 
@@ -155,16 +143,6 @@ export function mountAuth(app: {
       if (!id)
         return c.html(entraLoginPage('/', 'Fant ingen bruker i svaret fra Entra ID.'), 502);
       const email = claims.preferred_username ?? claims.email ?? '';
-      if (!domainAllowed({ email, upn: claims.upn ?? result.account?.username })) {
-        return c.html(
-          entraLoginPage(
-            '/',
-            `Kontoen ${email} har ikke tilgang. Tillatte domener: ` +
-              config.auth.allowedDomains.join(', '),
-          ),
-          403,
-        );
-      }
       await writeUser(c, {
         id,
         name: result.account?.name ?? claims.name ?? '',

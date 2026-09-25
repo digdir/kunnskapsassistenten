@@ -94,3 +94,36 @@ describe('toFilterBy', () => {
     assert.equal(facets.toFilterBy(undefined), undefined);
   });
 });
+
+describe('cleanFilter', () => {
+  test('keeps known fields as lists of strings', () => {
+    assert.deepEqual(facets.cleanFilter({ type: ['Evaluering'], concerned_years: ['2023'] }), {
+      type: ['Evaluering'],
+      concerned_years: ['2023'],
+    });
+  });
+
+  test('drops unknown fields, non-lists and non-strings', () => {
+    assert.deepEqual(
+      facets.cleanFilter({
+        junk: ['x'],
+        type: null,
+        orgs_long: 'Digdir',
+        concerned_years: [5, {}],
+      }),
+      {},
+    );
+  });
+
+  test('caps how many values and how long each may be', () => {
+    const many = Array.from({ length: 500 }, (_, i) => `v${i}`);
+    assert.equal(facets.cleanFilter({ type: many }).type?.length, 100);
+    assert.deepEqual(facets.cleanFilter({ type: ['x'.repeat(201), 'ok'] }), { type: ['ok'] });
+  });
+
+  test('anything that is not an object is no filter', () => {
+    assert.deepEqual(facets.cleanFilter(null), {});
+    assert.deepEqual(facets.cleanFilter(['type']), {});
+    assert.deepEqual(facets.cleanFilter('type'), {});
+  });
+});

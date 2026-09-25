@@ -72,6 +72,24 @@ export function shapeFacet(
   return { field, label, options };
 }
 
+const MAX_VALUES = 100;
+const MAX_VALUE_LENGTH = 200;
+
+/** Only known fields, and only bounded lists of strings. */
+export function cleanFilter(raw: unknown): Record<string, string[]> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const out: Record<string, string[]> = {};
+  for (const { field } of FIELDS) {
+    const values = (raw as Record<string, unknown>)[field];
+    if (!Array.isArray(values)) continue;
+    const kept = values
+      .filter((v): v is string => typeof v === 'string' && v.length <= MAX_VALUE_LENGTH)
+      .slice(0, MAX_VALUES);
+    if (kept.length) out[field] = kept;
+  }
+  return out;
+}
+
 export function toFilterBy(
   selected: Record<string, string[]> | undefined,
 ): { fields: Array<{ field: string; 'selected-options': string[] }> } | undefined {

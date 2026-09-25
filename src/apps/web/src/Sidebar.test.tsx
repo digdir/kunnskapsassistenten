@@ -120,7 +120,7 @@ describe('Sidebar', () => {
   });
 
   test('a signed-in user can log out', () => {
-    const host = show({ user: { name: 'Kari Nordmann', email: 'kari@digdir.no' } });
+    const host = show({ user: { name: 'Kari Nordmann', email: 'kari@example.com' } });
     expect(host.textContent).toContain('Kari Nordmann');
     expect(host.querySelector('a[href="/auth/logout"]')).toBeTruthy();
   });

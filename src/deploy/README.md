@@ -13,8 +13,9 @@ images in `altinnaicontainers`. The DNS records for the domain live with
 
 Sign-in is Entra ID, app registration `altinn-ai-assistant-ka-sso`, single
 tenant, with admin consent granted. Only accounts that exist in the tenant can
-sign in, and `ALLOWED_EMAIL_DOMAINS` narrows that further. `AUTH_MODE=off` is
-for local development only: unsigned identity, anyone can be anyone.
+sign in, and the app adds no check of its own. `AUTH_MODE=off` is for local
+development only: unsigned identity, anyone can be anyone, and the server
+refuses to start with it unless `APP_ORIGIN` is localhost.
 
 A new public host needs its `https://<host>/auth/callback` added to the app
 registration's redirect URIs before `APP_ORIGIN` and `AZURE_REDIRECT_URI` point

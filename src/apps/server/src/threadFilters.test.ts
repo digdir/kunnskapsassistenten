@@ -17,3 +17,12 @@ test('a deleted thread forgets its filter', () => {
   forget('t3');
   assert.equal(recall('t3'), undefined);
 });
+
+test('a thread that was read recently outlives older ones', () => {
+  remember('kept', { type: ['Evaluering'] });
+  for (let i = 0; i < 499; i++) remember(`filler-${i}`, { type: ['Årsrapport'] });
+  recall('kept');
+  remember('one-more', { type: ['Årsrapport'] });
+  assert.deepEqual(recall('kept'), { type: ['Evaluering'] });
+  assert.equal(recall('filler-0'), undefined);
+});

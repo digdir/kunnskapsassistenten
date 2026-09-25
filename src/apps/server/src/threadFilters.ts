@@ -11,7 +11,13 @@ export function remember(conversationId: string, filter: Record<string, string[]
   }
 }
 
-export const recall = (conversationId: string): Record<string, string[]> | undefined =>
-  store.get(conversationId);
+export function recall(conversationId: string): Record<string, string[]> | undefined {
+  const filter = store.get(conversationId);
+  if (filter) {
+    store.delete(conversationId);
+    store.set(conversationId, filter);
+  }
+  return filter;
+}
 
 export const forget = (conversationId: string): void => void store.delete(conversationId);

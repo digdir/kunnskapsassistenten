@@ -19,9 +19,6 @@ param azureClientId string
 @description('Custom domain users reach the app on. Empty uses the Container Apps default domain.')
 param publicHost string = ''
 
-@description('Comma-separated domains allowed to sign in. Empty admits anyone the tenant admits. digdir.no covers 202 accounts here and excludes ai-dev.no ones.')
-param allowedEmailDomains string = 'digdir.no'
-
 @secure()
 param digdirApiKey string
 @secure()
@@ -113,7 +110,6 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
               { name: 'AZURE_CLIENT_ID', value: azureClientId }
               { name: 'AZURE_CLIENT_SECRET', secretRef: 'azure-client-secret' }
               { name: 'AZURE_REDIRECT_URI', value: 'https://${appHost}/auth/callback' }
-              { name: 'ALLOWED_EMAIL_DOMAINS', value: allowedEmailDomains }
             ],
             empty(typesenseApiKey) ? [] : [
               { name: 'TYPESENSE_API_KEY_ADMIN', secretRef: 'typesense-key' }
