@@ -23,19 +23,25 @@ export function useConversations() {
     void refresh();
   }, [refresh]);
 
-  const open = useCallback(async (id: string) => {
+  const open = useCallback(async (id: string): Promise<Record<string, string[]>> => {
     setActiveId(id);
     setLoading(true);
     setMessages([]);
     try {
       const res = await fetch(`/api/conversations/${encodeURIComponent(id)}`);
-      if (res.ok) {
-        const body = (await res.json()) as { messages: Message[]; sources?: Source[] };
-        setMessages(body.messages);
-        if (body.sources?.length) {
-          setSourcesByThread((m) => ({ ...m, [id]: body.sources as Source[] }));
-        }
+      if (!res.ok) return {};
+      const body = (await res.json()) as {
+        messages: Message[];
+        sources?: Source[];
+        filter?: Record<string, string[]>;
+      };
+      setMessages(body.messages);
+      if (body.sources?.length) {
+        setSourcesByThread((m) => ({ ...m, [id]: body.sources as Source[] }));
       }
+      return body.filter ?? {};
+    } catch {
+      return {};
     } finally {
       setLoading(false);
     }

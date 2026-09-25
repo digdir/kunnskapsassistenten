@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { ModelOption, Stage } from '@ka/contract';
+import type { AgentOption, Stage } from '@ka/contract';
 import { Filters, type Selection } from './Filters.tsx';
 import { CopyIcon } from './icons.tsx';
 import { Sidebar } from './Sidebar.tsx';
@@ -50,20 +50,6 @@ function AnswerBlock({
         </a>
       </p>
     </article>
-  );
-}
-
-function NewThread() {
-  return (
-    <div class="new-thread">
-      <h2 class="ds-heading" data-size="xs">
-        Ny tråd
-      </h2>
-      <p class="ds-paragraph" data-size="sm">
-        Velg eventuelle filtre over, og still spørsmålet ditt under. Filtrene låses til tråden
-        når du har stilt det første spørsmålet.
-      </p>
-    </div>
   );
 }
 
@@ -135,13 +121,15 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 export function App() {
   const [input, setInput] = useState('');
   const [threadsOpen, setThreadsOpen] = useState(true);
-  const [models, setModels] = useState<ModelOption[]>([]);
+  const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [agentId, setAgentId] = useState<string>('');
+  const [showMode, setShowMode] = useState(false);
   const [model, setModel] = useState<string>('');
   const [filters, setFilters] = useState<Selection>({});
   const [composing, setComposing] = useState(false);
-  const [sourcesOpen, setSourcesOpen] = useState(true);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
   const convos = useConversations();
-  const { turn, ask, stop } = useTurn({
+  const { turn, ask, stop, reset } = useTurn({
     onConversationCreated: (c) =>
       convos.noteCreated({ id: c.id, topic: c.topic, created: Date.now() }),
   });
@@ -149,10 +137,14 @@ export function App() {
 
   useEffect(() => {
     void fetch('/api/models')
-      .then((r) => (r.ok ? r.json() : { models: [] }))
-      .then((b: { models: ModelOption[] }) => {
-        setModels(b.models);
-        setModel(b.models.find((m) => m.isDefault)?.id ?? b.models[0]?.id ?? '');
+      .then((r) => (r.ok ? r.json() : { agents: [] }))
+      .then((b: { agents: AgentOption[] }) => {
+        setAgents(b.agents);
+        const first = b.agents[0];
+        if (first) {
+          setAgentId(first.id);
+          setModel((first.modes.find((m) => m.isDefault) ?? first.modes[0])?.id ?? '');
+        }
       })
       .catch(() => undefined);
   }, []);
@@ -161,16 +153,10 @@ export function App() {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [convos.messages.length, turn?.answer, turn?.stage]);
 
-  const settled = useRef<string | null>(null);
+  const settled = useRef<number | null>(null);
   useEffect(() => {
-    if (
-      turn &&
-      !turn.running &&
-      !turn.error &&
-      turn.answer &&
-      settled.current !== turn.question
-    ) {
-      settled.current = turn.question;
+    if (turn && !turn.running && !turn.error && turn.answer && settled.current !== turn.id) {
+      settled.current = turn.id;
       convos.appendTurn(turn.question, turn.answer);
       if (convos.activeId) convos.rememberSources(convos.activeId, turn.sources);
     }
@@ -183,8 +169,9 @@ export function App() {
     setInput('');
   };
 
-  const showLive = turn && (turn.running || turn.error || !settled.current);
+  const showLive = turn && (turn.running || turn.error || settled.current !== turn.id);
   const empty = convos.messages.length === 0 && !turn;
+  const inThread = !empty || composing;
   const threadUrl = convos.activeId
     ? `${location.origin}/chat/${convos.activeId}`
     : location.href;
@@ -198,11 +185,14 @@ export function App() {
         onToggle={() => setThreadsOpen((v) => !v)}
         onOpen={(id) => {
           settled.current = null;
+          reset();
           setComposing(false);
-          void convos.open(id);
+          setFilters({});
+          void convos.open(id).then(setFilters);
         }}
         onNew={() => {
           settled.current = null;
+          reset();
           setFilters({});
           setComposing(true);
           convos.startNew();
@@ -213,7 +203,7 @@ export function App() {
 
       <main class="main">
         <div class="column">
-          {(!empty || composing) && (
+          {inThread && (
             <Filters
               selection={filters}
               locked={convos.messages.length > 0}
@@ -222,7 +212,7 @@ export function App() {
           )}
 
           <div class="thread" role="log" aria-label="Samtale">
-            {empty && (composing ? <NewThread /> : <Home />)}
+            {!inThread && <Home />}
             {convos.loading && <span class="ds-spinner" aria-label="Laster samtale" />}
 
             {convos.messages.map((m) =>
@@ -277,80 +267,116 @@ export function App() {
             <div ref={bottom} />
           </div>
 
-          <div class="composer">
-            {models.length > 0 && (
-              <div class="model-row">
-                <label class="ds-label" data-size="sm" for="model">
-                  Agent:
+          {inThread && (
+            <div class="composer">
+              {agents.length > 0 && (
+                <div class="model-row">
+                  <label class="ds-label" data-size="sm" for="agent">
+                    Agent:
+                  </label>
+                  <select
+                    id="agent"
+                    class="ds-input"
+                    data-size="sm"
+                    value={agentId}
+                    onChange={(e) => {
+                      const next = agents.find(
+                        (a) => a.id === (e.target as HTMLSelectElement).value,
+                      );
+                      if (!next) return;
+                      setAgentId(next.id);
+                      setModel(
+                        (next.modes.find((m) => m.isDefault) ?? next.modes[0])?.id ?? '',
+                      );
+                    }}
+                  >
+                    {agents.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.label}
+                      </option>
+                    ))}
+                  </select>
+                  {(agents.find((a) => a.id === agentId)?.modes.length ?? 0) > 1 &&
+                    (showMode ? (
+                      <select
+                        id="mode"
+                        class="ds-input"
+                        data-size="sm"
+                        value={model}
+                        onChange={(e) => setModel((e.target as HTMLSelectElement).value)}
+                      >
+                        {agents
+                          .find((a) => a.id === agentId)
+                          ?.modes.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.label}
+                            </option>
+                          ))}
+                      </select>
+                    ) : (
+                      <button
+                        type="button"
+                        class="ds-button mode-toggle"
+                        data-variant="tertiary"
+                        data-size="sm"
+                        onClick={() => setShowMode(true)}
+                      >
+                        Avansert
+                      </button>
+                    ))}
+                  {agents.find((a) => a.id === agentId)?.description && (
+                    <p class="ds-paragraph agent-description" data-size="sm">
+                      {agents.find((a) => a.id === agentId)?.description}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div class="ds-field composer-field">
+                <label class="ds-label sr-only" for="prompt">
+                  Hva kan jeg hjelpe deg med?
                 </label>
-                <select
-                  id="model"
+                <textarea
+                  id="prompt"
                   class="ds-input"
-                  data-size="sm"
-                  value={model}
-                  onChange={(e) => setModel((e.target as HTMLSelectElement).value)}
-                >
-                  {models.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-                {models.find((m) => m.id === model)?.description && (
-                  <p class="ds-paragraph agent-description" data-size="sm">
-                    {models.find((m) => m.id === model)?.description}
-                  </p>
+                  rows={3}
+                  placeholder="Hva kan jeg hjelpe deg med?"
+                  value={input}
+                  disabled={turn?.running}
+                  onInput={(e) => setInput((e.target as HTMLTextAreaElement).value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      submit();
+                    }
+                  }}
+                />
+                {turn?.running ? (
+                  <button type="button" class="send-button" aria-label="Stopp" onClick={stop}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                      <rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" />
+                    </svg>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    class="send-button"
+                    aria-label="Send"
+                    disabled={!input.trim()}
+                    onClick={submit}
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                      <path d="M3 20.5 21 12 3 3.5l4 8.5-4 8.5Z" fill="currentColor" />
+                    </svg>
+                  </button>
                 )}
               </div>
-            )}
 
-            <div class="ds-field composer-field">
-              <label class="ds-label sr-only" for="prompt">
-                Hva kan jeg hjelpe deg med?
-              </label>
-              <textarea
-                id="prompt"
-                class="ds-input"
-                rows={3}
-                placeholder="Hva kan jeg hjelpe deg med?"
-                value={input}
-                disabled={turn?.running}
-                onInput={(e) => setInput((e.target as HTMLTextAreaElement).value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    submit();
-                  }
-                }}
-              />
-              <button
-                type="button"
-                class="send-button"
-                aria-label="Send"
-                disabled={!input.trim() || turn?.running}
-                onClick={submit}
-              >
-                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                  <path d="M3 20.5 21 12 3 3.5l4 8.5-4 8.5Z" fill="currentColor" />
-                </svg>
-              </button>
+              <p class="ds-paragraph disclaimer" data-size="sm">
+                Kunnskapsassistenten kan gjøre feil. Husk å sjekke viktig informasjon.
+              </p>
             </div>
-            {turn?.running && (
-              <button
-                type="button"
-                class="ds-button stop-button"
-                data-variant="secondary"
-                data-size="sm"
-                onClick={stop}
-              >
-                Stopp
-              </button>
-            )}
-
-            <p class="ds-paragraph disclaimer" data-size="sm">
-              Kunnskapsassistenten kan gjøre feil. Husk å sjekke viktig informasjon.
-            </p>
-          </div>
+          )}
         </div>
       </main>
 

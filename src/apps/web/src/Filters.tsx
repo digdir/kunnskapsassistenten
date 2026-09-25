@@ -78,6 +78,7 @@ function Combobox({
               data-removable="true"
               data-size="sm"
               aria-label={`Slett ${v}`}
+              title={countOf(v) === undefined ? v : `${v} (${countOf(v)})`}
               disabled={disabled}
               onClick={(e) => {
                 e.stopPropagation();
@@ -108,37 +109,38 @@ function Combobox({
           />
         </div>
 
-        {selected.length > 0 && !disabled && (
-          <button
-            type="button"
-            class="ds-combobox__clear-button"
-            aria-label="Fjern alt"
-            onClick={(e) => {
-              e.stopPropagation();
-              onChange([]);
-              setQuery('');
-            }}
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <div class="ds-combobox__controls">
+          <div class="ds-combobox__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20">
               <path
-                d="m6 6 12 12M18 6 6 18"
+                d={open ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6'}
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
               />
             </svg>
-          </button>
-        )}
-
-        <div class="ds-combobox__arrow" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="20" height="20">
-            <path
-              d={open ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6'}
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            />
-          </svg>
+          </div>
+          {selected.length > 0 && !disabled && (
+            <button
+              type="button"
+              class="ds-combobox__clear-button"
+              aria-label="Fjern alt"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange([]);
+                setQuery('');
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  d="m6 6 12 12M18 6 6 18"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -150,7 +152,10 @@ function Combobox({
                 <input
                   type="checkbox"
                   checked={selected.includes(o.value)}
-                  onChange={() => toggle(o.value)}
+                  onChange={() => {
+                    toggle(o.value);
+                    setQuery('');
+                  }}
                 />
                 <span class="facet-value">{o.value}</span>
                 <span class="facet-count">({o.count})</span>
@@ -181,16 +186,29 @@ export function Filters({
   const [supported, setSupported] = useState(true);
 
   useEffect(() => {
-    void fetch('/api/facets')
-      .then((r) => (r.ok ? r.json() : { facets: [] }))
-      .then((b: { facets: FacetField[] }) => setFacets(b.facets))
-      .catch(() => undefined);
+    let cancelled = false;
+    const load = (attempt: number) =>
+      fetch('/api/facets')
+        .then((r) => (r.ok ? r.json() : { facets: [] }))
+        .then((b: { facets: FacetField[] }) => {
+          if (cancelled) return;
+          if (b.facets.length > 0) setFacets(b.facets);
+          else if (attempt < 3) setTimeout(() => void load(attempt + 1), 2000 * (attempt + 1));
+        })
+        .catch(() => {
+          if (!cancelled && attempt < 3)
+            setTimeout(() => void load(attempt + 1), 2000 * (attempt + 1));
+        });
+    void load(0);
     void fetch('/api/capabilities')
       .then((r) => (r.ok ? r.json() : null))
       .then((b: { capabilities?: { filters?: boolean } } | null) => {
         if (b?.capabilities) setSupported(Boolean(b.capabilities.filters));
       })
       .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (facets.length === 0) return null;
