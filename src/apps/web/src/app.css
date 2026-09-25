@@ -729,6 +729,31 @@ body {
   gap: var(--ds-size-2);
 }
 
+.signed-in {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+  padding-block-start: var(--ds-size-4);
+  border-block-start: 1px solid var(--ds-color-neutral-border-subtle);
+}
+
+.signed-in .ds-link {
+  font-size: 0.875rem;
+}
+
+.signed-in .ds-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+.signed-in .ds-paragraph {
+  margin: 0;
+  color: var(--ds-color-neutral-text-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

@@ -22,14 +22,14 @@ function allowedDomainsOf(): string[] {
     .filter(Boolean);
 }
 
-function authMode(entraReady: boolean, supabaseReady: boolean): 'entra' | 'supabase' | 'off' {
+function authMode(entraReady: boolean): 'entra' | 'off' {
   const asked = (process.env.AUTH_MODE ?? '').trim().toLowerCase();
-  if (asked === 'entra' || asked === 'supabase' || asked === 'off') return asked;
+  if (asked === 'entra' || asked === 'off') return asked;
   if (asked) {
-    console.error(`AUTH_MODE må være entra, supabase eller off. Fikk "${asked}".`);
+    console.error(`AUTH_MODE må være entra eller off. Fikk "${asked}".`);
     process.exit(1);
   }
-  return entraReady ? 'entra' : supabaseReady ? 'supabase' : 'off';
+  return entraReady ? 'entra' : 'off';
 }
 
 function authConfig() {
@@ -41,24 +41,13 @@ function authConfig() {
     `http://localhost:${process.env.PORT ?? 8787}/auth/callback`;
   const origin = process.env.APP_ORIGIN?.replace(/\/$/, '') ?? new URL(redirectUri).origin;
   const sessionSecret = process.env.SESSION_SECRET ?? '';
-  const supabaseUrl = process.env.SUPABASE_URL ?? '';
-  const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? '';
   const entraReady = Boolean(tenantId && clientId && clientSecret);
-  const supabaseReady = Boolean(supabaseUrl && supabasePublishableKey);
-  const mode = authMode(entraReady, supabaseReady);
+  const mode = authMode(entraReady);
   const enabled = mode !== 'off';
   if (mode === 'entra' && !entraReady) {
     console.error(
       'AUTH_MODE=entra krever AZURE_TENANT_ID, AZURE_CLIENT_ID og AZURE_CLIENT_SECRET.',
     );
-    process.exit(1);
-  }
-  if (mode === 'supabase' && !supabaseReady) {
-    console.error('AUTH_MODE=supabase krever SUPABASE_URL og SUPABASE_PUBLISHABLE_KEY.');
-    process.exit(1);
-  }
-  if (mode === 'supabase' && allowedDomainsOf().length === 0) {
-    console.error('AUTH_MODE=supabase krever ALLOWED_EMAIL_DOMAINS.');
     process.exit(1);
   }
   if (enabled && sessionSecret.length < 32) {
@@ -69,8 +58,6 @@ function authConfig() {
   return {
     enabled,
     mode,
-    supabaseUrl,
-    supabasePublishableKey,
     tenantId,
     clientId,
     clientSecret,

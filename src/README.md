@@ -128,28 +128,19 @@ Tvinges med `KA_CAPABILITIES="filters"` eller `"no-filters"`.
 
 ## Innlogging
 
-`AUTH_MODE` velger mekanisme. Alle tre ender i den samme signerte
-øktinformasjonskapselen, så å bytte er ren konfigurasjon.
+`AUTH_MODE` velger mekanisme.
 
-|            |                                                                   |
-| ---------- | ----------------------------------------------------------------- |
-| `entra`    | Entra ID. Krever at en administrator har gitt samtykke for appen. |
-| `supabase` | Engangskode på e-post. Mellomløsning mens man venter på samtykke. |
-| `off`      | Kun lokalt. Usignert id, hvem som helst kan bli hvem som helst.   |
+|         |                                                                 |
+| ------- | --------------------------------------------------------------- |
+| `entra` | Entra ID. Det som kjører på `qa.kunnskap.digdir.cloud`.         |
+| `off`   | Kun lokalt. Usignert id, hvem som helst kan bli hvem som helst. |
 
 Utelater du `AUTH_MODE` utledes den: `entra` hvis Azure-variablene er satt,
-`supabase` hvis Supabase-variablene er satt, ellers `off`. Serveren skriver hvilken
-modus den kjører i ved hver oppstart.
+ellers `off`. Serveren skriver hvilken modus den kjører i ved hver oppstart.
 
-Uansett modus når ingen token nettleseren, bare en signert
-informasjonskapsel. `/api/*` svarer 401 uten innlogging, `/api/health` er
-åpen, og `ALLOWED_EMAIL_DOMAINS` gjelder i begge innloggingsmodusene.
-
-`supabase` har ingen brukerliste og ingen passord: alle med en adresse på et
-tillatt domene får en engangskode på e-post, og det å motta den er det som
-beviser at de eier adressen. Koden løses inn på serveren, så ingen token
-havner i nettleseren. `ALLOWED_EMAIL_DOMAINS` er påkrevd i den
-modusen, ellers nekter serveren å starte. Oppsett og bytte til Entra ID i
+Ingen token når nettleseren, bare en signert informasjonskapsel. `/api/*`
+svarer 401 uten innlogging, `/api/health` er åpen, og `ALLOWED_EMAIL_DOMAINS`
+begrenser hvilke kontoer som slipper inn. Oppsett i
 [`deploy/README.md`](deploy/README.md).
 
 ## Dokumentasjon

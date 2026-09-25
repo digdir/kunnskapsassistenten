@@ -128,12 +128,22 @@ export function App() {
   const [filters, setFilters] = useState<Selection>({});
   const [composing, setComposing] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const convos = useConversations();
   const { turn, ask, stop, reset } = useTurn({
     onConversationCreated: (c) =>
       convos.noteCreated({ id: c.id, topic: c.topic, created: Date.now() }),
   });
   const bottom = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    void fetch('/api/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b: { user?: { name: string; email: string } | null } | null) =>
+        setUser(b?.user ?? null),
+      )
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     void fetch('/api/models')
@@ -199,6 +209,7 @@ export function App() {
         }}
         onRename={convos.rename}
         onDelete={convos.remove}
+        user={user}
       />
 
       <main class="main">

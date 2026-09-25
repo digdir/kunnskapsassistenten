@@ -33,20 +33,3 @@ export async function signedIn(): Promise<boolean> {
     return true;
   }
 }
-
-/** Supabase drops the session on whatever Site URL points at, not just our callback. */
-export async function claimFragmentSession(): Promise<boolean> {
-  const token = new URLSearchParams(location.hash.slice(1)).get('access_token');
-  if (!token) return false;
-  history.replaceState(null, '', location.pathname + location.search);
-  try {
-    const res = await fetch('/auth/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token: token }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}

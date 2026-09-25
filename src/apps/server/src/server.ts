@@ -260,9 +260,7 @@ serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(
     config.auth.mode === 'entra'
       ? `innlogging: Entra ID, tenant ${config.auth.tenantId}`
-      : config.auth.mode === 'supabase'
-        ? `innlogging: engangslenke på e-post, midlertidig. Domener: ${config.auth.allowedDomains.join(', ')}`
-        : 'innlogging: AV. Usignert utviklings-id, ikke bruk dette utenfor egen maskin.',
+      : 'innlogging: AV. Usignert utviklings-id, ikke bruk dette utenfor egen maskin.',
   );
   if (!typesenseConfigured) {
     console.log('Typesense er ikke satt opp: ingen filtre og ingen utdrag i kildepanelet.');
