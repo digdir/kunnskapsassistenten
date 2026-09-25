@@ -4,34 +4,22 @@ One container: the Hono server holds the API key, talks to
 `digdir-headless-rag`, and serves the built SPA from the same origin. Same
 origin is not cosmetic, it is what keeps the session cookie first-party.
 
-**Deployed and in use:**
-`https://ka-app.thankfulpebble-9bb35590.norwayeast.azurecontainerapps.io`
+**Deployed and in use:** `https://qa.kunnskap.digdir.cloud`
 Resource group `rg-ka-app`, Norway East, subscription `Altinn-AI-Assistant`,
-images in `altinnaicontainers`.
-
-Sign-in works. Questions do not: see [Known limits](#known-limits).
+images in `altinnaicontainers`. The DNS records for the domain live with
+`digdir.cloud` at Porkbun; the certificate is managed by Container Apps.
 
 ## What is already set up
 
-An Entra ID app registration and a Supabase project both exist. Neither needs
-recreating; ask Nikolai for the ids.
+Sign-in is Entra ID, app registration `altinn-ai-assistant-ka-sso`, single
+tenant, with admin consent granted. Only accounts that exist in the tenant can
+sign in, and the app adds no check of its own. `AUTH_MODE=off` is for local
+development only: unsigned identity, anyone can be anyone, and the server
+refuses to start with it unless `APP_ORIGIN` is localhost.
 
-`AUTH_MODE` picks the mechanism, and all of them end at the same signed
-session cookie, so switching is configuration only.
-
-| mode       | when                                                             |
-| ---------- | ---------------------------------------------------------------- |
-| `entra`    | once an admin has granted tenant consent. Not yet granted.       |
-| `supabase` | a one-time code by e-mail. What runs today.                      |
-| `off`      | local development only. Unsigned identity, anyone can be anyone. |
-
-`ALLOWED_EMAIL_DOMAINS` is required for `supabase` and the server refuses to
-start without it. Supabase creates an account for any address that asks, so
-without it anyone with e-mail could sign in.
-
-Sign-in sends a code, so the Supabase e-mail templates carry `{{ .Token }}`
-and no `{{ .ConfirmationURL }}`. Receiving the code is what proves someone owns
-a digdir.no mailbox; the domain check only inspects the string after the `@`.
+A new public host needs its `https://<host>/auth/callback` added to the app
+registration's redirect URIs before `APP_ORIGIN` and `AZURE_REDIRECT_URI` point
+at it.
 
 ## Changing a running deployment
 
@@ -96,8 +84,8 @@ az role assignment create --role AcrPull \
 
 Parameters the template needs are declared with `@description` in
 `main.bicep`. The ones that are not obvious: `digdirDatasetConfigKey` is
-`kudos` on the hosted backend and `default` locally, and `authMode` decides
-which of the Supabase or Entra parameters are read.
+`kudos` on the hosted backend and `default` locally, and `publicHost` is the
+custom domain, which decides `APP_ORIGIN` and the Entra callback.
 
 ## Known limits
 

@@ -12,27 +12,17 @@ param digdirApiBase string = 'https://test.rag.digdir.cloud'
 @description('Hosted uses `kudos`; a local backend uses `default`.')
 param digdirDatasetConfigKey string = 'kudos'
 
-@description('Which sign-in to deploy. `off` is local development only and is not deployable.')
-@allowed(['entra', 'supabase'])
-param authMode string
-
-@description('AUTH_MODE=supabase only: the project URL and its anon key.')
-param supabaseUrl string = ''
-
-@secure()
-param supabasePublishableKey string = ''
-
-@description('Entra ID. Leave clientId empty to run without sign-in, which is only sane for a throwaway environment.')
+@description('Entra ID app registration. Sign-in is always on; `off` is local development only.')
 param azureTenantId string = tenant().tenantId
-param azureClientId string = ''
+param azureClientId string
 
-@description('Comma-separated domains allowed to sign in. Empty admits anyone the tenant admits. digdir.no covers 202 accounts here and excludes ai-dev.no ones.')
-param allowedEmailDomains string = 'digdir.no'
+@description('Custom domain users reach the app on. Empty uses the Container Apps default domain.')
+param publicHost string = ''
 
 @secure()
 param digdirApiKey string
 @secure()
-param azureClientSecret string = ''
+param azureClientSecret string
 @secure()
 param sessionSecret string
 @secure()
@@ -41,9 +31,7 @@ param typesenseApiKey string = ''
 param typesenseHost string = ''
 param kudosDocsCollection string = ''
 
-var supabaseMode = authMode == 'supabase'
-var authOn = !empty(azureClientId) || supabaseMode
-var appFqdnPlaceholder = '${name}.${containerEnv.properties.defaultDomain}'
+var appHost = empty(publicHost) ? '${name}.${containerEnv.properties.defaultDomain}' : publicHost
 
 resource logs 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: '${name}-logs'
@@ -96,9 +84,8 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
         [
           { name: 'digdir-api-key', value: digdirApiKey }
           { name: 'session-secret', value: sessionSecret }
+          { name: 'azure-client-secret', value: azureClientSecret }
         ],
-        !empty(azureClientId) ? [ { name: 'azure-client-secret', value: azureClientSecret } ] : [],
-        supabaseMode ? [ { name: 'supabase-publishable-key', value: supabasePublishableKey } ] : [],
         empty(typesenseApiKey) ? [] : [ { name: 'typesense-key', value: typesenseApiKey } ]
       )
     }
@@ -113,26 +100,17 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
               { name: 'PORT', value: '8787' }
               { name: 'DIGDIR_API_BASE', value: digdirApiBase }
               { name: 'DIGDIR_DATASET_CONFIG_KEY', value: digdirDatasetConfigKey }
-              { name: 'APP_ORIGIN', value: 'https://${appFqdnPlaceholder}' }
+              { name: 'APP_ORIGIN', value: 'https://${appHost}' }
               { name: 'DIGDIR_API_KEY', secretRef: 'digdir-api-key' }
               { name: 'SESSION_SECRET', secretRef: 'session-secret' }
               { name: 'TYPESENSE_API_HOST', value: typesenseHost }
               { name: 'KUDOS_DOCS_COLLECTION', value: kudosDocsCollection }
-            ],
-            empty(authMode) ? [] : [ { name: 'AUTH_MODE', value: authMode } ],
-            supabaseMode
-              ? [
-                  { name: 'SUPABASE_URL', value: supabaseUrl }
-                  { name: 'SUPABASE_PUBLISHABLE_KEY', secretRef: 'supabase-publishable-key' }
-                ]
-              : [],
-            !empty(azureClientId) ? [
+              { name: 'AUTH_MODE', value: 'entra' }
               { name: 'AZURE_TENANT_ID', value: azureTenantId }
               { name: 'AZURE_CLIENT_ID', value: azureClientId }
               { name: 'AZURE_CLIENT_SECRET', secretRef: 'azure-client-secret' }
-              { name: 'AZURE_REDIRECT_URI', value: 'https://${appFqdnPlaceholder}/auth/callback' }
-            ] : [],
-            authOn ? [ { name: 'ALLOWED_EMAIL_DOMAINS', value: allowedEmailDomains } ] : [],
+              { name: 'AZURE_REDIRECT_URI', value: 'https://${appHost}/auth/callback' }
+            ],
             empty(typesenseApiKey) ? [] : [
               { name: 'TYPESENSE_API_KEY_ADMIN', secretRef: 'typesense-key' }
             ]
@@ -153,5 +131,5 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
 }
 
 output fqdn string = app.properties.configuration.ingress.fqdn
-output redirectUri string = 'https://${app.properties.configuration.ingress.fqdn}/auth/callback'
+output redirectUri string = 'https://${appHost}/auth/callback'
 output principalId string = identity.properties.principalId

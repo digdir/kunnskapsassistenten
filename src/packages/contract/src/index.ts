@@ -70,13 +70,20 @@ export interface Message {
 export interface ConversationDetail {
   conversation: ConversationSummary;
   messages: Message[];
+  filter?: Record<string, string[]>;
 }
 
-export interface ModelOption {
+export interface AgentMode {
   id: string;
   label: string;
   isDefault: boolean;
+}
+
+export interface AgentOption {
+  id: string;
+  label: string;
   description?: string;
+  modes: AgentMode[];
 }
 
 export interface Capabilities {

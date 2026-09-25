@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from 'preact/hooks';
 import type { Source, Stage, TurnEvent } from '@ka/contract';
 
 export interface Turn {
+  id: number;
   question: string;
   answer: string;
   sources: Source[];
@@ -14,7 +15,10 @@ export interface Turn {
   running: boolean;
 }
 
+let nextId = 0;
+
 const empty = (question: string): Turn => ({
+  id: ++nextId,
   question,
   answer: '',
   sources: [],
@@ -63,9 +67,8 @@ export function useTurn({ onConversationCreated }: Options = {}) {
           signal: ac.signal,
         });
       } catch {
-        setTurn(
-          (t) => t && { ...t, running: false, error: 'Fikk ikke kontakt med tjenesten.' },
-        );
+        const error = ac.signal.aborted ? 'Avbrutt.' : 'Fikk ikke kontakt med tjenesten.';
+        setTurn((t) => t && { ...t, running: false, error });
         return;
       }
 

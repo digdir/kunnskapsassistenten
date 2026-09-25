@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import type { ConversationSummary } from '@ka/contract';
-import { BookIcon, InfoIcon, PanelIcon, PencilIcon, WrenchIcon } from './icons.tsx';
+import { BookIcon, InfoIcon, LogoutIcon, PanelIcon, PencilIcon, WrenchIcon } from './icons.tsx';
 
 interface Props {
   conversations: ConversationSummary[];
@@ -11,6 +11,7 @@ interface Props {
   onNew: () => void;
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
+  user?: { name: string; email: string } | null;
 }
 
 export function Sidebar({
@@ -22,6 +23,7 @@ export function Sidebar({
   onNew,
   onRename,
   onDelete,
+  user,
 }: Props) {
   const [query, setQuery] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
@@ -169,6 +171,17 @@ export function Sidebar({
           <InfoIcon />
           Om prosjektet
         </a>
+        {user && (
+          <div class="signed-in">
+            <span class="ds-paragraph" data-size="sm" title={user.email}>
+              {user.name || user.email}
+            </span>
+            <a class="ds-link" href="/auth/logout">
+              <LogoutIcon />
+              Logg ut
+            </a>
+          </div>
+        )}
       </footer>
     </nav>
   );

@@ -3,10 +3,8 @@ import { ConfidentialClientApplication } from '@azure/msal-node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie';
 import { config } from './config.ts';
-import { mountSupabaseAuth } from './supabaseAuth.ts';
+import { entraLoginPage } from './authPages.ts';
 
-const SESSION = 'ka_session';
-const RETURN_TO = 'ka_return_to';
 const MAX_AGE = 60 * 60 * 8;
 const SCOPES = ['openid', 'profile', 'email'];
 
@@ -14,26 +12,6 @@ export interface User {
   id: string;
   name: string;
   email: string;
-}
-
-/** A guest's UPN is `navn_digdir.no#EXT#@tenant`. */
-export function domainsOf(claims: { email?: string; upn?: string }): string[] {
-  const out = new Set<string>();
-  const add = (d?: string) => {
-    if (d) out.add(d.toLowerCase());
-  };
-  add(claims.email?.split('@').pop());
-  const upn = claims.upn ?? '';
-  const ext = upn.indexOf('#EXT#');
-  if (ext === -1) add(upn.split('@').pop());
-  else add(upn.slice(0, ext).split('_').pop());
-  return [...out].filter(Boolean);
-}
-
-export function domainAllowed(claims: { email?: string; upn?: string }): boolean {
-  const allowed = config.auth.allowedDomains;
-  if (allowed.length === 0) return true;
-  return domainsOf(claims).some((d) => allowed.includes(d));
 }
 
 const msal =
@@ -48,6 +26,9 @@ const msal =
     : null;
 
 const secure = () => !config.auth.origin.startsWith('http://localhost');
+// __Host- needs Secure, which a plain-http localhost cannot have.
+const SESSION = secure() ? '__Host-ka_session' : 'ka_session';
+const RETURN_TO = secure() ? '__Host-ka_return_to' : 'ka_return_to';
 
 function cookieOptions() {
   return {
@@ -92,7 +73,14 @@ export function safeReturnTo(value: string | undefined): string {
   if (!value || !value.startsWith('/')) return '/';
   if (UNSAFE_IN_PATH.test(value)) return '/';
   if (value.startsWith('//')) return '/';
-  if (value.startsWith('/auth/')) return '/';
+  let url: URL;
+  try {
+    url = new URL(value, 'http://ka.invalid');
+  } catch {
+    return '/';
+  }
+  if (url.origin !== 'http://ka.invalid') return '/';
+  if (url.pathname.startsWith('/auth/')) return '/';
   return value;
 }
 
@@ -100,13 +88,11 @@ export function mountAuth(app: {
   get: (path: string, handler: (c: Context) => Promise<Response> | Response) => unknown;
   post: (path: string, handler: (c: Context) => Promise<Response> | Response) => unknown;
 }): void {
-  if (config.auth.mode === 'supabase') {
-    mountSupabaseAuth(app, { writeUser, clearUser, safeReturnTo });
-    return;
-  }
   if (!msal) return;
 
-  app.get('/auth/login', async (c) => {
+  app.get('/auth/login', (c) => c.html(entraLoginPage(safeReturnTo(c.req.query('next')))));
+
+  app.get('/auth/start', async (c) => {
     const next = safeReturnTo(c.req.query('next'));
     const state = randomUUID();
     const pending = JSON.stringify({ state, next });
@@ -124,8 +110,11 @@ export function mountAuth(app: {
   });
 
   app.get('/auth/callback', async (c) => {
+    if (c.req.query('error')) {
+      return c.html(entraLoginPage('/', 'Innloggingen ble avbrutt. Prøv igjen.'), 400);
+    }
     const code = c.req.query('code');
-    if (!code) return c.text('Mangler autorisasjonskode.', 400);
+    if (!code) return c.html(entraLoginPage('/', 'Innloggingen feilet. Prøv igjen.'), 400);
 
     const pendingRaw = await getSignedCookie(c, config.auth.sessionSecret, RETURN_TO);
     deleteCookie(c, RETURN_TO, { path: '/' });
@@ -134,7 +123,13 @@ export function mountAuth(app: {
       pending = typeof pendingRaw === 'string' ? JSON.parse(pendingRaw) : {};
     } catch {}
     if (!pending.state || pending.state !== c.req.query('state')) {
-      return c.text('Ugyldig state. Prøv innloggingen på nytt.', 400);
+      return c.html(
+        entraLoginPage(
+          '/',
+          'Innloggingen tok for lang tid eller ble startet et annet sted. Prøv igjen.',
+        ),
+        400,
+      );
     }
 
     try {
@@ -145,15 +140,9 @@ export function mountAuth(app: {
       });
       const claims = (result.idTokenClaims ?? {}) as Record<string, string>;
       const id = result.account?.homeAccountId ?? claims.oid ?? claims.sub;
-      if (!id) return c.text('Fant ingen bruker i svaret fra Entra ID.', 502);
+      if (!id)
+        return c.html(entraLoginPage('/', 'Fant ingen bruker i svaret fra Entra ID.'), 502);
       const email = claims.preferred_username ?? claims.email ?? '';
-      if (!domainAllowed({ email, upn: claims.upn ?? result.account?.username })) {
-        return c.text(
-          `Kontoen ${email} har ikke tilgang. Tillatte domener: ` +
-            config.auth.allowedDomains.join(', '),
-          403,
-        );
-      }
       await writeUser(c, {
         id,
         name: result.account?.name ?? claims.name ?? '',
@@ -162,7 +151,7 @@ export function mountAuth(app: {
       return c.redirect(safeReturnTo(pending.next));
     } catch (err) {
       console.error('auth callback', err);
-      return c.text('Innlogging feilet.', 502);
+      return c.html(entraLoginPage('/', 'Innloggingen feilet. Prøv igjen.'), 502);
     }
   });
 

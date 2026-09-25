@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import type { AskRequest } from '@ka/contract';
@@ -8,10 +9,12 @@ import { mountAuth, readUser, requireAuth } from './auth.ts';
 import { capabilities, probe, probeComplete } from './capabilities.ts';
 import { config, typesenseConfigured } from './config.ts';
 import { ask, setAllowedTools } from './mcp.ts';
+import { toAgents } from './models.ts';
 import * as convos from './conversations.ts';
-import { facets, toFilterBy } from './facets.ts';
+import { cleanFilter, facets, toFilterBy } from './facets.ts';
 import { sessionMiddleware, type SessionVars } from './session.ts';
 import * as sourceStore from './sourceStore.ts';
+import * as threadFilters from './threadFilters.ts';
 
 const app = new Hono<{ Variables: SessionVars }>();
 
@@ -45,6 +48,13 @@ app.use(
 app.use('*', csrf({ origin: config.auth.origin }));
 
 mountAuth(app);
+app.use(
+  '/api/*',
+  bodyLimit({
+    maxSize: 64 * 1024,
+    onError: (c) => c.json({ error: 'Forespørselen er for stor.' }, 413),
+  }),
+);
 app.use('/api/*', async (c, next) =>
   c.req.path === '/api/health' ? next() : requireAuth(c, next),
 );
@@ -82,24 +92,9 @@ app.get('/api/models', async (c) => {
       }>;
     };
     setAllowedTools((body.data ?? []).map((m) => m.id));
-    return c.json({
-      models: (body.data ?? []).map((m) => {
-        const agent = (
-          (m._agent_id ?? m.id.split('__')[0] ?? '').split(/[/.]/).pop() ?? m.id
-        ).replace(/-agent$/, '');
-        const mode = (m._mode ?? m.id.split('__')[1] ?? '').replace(/^agent-rag-graph-/, '');
-        // `description` is "<agent> — <mode>: <internals>".
-        const description = (m.description ?? '').split(/\s+—\s+/)[0]?.trim();
-        return {
-          id: m.id,
-          label: mode && mode !== agent ? `${agent} (${mode})` : agent,
-          isDefault: Boolean(m._default),
-          ...(description ? { description } : {}),
-        };
-      }),
-    });
+    return c.json({ agents: toAgents(body.data ?? []) });
   } catch {
-    return c.json({ models: [] });
+    return c.json({ agents: [] });
   }
 });
 
@@ -122,7 +117,11 @@ app.get('/api/conversations', async (c) => {
 app.get('/api/conversations/:id', async (c) => {
   try {
     const detail = await convos.detail(c.get('userId'), c.req.param('id'));
-    return c.json({ ...detail, sources: sourceStore.recall(c.req.param('id')) });
+    return c.json({
+      ...detail,
+      sources: sourceStore.recall(c.req.param('id')),
+      filter: threadFilters.recall(c.req.param('id')),
+    });
   } catch {
     return c.json({ error: 'Fant ikke samtalen.' }, 404);
   }
@@ -143,6 +142,7 @@ app.delete('/api/conversations/:id', async (c) => {
   try {
     await convos.remove(c.get('userId'), c.req.param('id'));
     sourceStore.forget(c.req.param('id'));
+    threadFilters.forget(c.req.param('id'));
     return c.json({ ok: true });
   } catch {
     return c.json({ error: 'Kunne ikke slette samtalen.' }, 502);
@@ -166,7 +166,7 @@ app.post('/api/ask', async (c) => {
     );
   }
 
-  const filterBy = toFilterBy((body as { filter?: Record<string, string[]> }).filter);
+  const requested = cleanFilter((body as { filter?: unknown }).filter);
   const model =
     typeof (body as { model?: unknown }).model === 'string'
       ? (body as { model: string }).model
@@ -190,10 +190,13 @@ app.post('/api/ask', async (c) => {
       const conv = await convos.create(userId, convos.topicFrom(query));
       conversationId = conv.id;
       created = { id: conv.id, topic: conv.topic };
+      threadFilters.remember(conv.id, requested);
     } catch {
       return c.json({ error: 'Kunne ikke opprette samtale.' }, 502);
     }
   }
+
+  const filterBy = toFilterBy(threadFilters.recall(conversationId) ?? requested);
 
   // Accumulating, compressing or dropping X-Accel-Buffering re-buffers the stream.
   const encoder = new TextEncoder();
@@ -263,9 +266,7 @@ serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(
     config.auth.mode === 'entra'
       ? `innlogging: Entra ID, tenant ${config.auth.tenantId}`
-      : config.auth.mode === 'supabase'
-        ? `innlogging: engangslenke på e-post, midlertidig. Domener: ${config.auth.allowedDomains.join(', ')}`
-        : 'innlogging: AV. Usignert utviklings-id, ikke bruk dette utenfor egen maskin.',
+      : 'innlogging: AV. Usignert utviklings-id, ikke bruk dette utenfor egen maskin.',
   );
   if (!typesenseConfigured) {
     console.log('Typesense er ikke satt opp: ingen filtre og ingen utdrag i kildepanelet.');

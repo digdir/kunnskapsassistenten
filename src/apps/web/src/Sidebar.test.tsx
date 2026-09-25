@@ -118,4 +118,14 @@ describe('Sidebar', () => {
     expect(toggle.getAttribute('aria-disabled')).toBe('true');
     expect(toggle.tagName.toLowerCase()).toBe('span');
   });
+
+  test('a signed-in user can log out', () => {
+    const host = show({ user: { name: 'Kari Nordmann', email: 'kari@example.com' } });
+    expect(host.textContent).toContain('Kari Nordmann');
+    expect(host.querySelector('a[href="/auth/logout"]')).toBeTruthy();
+  });
+
+  test('without sign-in there is nothing to log out of', () => {
+    expect(show().querySelector('a[href="/auth/logout"]')).toBeNull();
+  });
 });

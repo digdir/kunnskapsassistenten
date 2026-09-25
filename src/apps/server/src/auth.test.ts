@@ -3,43 +3,10 @@ import { before, describe, test } from 'node:test';
 
 process.env.DIGDIR_API_KEY ??= 'test-key';
 
-let domainsOf: typeof import('./auth.ts').domainsOf;
 let safeReturnTo: typeof import('./auth.ts').safeReturnTo;
 
 before(async () => {
-  ({ domainsOf, safeReturnTo } = await import('./auth.ts'));
-});
-
-describe('domainsOf', () => {
-  test('a member account yields its own domain', () => {
-    assert.deepEqual(domainsOf({ email: 'ansatt@ai-dev.no' }), ['ai-dev.no']);
-  });
-
-  test('a guest UPN yields the domain the person actually belongs to', () => {
-    assert.deepEqual(
-      domainsOf({ upn: 'fornavn.etternavn_digdir.no#EXT#@aidev.onmicrosoft.com' }),
-      ['digdir.no'],
-    );
-  });
-
-  test('the guest mail and the mangled UPN agree on one domain', () => {
-    assert.deepEqual(
-      domainsOf({
-        email: 'fornavn.etternavn@digdir.no',
-        upn: 'fornavn.etternavn_digdir.no#EXT#@aidev.onmicrosoft.com',
-      }),
-      ['digdir.no'],
-    );
-  });
-
-  test('the tenant domain is not mistaken for the guest domain', () => {
-    const d = domainsOf({ upn: 'x_digdir.no#EXT#@aidev.onmicrosoft.com' });
-    assert.ok(!d.includes('aidev.onmicrosoft.com'));
-  });
-
-  test('nothing in, nothing out', () => {
-    assert.deepEqual(domainsOf({}), []);
-  });
+  ({ safeReturnTo } = await import('./auth.ts'));
 });
 
 describe('safeReturnTo', () => {
@@ -50,6 +17,12 @@ describe('safeReturnTo', () => {
   test('an auth route is refused, since that is how the redirect loop starts', () => {
     assert.equal(safeReturnTo('/auth/login'), '/');
     assert.equal(safeReturnTo('/auth/login?next=%2Fauth%2Flogin'), '/');
+  });
+
+  test('an auth route reached through dot segments is refused too', () => {
+    assert.equal(safeReturnTo('/./auth/logout'), '/');
+    assert.equal(safeReturnTo('/a/../auth/logout'), '/');
+    assert.equal(safeReturnTo('/%2e/auth/logout'), '/');
   });
 
   test('another origin is refused', () => {
