@@ -181,3 +181,58 @@ describe('documentUrl safety', () => {
     assert.equal(sources[0]?.url, 'https://kudos.dfo.no/documents/42');
   });
 });
+
+describe('ask: plan and answer', () => {
+  const recorded = readFileSync(
+    new URL('../fixtures/mcp-stream-raw.sse', import.meta.url),
+    'utf8',
+  );
+
+  /** The recorded stream, with the final frame's text swapped for `answer`. */
+  function withAnswer(answer: string): string {
+    return mcp
+      .takeFrames(recorded)
+      .frames.map((frame) => {
+        const msg = mcp.frameData(frame);
+        if (!msg?.result) return frame;
+        msg.result.content = [{ type: 'text', text: answer }];
+        return `event: message\ndata: ${JSON.stringify(msg)}`;
+      })
+      .join('\n\n')
+      .concat('\n\n');
+  }
+
+  async function deltas(body: string): Promise<string> {
+    const original = globalThis.fetch;
+    globalThis.fetch = async () =>
+      new Response(body, { headers: { 'Content-Type': 'text/event-stream' } });
+    try {
+      let text = '';
+      for await (const e of mcp.ask('q', 'u', undefined, new AbortController().signal)) {
+        if (e.type === 'delta') text += e.text;
+      }
+      return text;
+    } finally {
+      globalThis.fetch = original;
+    }
+  }
+
+  test('the plan the agent streams is dropped, and the final frame is the answer', async () => {
+    const text = await deltas(withAnswer('Svaret [1].'));
+    assert.equal(text, 'Svaret [1].');
+  });
+
+  test('deltas no agent/thinking claims are answer text, and are not doubled', async () => {
+    const streamed = recorded
+      .split('\n\n')
+      .filter((frame) => !frame.includes('"agent/thinking"'))
+      .join('\n\n');
+    const plan = mcp
+      .takeFrames(recorded)
+      .frames.map(mcp.frameData)
+      .filter((m) => m?.params?._meta?.event === 'response/chunk')
+      .map((m) => m!.params._meta.delta)
+      .join('');
+    assert.equal(await deltas(streamed), plan);
+  });
+});

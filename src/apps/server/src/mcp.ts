@@ -1,4 +1,4 @@
-import type { Source, Stage, TurnEvent } from '@ka/contract';
+import type { DeltaEvent, Source, Stage, TurnEvent } from '@ka/contract';
 import { config } from './config.ts';
 import { excerpts } from './excerpts.ts';
 
@@ -199,6 +199,19 @@ export async function* ask(
   let streamedAnyText = false;
   let iteration = 0;
   let maxIterations = 10;
+  // A `response/chunk` is not known to be answer text when it arrives. Against
+  // this agent every run of them is its plan, repeated by the `agent/thinking`
+  // that follows, and the answer comes whole in the final frame. So deltas are
+  // held: `agent/thinking` drops them, `agent/finalized` and the result release
+  // them. An agent that streams its answer still streams it.
+  let pending: string[] = [];
+  function* release(): Generator<DeltaEvent> {
+    for (const text of pending) {
+      streamedAnyText = true;
+      yield { type: 'delta', text };
+    }
+    pending = [];
+  }
 
   while (true) {
     const { done, value } = await reader.read();
@@ -224,6 +237,7 @@ export async function* ask(
           return;
         }
 
+        yield* release();
         if (!streamedAnyText) {
           const full = r.content?.find((b: { type?: string }) => b.type === 'text')?.text;
           if (full) yield { type: 'delta', text: full };
@@ -251,12 +265,12 @@ export async function* ask(
           lastStage = 'writing';
           yield { type: 'stage', stage: 'writing', iteration, maxIterations };
         }
-        if (meta.delta) {
-          streamedAnyText = true;
-          yield { type: 'delta', text: meta.delta };
-        }
+        if (meta.delta) pending.push(meta.delta);
         continue;
       }
+
+      if (event === 'agent/thinking') pending = [];
+      if (event === 'agent/finalized') yield* release();
 
       const stage = toStage(event, meta);
       if (!stage || stage === lastStage) continue;
