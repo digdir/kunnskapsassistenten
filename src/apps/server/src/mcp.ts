@@ -1,4 +1,4 @@
-import type { DeltaEvent, Source, Stage, TurnEvent } from '@ka/contract';
+import type { DeltaEvent, Source, Stage, ToolCallEvent, TurnEvent } from '@ka/contract';
 import { config } from './config.ts';
 import { excerpts } from './excerpts.ts';
 
@@ -24,6 +24,13 @@ function headers(method: string, userId: string, toolName?: string): Record<stri
   return h;
 }
 
+interface ToolCall {
+  tool?: string;
+  'duration-ms'?: number;
+  'result-summary'?: string;
+  args?: { queries?: string[]; query?: string; chunk_ids?: string[] };
+}
+
 interface ProgressMeta {
   event?: string;
   delta?: string;
@@ -31,6 +38,36 @@ interface ProgressMeta {
   'max-iterations'?: number | string;
   'tool-calls'?: unknown;
   reasoning?: string;
+}
+
+/**
+ * The calls in an `agent/turn-completed`, as events of their own.
+ *
+ * Everything the backend says about a call is passed on: which tool, what it
+ * found (`result-summary`), the search strings it ran, how long it took, and
+ * how many chunks it asked to read. The client decides what the reader sees;
+ * measured against the backend 2026-09-29, a single question ran
+ * `plan_queries`, two `search`, `inspect_filters`, three `read_chunks` and
+ * `generate_response`, each with its own summary and duration.
+ */
+function toolCallEvents(raw: unknown): ToolCallEvent[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((value): ToolCallEvent[] => {
+    const call = value as ToolCall;
+    if (!call || typeof call.tool !== 'string') return [];
+    const queries = call.args?.queries ?? (call.args?.query ? [call.args.query] : undefined);
+    const chunkCount = call.args?.chunk_ids?.length;
+    return [
+      {
+        type: 'tool-call',
+        tool: call.tool,
+        ...(call['result-summary'] ? { detail: call['result-summary'] } : {}),
+        ...(queries?.length ? { queries } : {}),
+        ...(typeof call['duration-ms'] === 'number' ? { durationMs: call['duration-ms'] } : {}),
+        ...(chunkCount ? { chunkCount } : {}),
+      },
+    ];
+  });
 }
 
 const num = (v: unknown, fallback: number): number => {
@@ -340,6 +377,21 @@ export async function* ask(
 
       if (event === 'agent/thinking') pending = [];
       if (event === 'agent/finalized') yield* release();
+
+      /*
+       * The agent's own account of what it is doing, on its way through.
+       *
+       * Sent as well as the stage, not instead of it: a stage says which
+       * phase the agent is in, and these say what it actually did. The client
+       * draws the reader's sentences from them, the way the live path already
+       * does from the same frames.
+       */
+      if (event === 'agent/thinking' && meta.reasoning) {
+        yield { type: 'thinking', reasoning: meta.reasoning };
+      }
+      if (event === 'agent/turn-completed') {
+        yield* toolCallEvents(meta['tool-calls']);
+      }
 
       const stage = toStage(event, meta);
       if (!stage || stage === lastStage) continue;

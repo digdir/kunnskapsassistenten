@@ -35,6 +35,47 @@ export interface StageEvent {
   queries?: string[];
 }
 
+/**
+ * The agent's own words, on its way to an answer.
+ *
+ * `stage` says which phase the agent is in and nothing about what it did.
+ * That was all the client had, so it drew four fixed sentences while the
+ * live client — reading the same backend frames directly — showed the
+ * agent's reasoning in its own Norwegian, what each tool call found, and how
+ * long it took. Measured 2026-09-29 with the same question: live gave three
+ * reasoning steps and a `result-summary` under each call; through this server
+ * the reader got «Jeg søker i dokumentene.» and nothing else.
+ *
+ * Passed on as it comes, and not turned into display text here: the sentences
+ * the reader sees are Norwegian and belong to the client, which already
+ * writes them for the live path.
+ */
+export interface ThinkingEvent {
+  type: 'thinking';
+  /** What the agent said it was about to do, in its own words. */
+  reasoning: string;
+}
+
+/**
+ * One tool call the agent ran, as `agent/turn-completed` reported it.
+ *
+ * One event per call and not per phase: a single frame carries several calls
+ * — three `read_chunks` in a row is ordinary — and the reader is meant to see
+ * each of them, as the live client does.
+ */
+export interface ToolCallEvent {
+  type: 'tool-call';
+  /** `search`, `read_chunks`, `plan_queries`, `generate_response`, … */
+  tool: string;
+  /** The backend's `result-summary`: what the call found, in English. */
+  detail?: string;
+  /** The search strings the call actually ran. */
+  queries?: string[];
+  durationMs?: number;
+  /** How many chunks the call asked to read, when it asked for any. */
+  chunkCount?: number;
+}
+
 export interface DeltaEvent {
   type: 'delta';
   text: string;
@@ -84,7 +125,14 @@ export interface ErrorEvent {
 }
 
 export type TurnEvent =
-  ConversationEvent | StageEvent | DeltaEvent | SourcesEvent | DoneEvent | ErrorEvent;
+  | ConversationEvent
+  | StageEvent
+  | ThinkingEvent
+  | ToolCallEvent
+  | DeltaEvent
+  | SourcesEvent
+  | DoneEvent
+  | ErrorEvent;
 
 export interface AskRequest {
   query: string;

@@ -261,6 +261,22 @@ describe('ask: plan and answer', () => {
       .concat('\n\n');
   }
 
+  /** Every event `ask` yields for one canned upstream body. */
+  async function eventsFrom(body: string): Promise<Array<Record<string, unknown>>> {
+    const original = globalThis.fetch;
+    globalThis.fetch = async () =>
+      new Response(body, { headers: { 'Content-Type': 'text/event-stream' } });
+    try {
+      const out: Array<Record<string, unknown>> = [];
+      for await (const e of mcp.ask('q', 'u', undefined, new AbortController().signal)) {
+        out.push(e as unknown as Record<string, unknown>);
+      }
+      return out;
+    } finally {
+      globalThis.fetch = original;
+    }
+  }
+
   async function deltas(body: string): Promise<string> {
     const original = globalThis.fetch;
     globalThis.fetch = async () =>
@@ -364,6 +380,91 @@ describe('ask: plan and answer', () => {
     assert.equal(event?.type, 'error');
     assert.equal(event?.code, 'stream_broken');
     assert.equal(event?.message, 'Forbindelsen til backend ble brutt.');
+  });
+
+  test("the agent's own words are passed on, one event per agent/thinking", async () => {
+    const events = await eventsFrom(recorded);
+    const thinking = events.filter((e) => e.type === 'thinking');
+    assert.ok(thinking.length > 0, 'the recorded stream has agent/thinking frames');
+    for (const event of thinking) {
+      assert.equal(typeof event.reasoning, 'string');
+      assert.ok((event.reasoning as string).length > 0);
+    }
+  });
+
+  test('every tool call becomes its own event, with what the backend said about it', async () => {
+    const frame = {
+      jsonrpc: '2.0',
+      method: 'notifications/progress',
+      params: {
+        _meta: {
+          event: 'agent/turn-completed',
+          'tool-calls': [
+            {
+              tool: 'search',
+              'duration-ms': 1897,
+              'result-summary': 'Search pass 1: found 95 chunks (95 new).',
+              args: { queries: ['nkom måloppnåelse', 'oppfølging av måloppnåelse'] },
+            },
+            {
+              tool: 'read_chunks',
+              'duration-ms': 167,
+              'result-summary': 'Read 4 chunks (6314 chars this call)',
+              args: { chunk_ids: ['a', 'b', 'c', 'd'] },
+            },
+          ],
+        },
+      },
+    };
+    const events = await eventsFrom(`data: ${JSON.stringify(frame)}\n\n`);
+    const calls = events.filter((e) => e.type === 'tool-call');
+
+    assert.equal(calls.length, 2, 'one event per call, not one per frame');
+    assert.deepEqual(calls[0], {
+      type: 'tool-call',
+      tool: 'search',
+      detail: 'Search pass 1: found 95 chunks (95 new).',
+      queries: ['nkom måloppnåelse', 'oppfølging av måloppnåelse'],
+      durationMs: 1897,
+    });
+    assert.deepEqual(calls[1], {
+      type: 'tool-call',
+      tool: 'read_chunks',
+      detail: 'Read 4 chunks (6314 chars this call)',
+      durationMs: 167,
+      chunkCount: 4,
+    });
+  });
+
+  test('a call with a single query carries it as a list, as the agent ran it', async () => {
+    const frame = {
+      jsonrpc: '2.0',
+      method: 'notifications/progress',
+      params: {
+        _meta: {
+          event: 'agent/turn-completed',
+          'tool-calls': [{ tool: 'plan_queries', args: { query: 'Ett spørsmål?' } }],
+        },
+      },
+    };
+    const [call] = (await eventsFrom(`data: ${JSON.stringify(frame)}\n\n`)).filter(
+      (e) => e.type === 'tool-call',
+    );
+    assert.deepEqual(call, {
+      type: 'tool-call',
+      tool: 'plan_queries',
+      queries: ['Ett spørsmål?'],
+    });
+  });
+
+  test('a tool-calls payload that is not a list costs nothing', async () => {
+    const frame = {
+      jsonrpc: '2.0',
+      method: 'notifications/progress',
+      params: { _meta: { event: 'agent/turn-completed', 'tool-calls': 'noe annet' } },
+    };
+    const events = await eventsFrom(`data: ${JSON.stringify(frame)}\n\n`);
+    assert.equal(events.filter((e) => e.type === 'tool-call').length, 0);
   });
 
   test('deltas no agent/thinking claims are answer text, and are not doubled', async () => {
