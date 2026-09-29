@@ -102,6 +102,9 @@ needed.
 caller-supplied filters, so the chips render disabled with an explanation.
 They enable themselves once the backend takes filters, with no redeploy.
 `kaCapabilities=filters` forces them on if the probe cannot get an answer.
+Against a slow backend the probe can stay unsettled for about 9 minutes
+(three tries of 60 s, 1 and 5 minutes apart), with the filters hidden, and
+then answers no until the app restarts.
 
 **The hosted dataset key is `kudos`, not `default`.** Getting it wrong fails
 every call with "API key is not allowed to access the requested dataset",
