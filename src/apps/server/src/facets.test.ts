@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
-import { before, describe, test } from 'node:test';
+import { after, before, beforeEach, describe, test } from 'node:test';
 import type { FilterFieldSpec } from './datasetConfig.ts';
 
 process.env.DIGDIR_API_KEY ??= 'test-key';
+process.env.TYPESENSE_API_HOST = 'typesense.test';
+process.env.TYPESENSE_API_KEY_ADMIN = 'test-typesense-key';
+process.env.KUDOS_DOCS_COLLECTION = 'kudos_documents_test';
 
 let facets: typeof import('./facets.ts');
 before(async () => {
@@ -178,9 +181,16 @@ describe('cleanFilter', () => {
     );
   });
 
-  test('drops values that are too long to be one', () => {
-    assert.deepEqual(facets.cleanFilter({ type: ['x'.repeat(201), 'ok'] }, [], FIELDS), {
-      type: ['ok'],
+  test('a value the backend refuses is a 400, never dropped', () => {
+    for (const bad of ['x'.repeat(257), 'a`b', 'a\\b', 'a\nb', 'a\u0000b']) {
+      assert.throws(
+        () => facets.cleanFilter({ type: [bad, 'ok'] }, [], FIELDS),
+        (err: unknown) => err instanceof facets.FilterInvalidValue && err.field === 'type',
+        JSON.stringify(bad),
+      );
+    }
+    assert.deepEqual(facets.cleanFilter({ type: ['x'.repeat(256)] }, [], FIELDS), {
+      type: ['x'.repeat(256)],
     });
   });
 
@@ -188,5 +198,102 @@ describe('cleanFilter', () => {
     assert.deepEqual(facets.cleanFilter(null, [], FIELDS), {});
     assert.deepEqual(facets.cleanFilter(['type'], [], FIELDS), {});
     assert.deepEqual(facets.cleanFilter('type', [], FIELDS), {});
+  });
+});
+
+/**
+ * A Typesense that behaves like the real one: it returns the most frequent
+ * `max_facet_values` values per field and no more. The corpus is Kudos's
+ * shape, measured 29.09: 8 types, 457 organisations, and 1006 distinct
+ * `concerned_years` of which 46 are years — and the years with the fewest
+ * documents are rarer than much of the noise.
+ */
+describe('facets, against a Typesense shaped like Kudos', () => {
+  const types = Array.from({ length: 8 }, (_, i) => ({ value: `type${i}`, count: 3000 - i }));
+  const orgs = Array.from({ length: 457 }, (_, i) => ({ value: `org${i}`, count: 900 - i }));
+  const realYears = Array.from({ length: 46 }, (_, i) => ({
+    value: String(1990 + i),
+    count: i < 10 ? 6 + i : 1000 + i,
+  }));
+  const noise = Array.from({ length: 960 }, (_, i) => ({
+    value: String(2100 + i),
+    count: 20 + (i % 30),
+  }));
+  const byField: Record<string, Array<{ value: string; count: number }>> = {
+    type: types,
+    orgs_long: orgs,
+    concerned_years: [...realYears, ...noise],
+  };
+
+  let asked: URL[] = [];
+  const realFetch = globalThis.fetch;
+  before(() => {
+    globalThis.fetch = (async (input: string | URL) => {
+      const url = new URL(String(input));
+      asked.push(url);
+      const max = Number(url.searchParams.get('max_facet_values') ?? 10);
+      const fields = (url.searchParams.get('facet_by') ?? '').split(',');
+      const facet_counts = fields.map((field) => ({
+        field_name: field,
+        counts: [...(byField[field] ?? [])].sort((a, b) => b.count - a.count).slice(0, max),
+      }));
+      return new Response(JSON.stringify({ facet_counts }), { status: 200 });
+    }) as typeof fetch;
+  });
+  after(() => {
+    globalThis.fetch = realFetch;
+  });
+  beforeEach(() => {
+    asked = [];
+    facets.resetFacetCache();
+  });
+
+  test('asks for at least as many values as the year field has, 1006', async () => {
+    await facets.facets(FIELDS);
+    assert.ok(Number(asked[0]?.searchParams.get('max_facet_values')) >= 1006);
+  });
+
+  test('gives every organisation and every year: 8, 457 and 46', async () => {
+    const found = await facets.facets(FIELDS);
+    assert.deepEqual(
+      found.map((f) => [f.id, f.options.length]),
+      [
+        ['documentType', 8],
+        ['organisation', 457],
+        ['year', 46],
+      ],
+    );
+    assert.deepEqual(found[2]?.options.at(-1), { value: '1990', count: 6 });
+  });
+
+  test('the cache belongs to the fields it was fetched for', async () => {
+    await facets.facets(FIELDS);
+    const types = await facets.facets([TYPE]);
+    assert.equal(asked.length, 2);
+    assert.deepEqual(
+      types.map((f) => f.id),
+      ['documentType'],
+    );
+    await facets.facets([TYPE]);
+    assert.equal(asked.length, 2);
+  });
+
+  test('cachedFacets never asks Typesense, and gives what is cached', async () => {
+    assert.deepEqual(facets.cachedFacets(FIELDS), []);
+    assert.equal(asked.length, 0);
+    await facets.facets(FIELDS);
+    assert.equal(facets.cachedFacets(FIELDS).length, 3);
+    assert.deepEqual(facets.cachedFacets([TYPE]), []);
+    assert.equal(asked.length, 1);
+  });
+
+  test('gives up on a Typesense that does not answer, with a timeout on the call', async () => {
+    let signal: AbortSignal | undefined;
+    globalThis.fetch = (async (_: unknown, init?: RequestInit) => {
+      signal = init?.signal ?? undefined;
+      throw new Error('unreachable');
+    }) as typeof fetch;
+    await assert.rejects(facets.facets(FIELDS));
+    assert.ok(signal, 'the call carries an abort signal');
   });
 });

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { parseDataset, parseFilterFields } from './datasetConfig.ts';
+import { capabilitiesResponse, parseDataset, parseFilterFields } from './datasetConfig.ts';
 
 const KUDOS =
   'kudos-full=documentType:type|organisation:orgs_long|year:concerned_years:integer';
@@ -76,5 +76,24 @@ describe('parseDataset', () => {
     assert.equal(parseDataset(undefined, 'kudos-full'), undefined);
     assert.equal(parseDataset('kudos-full=|beskrivelse', 'kudos-full'), undefined);
     assert.equal(parseDataset('other=Other', 'kudos-full'), undefined);
+  });
+});
+
+describe('capabilitiesResponse', () => {
+  const caps = { filters: true, othersThreads: false, threadTitles: false };
+
+  test('names the dataset when it is configured', () => {
+    assert.deepEqual(capabilitiesResponse(caps, true, { key: 'kudos-full', label: 'Kudos' }), {
+      capabilities: caps,
+      settled: true,
+      dataset: { key: 'kudos-full', label: 'Kudos' },
+    });
+  });
+
+  test('leaves it out when it is not', () => {
+    assert.deepEqual(capabilitiesResponse(caps, false, undefined), {
+      capabilities: caps,
+      settled: false,
+    });
   });
 });

@@ -4,8 +4,13 @@ import type { FilterFieldSpec } from './datasetConfig.ts';
 
 export type { FacetField, FacetOption };
 
-let cache: { at: number; data: FacetField[] } | null = null;
+let cache: { at: number; key: string; data: FacetField[] } | null = null;
 const TTL_MS = 10 * 60 * 1000;
+
+/** A Typesense that accepts and never answers must not hold up the panel. */
+const TIMEOUT_MS = 5000;
+
+const cacheKey = (fields: FilterFieldSpec[]) => fields.map((f) => f.field).join(',');
 
 /**
  * Enough for every value of a field, so the policy and not a cut-off decides
@@ -20,14 +25,17 @@ export const YEAR_SPAN = { from: 1990, to: 2035 } as const;
 /** What the backend takes per field: 1 to 100 values. */
 export const MAX_SELECTED_VALUES = 100;
 
-const MAX_VALUE_LENGTH = 200;
+/** What #15 takes per value: at most 256 characters, and none of these. */
+const MAX_VALUE_LENGTH = 256;
+const FORBIDDEN = /[`\\\u0000-\u001f\u007f]/;
 
 export async function facets(
   fields: FilterFieldSpec[] = config.filterFields,
 ): Promise<FacetField[]> {
   if (!config.typesenseHost || !config.typesenseKey || !config.docsCollection) return [];
   if (!fields.length) return [];
-  if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
+  const key = cacheKey(fields);
+  if (cache && cache.key === key && Date.now() - cache.at < TTL_MS) return cache.data;
 
   const url = new URL(
     `https://${config.typesenseHost}/collections/${config.docsCollection}/documents/search`,
@@ -38,7 +46,10 @@ export async function facets(
   url.searchParams.set('facet_by', fields.map((f) => f.field).join(','));
   url.searchParams.set('max_facet_values', String(MAX_FACET_VALUES));
 
-  const res = await fetch(url, { headers: { 'X-TYPESENSE-API-KEY': config.typesenseKey } });
+  const res = await fetch(url, {
+    headers: { 'X-TYPESENSE-API-KEY': config.typesenseKey },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
   if (!res.ok) throw new Error(`facets ${res.status}`);
 
   const body = (await res.json()) as {
@@ -50,8 +61,23 @@ export async function facets(
     .map((spec) => shapeFacet(spec, byField.get(spec.field)))
     .filter((f) => f.options.length > 0);
 
-  cache = { at: Date.now(), data };
+  cache = { at: Date.now(), key, data };
   return data;
+}
+
+/**
+ * The facets already fetched, without asking Typesense. For `/api/ask`, which
+ * must not wait on Typesense to learn what «all» is: without a cache, a
+ * field with every value selected is sent as it is, and the 400 still holds.
+ */
+export function cachedFacets(fields: FilterFieldSpec[] = config.filterFields): FacetField[] {
+  if (!cache || cache.key !== cacheKey(fields) || Date.now() - cache.at >= TTL_MS) return [];
+  return cache.data;
+}
+
+/** For tests: forget the cache. */
+export function resetFacetCache(): void {
+  cache = null;
 }
 
 /** No empty values; years only inside `YEAR_SPAN`, newest first; the rest by count. */
@@ -82,6 +108,18 @@ export function shapeFacet(
   };
 }
 
+/** A value the backend refuses (#15). Answered as 400, never dropped. */
+export class FilterInvalidValue extends Error {
+  readonly field: string;
+
+  constructor(field: string, label: string) {
+    super(
+      `Et av valgene i ${label} har tegn eller en lengde søket ikke tar imot. Fjern det og prøv igjen.`,
+    );
+    this.field = field;
+  }
+}
+
 /** More values in one field than the backend takes. Answered as 400, never cut. */
 export class FilterTooManyValues extends Error {
   readonly field: string;
@@ -99,7 +137,8 @@ export class FilterTooManyValues extends Error {
 
 /**
  * Only configured fields, and only lists of strings. A field with every known
- * value selected is the same as no filter on it, and is left out.
+ * value selected is the same as no filter on it, and is left out. A value the
+ * backend would refuse, and more than it takes, are a 400 and never dropped.
  */
 export function cleanFilter(
   raw: unknown,
@@ -112,14 +151,12 @@ export function cleanFilter(
     const values = (raw as Record<string, unknown>)[spec.field];
     if (!Array.isArray(values)) continue;
     const kept = [
-      ...new Set(
-        values.filter(
-          (v): v is string =>
-            typeof v === 'string' && v.trim() !== '' && v.length <= MAX_VALUE_LENGTH,
-        ),
-      ),
+      ...new Set(values.filter((v): v is string => typeof v === 'string' && v.trim() !== '')),
     ];
     if (!kept.length) continue;
+    if (kept.some((v) => v.length > MAX_VALUE_LENGTH || FORBIDDEN.test(v))) {
+      throw new FilterInvalidValue(spec.field, spec.label);
+    }
 
     const all = known.find((f) => f.field === spec.field)?.options.map((o) => o.value) ?? [];
     if (all.length && all.every((v) => kept.includes(v))) continue;

@@ -3,7 +3,12 @@
  * Configuration, not code, so another corpus is an environment change.
  * The grammar is the client's `VITE_KA_FILTER_FIELDS` and `VITE_KA_DATASETS`.
  */
-import type { DatasetInfo, FilterFieldId } from '@ka/contract';
+import type {
+  Capabilities,
+  CapabilitiesResponse,
+  DatasetInfo,
+  FilterFieldId,
+} from '@ka/contract';
 
 export interface FilterFieldSpec {
   id: FilterFieldId;
@@ -80,4 +85,13 @@ export function parseDataset(
   const description = pipe === -1 ? '' : entry.slice(pipe + 1).trim();
   if (!label) return undefined;
   return { key: dataset, label, ...(description ? { description } : {}) };
+}
+
+/** `GET /api/capabilities`: what the backend can do, and which dataset this is. */
+export function capabilitiesResponse(
+  capabilities: Capabilities,
+  settled: boolean,
+  dataset: DatasetInfo | undefined,
+): CapabilitiesResponse {
+  return { capabilities, settled, ...(dataset ? { dataset } : {}) };
 }

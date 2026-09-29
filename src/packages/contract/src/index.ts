@@ -98,6 +98,13 @@ export interface CapabilitiesResponse {
   dataset?: DatasetInfo;
 }
 
+/** `400` from `POST /api/ask` when a value is one the backend refuses. */
+export interface FilterInvalidValue {
+  error: string;
+  code: 'filter-invalid-value';
+  field: string;
+}
+
 /** `400` from `POST /api/ask` when one field has more values than the backend takes. */
 export interface FilterTooManyValues {
   error: string;
