@@ -65,11 +65,32 @@ async function retrieveOnly(filterBy: unknown, signal: AbortSignal): Promise<num
   return text.includes('"isError":true') ? null : countChunks(text);
 }
 
-async function probeFilters(signal: AbortSignal): Promise<boolean> {
-  const baseline = await retrieveOnly(undefined, signal);
-  if (baseline === null || baseline === 0) return false;
-  const filtered = await retrieveOnly(IMPOSSIBLE, signal);
+export type Retrieve = (filterBy: unknown, signal: AbortSignal) => Promise<number | null>;
+
+/** `null` is «could not tell»: a backend that is slow or down is not one without filters. */
+export async function probeFilters(
+  signal: AbortSignal,
+  retrieve: Retrieve = retrieveOnly,
+): Promise<boolean | null> {
+  // Both at once, so the probe takes the slower call and not the sum of them.
+  const [baseline, filtered] = await Promise.all([
+    retrieve(undefined, signal),
+    retrieve(IMPOSSIBLE, signal),
+  ]);
+  if (baseline === null || baseline === 0 || filtered === null) return null;
   return filtered === 0;
+}
+
+async function attempt(timeoutMs: number, retrieve: Retrieve): Promise<boolean | null> {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), timeoutMs);
+  try {
+    return await probeFilters(ac.signal, retrieve);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function fromEnv(): Partial<Capabilities> {
@@ -81,23 +102,28 @@ function fromEnv(): Partial<Capabilities> {
   return { ...pick('filters'), ...pick('othersThreads'), ...pick('threadTitles') };
 }
 
-export async function probe(timeoutMs = 60_000): Promise<Capabilities> {
+const RETRY_DELAYS_MS = [60_000, 5 * 60_000];
+
+/** Unsettled until the backend answers yes or no, or the retries run out. */
+export async function probe(
+  timeoutMs = 60_000,
+  retryDelaysMs: readonly number[] = RETRY_DELAYS_MS,
+  retrieve: Retrieve = retrieveOnly,
+): Promise<Capabilities> {
   const override = fromEnv();
   if ('filters' in override) {
     current = { ...current, ...override };
     probed = true;
     return capabilities();
   }
-  const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), timeoutMs);
-  try {
-    current = { ...current, filters: await probeFilters(ac.signal) };
-  } catch {
-    current = { ...current, filters: false };
-  } finally {
-    clearTimeout(timer);
+  for (let tries = 0; ; tries += 1) {
+    const filters = await attempt(timeoutMs, retrieve);
+    const delay = retryDelaysMs[tries];
+    if (filters !== null || delay === undefined) {
+      current = { ...current, filters: filters ?? false, ...override };
+      probed = true;
+      return capabilities();
+    }
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
-  current = { ...current, ...override };
-  probed = true;
-  return capabilities();
 }
