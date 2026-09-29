@@ -29,6 +29,9 @@ export const MAX_SELECTED_VALUES = 100;
 const MAX_VALUE_LENGTH = 256;
 const FORBIDDEN = /[`\\\u0000-\u001f\u007f]/;
 
+/** The fetch in flight, so a burst of questions after expiry makes one call, not ten. */
+let inflight: { key: string; promise: Promise<FacetField[]> } | null = null;
+
 export async function facets(
   fields: FilterFieldSpec[] = config.filterFields,
 ): Promise<FacetField[]> {
@@ -36,7 +39,16 @@ export async function facets(
   if (!fields.length) return [];
   const key = cacheKey(fields);
   if (cache && cache.key === key && Date.now() - cache.at < TTL_MS) return cache.data;
+  if (inflight?.key === key) return inflight.promise;
 
+  const promise = fetchFacets(fields, key).finally(() => {
+    if (inflight?.promise === promise) inflight = null;
+  });
+  inflight = { key, promise };
+  return promise;
+}
+
+async function fetchFacets(fields: FilterFieldSpec[], key: string): Promise<FacetField[]> {
   const url = new URL(
     `https://${config.typesenseHost}/collections/${config.docsCollection}/documents/search`,
   );
@@ -135,6 +147,7 @@ export function askFilter(
 /** For tests: forget the cache. */
 export function resetFacetCache(): void {
   cache = null;
+  inflight = null;
 }
 
 /** No empty values; years only inside `YEAR_SPAN`, newest first; the rest by count. */

@@ -326,6 +326,15 @@ describe('facets, against a Typesense shaped like Kudos', () => {
     assert.equal(!refused.ok && refused.body.code, 'filter-invalid-value');
   });
 
+  test('ten questions right after expiry share one fetch', async (t) => {
+    await facets.facets(FIELDS);
+    const now = Date.now();
+    t.mock.method(Date, 'now', () => now + 11 * 60 * 1000);
+    for (let i = 0; i < 10; i += 1) facets.cachedFacets(FIELDS);
+    await Promise.all(Array.from({ length: 5 }, () => facets.facets(FIELDS)));
+    assert.equal(asked.length, 2);
+  });
+
   test('gives up on a Typesense that does not answer, with a timeout on the call', async () => {
     let signal: AbortSignal | undefined;
     globalThis.fetch = (async (_: unknown, init?: RequestInit) => {
