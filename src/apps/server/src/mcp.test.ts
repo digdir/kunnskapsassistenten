@@ -254,6 +254,91 @@ describe('ask: plan and answer', () => {
     assert.equal(text, 'Svaret [1].');
   });
 
+  /** Every event `ask` yields for one canned upstream. */
+  async function events(
+    upstream: () => Promise<Response>,
+  ): Promise<Array<Record<string, unknown>>> {
+    const original = globalThis.fetch;
+    globalThis.fetch = upstream as typeof globalThis.fetch;
+    try {
+      const out: Array<Record<string, unknown>> = [];
+      for await (const e of mcp.ask('q', 'u', undefined, new AbortController().signal)) {
+        out.push(e as unknown as Record<string, unknown>);
+      }
+      return out;
+    } finally {
+      globalThis.fetch = original;
+    }
+  }
+
+  const sse = (body: string) =>
+    new Response(body, { headers: { 'Content-Type': 'text/event-stream' } });
+
+  test('a backend that cannot be reached is named as that, not as a broken stream', async () => {
+    const [event] = await events(async () => {
+      throw Object.assign(new TypeError('fetch failed'), {
+        cause: { code: 'ECONNREFUSED' },
+      });
+    });
+    assert.equal(event?.type, 'error');
+    assert.equal(event?.code, 'backend_unreachable');
+    assert.match(String(event?.message), /ECONNREFUSED/);
+  });
+
+  test('an abort stays an exception, so the route can tell it from a failure', async () => {
+    await assert.rejects(
+      events(async () => {
+        throw Object.assign(new Error('aborted'), { name: 'AbortError' });
+      }),
+      { name: 'AbortError' },
+    );
+  });
+
+  test('an HTTP status from the backend carries both the sentence and a code', async () => {
+    const [event] = await events(async () => new Response('nope', { status: 503 }));
+    assert.equal(event?.code, 'backend_http_503');
+    assert.equal(event?.message, 'Backend svarte 503.');
+  });
+
+  test("the backend's own code in _meta reaches the client", async () => {
+    const frame = {
+      jsonrpc: '2.0',
+      id: 1,
+      result: {
+        isError: true,
+        content: [{ type: 'text', text: 'Dataset not authorized for this key' }],
+        _meta: { code: 'dataset_not_authorized' },
+      },
+    };
+    const [event] = await events(async () => sse(`data: ${JSON.stringify(frame)}\n\n`));
+    assert.equal(event?.type, 'error');
+    assert.equal(event?.code, 'dataset_not_authorized');
+    assert.equal(event?.message, 'Dataset not authorized for this key');
+  });
+
+  test('a JSON-RPC error frame is an error, not a stream that ran out', async () => {
+    const frame = {
+      jsonrpc: '2.0',
+      id: 1,
+      error: {
+        code: -32602,
+        message: 'Unknown tool',
+        data: { code: 'invalid_tool_name' },
+      },
+    };
+    const events_ = await events(async () => sse(`data: ${JSON.stringify(frame)}\n\n`));
+    assert.equal(events_.length, 1);
+    assert.equal(events_[0]?.code, 'invalid_tool_name');
+    assert.equal(events_[0]?.message, 'Unknown tool');
+  });
+
+  test('a stream that ends without a result is a broken stream, with a code', async () => {
+    const [event] = await events(async () => sse(''));
+    assert.equal(event?.type, 'error');
+    assert.equal(event?.code, 'stream_broken');
+    assert.equal(event?.message, 'Forbindelsen til backend ble brutt.');
+  });
+
   test('deltas no agent/thinking claims are answer text, and are not doubled', async () => {
     const streamed = recorded
       .split('\n\n')

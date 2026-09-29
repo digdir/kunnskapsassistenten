@@ -184,15 +184,39 @@ export async function* ask(
     },
   };
 
-  const upstream = await fetch(`${config.apiBase}/api/mcp`, {
-    method: 'POST',
-    headers: { ...headers('tools/call', userId, tool), Accept: 'text/event-stream' },
-    body: JSON.stringify(body),
-    signal,
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${config.apiBase}/api/mcp`, {
+      method: 'POST',
+      headers: { ...headers('tools/call', userId, tool), Accept: 'text/event-stream' },
+      body: JSON.stringify(body),
+      signal,
+    });
+  } catch (err) {
+    // An abort is the caller's own doing and stays an exception, so the route
+    // can tell it from a failure. Everything else here is the backend not
+    // being there at all — a DNS miss, a refused connection, a dead TLS
+    // session — which is a different thing from any answer it could give, and
+    // the only place that knows it is this one.
+    if (err instanceof Error && err.name === 'AbortError') throw err;
+    const why =
+      err instanceof Error ? ((err.cause as { code?: string })?.code ?? err.name) : '';
+    yield {
+      type: 'error',
+      message: `Fikk ikke kontakt med backend${why ? ` (${why})` : ''}.`,
+      code: 'backend_unreachable',
+    };
+    return;
+  }
 
   if (!upstream.ok || !upstream.body) {
-    yield { type: 'error', message: `Backend svarte ${upstream.status}.` };
+    // The sentence keeps the status, because that is what anyone debugging
+    // from a screenshot has to go on; the code is what the client acts on.
+    yield {
+      type: 'error',
+      message: `Backend svarte ${upstream.status}.`,
+      code: `backend_http_${upstream.status}`,
+    };
     return;
   }
 
@@ -236,8 +260,19 @@ export async function* ask(
         const convo: string | undefined = sc.conversation_id ?? meta.conversation_id;
 
         if (r.isError) {
+          // The backend names the condition in `_meta.code`
+          // (digdir/mcp/tools.clj, `error->tool-result`). It was dropped here,
+          // so every one of them — an unauthorized dataset, a mode that does
+          // not exist, a model that did not answer — reached the client as
+          // English prose to guess at.
           const text = r.content?.[0]?.text ?? 'Ukjent feil fra backend.';
-          yield { type: 'error', message: text, conversationId: convo };
+          const code = typeof meta.code === 'string' ? meta.code : undefined;
+          yield {
+            type: 'error',
+            message: text,
+            ...(code ? { code } : {}),
+            conversationId: convo,
+          };
           return;
         }
 
@@ -253,6 +288,22 @@ export async function* ask(
           type: 'done',
           conversationId: convo ?? '',
           insufficient: Boolean(meta.insufficient),
+        };
+        return;
+      }
+
+      // A tools/call that named something nonexistent comes back as a
+      // JSON-RPC error with the code in `data.code`, not as a result
+      // (digdir/mcp/transport.clj, `invalid-params`). Nothing read these
+      // frames, so the stream simply ran out and the reader was told the
+      // connection broke.
+      if (msg.error) {
+        const e = msg.error as { message?: string; code?: number; data?: { code?: unknown } };
+        const backendCode = typeof e.data?.code === 'string' ? e.data.code : undefined;
+        yield {
+          type: 'error',
+          message: e.message ?? `Backend svarte JSON-RPC-feil ${e.code ?? ''}`.trim(),
+          ...(backendCode ? { code: backendCode } : {}),
         };
         return;
       }
@@ -291,5 +342,9 @@ export async function* ask(
     }
   }
 
-  yield { type: 'error', message: 'Forbindelsen til backend ble brutt.' };
+  yield {
+    type: 'error',
+    message: 'Forbindelsen til backend ble brutt.',
+    code: 'stream_broken',
+  };
 }
