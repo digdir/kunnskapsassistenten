@@ -1,6 +1,6 @@
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
-import { Hono } from 'hono';
+import { Hono, type MiddlewareHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
@@ -252,8 +252,23 @@ app.post('/api/ask', async (c) => {
   });
 });
 
+// Before the SPA fallback, or a mistyped endpoint answers 200 with index.html.
+app.all('/api/*', (c) => c.json({ error: 'Ukjent endepunkt.' }, 404));
+
+/** After `next()`: serveStatic's `onFound` runs when the response is already built. */
+const cacheFor =
+  (value: string): MiddlewareHandler =>
+  async (c, next) => {
+    await next();
+    if (c.res.ok) c.res.headers.set('Cache-Control', value);
+  };
+
 if (config.webRoot) {
+  // Vite puts a content hash in every name under /assets/.
+  app.use('/assets/*', cacheFor('public, max-age=31536000, immutable'));
   app.use('/assets/*', serveStatic({ root: config.webRoot }));
+  // A name from an older build is gone, and must not become index.html cached for a year.
+  app.all('/assets/*', (c) => c.text('Fant ikke fila.', 404));
   app.get('/favicon.ico', serveStatic({ root: config.webRoot, path: 'favicon.ico' }));
   app.get('*', async (c, next) => {
     if (config.auth.enabled && !(await readUser(c))) {
@@ -261,7 +276,8 @@ if (config.webRoot) {
     }
     return next();
   });
-  app.get('*', serveStatic({ root: config.webRoot, path: 'index.html' }));
+  // index.html names the hashed files, so it is asked for again on every load.
+  app.get('*', cacheFor('no-cache'), serveStatic({ root: config.webRoot, path: 'index.html' }));
 }
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
