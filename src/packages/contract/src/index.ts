@@ -1,9 +1,27 @@
+/**
+ * One retrieved chunk, in the order the agent retrieved them.
+ *
+ * ONE PER CHUNK, not one per document, because `[N]` in the answer is the
+ * agent's 1-based index into its flat chunk list. Grouping the chunks by
+ * document first and numbering the documents made the two agree only when
+ * every document gave exactly one chunk: measured 2026-09-29 against
+ * kudos-full, one question returned eight chunks of the same document and the
+ * answer cited `[1]`..`[8]`, while the grouped form offered a single source
+ * with marker 1 — so `[2]`..`[8]` pointed at nothing and `[1]` pointed at all
+ * eight passages glued together.
+ *
+ * The client groups them back into documents for display, which is what it
+ * already does for the chunks it reads straight from the backend.
+ */
 export interface Source {
   docNum: string;
   title: string;
   url: string;
-  /** 1-based, matching the `[N]` markers in the answer text. */
+  /** 1-based, matching the `[N]` markers in the answer text. One per chunk. */
   marker: number;
+  /** The chunk this marker points at, when the backend named it. */
+  chunkId?: string;
+  /** The passage itself. Absent when it could not be looked up. */
   excerpt?: string;
 }
 
@@ -41,7 +59,27 @@ export interface DoneEvent {
 
 export interface ErrorEvent {
   type: 'error';
+  /**
+   * What went wrong, in the words of whoever caught it. English, technical,
+   * and written for whoever runs the service — the client never puts it on
+   * screen as it stands.
+   */
   message: string;
+  /**
+   * What kind of failure it was, when that is known.
+   *
+   * The client writes the reader's two sentences from the code, so a code is
+   * the only way it can tell «the language model did not answer» from «the
+   * search did not answer» — two cases that ask the reader for opposite
+   * things. Without one it has to guess from English prose, and everything it
+   * cannot place becomes the same catch-all sentence.
+   *
+   * Either the backend's own code, passed through untouched, or one of the
+   * names this server uses for what it knows by itself:
+   * `backend_unreachable`, `backend_http_<status>`, `stream_broken`,
+   * `request_aborted`.
+   */
+  code?: string;
   conversationId?: string;
 }
 

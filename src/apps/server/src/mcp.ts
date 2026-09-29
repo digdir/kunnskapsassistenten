@@ -121,33 +121,37 @@ function documentUrl(chunk: ResultChunk): string {
   return '';
 }
 
+/**
+ * The retrieved chunks as sources, one per chunk and in retrieval order.
+ *
+ * The index IS the marker: `[N]` in the answer is the agent's 1-based index
+ * into this same list, so nothing here may reorder it, group it or drop an
+ * entry. An earlier version grouped by document and numbered the documents,
+ * which silently shifted every marker as soon as one document gave two
+ * chunks. Dropping a chunk without a `doc_num` would shift them the same way,
+ * so such a chunk keeps its place with an empty `docNum` and the client names
+ * it by its marker.
+ */
 export async function toSources(
   chunks: ResultChunk[] | undefined,
   lookup: (ids: string[]) => Promise<Map<string, string>> = excerpts,
 ): Promise<Source[]> {
   if (!chunks?.length) return [];
-  const byDoc = new Map<string, { chunk: ResultChunk; chunkIds: string[] }>();
-  for (const c of chunks) {
-    const key = c.doc_num || c.url;
-    if (!key) continue;
-    const entry = byDoc.get(key) ?? { chunk: c, chunkIds: [] };
-    if (c.chunk_id) entry.chunkIds.push(c.chunk_id);
-    byDoc.set(key, entry);
-  }
 
   let text = new Map<string, string>();
   try {
-    text = await lookup([...byDoc.values()].flatMap((e) => e.chunkIds));
+    text = await lookup(chunks.flatMap((c) => (c.chunk_id ? [c.chunk_id] : [])));
   } catch {}
 
-  return [...byDoc.values()].map(({ chunk, chunkIds }, i) => {
-    const passages = chunkIds.map((id) => text.get(id)).filter(Boolean) as string[];
+  return chunks.map((chunk, i) => {
+    const passage = chunk.chunk_id ? text.get(chunk.chunk_id) : undefined;
     return {
       docNum: chunk.doc_num ?? '',
       title: chunk.title || `Dokument ${chunk.doc_num ?? ''}`.trim(),
       url: documentUrl(chunk),
       marker: i + 1,
-      ...(passages.length ? { excerpt: passages.join('\n\n') } : {}),
+      ...(chunk.chunk_id ? { chunkId: chunk.chunk_id } : {}),
+      ...(passage ? { excerpt: passage } : {}),
     };
   });
 }

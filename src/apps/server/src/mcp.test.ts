@@ -63,7 +63,7 @@ describe('frameData', () => {
 });
 
 describe('toSources', () => {
-  test('collapses many chunks of one document into a single source', async () => {
+  test('one source per chunk, so a document that gave two does not swallow a marker', async () => {
     const sources = await mcp.toSources(
       [
         { chunk_id: 'a', doc_num: '1', title: 'Rapport' },
@@ -72,10 +72,29 @@ describe('toSources', () => {
       ],
       noExcerpts,
     );
-    assert.equal(sources.length, 2);
+    assert.equal(sources.length, 3);
+    assert.deepEqual(
+      sources.map((s) => [s.chunkId, s.docNum, s.marker]),
+      [
+        ['a', '1', 1],
+        ['b', '1', 2],
+        ['c', '2', 3],
+      ],
+    );
+  });
+
+  test('eight chunks of one document keep the markers the answer cites', async () => {
+    // The shape measured against kudos-full on 2026-09-29: one question,
+    // eight chunks, all from document 347922, and an answer citing [1]..[8].
+    const chunks = Array.from({ length: 8 }, (_, i) => ({
+      chunk_id: `c${i}`,
+      doc_num: '347922',
+      title: 'Tildelingsbrev Landbruksdirektoratet 2025',
+    }));
+    const sources = await mcp.toSources(chunks, noExcerpts);
     assert.deepEqual(
       sources.map((s) => s.marker),
-      [1, 2],
+      [1, 2, 3, 4, 5, 6, 7, 8],
     );
   });
 
@@ -114,8 +133,8 @@ describe('toSources', () => {
     assert.equal(source?.title, 'Dokument 77');
   });
 
-  test('joins every passage of a document, in retrieval order', async () => {
-    const [source] = await mcp.toSources(
+  test("each chunk carries its own passage, never the document's glued together", async () => {
+    const sources = await mcp.toSources(
       [
         { chunk_id: 'a', doc_num: '1' },
         { chunk_id: 'b', doc_num: '1' },
@@ -126,7 +145,10 @@ describe('toSources', () => {
           ['b', 'second'],
         ]),
     );
-    assert.equal(source?.excerpt, 'first\n\nsecond');
+    assert.deepEqual(
+      sources.map((s) => s.excerpt),
+      ['first', 'second'],
+    );
   });
 
   test('omits excerpt entirely when no passage was found', async () => {
@@ -145,9 +167,19 @@ describe('toSources', () => {
     assert.equal(sources[0]?.excerpt, undefined);
   });
 
-  test('skips chunks with neither doc_num nor url', async () => {
-    const sources = await mcp.toSources([{ chunk_id: 'orphan' }], noExcerpts);
-    assert.deepEqual(sources, []);
+  test('a chunk with neither doc_num nor url keeps its place, or the markers shift', async () => {
+    const sources = await mcp.toSources(
+      [{ chunk_id: 'orphan' }, { chunk_id: 'b', doc_num: '2', title: 'To' }],
+      noExcerpts,
+    );
+    assert.equal(sources.length, 2);
+    assert.deepEqual(
+      sources.map((s) => [s.docNum, s.url, s.marker]),
+      [
+        ['', '', 1],
+        ['2', 'https://kudos.example/documents/2', 2],
+      ],
+    );
   });
 
   test('no chunks means no sources', async () => {
