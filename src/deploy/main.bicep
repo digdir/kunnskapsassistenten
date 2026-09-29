@@ -31,6 +31,9 @@ param typesenseApiKey string = ''
 param typesenseHost string = ''
 param kudosDocsCollection string = ''
 
+@description('What the capability probe would find, forced: `filters` or `no-filters`. Empty lets the probe decide.')
+param kaCapabilities string = ''
+
 var appHost = empty(publicHost) ? '${name}.${containerEnv.properties.defaultDomain}' : publicHost
 
 resource logs 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -113,6 +116,9 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             ],
             empty(typesenseApiKey) ? [] : [
               { name: 'TYPESENSE_API_KEY_ADMIN', secretRef: 'typesense-key' }
+            ],
+            empty(kaCapabilities) ? [] : [
+              { name: 'KA_CAPABILITIES', value: kaCapabilities }
             ]
           )
           probes: [

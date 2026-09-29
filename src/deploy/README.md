@@ -101,6 +101,7 @@ needed.
 **Filters are disabled.** The capability probe finds the hosted backend drops
 caller-supplied filters, so the chips render disabled with an explanation.
 They enable themselves once the backend takes filters, with no redeploy.
+`kaCapabilities=filters` forces them on if the probe cannot get an answer.
 
 **The hosted dataset key is `kudos`, not `default`.** Getting it wrong fails
 every call with "API key is not allowed to access the requested dataset",
