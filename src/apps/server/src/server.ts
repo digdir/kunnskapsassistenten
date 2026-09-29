@@ -11,7 +11,13 @@ import { config, typesenseConfigured } from './config.ts';
 import { ask, setAllowedTools } from './mcp.ts';
 import { toAgents } from './models.ts';
 import * as convos from './conversations.ts';
-import { cleanFilter, facets, toFilterBy } from './facets.ts';
+import {
+  cleanFilter,
+  facets,
+  FilterTooManyValues,
+  MAX_SELECTED_VALUES,
+  toFilterBy,
+} from './facets.ts';
 import { sessionMiddleware, type SessionVars } from './session.ts';
 import * as sourceStore from './sourceStore.ts';
 import * as threadFilters from './threadFilters.ts';
@@ -73,7 +79,11 @@ app.get('/api/me', (c) =>
 );
 
 app.get('/api/capabilities', (c) =>
-  c.json({ capabilities: capabilities(), settled: probeComplete() }),
+  c.json({
+    capabilities: capabilities(),
+    settled: probeComplete(),
+    ...(config.dataset ? { dataset: config.dataset } : {}),
+  }),
 );
 
 app.get('/api/models', async (c) => {
@@ -166,7 +176,23 @@ app.post('/api/ask', async (c) => {
     );
   }
 
-  const requested = cleanFilter((body as { filter?: unknown }).filter);
+  // The facets are cached, and they say which selections mean «all».
+  const known = await facets().catch(() => []);
+  let requested: Record<string, string[]>;
+  try {
+    requested = cleanFilter((body as { filter?: unknown }).filter, known);
+  } catch (err) {
+    if (!(err instanceof FilterTooManyValues)) throw err;
+    return c.json(
+      {
+        error: err.message,
+        code: 'filter-too-many-values',
+        field: err.field,
+        max: MAX_SELECTED_VALUES,
+      },
+      400,
+    );
+  }
   const model =
     typeof (body as { model?: unknown }).model === 'string'
       ? (body as { model: string }).model

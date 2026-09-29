@@ -52,6 +52,58 @@ export interface AskRequest {
   query: string;
   model?: string;
   conversationId?: string;
+  /**
+   * Keyed by `FacetField.field`. A field with every value selected is the
+   * same as no filter on it, and is left out.
+   */
+  filter?: Record<string, string[]>;
+}
+
+/** The three filter dimensions the client draws. */
+export type FilterFieldId = 'documentType' | 'organisation' | 'year';
+
+export interface FacetOption {
+  value: string;
+  /** Documents in the whole corpus with this value, as Typesense counts them. */
+  count: number;
+}
+
+/** One filter field, as `KA_FILTER_FIELDS` configures it for this dataset. */
+export interface FacetField {
+  id: FilterFieldId;
+  /** The corpus's own field name, and the key in `AskRequest.filter`. */
+  field: string;
+  /** `value-type` on the backend's filter, for a field that is not text. */
+  valueType?: 'integer' | 'string';
+  /** Norwegian noun in lower case, for a sentence: «dokumenttyper». */
+  label: string;
+  /** Every value in the corpus, not a top N. */
+  options: FacetOption[];
+}
+
+export interface FacetsResponse {
+  facets: FacetField[];
+}
+
+/** The dataset this BFF answers from, as `KA_DATASETS` names it. */
+export interface DatasetInfo {
+  key: string;
+  label: string;
+  description?: string;
+}
+
+export interface CapabilitiesResponse {
+  capabilities: Capabilities;
+  settled: boolean;
+  dataset?: DatasetInfo;
+}
+
+/** `400` from `POST /api/ask` when one field has more values than the backend takes. */
+export interface FilterTooManyValues {
+  error: string;
+  code: 'filter-too-many-values';
+  field: string;
+  max: number;
 }
 
 export interface ConversationSummary {
