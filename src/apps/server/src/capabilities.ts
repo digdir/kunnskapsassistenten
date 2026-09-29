@@ -1,4 +1,5 @@
 import { config } from './config.ts';
+import type { FilterFieldSpec } from './datasetConfig.ts';
 
 export interface Capabilities {
   filters: boolean;
@@ -8,9 +9,21 @@ export interface Capabilities {
 
 const PROBE_TOOL = 'builtin.retrieve-only-agent__retrieve-only';
 const PROBE_QUERY = 'tiltak og resultater';
-const IMPOSSIBLE = {
-  fields: [{ field: 'type', 'selected-options': ['ZZZ_ingen_slik_type'] }],
-};
+
+/** A value no document has, on a configured field. Without fields there is nothing to probe. */
+export function impossibleFilter(fields: readonly FilterFieldSpec[]) {
+  const spec = fields.find((f) => f.valueType !== 'integer') ?? fields[0];
+  if (!spec) return undefined;
+  return {
+    fields: [
+      {
+        field: spec.field,
+        'selected-options': [spec.valueType === 'integer' ? '-1' : 'ZZZ_ingen_slik_verdi'],
+        ...(spec.valueType ? { 'value-type': spec.valueType } : {}),
+      },
+    ],
+  };
+}
 
 let current: Capabilities = { filters: false, othersThreads: false, threadTitles: false };
 let probed = false;
@@ -70,22 +83,27 @@ export type Retrieve = (filterBy: unknown, signal: AbortSignal) => Promise<numbe
 /** `null` is «could not tell»: a backend that is slow or down is not one without filters. */
 export async function probeFilters(
   signal: AbortSignal,
+  impossible: unknown,
   retrieve: Retrieve = retrieveOnly,
 ): Promise<boolean | null> {
   // Both at once, so the probe takes the slower call and not the sum of them.
   const [baseline, filtered] = await Promise.all([
     retrieve(undefined, signal),
-    retrieve(IMPOSSIBLE, signal),
+    retrieve(impossible, signal),
   ]);
   if (baseline === null || baseline === 0 || filtered === null) return null;
   return filtered === 0;
 }
 
-async function attempt(timeoutMs: number, retrieve: Retrieve): Promise<boolean | null> {
+async function attempt(
+  timeoutMs: number,
+  impossible: unknown,
+  retrieve: Retrieve,
+): Promise<boolean | null> {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), timeoutMs);
   try {
-    return await probeFilters(ac.signal, retrieve);
+    return await probeFilters(ac.signal, impossible, retrieve);
   } catch {
     return null;
   } finally {
@@ -109,15 +127,17 @@ export async function probe(
   timeoutMs = 60_000,
   retryDelaysMs: readonly number[] = RETRY_DELAYS_MS,
   retrieve: Retrieve = retrieveOnly,
+  fields: readonly FilterFieldSpec[] = config.filterFields,
 ): Promise<Capabilities> {
   const override = fromEnv();
-  if ('filters' in override) {
-    current = { ...current, ...override };
+  const impossible = impossibleFilter(fields);
+  if ('filters' in override || !impossible) {
+    current = { ...current, filters: false, ...override };
     probed = true;
     return capabilities();
   }
   for (let tries = 0; ; tries += 1) {
-    const filters = await attempt(timeoutMs, retrieve);
+    const filters = await attempt(timeoutMs, impossible, retrieve);
     const delay = retryDelaysMs[tries];
     if (filters !== null || delay === undefined) {
       current = { ...current, filters: filters ?? false, ...override };
