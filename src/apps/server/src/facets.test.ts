@@ -278,13 +278,52 @@ describe('facets, against a Typesense shaped like Kudos', () => {
     assert.equal(asked.length, 2);
   });
 
-  test('cachedFacets never asks Typesense, and gives what is cached', async () => {
-    assert.deepEqual(facets.cachedFacets(FIELDS), []);
-    assert.equal(asked.length, 0);
-    await facets.facets(FIELDS);
+  test('cachedFacets never waits: cold, it gives nothing and warms the cache', async () => {
+    const cold = facets.cachedFacets(FIELDS);
+    assert.deepEqual(cold, []);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(asked.length, 1, 'the cold cache is warmed in the background');
     assert.equal(facets.cachedFacets(FIELDS).length, 3);
     assert.deepEqual(facets.cachedFacets([TYPE]), []);
-    assert.equal(asked.length, 1);
+  });
+
+  test('an expired cache is still given, and a fresh one fetched behind it', async (t) => {
+    await facets.facets(FIELDS);
+    const now = Date.now();
+    t.mock.method(Date, 'now', () => now + 11 * 60 * 1000);
+    assert.equal(facets.cachedFacets(FIELDS).length, 3);
+    assert.equal(asked.length, 2);
+  });
+
+  test('«all» of 457 is still no filter once the cache is ten minutes old', async (t) => {
+    await facets.facets(FIELDS);
+    const now = Date.now();
+    t.mock.method(Date, 'now', () => now + 11 * 60 * 1000);
+    const all = orgs.map((o) => o.value);
+    assert.deepEqual(facets.askFilter({ orgs_long: all }, FIELDS), { ok: true, filter: {} });
+  });
+
+  test('askFilter answers at once, without waiting on Typesense', () => {
+    const answer = facets.askFilter({ type: ['type1'] }, FIELDS);
+    assert.equal(typeof (answer as { then?: unknown }).then, 'undefined');
+    assert.deepEqual(answer, { ok: true, filter: { type: ['type1'] } });
+  });
+
+  test('askFilter gives the 400 body for too many values and for a refused value', () => {
+    const many = orgs.slice(0, 150).map((o) => o.value);
+    assert.deepEqual(facets.askFilter({ orgs_long: many }, FIELDS), {
+      ok: false,
+      body: {
+        error:
+          'Du har valgt 150 virksomheter. Velg høyst 100, eller alle, som er det samme som ingen avgrensning.',
+        code: 'filter-too-many-values',
+        field: 'orgs_long',
+        max: 100,
+      },
+    });
+    const refused = facets.askFilter({ type: ['a`b'] }, FIELDS);
+    assert.equal(refused.ok, false);
+    assert.equal(!refused.ok && refused.body.code, 'filter-invalid-value');
   });
 
   test('gives up on a Typesense that does not answer, with a timeout on the call', async () => {

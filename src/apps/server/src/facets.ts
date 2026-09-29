@@ -66,13 +66,70 @@ export async function facets(
 }
 
 /**
- * The facets already fetched, without asking Typesense. For `/api/ask`, which
- * must not wait on Typesense to learn what «all» is: without a cache, a
- * field with every value selected is sent as it is, and the 400 still holds.
+ * The facets already fetched, without waiting on Typesense. For `/api/ask`,
+ * which must not wait to learn what «all» is.
+ *
+ * A cache past its ten minutes is still given, and a fresh one is fetched in
+ * the background: which values a corpus has changes in days, and an expired
+ * cache made «all selected» a 400 on the first question after a quiet ten
+ * minutes (KA CC). A cold cache gives nothing and is warmed for the next one.
  */
 export function cachedFacets(fields: FilterFieldSpec[] = config.filterFields): FacetField[] {
-  if (!cache || cache.key !== cacheKey(fields) || Date.now() - cache.at >= TTL_MS) return [];
+  if (!cache || cache.key !== cacheKey(fields)) {
+    void facets(fields).catch(() => {});
+    return [];
+  }
+  if (Date.now() - cache.at >= TTL_MS) void facets(fields).catch(() => {});
   return cache.data;
+}
+
+export type AskFilter =
+  | { ok: true; filter: Record<string, string[]> }
+  | { ok: false; body: FilterTooManyValuesBody | FilterInvalidValueBody };
+
+interface FilterTooManyValuesBody {
+  error: string;
+  code: 'filter-too-many-values';
+  field: string;
+  max: number;
+}
+
+interface FilterInvalidValueBody {
+  error: string;
+  code: 'filter-invalid-value';
+  field: string;
+}
+
+/**
+ * The filter a question is asked with, or the 400 to answer instead.
+ * Synchronous on purpose: it cannot wait on Typesense, only read the cache.
+ */
+export function askFilter(
+  raw: unknown,
+  fields: FilterFieldSpec[] = config.filterFields,
+): AskFilter {
+  try {
+    return { ok: true, filter: cleanFilter(raw, cachedFacets(fields), fields) };
+  } catch (err) {
+    if (err instanceof FilterTooManyValues) {
+      return {
+        ok: false,
+        body: {
+          error: err.message,
+          code: 'filter-too-many-values',
+          field: err.field,
+          max: MAX_SELECTED_VALUES,
+        },
+      };
+    }
+    if (err instanceof FilterInvalidValue) {
+      return {
+        ok: false,
+        body: { error: err.message, code: 'filter-invalid-value', field: err.field },
+      };
+    }
+    throw err;
+  }
 }
 
 /** For tests: forget the cache. */

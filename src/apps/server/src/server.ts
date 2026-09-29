@@ -12,15 +12,7 @@ import { capabilitiesResponse } from './datasetConfig.ts';
 import { ask, setAllowedTools } from './mcp.ts';
 import { toAgents } from './models.ts';
 import * as convos from './conversations.ts';
-import {
-  cachedFacets,
-  cleanFilter,
-  facets,
-  FilterInvalidValue,
-  FilterTooManyValues,
-  MAX_SELECTED_VALUES,
-  toFilterBy,
-} from './facets.ts';
+import { askFilter, facets, toFilterBy } from './facets.ts';
 import { sessionMiddleware, type SessionVars } from './session.ts';
 import * as sourceStore from './sourceStore.ts';
 import * as threadFilters from './threadFilters.ts';
@@ -176,32 +168,10 @@ app.post('/api/ask', async (c) => {
   }
 
   // Only what is cached: a question must not wait on Typesense to learn what
-  // «all» is. A cold cache is warmed for the next one.
-  const known = cachedFacets();
-  if (!known.length) void facets().catch(() => {});
-  let requested: Record<string, string[]>;
-  try {
-    requested = cleanFilter((body as { filter?: unknown }).filter, known);
-  } catch (err) {
-    if (err instanceof FilterTooManyValues) {
-      return c.json(
-        {
-          error: err.message,
-          code: 'filter-too-many-values',
-          field: err.field,
-          max: MAX_SELECTED_VALUES,
-        },
-        400,
-      );
-    }
-    if (err instanceof FilterInvalidValue) {
-      return c.json(
-        { error: err.message, code: 'filter-invalid-value', field: err.field },
-        400,
-      );
-    }
-    throw err;
-  }
+  // «all» is (`askFilter`).
+  const asked = askFilter((body as { filter?: unknown }).filter);
+  if (!asked.ok) return c.json(asked.body, 400);
+  const requested = asked.filter;
   const model =
     typeof (body as { model?: unknown }).model === 'string'
       ? (body as { model: string }).model
