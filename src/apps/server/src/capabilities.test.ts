@@ -111,6 +111,26 @@ describe('probe', () => {
     assert.equal(calls, 4);
   });
 
+  test('a filter the backend refuses with a JSON-RPC error is not a yes', async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+      const call = JSON.parse(String(init?.body)) as { params: { arguments: object } };
+      const payload =
+        'overrides' in call.params.arguments
+          ? { jsonrpc: '2.0', id: 1, error: { code: -32602, message: 'Invalid filter' } }
+          : { jsonrpc: '2.0', id: 1, result: { structuredContent: { chunks: [{}, {}] } } };
+      return new Response(JSON.stringify(payload), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }) as typeof fetch;
+    try {
+      const caps = await probe(1000, [], undefined, [TYPE]);
+      assert.equal(caps.filters, false);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+
   test('when the retries run out, it settles on no', async () => {
     const caps = await probe(10, [0, 0], async () => null, [TYPE]);
     assert.equal(caps.filters, false);
