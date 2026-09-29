@@ -11,6 +11,7 @@ let probeFilters: Module['probeFilters'];
 let probe: Module['probe'];
 let probeComplete: Module['probeComplete'];
 let impossibleFilter: Module['impossibleFilter'];
+let refused: Module['refused'];
 
 before(async () => {
   ({
@@ -20,6 +21,7 @@ before(async () => {
     probe,
     probeComplete,
     impossibleFilter,
+    refused,
   } = await import('./capabilities.ts'));
 });
 
@@ -145,5 +147,34 @@ describe('impossibleFilter', () => {
     assert.equal(impossibleFilter([]), undefined);
     assert.equal(caps.filters, false);
     assert.equal(asked, false);
+  });
+});
+
+describe('refused', () => {
+  test('a JSON-RPC error with no result is a refusal, as #15 answers a bad filter', () => {
+    const body = JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      error: { code: -32602, message: 'x' },
+    });
+    assert.equal(refused(body), true);
+    assert.equal(refused(`event: message\ndata: ${body}\n\n`), true);
+  });
+
+  test('a tool error in the result is a refusal', () => {
+    assert.equal(refused('{"jsonrpc":"2.0","id":1,"result":{"isError":true}}'), true);
+  });
+
+  test('a result, streamed or not, is not', () => {
+    const body = JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      result: { structuredContent: { chunks: [] } },
+    });
+    assert.equal(refused(body), false);
+    assert.equal(
+      refused(`data: {"method":"notifications/progress"}\n\ndata: ${body}\n\n`),
+      false,
+    );
   });
 });

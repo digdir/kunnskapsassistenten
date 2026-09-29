@@ -75,7 +75,26 @@ async function retrieveOnly(filterBy: unknown, signal: AbortSignal): Promise<num
   });
   if (!res.ok) return null;
   const text = await res.text();
-  return text.includes('"isError":true') ? null : countChunks(text);
+  return refused(text) ? null : countChunks(text);
+}
+
+/** A tool error in the result, or a JSON-RPC error with no result: #15 refuses a bad filter so. */
+export function refused(text: string): boolean {
+  if (text.includes('"isError":true')) return true;
+  const bodies = text.trimStart().startsWith('{')
+    ? [text]
+    : text
+        .split('\n')
+        .filter((line) => line.startsWith('data: '))
+        .map((line) => line.slice(6));
+  return bodies.some((body) => {
+    try {
+      const msg = JSON.parse(body) as { error?: unknown; result?: unknown };
+      return msg.error !== undefined && msg.result === undefined;
+    } catch {
+      return false;
+    }
+  });
 }
 
 export type Retrieve = (filterBy: unknown, signal: AbortSignal) => Promise<number | null>;
