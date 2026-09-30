@@ -161,14 +161,22 @@ describe('cleanFilter', () => {
     );
   });
 
-  test('drops unknown fields, non-lists and non-strings', () => {
+  test('drops non-lists and non-strings under a known field', () => {
     assert.deepEqual(
       facets.cleanFilter(
-        { junk: ['x'], type: null, orgs_long: 'Digdir', concerned_years: [5, {}] },
+        { type: null, orgs_long: 'Digdir', concerned_years: [5, {}] },
         [],
         FIELDS,
       ),
       {},
+    );
+  });
+
+  test('refuses a key that is not a configured field, instead of dropping it', () => {
+    // Dropped, it was a filter the reader asked for and never got.
+    assert.throws(
+      () => facets.cleanFilter({ junk: ['x'] }, [], FIELDS),
+      (err: unknown) => err instanceof facets.FilterUnknownField && err.field === 'junk',
     );
   });
 
@@ -336,6 +344,32 @@ describe('facets, against a Typesense shaped like Kudos', () => {
     const answer = facets.askFilter({ type: ['type1'] }, FIELDS);
     assert.equal(typeof (answer as { then?: unknown }).then, 'undefined');
     assert.deepEqual(answer, { ok: true, filter: { type: ['type1'] } });
+  });
+
+  test('askFilter gives a 400 for a key that is not a field, naming it, instead of dropping it', () => {
+    // Found by #4 in the pod, 30.09: the facet ids instead of the field names
+    // gave 200 and an answer from the whole corpus, the filter gone unsaid.
+    assert.deepEqual(facets.askFilter({ year: ['2024'] }, FIELDS), {
+      ok: false,
+      body: {
+        error:
+          'Filteret har feltet «year», som ikke finnes. Feltene er «type», «orgs_long», «concerned_years», som i field i /api/facets.',
+        code: 'filter-unknown-field',
+        field: 'year',
+      },
+    });
+    const mixed = facets.askFilter({ type: ['type1'], documentType: ['type2'] }, FIELDS);
+    assert.equal(!mixed.ok && mixed.body.code, 'filter-unknown-field');
+    assert.equal(!mixed.ok && mixed.body.field, 'documentType');
+  });
+
+  test('askFilter still takes the field names, and an empty filter', () => {
+    assert.deepEqual(facets.askFilter({ concerned_years: ['2024'] }, FIELDS), {
+      ok: true,
+      filter: { concerned_years: ['2024'] },
+    });
+    assert.deepEqual(facets.askFilter({}, FIELDS), { ok: true, filter: {} });
+    assert.deepEqual(facets.askFilter(undefined, FIELDS), { ok: true, filter: {} });
   });
 
   test('askFilter gives the 400 body for too many values and for a refused value', () => {

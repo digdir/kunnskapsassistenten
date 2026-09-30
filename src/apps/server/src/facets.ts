@@ -114,7 +114,10 @@ export function cachedFacets(fields: FilterFieldSpec[] = config.filterFields): F
 
 export type AskFilter =
   | { ok: true; filter: Record<string, string[]> }
-  | { ok: false; body: FilterTooManyValuesBody | FilterInvalidValueBody };
+  | {
+      ok: false;
+      body: FilterTooManyValuesBody | FilterInvalidValueBody | FilterUnknownFieldBody;
+    };
 
 interface FilterTooManyValuesBody {
   error: string;
@@ -126,6 +129,12 @@ interface FilterTooManyValuesBody {
 interface FilterInvalidValueBody {
   error: string;
   code: 'filter-invalid-value';
+  field: string;
+}
+
+interface FilterUnknownFieldBody {
+  error: string;
+  code: 'filter-unknown-field';
   field: string;
 }
 
@@ -155,6 +164,12 @@ export function askFilter(
       return {
         ok: false,
         body: { error: err.message, code: 'filter-invalid-value', field: err.field },
+      };
+    }
+    if (err instanceof FilterUnknownField) {
+      return {
+        ok: false,
+        body: { error: err.message, code: 'filter-unknown-field', field: err.field },
       };
     }
     throw err;
@@ -208,6 +223,30 @@ export class FilterInvalidValue extends Error {
   }
 }
 
+/**
+ * A key in the filter that is not a field in `KA_FILTER_FIELDS`. Answered as
+ * 400, never dropped.
+ *
+ * It used to be skipped, so a client that sent the facet ids — `year`,
+ * `documentType` — instead of the field names got 200 and an answer from the
+ * whole corpus, with nothing to say its filter had gone (found by #4 in the
+ * pod, 30.09). The filter is keyed by the corpus's field names, as
+ * `/api/facets` gives them in `field`; the message names the ones there are.
+ */
+export class FilterUnknownField extends Error {
+  readonly field: string;
+
+  constructor(field: string, known: string[]) {
+    super(
+      `Filteret har feltet «${field}», som ikke finnes. ` +
+        (known.length
+          ? `Feltene er ${known.map((f) => `«${f}»`).join(', ')}, som i field i /api/facets.`
+          : 'Det er ingen filterfelt satt opp.'),
+    );
+    this.field = field;
+  }
+}
+
 /** More values in one field than the backend takes. Answered as 400, never cut. */
 export class FilterTooManyValues extends Error {
   readonly field: string;
@@ -225,8 +264,9 @@ export class FilterTooManyValues extends Error {
 
 /**
  * Only configured fields, and only lists of strings. A field with every known
- * value selected is the same as no filter on it, and is left out. A value the
- * backend would refuse, and more than it takes, are a 400 and never dropped.
+ * value selected is the same as no filter on it, and is left out. A key that
+ * is not a configured field, a value the backend would refuse, and more
+ * values than it takes are a 400 and never dropped.
  */
 export function cleanFilter(
   raw: unknown,
@@ -234,6 +274,10 @@ export function cleanFilter(
   fields: FilterFieldSpec[] = config.filterFields,
 ): Record<string, string[]> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const configured = fields.map((spec) => spec.field);
+  for (const key of Object.keys(raw)) {
+    if (!configured.includes(key)) throw new FilterUnknownField(key, configured);
+  }
   const out: Record<string, string[]> = {};
   for (const spec of fields) {
     const values = (raw as Record<string, unknown>)[spec.field];

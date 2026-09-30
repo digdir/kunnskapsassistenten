@@ -105,6 +105,16 @@ export interface FilterInvalidValue {
   field: string;
 }
 
+/**
+ * `400` from `POST /api/ask` when the filter has a key that is not one of the
+ * corpus's field names (`field` in `/api/facets`), such as a facet id.
+ */
+export interface FilterUnknownField {
+  error: string;
+  code: 'filter-unknown-field';
+  field: string;
+}
+
 /** `400` from `POST /api/ask` when one field has more values than the backend takes. */
 export interface FilterTooManyValues {
   error: string;
