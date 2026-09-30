@@ -205,6 +205,33 @@ describe('documentUrl safety', () => {
     assert.ok(!sources[0]?.url.startsWith('data:'));
   });
 
+  test('a UUID goes to /dokument/, where Kudos has it, and a number to /documents/', async () => {
+    const uuid = '650630f6-36a8-4119-bd65-5ea0af7b8718';
+    const sources = await mcp.toSources(
+      [
+        { chunk_id: 'c1', doc_num: uuid },
+        { chunk_id: 'c2', doc_num: '370449' },
+      ],
+      async () => new Map(),
+    );
+    assert.equal(sources[0]?.url, `https://kudos.example/dokument/${uuid}`);
+    assert.equal(sources[1]?.url, 'https://kudos.example/documents/370449');
+  });
+
+  test('a number in neither shape gets no link, and nothing reaches the path', async () => {
+    const sources = await mcp.toSources(
+      [
+        { chunk_id: 'c1', doc_num: '../admin?x=1' },
+        { chunk_id: 'c2', doc_num: 'doc-7' },
+      ],
+      async () => new Map(),
+    );
+    assert.deepEqual(
+      sources.map((s) => s.url),
+      ['', ''],
+    );
+  });
+
   test('an ordinary https url is kept', async () => {
     const sources = await mcp.toSources(
       [{ chunk_id: 'c1', doc_num: '42', url: 'https://kudos.dfo.no/documents/42' }],

@@ -111,13 +111,27 @@ function safeHttpUrl(value: string): string {
   }
 }
 
-/** `/documents/<n>`, not `/files/` — the latter 404s. */
+const DIGITS = /^\d+$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * `/documents/<n>`, not `/files/` — the latter 404s.
+ *
+ * Kudos answers the two shapes of a document number at different addresses
+ * (measured 30.09): `/documents/<number>` is a 301 to the document,
+ * `/documents/<uuid>` is a 404, and `/dokument/<uuid>` is the document. The
+ * Kudos API now gives only UUIDs (headless-rag #25), so a corpus loaded again
+ * after that fix has them. A number in neither shape gets no link rather than
+ * a guess, which also keeps anything but digits or a UUID out of the path.
+ */
 function documentUrl(chunk: ResultChunk): string {
   if (chunk.url) {
     const safe = safeHttpUrl(chunk.url);
     if (safe) return safe;
   }
-  if (chunk.doc_num) return `${config.kudosBase}/documents/${chunk.doc_num}`;
+  const num = chunk.doc_num?.trim() ?? '';
+  if (DIGITS.test(num)) return `${config.kudosBase}/documents/${num}`;
+  if (UUID.test(num)) return `${config.kudosBase}/dokument/${num}`;
   return '';
 }
 
