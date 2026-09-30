@@ -72,8 +72,17 @@ describe('shapeFacet', () => {
   });
 
   test('counts the year in Norway, not in UTC', () => {
-    assert.equal(facets.currentYear(new Date('2026-12-31T23:30:00Z')), 2027);
-    assert.equal(facets.currentYear(new Date('2026-12-31T22:30:00Z')), 2026);
+    // The machine's zone is set to UTC for this test, as the container's is.
+    // Left alone, a Mac in Norway would pass it with or without the fix.
+    const zone = process.env.TZ;
+    process.env.TZ = 'UTC';
+    try {
+      assert.equal(facets.currentYear(new Date('2026-12-31T23:30:00Z')), 2027);
+      assert.equal(facets.currentYear(new Date('2026-12-31T22:30:00Z')), 2026);
+    } finally {
+      if (zone === undefined) delete process.env.TZ;
+      else process.env.TZ = zone;
+    }
   });
 
   test('the year policy follows the id, not the field name', () => {
