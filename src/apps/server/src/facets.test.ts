@@ -54,12 +54,26 @@ describe('shapeFacet', () => {
   test('drops year values that are page numbers or parse noise', () => {
     const f = facets.shapeFacet(
       YEAR,
-      counts(['2436', 40], ['1989', 1], ['2036', 1], ['2024', 1], ['1990', 1], ['2035', 1]),
+      counts(['2436', 40], ['1989', 1], ['2024', 1], ['1990', 1], ['0', 1]),
+      2026,
     );
     assert.deepEqual(
       f.options.map((o) => o.value),
-      ['2035', '2024', '1990'],
+      ['2024', '1990'],
     );
+  });
+
+  test('ends at this year, not at the year a plan runs to', () => {
+    const f = facets.shapeFacet(YEAR, counts(['2027', 88], ['2026', 40], ['2025', 900]), 2026);
+    assert.deepEqual(
+      f.options.map((o) => o.value),
+      ['2026', '2025'],
+    );
+  });
+
+  test('counts the year in Norway, not in UTC', () => {
+    assert.equal(facets.currentYear(new Date('2026-12-31T23:30:00Z')), 2027);
+    assert.equal(facets.currentYear(new Date('2026-12-31T22:30:00Z')), 2026);
   });
 
   test('the year policy follows the id, not the field name', () => {
@@ -204,30 +218,35 @@ describe('cleanFilter', () => {
 /**
  * A Typesense that behaves like the real one: it returns the most frequent
  * `max_facet_values` values per field and no more. The corpus is Kudos's
- * shape, measured 29.09: 8 types, 457 organisations, and 1006 distinct
- * `concerned_years` of which 46 are years — and the years with the fewest
+ * shape, measured 29.09 and 30.09: 8 types, 457 organisations, and 1006
+ * distinct `concerned_years`, of which 46 are years from 1990 on — 9 of them
+ * after this one, the years plans run to — and the years with the fewest
  * documents are rarer than much of the noise.
+ *
+ * The years are laid out from this year rather than from 2026, so the test
+ * says the same thing next year.
  */
 describe('facets, against a Typesense shaped like Kudos', () => {
   const types = Array.from({ length: 8 }, (_, i) => ({ value: `type${i}`, count: 3000 - i }));
   const orgs = Array.from({ length: 457 }, (_, i) => ({ value: `org${i}`, count: 900 - i }));
-  const realYears = Array.from({ length: 46 }, (_, i) => ({
-    value: String(1990 + i),
-    count: i < 10 ? 6 + i : 1000 + i,
-  }));
   const noise = Array.from({ length: 960 }, (_, i) => ({
     value: String(2100 + i),
     count: 20 + (i % 30),
   }));
-  const byField: Record<string, Array<{ value: string; count: number }>> = {
-    type: types,
-    orgs_long: orgs,
-    concerned_years: [...realYears, ...noise],
-  };
+  let byField: Record<string, Array<{ value: string; count: number }>> = {};
+  let pastYears = 0;
 
   let asked: URL[] = [];
   const realFetch = globalThis.fetch;
   before(() => {
+    const thisYear = facets.currentYear();
+    pastYears = thisYear - 1990 + 1;
+    const years = Array.from({ length: pastYears + 9 }, (_, i) => ({
+      value: String(1990 + i),
+      count: i < 10 ? 6 + i : 1000 + i,
+    }));
+    byField = { type: types, orgs_long: orgs, concerned_years: [...years, ...noise] };
+
     globalThis.fetch = (async (input: string | URL) => {
       const url = new URL(String(input));
       asked.push(url);
@@ -253,16 +272,17 @@ describe('facets, against a Typesense shaped like Kudos', () => {
     assert.ok(Number(asked[0]?.searchParams.get('max_facet_values')) >= 1006);
   });
 
-  test('gives every organisation and every year: 8, 457 and 46', async () => {
+  test('gives every organisation and every year up to this one: 8, 457 and 37 in 2026', async () => {
     const found = await facets.facets(FIELDS);
     assert.deepEqual(
       found.map((f) => [f.id, f.options.length]),
       [
         ['documentType', 8],
         ['organisation', 457],
-        ['year', 46],
+        ['year', pastYears],
       ],
     );
+    assert.equal(found[2]?.options[0]?.value, String(facets.currentYear()));
     assert.deepEqual(found[2]?.options.at(-1), { value: '1990', count: 6 });
   });
 

@@ -19,8 +19,25 @@ const cacheKey = (fields: FilterFieldSpec[]) => fields.map((f) => f.field).join(
  */
 export const MAX_FACET_VALUES = 2000;
 
-/** Years outside this span are parse noise like 2436, not years. */
-export const YEAR_SPAN = { from: 1990, to: 2035 } as const;
+/** The first year kept. Earlier values are page numbers and parse noise. */
+export const FIRST_YEAR = 1990;
+
+/**
+ * The year it is in Norway, and the last year kept.
+ *
+ * Not a fixed year: a plan or an allocation letter names the year it runs to,
+ * so `concerned_years` holds years no document is from yet. With 2035 as the
+ * end, Kudos offered 2027–2035 (measured 30.09, 27 to 88 documents each).
+ * Read on every fetch, so it moves on New Year without a deploy.
+ *
+ * Oslo, not the server's clock: the container runs in UTC, and an hour into
+ * the new year in Norway it is still the old one there.
+ */
+export function currentYear(now = new Date()): number {
+  return Number(
+    new Intl.DateTimeFormat('en', { timeZone: 'Europe/Oslo', year: 'numeric' }).format(now),
+  );
+}
 
 /** What the backend takes per field: 1 to 100 values. */
 export const MAX_SELECTED_VALUES = 100;
@@ -150,10 +167,11 @@ export function resetFacetCache(): void {
   inflight = null;
 }
 
-/** No empty values; years only inside `YEAR_SPAN`, newest first; the rest by count. */
+/** No empty values; years from `FIRST_YEAR` to this year, newest first; the rest by count. */
 export function shapeFacet(
   spec: FilterFieldSpec,
   counts: FacetOption[] | undefined,
+  thisYear = currentYear(),
 ): FacetField {
   const years = spec.id === 'year';
   const options = (counts ?? [])
@@ -162,7 +180,7 @@ export function shapeFacet(
       if (o.value.trim() === '') return false;
       if (!years) return true;
       const y = Number(o.value);
-      return Number.isInteger(y) && y >= YEAR_SPAN.from && y <= YEAR_SPAN.to;
+      return Number.isInteger(y) && y >= FIRST_YEAR && y <= thisYear;
     })
     .sort((a, b) =>
       years
