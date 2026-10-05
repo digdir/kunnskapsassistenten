@@ -206,6 +206,16 @@ describe('readableExcerptText, HTML is text or nothing', () => {
     );
   });
 
+  test('leaves no tag or comment that taking another one out put together', () => {
+    expect(readableExcerptText('Før <scr<script>ipt> etter.')).toBe('Før etter.');
+    expect(readableExcerptText('Før <!<!<!-- -->-- -->-- skjult --> etter.')).toBe('Før etter.');
+    expect(readableExcerptText('Før <scr<b>ipt>alert(1)</scr</b>ipt> etter.')).toBe('Før etter.');
+    expect(readableExcerptText('| Sum <scr<script>ipt> | 5 |')).toBe('Sum · 5');
+    expect(readableHeading('<sp<b>an id="page-4-0"></span>1 Leders beretning')).toBe(
+      '1 Leders beretning',
+    );
+  });
+
   test('shows an escaped tag as the characters the document meant', () => {
     expect(readableExcerptText('Feltet heter &lt;span&gt; i malen.')).toBe(
       'Feltet heter <span> i malen.',

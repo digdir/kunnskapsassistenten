@@ -58,4 +58,16 @@ describe('distinctTitles', () => {
     expect(names.get('doc-egen')).toBe('Årsrapport Datatilsynet 2023');
     expect(names.get('90777')).toBe('Årsrapport Datatilsynet 2023');
   });
+
+  it('gir ikke et opplastet dokument nummer, selv når to i korpuset deler tittelen med det', () => {
+    // Her teller korpuset to, og uten at fila selv holdes utenfor, ville den
+    // fått et nummer den ikke har i Kudos (KA CC på #249, kan 1).
+    const title = 'Årsrapport Datatilsynet 2023';
+    const own: SourceDocument = { ...doc('doc-egen', title), origin: 'user' };
+    const names = distinctTitles([doc('90777', title), own, doc('88640', title)]);
+
+    expect(names.get('doc-egen')).toBe(title);
+    expect(names.get('90777')).toBe(`${title}, dokument 90777`);
+    expect(names.get('88640')).toBe(`${title}, dokument 88640`);
+  });
 });

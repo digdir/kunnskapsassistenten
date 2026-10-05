@@ -257,7 +257,7 @@ export async function proxy(
     if (controller.signal.aborted) return;
     response.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
     response.end(JSON.stringify({ error: 'Fikk ikke kontakt med backend.' }));
-    console.error('[ka] proxy mot %s feilet: %s', target.href, String(error));
+    console.error('[ka] proxy mot %s feilet: %s', JSON.stringify(target.href), String(error));
     return;
   }
 

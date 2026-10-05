@@ -1,0 +1,52 @@
+# CodeQL on our own code, so its alerts show up here before the client is
+# copied to digdir/kunnskapsassistenten, where code scanning runs with GitHub's
+# default setup. Same language and same query suite as there: the extended
+# one, which is where log injection is (digdir/kunnskapsassistenten#129).
+#
+# JavaScript and TypeScript need no build: CodeQL reads the source as it is.
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (javascript-typescript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # Uploading the results is what puts the alerts on the PR.
+      security-events: write
+    env:
+      # The whole repo on a PR too, not only the lines it changes. The copy in
+      # digdir arrives as one PR where every line is new, so this is what it
+      # will be told; and a guard in one file can be what a sink in another
+      # depends on, which a diff of the guard alone would not show.
+      CODEQL_ACTION_DIFF_INFORMED_QUERIES: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          build-mode: none
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:javascript-typescript

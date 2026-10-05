@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
+import { format } from 'node:util';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { accessToken } from './access.ts';
 import { createHandler } from './app.ts';
@@ -257,6 +258,26 @@ describe('/api/facets', () => {
     expect(asked).toHaveLength(2);
   });
 
+  it('skriver navnet på datasettet på én linje i loggen, også med linjeskift i', async () => {
+    // A line break in a logged value starts a line of its own, and that line
+    // can claim to be anything (CodeQL js/log-injection).
+    const dataset = 'kudos-full\n[ka] alt i orden';
+    await start({
+      KA_FACET_COLLECTIONS: `${dataset}=KUDOS_docs v4`,
+      VITE_KA_FILTER_FIELDS: FIELDS.replace('kudos-full', dataset),
+    });
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    answer = { status: 500, body: '{}' };
+
+    const response = await fetch(`${base}/api/facets?dataset=${encodeURIComponent(dataset)}`);
+
+    expect(response.status).toBe(502);
+    expect(logged).toHaveBeenCalledOnce();
+    const line = format(...logged.mock.calls[0]);
+    expect(line).not.toContain('\n');
+    expect(line).toContain(JSON.stringify(dataset));
+  });
+
   it('spør Typesense én gang for mange forespørsler, også samtidige', async () => {
     // Panelet spør ved hvert klikk, og det skal ikke bli et kall til Benjamins
     // Typesense hver gang.
@@ -325,6 +346,30 @@ describe('/api/facets', () => {
     expect(response.status).toBe(200);
     expect(warned).toHaveBeenCalledOnce();
     expect(String(warned.mock.calls[0])).toContain('type');
+  });
+
+  it('skriver advarselen om grensen på én linje, også med linjeskift i datasettet', async () => {
+    const dataset = 'kudos-full\n[ka] alt i orden';
+    await start({
+      KA_FACET_COLLECTIONS: `${dataset}=KUDOS_docs v4`,
+      VITE_KA_FILTER_FIELDS: FIELDS.replace('kudos-full', dataset),
+    });
+    const warned = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const full = Array.from({ length: MAX_FACET_VALUES }, (_, index) => ({
+      value: `Type ${index}`,
+      count: MAX_FACET_VALUES - index,
+    }));
+    answer = {
+      status: 200,
+      body: JSON.stringify({ facet_counts: [{ field_name: 'type', counts: full }] }),
+    };
+
+    await fetch(`${base}/api/facets?dataset=${encodeURIComponent(dataset)}`);
+
+    expect(warned).toHaveBeenCalledOnce();
+    const line = format(...warned.mock.calls[0]);
+    expect(line).not.toContain('\n');
+    expect(line).toContain(JSON.stringify(dataset));
   });
 
   it('spør ikke Typesense i mock', async () => {

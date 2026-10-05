@@ -160,8 +160,9 @@ export function excerptRoute(config: ExcerptConfig) {
     try {
       json(response, 200, { excerpts: await loadExcerpts(config, collection, ids) });
     } catch (error) {
-      // A configured dataset's name, never what the browser sent.
-      console.error('[ka] utdragene for %s feilet: %s', dataset, String(error));
+      // A configured dataset's name, never what the browser sent. Quoted all
+      // the same, so a line break in it cannot start a log line of its own.
+      console.error('[ka] utdragene for %s feilet: %s', JSON.stringify(dataset), String(error));
       json(response, 502, { error: 'Fikk ikke hentet utdragene.' });
     }
   };

@@ -1,10 +1,16 @@
 # Egen backend i testmiljøet
 
 Testmiljøets frontend spør vår egen `digdir-headless-rag` i Azure Container
-Apps, med samme bilde og samme korpus som lokalt: grenen
-`fix/mcp-retrieve-filter-by`, tenant `kudos` og datasett `kudos-full` mot
-Benjamins Typesense. Backenden har bare intern adresse, og databasen ligger i
-Azure Database for PostgreSQL. Malen er `deploy/rag.bicep`.
+Apps, med tenant `kudos` og datasett `kudos-full` mot Typesense med hele
+Kudos. Backenden har bare intern adresse, og databasen ligger i Azure Database
+for PostgreSQL. Malen er `deploy/rag.bicep`.
+
+**Bildet er upstream `main` fra 05.10** (`1c65865` i
+digdir/digdir-headless-rag). Før det kjørte grenen `fix/mcp-retrieve-filter-by`
+(`a836b91`), og det bildet står i registeret til
+[tilbakerullingen](#tilbakerulling). Byttet står i
+[Et nytt bilde](#et-nytt-bilde), og målingene i
+[Målt i Azure 05.10](#målt-i-azure-0510).
 
 **Rullet ut i `rg-ka-test` 28.09.** Backenden kjører på Postgres og svarer
 gjennom frontenden. Hva som er målt der, står i
@@ -12,8 +18,8 @@ gjennom frontenden. Hva som er målt der, står i
 [Det som ikke er målt](#det-som-ikke-er-målt). Oppsettet ble først prøvd
 lokalt i samme form; se [Prøve det lokalt](#prøve-det-lokalt).
 
-`test.rag.digdir.cloud` svarer ikke med agentene (`mode_not_allowed`) og tar
-ikke imot filteret, og det er Benjamins oppsett og kode. Derfor en egen backend.
+`test.rag.digdir.cloud` svarte ikke med agentene (`mode_not_allowed`) og tok
+ikke imot filteret da dette ble satt opp. Derfor en egen backend.
 
 ## Hva som lages
 
@@ -33,8 +39,8 @@ Navnene på serveren og lagringskontoen har det samme suffikset som registeret,
 fordi alle tre er avledet av ressursgruppa. Delingen heter `ka-rag-db` fordi
 databasen lå der først; se [Hvorfor Postgres](#hvorfor-postgres).
 
-Utenfor Azure, som lokalt: Benjamins Typesense, Azure OpenAI (`gpt-5.6-terra`)
-og ColBERT.
+Utenfor Azure, som lokalt: Typesense med hele Kudos, Azure OpenAI
+(`gpt-5.6-terra`) og ColBERT.
 
 ## Før du begynner
 
@@ -49,15 +55,17 @@ og ColBERT.
   Ingen av dem står i oppskriften.
 - **På maskinen:** headless-rag-checkouten i
   `~/projects/kunnskapsassistenten/digdir-headless-rag` med `.env`
-  (Azure OpenAI-verdiene) og `.env.benjamin` (Typesense og ColBERT), og grenen
-  pushet. `git`, `openssl` og `jq`.
+  (Azure OpenAI-verdiene) og `.env.benjamin` (Typesense og ColBERT). `git`,
+  `openssl` og `jq`.
 
 **Hver kommando står alene.** Ingen variabel går fra én blokk til den neste.
-Det som må følge med, ligger i to filer: commiten i
-`~/.cache/ka-rag-test/commit` (steg 1) og verdiene i
-`~/.config/ka-rag-test/parameters.json` (steg 2). Hver `az`-kommando begynner
-med `--subscription Altinn-AI-Assistant`, og med `-g rg-ka-test` rett etter der
-kommandoen tar en ressursgruppe. Kommandoene kjøres fra rota i dette repoet.
+Det som må følge med, ligger i filer: commiten i
+`~/.cache/ka-rag-test/commit` (steg 1), verdiene i
+`~/.config/ka-rag-test/parameters.json` (steg 2), og ved et nytt bilde
+revisjonen som skal stoppes, i `~/.cache/ka-rag-test/revisjon.gammel`. Hver
+`az`-kommando begynner med `--subscription Altinn-AI-Assistant`, og med
+`-g rg-ka-test` rett etter der kommandoen tar en ressursgruppe. Kommandoene
+kjøres fra rota i dette repoet.
 
 ## Steg 0: sjekken
 
@@ -77,11 +85,11 @@ Postgres og lagringen. Linja gir også `STOPP` når `az` selv feiler.
 ## Steg 1: kildene og bildet
 
 Commiten skrives til en fil, så bildet, seed-skriptet og utrullingene senere
-bruker samme commit selv om grenen flytter seg i mellomtiden.
+bruker samme commit selv om `main` flytter seg i mellomtiden.
 
 ```sh
-git -C "$HOME/projects/kunnskapsassistenten/digdir-headless-rag" fetch origin fix/mcp-retrieve-filter-by
-mkdir -p "$HOME/.cache/ka-rag-test" && git -C "$HOME/projects/kunnskapsassistenten/digdir-headless-rag" rev-parse origin/fix/mcp-retrieve-filter-by > "$HOME/.cache/ka-rag-test/commit"
+git -C "$HOME/projects/kunnskapsassistenten/digdir-headless-rag" fetch origin main
+mkdir -p "$HOME/.cache/ka-rag-test" && git -C "$HOME/projects/kunnskapsassistenten/digdir-headless-rag" rev-parse origin/main > "$HOME/.cache/ka-rag-test/commit"
 rm -rf "$HOME/.cache/ka-rag-test/src" && mkdir -p "$HOME/.cache/ka-rag-test/src" && git -C "$HOME/projects/kunnskapsassistenten/digdir-headless-rag" archive "$(cat "$HOME/.cache/ka-rag-test/commit")" | tar -x -C "$HOME/.cache/ka-rag-test/src"
 cat "$HOME/.cache/ka-rag-test/commit"
 ```
@@ -93,8 +101,8 @@ cat "$HOME/.cache/ka-rag-test/commit"
 `--file` leses fra mappa kommandoen kjøres i, ikke fra kilden, så kommandoen
 går inn i kildemappa først og bygger `.`. Parentesene holder `cd` inne i
 kommandoen, så skallet står i repo-rota etterpå, der steg 3 og 6 finner
-`deploy/rag.bicep`. Denne formen er målt i Azure 28.09: bygget tok 6 minutter
-og 59 sekunder.
+`deploy/rag.bicep`. Denne formen er målt i Azure: bygget tok 6 min 59 s for
+`a836b91` 28.09, og 6 min 45 s for `1c65865` 05.10.
 
 Bildet bygges fra en `git archive` av commiten, ikke fra repo-mappa.
 headless-rag har ingen `.dockerignore`, så `az acr build` fra mappa ville
@@ -316,16 +324,20 @@ første åtte tegnene av nøkkelen i `:api-key-prefix`, og `sed` tar dem ut før
 de vises, også om anførselstegnene kommer escapet:
 
 ```sh
-az containerapp logs show --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-rag-test --format text --tail 100 | grep -E "init-db|e2e/seeded|Started oejs.Server" | sed -E 's/:api-key-prefix[^,}]*/:api-key-prefix skjult/'
+az containerapp logs show --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-rag-test --format text --tail 100 | grep -E "init-db|e2e/seeded|Provider switch|Started oejs.Server" | sed -E 's/:api-key-prefix[^,}]*/:api-key-prefix skjult/'
 ```
 
 Første gang skal `init-db` vise `backend=:jdbc`, og linja med `e2e/seeded`
 skal vise `:agents-after 8` og `:api-key-existed? false`. Ved senere
-oppstarter står det `true`.
+oppstarter står det `true`. `Provider switch check` skal ha `:violations []`
+og `:credential-violations []`. Ellers starter ikke appen, og linja sier
+hvilken sti som mangler. `:unreadable 1` sto der også i Azure 05.10, og den
+stopper ikke oppstarten.
 
 Oppstartsproben venter i inntil 130 sekunder på `/up`. Lokalt, mot Postgres og
 med 2 CPU og 4 GiB som her, svarte den etter 43 sekunder. I Azure tok
 utrullingen 2 min 49 s, og appen sto som `Running` med bare intern ingress.
+Med `1c65865` startet Jetty 78 s etter JVM-en (05.10).
 
 ## Steg 7: frontenden peker på backenden
 
@@ -412,9 +424,10 @@ er ikke gjort.
 - **Én skriver.** Datahike tåler én prosess som skriver, også i Postgres.
   Derfor én replika, og seed-jobben bare når appen ikke finnes (steg 5).
 - **Nye revisjoner overlapper.** En ny revisjon av `ka-rag-test` (nytt bilde,
-  ny variabel, ny secret) startes før den gamle stoppes, så to JVM-er har
-  databasen åpen en liten stund. Hva Datahike gjør da, er ikke målt. Om en
-  omstart av samme revisjon også overlapper, er heller ikke målt.
+  ny variabel, ny secret) startes før den gamle stoppes. Ved et nytt bilde
+  stoppes den gamle for hånd, se [Et nytt bilde](#et-nytt-bilde). Hva
+  Datahike gjør når to JVM-er har databasen åpen, er ikke målt. Om en omstart
+  av samme revisjon også overlapper, er heller ikke målt.
 - **Sikkerhetskopi:** Flexible Server tar dem selv, og malen beholder dem i sju
   dager (`backupRetentionDays`). Innenfor de sju dagene kan serveren
   gjenopprettes til et tidspunkt, som en ny server.
@@ -444,12 +457,86 @@ leser dem.
 
 ## Et nytt bilde
 
-Steg 1 gir ny commit i `~/.cache/ka-rag-test/commit` og nytt bilde. Kjør så
-utrullingen i steg 6. Jobben får det nye bildet samtidig.
+Slik ble backenden byttet fra `a836b91` til `1c65865` 05.10. Det gir et brudd
+på om lag fem minutter, og spørsmål i frontenden får ikke svar så lenge.
+
+Ta vare på commiten som kjører, så tilbakerullingen har den. `-n` skriver ikke
+over en fil som finnes, og på macOS avslutter `cp` da med 1:
+
+```sh
+cp -n "$HOME/.cache/ka-rag-test/commit" "$HOME/.cache/ka-rag-test/commit.$(cut -c1-7 "$HOME/.cache/ka-rag-test/commit")"
+```
+
+Så steg 1, som skriver den nye commiten og bygger bildet. Jobben får det nye
+bildet samtidig med appen i steg 6.
+
+Skriv revisjonen som kjører, til en fil, og noter tidspunktet i UTC. Postgres
+kan gjenopprettes til det tidspunktet i sju dager, som en ny server:
+
+```sh
+az containerapp revision list --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-rag-test --query "[?properties.active].name" -o tsv > "$HOME/.cache/ka-rag-test/revisjon.gammel" && cat "$HOME/.cache/ka-rag-test/revisjon.gammel" && date -u '+%Y-%m-%dT%H:%M:%SZ'
+```
+
+Lista skal ha én revisjon. Deaktiver den. Her begynner bruddet:
+
+```sh
+az containerapp revision deactivate --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-rag-test --revision "$(cat "$HOME/.cache/ka-rag-test/revisjon.gammel")"
+```
+
+Kjør steg 6. **Kjør deaktiveringen over igjen med en gang steg 6 er
+ferdig.** Malen setter den deaktiverte revisjonen tilbake til 100 % trafikk
+før den lager den nye, og da starter begge. Den første deaktiveringen holder
+dem altså ikke fra hverandre, det er den andre som gjør det. Uten den første
+er ikke prøvd. Så skal bare den nye være aktiv, med 100 %:
+
+```sh
+az containerapp revision list --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-rag-test --all --query "[].{name:name,active:properties.active,health:properties.healthState,traffic:properties.trafficWeight,replicas:properties.replicas}" -o table
+```
+
+Sjekk så at den gamle ikke rakk databasen. Loggen fra en revisjon som er
+stoppet, kan ikke leses med `logs show`, men den står i Log Analytics, i
+tabellen `ContainerAppConsoleLogs_CL`. Kommandoen slår opp arbeidsområdet
+selv, og viser JVM-starten, `init-db` og Jetty for alle revisjonene den siste
+timen. Tiden er containerens egen (`time_t`), i UTC, den samme som
+`logs show` viser. `TimeGenerated` kommer opp mot et sekund senere:
+
+```sh
+az monitor log-analytics query --subscription Altinn-AI-Assistant -w "$(az containerapp env show --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-frontend-test-env --query properties.appLogsConfiguration.logAnalyticsConfiguration.customerId -o tsv)" --analytics-query "ContainerAppConsoleLogs_CL | where TimeGenerated > ago(1h) | where ContainerAppName_s == 'ka-rag-test' | where Log_s has_any ('JAVA_TOOL_OPTIONS', 'init-db', 'Started oejs.Server') | project T = format_datetime(time_t, 'HH:mm:ss'), Rev = RevisionName_s, L = substring(Log_s, 0, 60) | order by T asc" --query "[].[T, Rev, L]" -o tsv
+```
+
+**Har den gamle revisjonen en `init-db` etter sin siste JVM-start, rakk den
+databasen mens den nye startet.** Målt 05.10: malen satte den gamle
+tilbake kl. 14:56:13 UTC, og JVM-en startet 14:56:19. Steg 6 var ferdig etter
+3 min 21 s, og den gamle ble deaktivert igjen 14:57:08, uten noe etter
+JVM-starten i loggen. Den nye startet JVM-en 14:56:24 og nådde `init-db`
+14:57:38, 74 s senere. Det er ikke en garanti, og derfor sjekken.
+
+Til slutt loggsjekken fra steg 6, og et spørsmål med og uten filter gjennom
+frontenden, også etter ny innlasting.
 
 En ny seeding over en tenant som alt er seedet, er ikke prøvd, verken lokalt
 eller her. Skal det gjøres, må appen først slettes, så steg 5 og 6 gjelder som
 første gang. Databasen står når appen slettes.
+
+## Tilbakerulling
+
+Bildet `ka-rag-test:a836b91…` står i registeret, og commiten ligger i
+`~/.cache/ka-rag-test/commit.a836b91`. Ta vare på commiten som kjører, som i
+[Et nytt bilde](#et-nytt-bilde), og legg den gamle tilbake:
+
+```sh
+cp "$HOME/.cache/ka-rag-test/commit.a836b91" "$HOME/.cache/ka-rag-test/commit"
+```
+
+Resten er som et nytt bilde uten steg 1: revisjonen til fila, deaktiveringen,
+steg 6, og deaktiveringen igjen med en gang steg 6 er ferdig.
+
+Databasen trenger ikke å rulles tilbake for dette. Målt lokalt 05.10:
+`a836b91` startet på en database som `1c65865` hadde skrevet i, filtrene
+stemte, og alle trådene kunne leses. Ser databasen likevel ødelagt ut,
+gjenopprettes Postgres til tidspunktet du noterte, som en ny server, og
+`ADH_POSTGRES_URL` pekes dit. Det er en større operasjon, og ingenting i
+målingene tyder på at den trengs.
 
 ## Hvis parameterfila er borte
 
@@ -625,6 +712,26 @@ Målt av dirigenten i `rg-ka-test`.
 | Svartid gjennom frontenden                        | DFØ-spørsmålet med filteret Årsrapport: 38 s, 915 tegn, DFØs årsrapport 2024 som kilde. Antallsspørsmålet: 19 s. I nettleseren: «Hva skriver Statens vegvesen om trafikksikkerhet i årsrapporten for 2024?» på 19,8 s, med svar og kilde og 0 konsollfeil. |
 | Korpuset                                          | agenten svarte «10 064 dokumenter» med fordeling per type, som stemmer med Typesense (10 064 dokumenter og 621 244 biter)                                                                                                                                  |
 
+## Målt i Azure 05.10
+
+Byttet fra `a836b91` til `1c65865`, i `rg-ka-test`. Tidene er UTC. JVM-start,
+`init-db` og Jetty er fra containerens egen logg (`logs show`, og `time_t` i
+Log Analytics for den stoppede revisjonen), og sekundene mellom dem er regnet
+med desimalene.
+
+| Hva                                            | Målt                                                                                                                                                                                                                                                       |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bildet `ka-rag-test:1c65865`                   | bygget med `az acr build` fra en `git archive` på 6 min 45 s                                                                                                                                                                                               |
+| Malen                                          | uendret siden 28.09, så utrullingen endret bare bildet til appen og jobben                                                                                                                                                                                 |
+| Bruddet                                        | fra den gamle revisjonen ble deaktivert 14:53, til Jetty i den nye startet 14:57:43                                                                                                                                                                        |
+| Steg 6                                         | `Succeeded` på 3 min 21 s. Den nye revisjonen `ka-rag-test--0000001` var `Healthy` med 100 % trafikk.                                                                                                                                                      |
+| Den deaktiverte revisjonen                     | satt tilbake til 100 % av malen 14:56:13, JVM-start 14:56:19, deaktivert igjen 14:57:08, og ingenting etter JVM-starten i loggen                                                                                                                           |
+| Oppstarten av den nye                          | JVM-start 14:56:24, `init-db env=:remote backend=:jdbc` 14:57:38, Jetty 14:57:43                                                                                                                                                                           |
+| Sjekkene i loggen                              | `Placeholder-secret check` med 12 sjekket og 0 brudd, `Required boot environment` med 6 og 0, `e2e/seeded` med 8 agenter før og etter og nøkkelen fra før, og `Provider switch check` med `:violations []`, `:credential-violations []` og `:unreadable 1` |
+| Spørsmål uten filter, gjennom ka-frontend-test | 19 s, 1 529 tegn og 1 kilde. Før byttet: 21 s og 1 kilde.                                                                                                                                                                                                  |
+| Spørsmål med filteret Årsrapport               | 13 s, 975 tegn, låst, og 3 kilder som alle er årsrapporter. Før byttet: 19 s og 2 kilder.                                                                                                                                                                  |
+| Etter ny innlasting                            | svaret, kildene og låsen som før, og 0 konsollfeil                                                                                                                                                                                                         |
+
 ## Det som ikke er målt
 
 Ikke målt i Azure 28.09:
@@ -632,8 +739,9 @@ Ikke målt i Azure 28.09:
 - **ColBERT fra Container Apps.** Ikke sjekket for seg. Svarene kom, men loggen
   er ikke lest for reranking.
 - **Tråden etter en omstart av backenden.** Lokalt sto den der.
-- **Revisjoner som overlapper under en utrulling**, og hva Datahike gjør når to
-  JVM-er har databasen åpen samtidig.
+- **Hva Datahike gjør når to JVM-er har databasen åpen samtidig.** 05.10 ble
+  den gamle revisjonen stoppet før den rakk databasen, se
+  [Et nytt bilde](#et-nytt-bilde).
 - **Sertifikatsjekk.** `sslmode=require` sjekker ikke serverens sertifikat, og
   det er ikke endret.
 - **Vakta over ingressen.** At `refuse-if-server-running!` i jobben ser appen

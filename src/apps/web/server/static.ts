@@ -2,7 +2,7 @@ import { once } from 'node:events';
 import { createReadStream } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import type { ServerResponse } from 'node:http';
-import { join, normalize, resolve, sep } from 'node:path';
+import { isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 
 /**
@@ -46,7 +46,10 @@ function contentType(path: string): string {
  * `normalize` resolves `..` before the join rather than after, so a request
  * for `/../../etc/passwd` cannot walk out of the built client. The check
  * afterwards is the belt to that braces: whatever the path turned into, it
- * has to still be inside `distDir`.
+ * has to still be inside `distDir`. It is written as `path.relative` and a
+ * test for a leading `..` because that is the form CodeQL knows as a guard;
+ * the `startsWith(root + sep)` it replaced meant the same and was reported as
+ * a path built from user input (digdir/kunnskapsassistenten#129).
  */
 export function resolveInside(distDir: string, urlPath: string): string | undefined {
   const decoded = (() => {
@@ -61,7 +64,9 @@ export function resolveInside(distDir: string, urlPath: string): string | undefi
 
   const root = resolve(distDir);
   const candidate = resolve(join(root, normalize(decoded)));
-  return candidate === root || candidate.startsWith(root + sep) ? candidate : undefined;
+  const inside = relative(root, candidate);
+  if (inside === '..' || inside.startsWith('..' + sep) || isAbsolute(inside)) return undefined;
+  return candidate;
 }
 
 async function sendFile(

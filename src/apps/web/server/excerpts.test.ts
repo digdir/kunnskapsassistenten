@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { createServer, type Server } from 'node:http';
+import { format } from 'node:util';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHandler } from './app.ts';
 import { readConfig, type ServerConfig } from './config.ts';
@@ -219,6 +220,25 @@ describe('/api/excerpts', () => {
     expect(text).not.toContain('Forbidden');
     expect(JSON.parse(text)).toEqual({ error: 'Fikk ikke hentet utdragene.' });
     expect(String(logged.mock.calls[0])).toContain('403');
+  });
+
+  it('skriver navnet på datasettet på én linje i loggen, også med linjeskift i', async () => {
+    // A line break in a logged value starts a line of its own, and that line
+    // can claim to be anything (CodeQL js/log-injection).
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const dataset = 'kudos-full\n[ka] alt i orden';
+    answer = { status: 500, body: '{}' };
+    await start({ KA_CHUNK_COLLECTIONS: `${dataset}=KUDOS_chunks v4` });
+
+    const response = await fetch(
+      `${base}/api/excerpts?dataset=${encodeURIComponent(dataset)}&ids=ef0a96e7e2bb`,
+    );
+
+    expect(response.status).toBe(502);
+    expect(logged).toHaveBeenCalledOnce();
+    const line = format(...logged.mock.calls[0]);
+    expect(line).not.toContain('\n');
+    expect(line).toContain(JSON.stringify(dataset));
   });
 
   it('svarer 502 når Typesense aldri svarer, etter tidsavbruddet', async () => {

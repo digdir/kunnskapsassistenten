@@ -81,6 +81,26 @@ const LINE_BREAK_TAG = /<br\s*\/?>/gi;
 const TAG = /<\/?[a-z][a-z0-9-]*(?:[\s/][^<>]*)?>/gi;
 
 /**
+ * `patterns` taken out in turn, round after round, until a round changes
+ * nothing.
+ *
+ * One round can put together what it took apart: `<scr<script>ipt>` loses the
+ * tag in the middle and leaves `<script>`, and a comment inside a comment
+ * leaves a comment. Repeated, neither is left on screen. This is for the
+ * reader and not for safety: the text is only drawn as text (see the top of
+ * this file), so a tag that was left would be seen, not run.
+ */
+function removeUntilStable(text: string, ...patterns: RegExp[]): string {
+  let result = text;
+  let previous: string;
+  do {
+    previous = result;
+    for (const pattern of patterns) result = result.replace(pattern, '');
+  } while (result !== previous);
+  return result;
+}
+
+/**
  * Superscript as the characters for it, so a footnote mark or an exponent
  * stays raised: `Husleie<sup>1)</sup>` reads «Husleie¹⁾», `m<sup>2</sup>`
  * reads «m²». Content with a character that has no superscript form keeps
@@ -178,15 +198,13 @@ function decodeEntities(text: string): string {
  * theirs; `*` counts only with no space just inside it, so «5 * 3» keeps its.
  */
 function stripInline(text: string): string {
+  // Superscript before the other tags go, or it would go with them.
+  const withRaised = removeUntilStable(text, SCRIPT_OR_STYLE, HTML_COMMENT).replace(
+    SUPERSCRIPT_TAG,
+    (_, inner: string) => raised(removeUntilStable(inner, TAG).trim()) ?? inner,
+  );
   return (
-    text
-      .replace(SCRIPT_OR_STYLE, '')
-      .replace(HTML_COMMENT, '')
-      .replace(
-        SUPERSCRIPT_TAG,
-        (_, inner: string) => raised(inner.replace(TAG, '').trim()) ?? inner,
-      )
-      .replace(TAG, '')
+    removeUntilStable(withRaised, SCRIPT_OR_STYLE, HTML_COMMENT, TAG)
       // ![alt](src) before [text](href), or the image would leave its «!».
       .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
       .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
@@ -236,10 +254,11 @@ function tableRow(line: string): string | undefined {
  * a line break, so the view draws them with `white-space: pre-line`.
  */
 export function readableExcerptText(markdown: string): string {
-  const lines = protectEscapes(markdown.replace(/\r\n?/g, '\n'))
-    .replace(SCRIPT_OR_STYLE, '')
-    .replace(HTML_COMMENT, '')
-    .split('\n');
+  const lines = removeUntilStable(
+    protectEscapes(markdown.replace(/\r\n?/g, '\n')),
+    SCRIPT_OR_STYLE,
+    HTML_COMMENT,
+  ).split('\n');
 
   const readable: string[] = [];
   for (const raw of lines) {

@@ -32,11 +32,18 @@ const STORAGE_KEY = 'ka.user.v1';
  */
 let cached: string | undefined;
 
+/**
+ * `randomUUID` is only there in a secure context, so a page served over plain
+ * http from anything but localhost goes without it. `getRandomValues` is there
+ * all the same, and it is the one to fall back on rather than `Math.random()`:
+ * the id is not a secret, but it is what keeps one reader's threads apart from
+ * the next one's, and it should not be guessable.
+ */
 function newUserId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `ka-${crypto.randomUUID()}`;
-  }
-  return `ka-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  if (typeof crypto.randomUUID === 'function') return `ka-${crypto.randomUUID()}`;
+
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return `ka-${Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')}`;
 }
 
 export function currentUserId(): string {

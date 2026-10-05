@@ -241,7 +241,7 @@ async function loadFacets(config: FacetConfig, dataset: string): Promise<Facet[]
         '[ka] Typesense ga %d verdier for %s i %s, like mange som grensen. Noen kan mangle; se MAX_FACET_VALUES i server/facets.ts.',
         counts.length,
         field,
-        dataset,
+        JSON.stringify(dataset),
       );
     }
     const options = shapeOptions(dimension, counts);
@@ -296,8 +296,9 @@ export function facetRoute(config: FacetConfig) {
       json(response, 200, { facets: await facetsFor(dataset) });
     } catch (error) {
       // Only a configured dataset gets this far, so the name in the line is
-      // one of ours and not whatever the browser sent.
-      console.error('[ka] fasettene for %s feilet: %s', dataset, String(error));
+      // one of ours and not whatever the browser sent. Quoted all the same, so
+      // a line break in it cannot start a log line of its own.
+      console.error('[ka] fasettene for %s feilet: %s', JSON.stringify(dataset), String(error));
       json(response, 502, { error: 'Fikk ikke hentet filtrene.' });
     }
   };

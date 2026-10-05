@@ -41,9 +41,15 @@ describe('InfoPage', () => {
   it('beholder lenkene til filmene, som lenker', () => {
     render(<InfoPage title="Onboarding" parts={onboardingParts} />);
 
+    // The host name, not a substring of the address: «vimeo.com» can stand
+    // anywhere in a URL, also in one that goes somewhere else.
     const films = screen
       .getAllByRole('link')
-      .filter((link) => link.getAttribute('href')?.includes('vimeo.com'));
+      .filter(
+        (link) =>
+          new URL(link.getAttribute('href') ?? '', window.location.href).hostname ===
+          'player.vimeo.com',
+      );
 
     expect(films.map((link) => link.textContent)).toEqual([
       'Oppfølgingsspørsmål i Kunnskapsassistenten 2025',

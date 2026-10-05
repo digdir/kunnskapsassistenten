@@ -695,6 +695,31 @@ describe('SourcesView, Kudos-lenker som skiller seg fra hverandre', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
+  it('gir sidelenka i et utdrag samme nummer som kortet', () => {
+    // Lenka som åpner siden sitatet står på, har dokumentets navn i seg, og
+    // to slike lenker fra to dokumenter med samme tittel heter ellers det
+    // samme (KA CC på #249, kan 1).
+    const title = 'Årsrapport Datatilsynet 2023';
+    const pdf = 'https://kudos.dfo.no/documents/90777/filer/rapport.pdf#page=41';
+    const first = documentWith('90777', title, [1, 2]);
+    const twice = [
+      {
+        ...first,
+        url: 'https://kudos.dfo.no/documents/90777',
+        excerpts: first.excerpts.map((excerpt) =>
+          excerpt.citationNumber === 2 ? { ...excerpt, page: 41, kudosUrl: pdf } : excerpt,
+        ),
+      },
+      { ...documentWith('88640', title, [3]), url: 'https://kudos.dfo.no/documents/88640' },
+    ];
+    render(<SourcesView documents={twice} />);
+
+    const link = screen.getByRole('link', {
+      name: 'Les side 41 på Kudos, utdrag 2, Årsrapport Datatilsynet 2023, dokument 90777 (åpnes i ny fane)',
+    });
+    expect(link.getAttribute('href')).toBe(pdf);
+  });
+
   it('lar den synlige teksten være i fred', () => {
     // Tillegget er `ds-sr-only`: en seende leser skal fortsatt se de fire
     // ordene Figma har, ikke dokumenttittelen om igjen under hvert sitat.
