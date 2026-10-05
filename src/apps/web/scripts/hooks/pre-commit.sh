@@ -16,7 +16,11 @@
 # Regelen under er derfor: si fra når verktøyet mangler et sted det SKAL
 # være, og hold kjeft der det ikke hører hjemme.
 
-if [ ! -x node_modules/.bin/lint-staged ]; then
+# I workspace-et i src/ løfter npm verktøyene til src/node_modules.
+BIN=node_modules/.bin
+[ -x "$BIN/lint-staged" ] || BIN=../../node_modules/.bin
+
+if [ ! -x "$BIN/lint-staged" ]; then
   if grep -q '"lint-staged"' package.json 2>/dev/null; then
     echo "[ka] lint-staged mangler i node_modules. Kjør «npm install»." >&2
     exit 1
@@ -26,4 +30,4 @@ if [ ! -x node_modules/.bin/lint-staged ]; then
   exit 0
 fi
 
-exec node_modules/.bin/lint-staged
+exec "$BIN/lint-staged"

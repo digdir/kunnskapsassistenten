@@ -11,6 +11,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: src
@@ -31,3 +34,53 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  # The client's own checks, beside `check` rather than in it, so the
+  # end-to-end suite does not make the server's job slower. It runs in mock
+  # mode (playwright.config.ts sets VITE_API_MODE), so it needs no secret.
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/package-lock.json
+      - run: npm ci
+      - run: npm run lint --workspace apps/web
+      - run: npm run tokens:verify --workspace apps/web
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e --workspace apps/web
+      # The suite writes its report to ~/.cache/ka-review/e2e, outside the
+      # tree, and upload-artifact does not expand `~`.
+      - if: failure()
+        run: |
+          mkdir -p ../ci-artifacts
+          cp -r "$HOME/.cache/ka-review/e2e" ../ci-artifacts/ 2>/dev/null || true
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: ci-artifacts
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # The image, built before the merge so a broken Dockerfile stops at the pull
+  # request. Nothing is pushed.
+  image:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --tag ka:ci .
+      - name: Start it and ask
+        run: |
+          docker run --detach --rm --name ka --publish 8787:8787 \
+            -e AUTH_MODE=off -e APP_ORIGIN=http://localhost:8787 -e DIGDIR_API_KEY=unused \
+            ka:ci
+          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
+          curl -fsS localhost:8787/ | grep -q '<html lang="nb"'
+          docker stop ka

@@ -7,7 +7,8 @@ COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
 RUN npm ci
 COPY . .
-RUN npm run build
+# The client reads VITE_API_MODE when it is built, and defaults to its mock.
+RUN VITE_API_MODE=bff npm run build
 
 FROM node:22.23.2-alpine AS runtime
 ENV NODE_ENV=production

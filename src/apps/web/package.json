@@ -1,5 +1,5 @@
 {
-  "name": "kunnskapsassistenten-frontend",
+  "name": "@ka/web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -25,8 +25,8 @@
     "tokens:verify": "designsystemet tokens create --config designsystemet.config.json && designsystemet tokens build -t ./design-tokens -o ./.tokens-verify && diff -q ./.tokens-verify/digdir.css ./design-tokens-build/digdir.css && diff -q ./.tokens-verify/types.d.ts ./design-tokens-build/types.d.ts && rm -rf ./.tokens-verify && echo 'tokens:verify OK'"
   },
   "simple-git-hooks": {
-    "pre-commit": "[ -f scripts/hooks/pre-commit.sh ] || exit 0; sh scripts/hooks/pre-commit.sh",
-    "pre-push": "[ -f scripts/hooks/pre-push.sh ] || exit 0; sh scripts/hooks/pre-push.sh"
+    "pre-commit": "[ -f src/apps/web/scripts/hooks/pre-commit.sh ] || exit 0; cd src/apps/web && sh scripts/hooks/pre-commit.sh",
+    "pre-push": "[ -f src/apps/web/scripts/hooks/pre-push.sh ] || exit 0; cd src/apps/web && sh scripts/hooks/pre-push.sh"
   },
   "lint-staged": {
     "*.css": "stylelint",
