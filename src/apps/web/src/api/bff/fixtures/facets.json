@@ -1,0 +1,222 @@
+{
+  "facets": [
+    {
+      "field": "type",
+      "label": "dokumenttyper",
+      "options": [
+        {
+          "count": 3378,
+          "highlighted": "Tildelingsbrev",
+          "value": "Tildelingsbrev"
+        },
+        {
+          "count": 1709,
+          "highlighted": "Statusrapport",
+          "value": "Statusrapport"
+        },
+        {
+          "count": 1472,
+          "highlighted": "Evaluering",
+          "value": "Evaluering"
+        },
+        {
+          "count": 1418,
+          "highlighted": "Årsrapport",
+          "value": "Årsrapport"
+        },
+        {
+          "count": 1071,
+          "highlighted": "Proposisjon til Stortinget",
+          "value": "Proposisjon til Stortinget"
+        },
+        {
+          "count": 475,
+          "highlighted": "Strategi/plan",
+          "value": "Strategi/plan"
+        },
+        {
+          "count": 332,
+          "highlighted": "Instruks",
+          "value": "Instruks"
+        },
+        {
+          "count": 209,
+          "highlighted": "Melding til Stortinget",
+          "value": "Melding til Stortinget"
+        }
+      ]
+    },
+    {
+      "field": "orgs_long",
+      "label": "virksomheter",
+      "options": [
+        {
+          "count": 920,
+          "highlighted": "Kunnskapsdepartementet",
+          "value": "Kunnskapsdepartementet"
+        },
+        {
+          "count": 912,
+          "highlighted": "Justis- og beredskapsdepartementet",
+          "value": "Justis- og beredskapsdepartementet"
+        },
+        {
+          "count": 674,
+          "highlighted": "Helse- og omsorgsdepartementet",
+          "value": "Helse- og omsorgsdepartementet"
+        },
+        {
+          "count": 639,
+          "highlighted": "Kommunal- og distriktsdepartementet",
+          "value": "Kommunal- og distriktsdepartementet"
+        },
+        {
+          "count": 589,
+          "highlighted": "Arbeids- og inkluderingsdepartementet",
+          "value": "Arbeids- og inkluderingsdepartementet"
+        },
+        {
+          "count": 575,
+          "highlighted": "Nærings- og fiskeridepartementet",
+          "value": "Nærings- og fiskeridepartementet"
+        },
+        {
+          "count": 540,
+          "highlighted": "Norges forskningsråd",
+          "value": "Norges forskningsråd"
+        },
+        {
+          "count": 534,
+          "highlighted": "Politi- og lensmannsetaten",
+          "value": "Politi- og lensmannsetaten"
+        },
+        {
+          "count": 470,
+          "highlighted": "Samferdselsdepartementet",
+          "value": "Samferdselsdepartementet"
+        },
+        {
+          "count": 436,
+          "highlighted": "Helsedirektoratet",
+          "value": "Helsedirektoratet"
+        }
+      ]
+    },
+    {
+      "field": "concerned_years",
+      "label": "år",
+      "options": [
+        {
+          "count": 27,
+          "highlighted": "2035",
+          "value": "2035"
+        },
+        {
+          "count": 26,
+          "highlighted": "2034",
+          "value": "2034"
+        },
+        {
+          "count": 31,
+          "highlighted": "2033",
+          "value": "2033"
+        },
+        {
+          "count": 33,
+          "highlighted": "2032",
+          "value": "2032"
+        },
+        {
+          "count": 33,
+          "highlighted": "2031",
+          "value": "2031"
+        },
+        {
+          "count": 61,
+          "highlighted": "2030",
+          "value": "2030"
+        },
+        {
+          "count": 60,
+          "highlighted": "2029",
+          "value": "2029"
+        },
+        {
+          "count": 70,
+          "highlighted": "2028",
+          "value": "2028"
+        },
+        {
+          "count": 88,
+          "highlighted": "2027",
+          "value": "2027"
+        },
+        {
+          "count": 103,
+          "highlighted": "2026",
+          "value": "2026"
+        },
+        {
+          "count": 1165,
+          "highlighted": "2025",
+          "value": "2025"
+        },
+        {
+          "count": 1883,
+          "highlighted": "2024",
+          "value": "2024"
+        },
+        {
+          "count": 1851,
+          "highlighted": "2023",
+          "value": "2023"
+        },
+        {
+          "count": 1878,
+          "highlighted": "2022",
+          "value": "2022"
+        },
+        {
+          "count": 1798,
+          "highlighted": "2021",
+          "value": "2021"
+        },
+        {
+          "count": 1575,
+          "highlighted": "2020",
+          "value": "2020"
+        },
+        {
+          "count": 324,
+          "highlighted": "2019",
+          "value": "2019"
+        },
+        {
+          "count": 65,
+          "highlighted": "2018",
+          "value": "2018"
+        },
+        {
+          "count": 54,
+          "highlighted": "2017",
+          "value": "2017"
+        },
+        {
+          "count": 43,
+          "highlighted": "2016",
+          "value": "2016"
+        },
+        {
+          "count": 37,
+          "highlighted": "2015",
+          "value": "2015"
+        },
+        {
+          "count": 27,
+          "highlighted": "2014",
+          "value": "2014"
+        }
+      ]
+    }
+  ]
+}

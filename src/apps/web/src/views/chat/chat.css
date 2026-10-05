@@ -1,0 +1,1204 @@
+/*
+ * CSS for the chat view.
+ *
+ * Unlayered on purpose, like the rest of our CSS: unlayered author CSS beats
+ * all layered author CSS, so Designsystemet is overridden without !important.
+ * It lives here rather than in src/styles/global.css because that file
+ * belongs to the foundation and this view owns src/views/chat/.
+ *
+ * No hex colours and no raw font sizes: var(--ds-*) follows the theme, the
+ * size mode and dark mode. The two px values below are measurements from the
+ * design that have no token, and each one says where it comes from — same
+ * pattern as the --ka-* widths in global.css.
+ *
+ * Every rule here that sets `display` has a matching `[hidden]` rule at the
+ * bottom of the file. Unlayered author CSS beats the browser's own
+ * `[hidden] { display: none }`, so without the pair an element stays on
+ * screen after something hides it. See CONTRIBUTING.
+ */
+
+.ka-chat {
+  --ka-chat-content-max-width: 728px; /* content in Figma 1530:44994 */
+  --ka-composer-max-height: 274px; /* chatInput LongText, answer 54 */
+  /* What the greeting and the compose area are each set in from the free
+     room between them. The same on both sides; see `.ka-chat-greeting`. */
+  --ka-chat-room-inset: var(--ds-size-3);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-8);
+  inline-size: 100%;
+  max-inline-size: var(--ka-chat-content-max-width);
+  /* Fills the slot, so a short conversation still keeps the field at the
+     bottom. Figma bottom-aligns the column the same way. */
+  min-block-size: 100%;
+  margin-inline: auto;
+}
+
+/* ---------------------------------------------------------------- greeting */
+
+/*
+ * The greeting and the suggestions stand in the middle of the room between
+ * the top of the page and the top of the box (Simens issue 78): as much air
+ * over «Hei» as between the last suggestion and the field.
+ *
+ * The `auto` here and the one on `.ka-composer-area` share the column's free
+ * height equally, so the two airs are equal when what is fixed on each side
+ * is equal too. Over the greeting that is the column's start padding
+ * (`--ds-size-8`, in global.css) and this padding; under the suggestions it
+ * is the column's gap (`--ds-size-8`) and the compose area's start padding.
+ * Both paddings are `--ka-chat-room-inset`, so the sides match: 44 px each
+ * before the free height is shared out.
+ *
+ * It follows the window's height by itself, without a `dvh` to tune. Where
+ * there is nothing to spare, as on a phone, the margin is 0 and the air is
+ * those 44 px — the least the page gives, so the air can never be what makes
+ * the start screen scroll.
+ *
+ * This was 60 px on a desktop window (Simen, 30.09, about 4rem), from before
+ * the greeting was centred. Kept, it put 48 px more over «Hei» than under the
+ * suggestions, and with the Kudos suggestions on 1280 × 720 it was what made
+ * the page scroll by 35.
+ */
+.ka-chat-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-1);
+  margin-block-start: auto;
+  padding-block-start: var(--ka-chat-room-inset);
+}
+
+/* ------------------------------------------------------------ kickstarters */
+
+/*
+ * A little air over «Forslag», on top of the 32 px gap the column already
+ * puts between it and the greeting. About 1rem on a desktop window (Simen,
+ * 30.09), which is `--ds-size-4` exactly, and half of it on a phone — same
+ * `vw` reasoning as the greeting above.
+ */
+.ka-kickstarters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-1);
+  padding-block-start: clamp(var(--ds-size-2), 1.2vw, var(--ds-size-4));
+}
+
+.ka-kickstarters__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ka-kickstarters__list > li + li {
+  border-block-start: var(--ds-border-width-default) solid var(--ds-color-neutral-border-subtle);
+}
+
+/*
+ * A kickstarter is a tertiary Button (answer 40), but it holds a full
+ * question, so it has to wrap and read as a row rather than as a label.
+ */
+.ka-kickstarter {
+  inline-size: 100%;
+  justify-content: start;
+  align-items: start;
+  gap: var(--ds-size-3);
+  padding-block: var(--ds-size-3);
+  text-align: start;
+  white-space: normal;
+}
+
+.ka-kickstarter__icon {
+  flex-shrink: 0;
+  margin-block-start: var(--ds-size-1);
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/* ---------------------------------------------------------------- messages */
+
+.ka-messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ka-message {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+}
+
+/*
+ * The reader's own question: a box at the end of the line, and the answer
+ * across the column under it (Simens issue 117). Plain and larger than the
+ * answer, as Figma drew it, it read as a heading over the answer card.
+ *
+ * Three things tell the two apart, so none of them carries it alone: the
+ * side, the tinted blue ground, and the width — the question stops short of
+ * the column, the answer fills it. A screen reader hears «Du skrev:».
+ *
+ * Narrower than the column so it reads as a message and not as a band, and
+ * wide enough that a phone does not break a short question over many lines.
+ * The padding is a step in from Designsystemet's card, which is made for
+ * blocks of content and not for a sentence.
+ *
+ * No border. With one, the box was a blue box with a blue edge, which is what
+ * the follow-up suggestions under the field look like — and those are
+ * buttons. A message is not a control, so it is drawn as ground alone. The
+ * box is not a control either, so WCAG 1.4.11 asks nothing of its edge.
+ */
+.ka-message--user {
+  align-items: end;
+}
+
+.ka-message__bubble {
+  --dsc-card-padding: var(--ds-size-3) var(--ds-size-4);
+  --dsc-card-border-color: transparent;
+
+  max-inline-size: 85%;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * «Avgrenset til: Årsrapport · 2023» over the answer.
+ *
+ * Deliberately not a Chip. A Chip is a control — Designsystemet's own note on
+ * Tag says filtering belongs to Chip precisely because chips are pressed and
+ * removed — and this one is a statement about a question that has already
+ * been asked. Set a step in from the card edge, over the answer it framed.
+ * It used to line up with the reader's question, which stood in the same
+ * place; the question is a box at the far side now (Simens issue 117).
+ */
+.ka-filter-summary {
+  margin: 0;
+  padding-inline: var(--ds-size-2);
+  color: var(--ds-color-neutral-text-subtle);
+  font-size: var(--ds-font-size-minus-1);
+}
+
+/* Why a stopped answer has no sources under it. */
+/*
+ * The two notes a turn draws about itself when there is no answer to draw:
+ * one for a turn the reader stopped, one for a turn that failed and has
+ * outlived the alert that explained it. Subtle, because neither is the thing
+ * on the page to read first.
+ */
+.ka-aborted-note,
+.ka-failed-note {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+.ka-answer-card {
+  /* Chat is not a link target: nothing in the card should feel clickable. */
+  cursor: auto;
+}
+
+/*
+ * The «Trenger avklaring» row above the agent's question.
+ *
+ * A paragraph rather than a bare Tag, so the mark sits on its own line with
+ * the card's own block spacing under it and never runs alongside the first
+ * line of the question. One tag, so no list: a `ul` is what several of them
+ * would need to be countable. See designsystemet/komponenter/tag.md.
+ */
+.ka-clarification__label {
+  margin: 0;
+}
+
+/* -------------------------------------------------- tråden som hentes */
+
+/*
+ * The shape of the conversation being read: one question, one answer. Same
+ * stack and same gaps as `.ka-messages`, so nothing moves sideways or jumps
+ * when the real turns take its place.
+ */
+.ka-thread-loading__turn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+}
+
+/* Set in from the card edge, the way the reader's own question is. */
+.ka-thread-loading__question {
+  margin: 0;
+  padding-inline: var(--ds-size-2);
+}
+
+/* ----------------------------------------------------------------- status */
+
+.ka-answer-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+}
+
+/*
+ * One block per skeleton line. Designsystemet's text skeleton is
+ * `display: inline` and gets its width from the dashes it writes into
+ * `data-text`; as a direct flex child it would be blockified and its own
+ * `width: 100%` would take over, turning four ragged lines into four
+ * identical bars.
+ */
+.ka-answer-skeleton__line {
+  margin: 0;
+}
+
+.ka-streaming-status {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-size-2);
+  margin: 0;
+  color: var(--ds-color-neutral-text-subtle);
+  font-size: var(--ds-font-size-minus-1);
+}
+
+/* ---------------------------------------------------------- fremgangsmåte */
+
+/*
+ * «Fremgangsmåte» over the answer at the standard display level (Simens issue
+ * 88, drawn in his issue 113). It draws the same steps as the detailed panel
+ * — the rules below name both — so switching level changes what a step SAYS
+ * and never where it sits.
+ */
+.ka-procedure {
+  inline-size: 100%;
+}
+
+/* The robot in «Fremgangsmåte» and the document in «Kilder brukt i svaret».
+   Same size as Details' own chevron, from the same token, so the two ends of
+   the bar line up. */
+.ka-procedure__icon,
+.ka-sources-summary__icon {
+  font-size: var(--ds-icon-size);
+}
+
+.ka-procedure__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+}
+
+/*
+ * The rule Simen draws between the steps and the keywords. A border and not a
+ * `<hr>`: it separates two blocks that are already two blocks, and an element
+ * of its own would be one more thing for a screen reader to walk past.
+ */
+.ka-procedure__block--ruled {
+  margin-block-start: var(--ds-size-4);
+  padding-block-start: var(--ds-size-4);
+  border-block-start: var(--ds-border-width-default) solid var(--ds-color-neutral-border-subtle);
+}
+
+/* «Tenker …», «Nøkkelord som ble brukt i søket». Subtle, because each one
+   names what is under it rather than saying something of its own. */
+.ka-procedure__label {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-size-2);
+  margin: 0;
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+.ka-procedure__keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-size-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ------------------------------------------------------ kilder i svaret */
+
+/*
+ * «Kilder brukt i svaret» under the answer (Simens issue 113, Figma
+ * 1712:36955): Figma's `blackbox`, a white bar over a grey body, framed and
+ * rounded. The colours are Designsystemet's own Details variables, set to the
+ * two surfaces Figma names, so hover, open and focus stay Designsystemet's.
+ *
+ * Designsystemet frames a Details with a rule above and below and nothing at
+ * the sides. Figma frames it all round, which is what lets it stand as a box
+ * of its own on the white card, and `overflow: clip` rounds the bar's corners
+ * with the frame's.
+ */
+.ka-sources-summary {
+  /*
+   * Figma's 16 px on a desktop, 8 on a phone, where the box can be under 200
+   * px wide and 16 at each side of it is a sixth of the box. 2vw reaches the
+   * ceiling at 800.
+   */
+  --ka-sources-summary-inset: clamp(var(--ds-size-2), 2vw, var(--ds-size-4));
+  --dsc-details-padding: var(--ka-sources-summary-inset);
+  --dsc-details-background: var(--ds-color-neutral-background-tinted);
+  --dsc-details-border-color: var(--ds-color-neutral-border-subtle);
+  --dsc-details-summary-background: var(--ds-color-neutral-surface-default);
+  --dsc-details-summary-background--open: var(--ds-color-neutral-surface-default);
+  --dsc-details-summary-background--hover: var(--ds-color-neutral-surface-hover);
+
+  overflow: clip;
+  /* 32 px from the answer over it and from the closing question under it,
+     as Figma spaces it. The card's own 12 px over the question folds into
+     this. */
+  margin-block: var(--ds-size-8);
+  border: var(--ds-border-width-default) solid var(--ds-color-neutral-border-subtle);
+  border-radius: var(--ds-border-radius-lg);
+}
+
+/* The rule between the bar and the list, there only while the list is. */
+.ka-sources-summary[open] > summary {
+  border-block-end: var(--ds-border-width-default) solid var(--ds-color-neutral-border-subtle);
+}
+
+/*
+ * Figma's 16 px round the list and 24 under it, where Designsystemet puts 20
+ * on every side, and the same step down on a phone as the bar. Designsystemet
+ * writes these in `:where()`, so a class wins.
+ */
+.ka-sources-summary > :not(summary):not(u-summary) {
+  margin: var(--ka-sources-summary-inset) var(--ka-sources-summary-inset)
+    calc(var(--ka-sources-summary-inset) * 1.5);
+}
+
+/*
+ * Document titles are where the long compound nouns are: «kommunikasjons-
+ * myndighet» alone is wider than the box on a phone, and the box clips. So
+ * a word that cannot fit on a line breaks, at a Norwegian hyphenation point
+ * where the browser has one, as the titles in the sources panel do.
+ */
+.ka-sources-summary__list {
+  margin: 0;
+  overflow-wrap: break-word;
+  /* stylelint-disable-next-line plugin/browser-compat -- uprefikset
+     `hyphens` kom i Safari 17; 16 har den bare som `-webkit-hyphens`. Der
+     deles ordet av `overflow-wrap` over i stedet, uten bindestrek. */
+  hyphens: auto;
+}
+
+/* The icon keeps its size when the title next to it wraps. */
+.ka-sources-summary__icon {
+  flex-shrink: 0;
+}
+
+/* «Utdrag 1–2» under a title: what the markers in the text call it. Subtle,
+   because it says something about the row rather than something new. */
+.ka-sources-summary__excerpts {
+  margin: 0;
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/* ------------------------------------------------------------ innstillinger */
+
+/*
+ * Space between two settings in the hidden menu, for the same reason as the
+ * note below: Designsystemet puts none between a Fieldset and what follows
+ * it inside a Dialog.Block, and without it the second legend reads as the
+ * last option of the first group.
+ */
+.ka-settings__group {
+  margin-block-start: var(--ds-size-6);
+}
+
+/*
+ * The line under the choices in the hidden settings menu. Designsystemet puts
+ * no space between a Fieldset and what follows it inside a Dialog.Block, and
+ * without one the note reads as a third option's description.
+ */
+.ka-settings__note {
+  margin-block-start: var(--ds-size-4);
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/* --------------------------------------------------------------- thinking */
+
+/*
+ * «Tenker …» over the answer card. Full width, so it reads as this turn's
+ * header rather than as a control floating beside it.
+ */
+.ka-thinking {
+  inline-size: 100%;
+}
+
+.ka-procedure__summary,
+.ka-sources-summary__title,
+.ka-thinking__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-size-2);
+}
+
+.ka-procedure__steps,
+.ka-thinking__steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * One step, with a dot in the margin. The dot is hollow for a step that is
+ * over and filled for the one being worked on — a shape and not only a
+ * colour, because the marker is the only thing saying which step is current
+ * (WCAG 1.4.1). `aria-current` says the same to a screen reader.
+ */
+.ka-procedure__step,
+.ka-thinking__step {
+  position: relative;
+  padding-inline-start: var(--ds-size-5);
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+.ka-procedure__step::before,
+.ka-thinking__step::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  /* Centres the dot on the first line, whatever the size mode. */
+  /* stylelint-disable-next-line plugin/browser-compat -- `lh` kom i Safari
+     16.4. I 16.0–16.3 faller erklæringen bort og prikken står litt høyere på
+     første linje. Rent kosmetisk. */
+  inset-block-start: calc((1lh - var(--ds-size-2)) / 2);
+  block-size: var(--ds-size-2);
+  inline-size: var(--ds-size-2);
+  border: var(--ds-border-width-default) solid var(--ds-color-neutral-border-strong);
+  border-radius: var(--ds-border-radius-full);
+}
+
+.ka-procedure__step[data-ongoing],
+.ka-thinking__step[data-ongoing] {
+  color: var(--ds-color-neutral-text-default);
+}
+
+.ka-procedure__step[data-ongoing]::before,
+.ka-thinking__step[data-ongoing]::before {
+  background: var(--ds-color-neutral-base-default);
+  border-color: var(--ds-color-neutral-base-default);
+}
+
+.ka-thinking__detail {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/*
+ * «Søkte etter:» og søkestrengene på samme linje, som én setning som brytes.
+ * `baseline` og ikke `center`: lead-in-teksten og teksten inne i taggene skal
+ * stå på samme grunnlinje, ellers flyter ordet over eller under chipene.
+ */
+.ka-thinking__queries {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ds-size-2);
+  margin-block-start: var(--ds-size-2);
+}
+
+.ka-thinking__query-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-size-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* -------------------------------------------------------------- retrieval */
+
+.ka-retrieval__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-size-2);
+}
+
+/* Aksel icons are 1em square, so the size is the font size. The same token
+   Details uses for its own chevron, so the two line up. */
+.ka-retrieval__icon {
+  font-size: var(--ds-icon-size);
+}
+
+.ka-retrieval__keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-size-3);
+  margin-block-start: var(--ds-size-2);
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * A keyword the agent searched on can be a long phrase, and Tag is
+ * `width: max-content` with no upper bound — a long one grew straight out
+ * through the side of the card. Lars saw it 2026-09-15.
+ *
+ * The group already wraps between tags; this lets a single tag wrap inside
+ * itself as well. `anywhere` rather than `break-word` because the worst case
+ * is one unbroken string — a file name or an identifier — that is wider than
+ * the column on its own, and that has to break somewhere or it scrolls
+ * sideways again.
+ */
+.ka-tag--wrapping {
+  /*
+   * `width: max-content` is the one that has to go, and it is not obvious
+   * why: an element with a definite max-content width contributes its
+   * MAX-content size as its min-content size too, so the list item around it
+   * could never be asked to shrink, and a cap of 100% measured against that
+   * item is a cap against the tag's own width. `auto` first, then the cap
+   * means something.
+   *
+   * `flex-shrink` because a tag can itself be a flex item — the hit count
+   * sits in the summary row — and Designsystemet pins it at 0 there.
+   */
+  inline-size: auto;
+  max-inline-size: 100%;
+  flex-shrink: 1;
+  /* `word-break: break-word` is what Designsystemet ships. It breaks, but it
+     does not count towards min-content size, so it cannot get a tag through
+     a narrow column on its own. `anywhere` does both. */
+  word-break: normal;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+/* ---------------------------------------------------------------- actions */
+
+/* The rule above this row is the seam between two Card.Blocks, not a border
+   drawn here. */
+.ka-answer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-size-2);
+}
+
+/*
+ * When the answer came, at the far end of the action row.
+ *
+ * `margin-inline-start: auto` rather than a fixed gap: the row holds between
+ * one and four buttons depending on what the answer is and where the reader
+ * has scrolled, so «after the last one» is not a distance this rule can know.
+ * It gives way when the row wraps, which is what it should do — the time is
+ * the least important thing in the row.
+ *
+ * Subtle and a step down in size, like the receipt under it: it is a fact
+ * about the answer, not something to do.
+ */
+.ka-answer-time {
+  margin-inline-start: auto;
+  color: var(--ds-color-neutral-text-subtle);
+  font-size: var(--ds-font-size-minus-1);
+}
+
+/*
+ * Always rendered, never hidden while empty. It is an aria-live region, and a
+ * region that is `display: none` is not in the accessibility tree — the
+ * region and its text would then appear in the same frame, which announces
+ * nothing. Empty it has no line box and costs only the flex gap.
+ */
+.ka-answer-actions__receipt {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--ds-color-neutral-text-subtle);
+  font-size: var(--ds-font-size-minus-1);
+}
+
+/*
+ * Search inside one answer (brukerreiser punkt 13). A strip under the action
+ * row, in the same Card.Block, so it reads as belonging to the answer above
+ * rather than to the conversation.
+ */
+/*
+ * The strip lives in the shell's view-head now, pinned to the top of the
+ * answer column (brukerblikk 3, funn 1). `.view-head` brings the surface, the
+ * rule under it and the padding, so there is no margin to add here — one at
+ * the top would push the strip off the line the head draws.
+ */
+.ka-answer-search {
+  display: block;
+}
+
+/*
+ * «Søk i svar 2 av 3». Visible, because the strip is no longer inside the
+ * answer it searches, and at the start of the row rather than on a line of
+ * its own: everything pinned here is taken off the reading area for as long
+ * as the reader scrolls.
+ */
+.ka-answer-search__label {
+  flex: 0 0 auto;
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+.ka-answer-search__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-size-2);
+}
+
+/*
+ * Wide enough for a word or two and no wider: it sits beside the counter and
+ * the step buttons, and a field that takes the whole row pushes them onto a
+ * line of their own at every width.
+ */
+.ka-answer-search__field {
+  flex: 1 1 14rem;
+  min-width: 0;
+  max-width: 22rem;
+}
+
+.ka-answer-search__count {
+  margin: 0;
+  color: var(--ds-color-neutral-text-subtle);
+  font-size: var(--ds-font-size-minus-1);
+}
+
+.ka-answer-search__steps {
+  display: flex;
+  gap: var(--ds-size-1);
+}
+
+/*
+ * The same two surfaces the sources panel marks with, so a hit looks like a
+ * hit wherever the reader found it. Warning rather than accent: the answer
+ * already spends accent on the `[n]` markers, and a highlight in the same
+ * colour would read as one more of those.
+ */
+.ka-answer-mark {
+  background: var(--ds-color-warning-surface-tinted);
+  color: var(--ds-color-warning-text-default);
+  border-radius: var(--ds-border-radius-sm);
+}
+
+.ka-answer-mark[data-current='true'] {
+  background: var(--ds-color-warning-base-default);
+  color: var(--ds-color-warning-base-contrast-default);
+}
+
+/* --------------------------------------------------------------- composer */
+
+/*
+ * The compose field stays put while the conversation scrolls behind it. A
+ * chat where the field scrolls away makes the reader hunt for it after every
+ * long answer.
+ */
+.ka-composer-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-3);
+  margin-block-start: auto;
+  position: sticky;
+  /*
+   * Sticky offsets are measured from the scroll container's padding edge, so
+   * a plain 0 would park the field one padding above the bottom and let the
+   * answer show through underneath. The pull-down and the matching padding
+   * take the box all the way to the edge; the negative margin keeps it from
+   * adding that height to the scroll length twice.
+   *
+   * `--ka-main-padding-block-end` is the shell's own, declared in global.css
+   * and set on `.main`, which is the scroller both of these are measured
+   * against. It used to be a copy of the value here, and a copy is a promise
+   * that two files will be edited together — which is exactly what did not
+   * happen when the padding moved off the scroller on 21.09 (#193).
+   */
+  inset-block-end: calc(var(--ka-main-padding-block-end) * -1);
+  margin-block-end: calc(var(--ka-main-padding-block-end) * -1);
+  /*
+   * The shell's own end padding and no more, because the disclaimer stands
+   * under the box now (Simens issue 79) and the air is on both sides of it —
+   * see `.ka-composer__disclaimer`. The box keeps its 3rem of air to the
+   * bottom (Simen, 30.09): 84 px on a desktop window, with the line in it.
+   *
+   * It has to be at least this much, because the padding has a second job:
+   * it is what fills the pull-down above. Anything less than the shell's end
+   * padding would leave a band of answer showing under the field. It carries
+   * `env(safe-area-inset-bottom)` with it, so a phone drawn edge to edge
+   * keeps the disclaimer off the home indicator.
+   *
+   * The start padding is `--ka-chat-room-inset`, which the greeting has too:
+   * see there.
+   */
+  padding-block: var(--ka-chat-room-inset) var(--ka-main-padding-block-end);
+  /* Same ground as the shell, so the field looks fixed rather than boxed. */
+  background: var(--ds-color-neutral-background-tinted);
+}
+
+/*
+ * What the compose field may not hide (WCAG 2.4.11). A link in the answer
+ * reached by Tab, a marker, a hit the answer search scrolls to: each stops
+ * the field's height short of the bottom, so it lands above the field and not
+ * behind it. `--ka-composer-block-size` is measured by the chat view.
+ *
+ * The field and what is in it are left out, and that is the point of doing
+ * it here rather than with `scroll-padding` on the scroller. The padding held
+ * for the field as well, the field sits in the band it keeps clear, and every
+ * keystroke scrolled the column 49 px further down to bring the caret out
+ * from behind itself (Simens runde 3, ekstra 1).
+ */
+.ka-chat * {
+  scroll-margin-block-end: var(--ka-composer-block-size, 0);
+}
+
+.ka-composer-area,
+.ka-composer-area * {
+  scroll-margin-block-end: 0;
+}
+
+/*
+ * «Bla til nederst», over the field and in the middle of it (Simens runde 3,
+ * ekstra 5). In the sticky area, so it moves with the field and stays in one
+ * place wherever the reader is in the conversation.
+ *
+ * Out of the flow, so it costs the area no height and nothing under it moves
+ * when it comes and goes. Over the fade above the field, with the air of a
+ * small step between them.
+ *
+ * Designsystemet's secondary button with the page's own ground behind it:
+ * the variant is transparent, and here it lies over the answer's text. Round
+ * and with the smallest shadow, so it reads as floating over the text rather
+ * than as a part of it.
+ */
+.ka-scroll-to-bottom {
+  --dsc-button-background: var(--ds-color-neutral-background-default);
+  --dsc-button-border-radius: var(--ds-border-radius-full);
+
+  position: absolute;
+  inset-block-end: calc(100% + var(--ds-size-2));
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  /*
+   * On one line. A box that starts halfway across shrinks to fit the half
+   * that is left, and on a phone that broke «Bla til nederst» over two lines
+   * (117 × 58 px at 390 wide).
+   */
+  inline-size: max-content;
+  box-shadow: var(--ds-shadow-sm);
+}
+
+/*
+ * The seam between the answer and the field.
+ *
+ * Without it the card's white surface stops dead where the field begins,
+ * mid-sentence and sometimes just under a heading, and that reads as «the
+ * card is cut off» rather than «there is more further down» (brukerblikk
+ * 2026-09-15, finding 6). The ground fades in over the last few lines
+ * instead, so the text dissolves into the field.
+ *
+ * It sits above the sticky box and moves with it, and takes no pointer
+ * events: the answer under the fade is still text you can select.
+ */
+.ka-composer-area::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 100%;
+  block-size: var(--ds-size-6);
+  background: linear-gradient(to top, var(--ds-color-neutral-background-tinted), transparent);
+  pointer-events: none;
+}
+
+/*
+ * Two rows: the field across the top, the paperclip and the send button under
+ * it, one at each end.
+ *
+ * The three were on one row, which cost less height (høydebudsjett
+ * 2026-09-21, H1) and read badly once the box was tall enough to write in:
+ * the placeholder stood indented at the top and a button hung low on either
+ * side, with nothing lining up (Simens issue 79). Two rows cost the 48 px
+ * back and buy an edge the eye can follow — the field runs the full width of
+ * the box, its text starts over the paperclip and ends over the send button.
+ */
+.ka-composer {
+  /*
+   * How far a tertiary icon button holds its glyph in from its own box: half
+   * of what the icon leaves inside a medium control. The field is set in by
+   * the same amount, so the first letter of the question starts exactly where
+   * the paperclip under it starts (Simens issue 79). A raw 12px would stop
+   * following the size mode the moment anything set `data-size`.
+   */
+  --ka-composer-glyph-inset: calc((var(--ds-size-12) - var(--ds-icon-size)) / 2);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+  padding: var(--ds-size-2);
+  /* White box on the tinted ground, like the answer card. */
+  background: var(--ds-color-neutral-surface-default);
+  border: var(--ds-border-width-default) solid var(--ds-color-neutral-border-default);
+  border-radius: var(--ds-border-radius-xl);
+}
+
+/*
+ * The focus ring is Designsystemet's own, taken from its --dsc-focus-*
+ * custom properties rather than drawn here. The field and the buttons are one
+ * control to a reader, so the ring belongs on the frame around them; the
+ * textarea inside therefore gives up its own border and ring.
+ */
+.ka-composer:focus-within {
+  box-shadow: var(--dsc-focus-boxShadow);
+  /* stylelint-disable-next-line plugin/browser-compat -- MDN fører `outline`
+     som delvis implementert før Safari 16.4: ringen følger ikke
+     `border-radius`, så den blir rektangulær rundt et avrundet felt. Den er
+     der, den er synlig, og fokuskravet er dermed oppfylt — det er formen som
+     avviker. */
+  outline: var(--dsc-focus-outline);
+  outline-offset: var(--ds-border-width-focus);
+}
+
+/*
+ * Textfield puts the field inside a .ds-field-affixes box that carries the
+ * border and the background. The frame around the whole composer carries
+ * those instead, so this one steps aside.
+ */
+.ka-composer__field,
+.ka-composer__field .ds-field-affixes {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+/*
+ * Firefox has no `field-sizing` yet, so the field stays one row there however
+ * long the question is. It still scrolls and still sends, so the degradation
+ * is acceptable; a ResizeObserver to cover it would be a frame behind on
+ * every keystroke in every other browser.
+ */
+.ka-composer__field textarea {
+  /* stylelint-disable-next-line plugin/browser-compat -- Firefox mangler den
+     fortsatt, og avsnittet over sier hvorfor det er greit: feltet blir én rad
+     der, men ruller og sender som ellers. */
+  field-sizing: content; /* grows with the content, answer 54 */
+  max-block-size: var(--ka-composer-max-height);
+  overflow-y: auto;
+  /* stylelint-disable-next-line plugin/browser-compat -- iOS Safari har ingen
+     `resize`, og det er uten betydning her: verdien er `none`, og et felt
+     uten dradhåndtak er nøyaktig det iOS gir fra før. */
+  resize: none; /* the height follows the text; a drag handle would fight it */
+  border: 0;
+  background: transparent;
+  /*
+   * Set in at the start by exactly what the paperclip below is set in by, and
+   * flush at the end, where the send button's own edge is. That is the line
+   * Simen asked for in issue 79: the text lines up with what you can see on
+   * each side, the glyph on one and the filled button on the other.
+   */
+  padding-block: var(--ds-size-1);
+  padding-inline: var(--ka-composer-glyph-inset) 0;
+  /*
+   * About three lines to write in, 90 px on a Mac at 1440 × 900 (Simen,
+   * 30.09). `--ds-size-22` is 88 px at the `md` size mode and the nearest step
+   * on the scale.
+   *
+   * The principle is «room for a real question, never at the cost of a short
+   * screen», so the middle term is `dvh` and the floor is two lines: a laptop
+   * at 720 gets 72 px, a 480 px window gets the 48 px floor, and a phone gets
+   * what its address bar leaves rather than what the page thinks it has. The
+   * field still grows with the text from here up to
+   * `--ka-composer-max-height`.
+   */
+  /* stylelint-disable-next-line plugin/browser-compat -- `dvh` landed in
+     Safari 15.4 and Chrome 108. Where it is missing the declaration is
+     dropped and the field falls back on Designsystemet's own minimum, which
+     is exactly where it stood before. */
+  min-block-size: clamp(var(--ds-size-12), 10dvh, var(--ds-size-22));
+}
+
+.ka-composer__field textarea:focus-visible {
+  box-shadow: none;
+  /* stylelint-disable-next-line plugin/browser-compat -- samme oppføring som
+     over, men her er verdien `none`. Å fjerne en ring virker i alle
+     versjoner; advarselen gjelder formen på en ring som tegnes, og her
+     tegnes ingen. */
+  outline: none;
+}
+
+/*
+ * The files attached to the question being written, over the field.
+ *
+ * They wrap inside the composer's width rather than scrolling sideways: a
+ * reader with four documents should see four, not two and a hidden pair
+ * (#112-regelen).
+ */
+.ka-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-size-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ka-attachments__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-size-1);
+}
+
+.ka-attachments__error {
+  color: var(--ds-color-danger-text-subtle);
+  font-size: var(--ds-font-size-minus-1);
+}
+
+/*
+ * The field while a file is over it. A border and no movement: the box must
+ * not change size under a pointer that is about to let go, or the drop lands
+ * somewhere the reader did not aim.
+ */
+.ka-composer[data-dragging] {
+  border-color: var(--ds-color-accent-border-strong);
+}
+
+.ka-composer__drop-hint,
+.ka-composer__refusal {
+  display: block; /* `output` is inline, and a centred inline centres nothing */
+  margin: 0;
+  text-align: center;
+  font-size: var(--ds-font-size-minus-1);
+}
+
+.ka-composer__drop-hint {
+  color: var(--ds-color-accent-text-subtle);
+}
+
+.ka-composer__refusal {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/* What a question was asked with, under the question itself. */
+.ka-message__attachments {
+  margin-block-start: var(--ds-size-1);
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/*
+ * The field takes what the two buttons leave. `min-inline-size: 0` because a
+ * flex item will not shrink below its content otherwise, and one long
+ * unbroken word would push the send button off the row.
+ */
+.ka-composer__field {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+/* The picker behind the paperclip. See Composer.tsx for why it is not sr-only. */
+.ka-composer__file-input {
+  display: none;
+}
+
+/* Neither button shrinks or stretches: they are icon-sized, the field is not. */
+.ka-composer__attach,
+.ka-composer__send {
+  flex: 0 0 auto;
+}
+
+/*
+ * Round, the way Simen drew it (issue 79). `--ds-border-radius-full` and not
+ * a radius of our own, so the stop button — which is wide, because it carries
+ * the word «Avbryt» — becomes a pill rather than a circle with the text
+ * hanging out of it.
+ */
+.ka-composer__send {
+  border-radius: var(--ds-border-radius-full);
+}
+
+/*
+ * The paperclip when it carries the sentence rather than standing alone.
+ *
+ * It wraps rather than pushing the send button off the row, and it starts
+ * where the glyph of an icon button starts. Designsystemet gives a button
+ * with text 16 px of inline padding and an icon-only one enough to centre the
+ * glyph in 48, which is 12 — so without this the icon sat 5 px to the right
+ * of the text above it, which is the one edge Simens issue 79 is about
+ * (measured by KA CC in bff mode: 565 against 560 at 1440).
+ *
+ * `:not([data-icon])` because the icon-only button must keep its own padding:
+ * it is 48 px wide with the glyph centred, and a start padding of our own
+ * would push that glyph off centre.
+ */
+.ka-composer__attach {
+  min-inline-size: 0;
+  flex-shrink: 1;
+  text-align: start;
+  white-space: normal;
+}
+
+.ka-composer__attach:not([data-icon]) {
+  /*
+   * Less the border, which is transparent on a tertiary button but still one
+   * pixel of box: padding is measured from inside it, and the inset is
+   * measured from the button's outer edge. Without the subtraction the glyph
+   * landed on 561 against the text's 560.
+   */
+  padding-inline-start: calc(var(--ka-composer-glyph-inset) - var(--ds-border-width-default));
+}
+
+/*
+ * A control that is coming: out of focus, and still readable.
+ *
+ * Simen asked for it to stand back (issue 79), and drew it pale blue. That
+ * is Designsystemet's disabled tertiary button in the accent colour, and this
+ * is that button, with one thing changed: how far it fades.
+ *
+ * Designsystemet fades `aria-disabled` to `--ds-opacity-disabled`, 30 %,
+ * which takes the accent's subtle text to 1.62 : 1 against the white box.
+ * WCAG 1.4.3 exempts an inactive control, so that is not a failure — but this
+ * sentence is the only place anyone is told that uploading is on its way,
+ * and a sentence at 1.6 : 1 is one nobody reads. 70 % is the least that
+ * keeps it at 3 : 1 in both schemes, measured against the box: 3.50 : 1 in
+ * light and 3.81 : 1 in dark. 60 % gave 2.86 in light. It was the neutral
+ * subtle text at full strength before, 6.58 : 1, which read as a working
+ * control rather than one that is coming.
+ *
+ * Regular weight rather than the button's medium, which is the other half of
+ * standing back: a label in medium reads as something to press.
+ */
+.ka-composer__attach[aria-disabled='true'] {
+  opacity: 0.7;
+  font-weight: var(--ds-font-weight-regular);
+}
+
+/*
+ * Narrow enough that the sentence would wrap: take it off the screen and
+ * leave the paperclip, which still carries it as its accessible name.
+ *
+ * Measured at the `md` size mode with a 16 px root: the sentence sets 334 px
+ * wide, and the row needs 472 px of box to hold it beside the send button.
+ * Under that it wrapped onto three or four lines and the box grew from 162 px
+ * to 226 at 440 and 245 at 390 — 83 px of the sticky bottom, on the screens
+ * with the least of it (KA CC on #195).
+ *
+ * A container query and not a media query: the box is as wide as the answer
+ * column, and the column is as wide as the panels leave it. The same window
+ * gives the row 690 px with both panels shut and 405 px with them open.
+ *
+ * **`rem` and not `px`, because the sentence is set in `rem` too.** A reader
+ * who turns the text up to a 20 px root gets a sentence 25 % wider, and a
+ * threshold written in pixels stays where it was — so the row wrapped again at
+ * 768, on a box the pixel rule called wide enough (KA CC on #195, kan 1).
+ * 30rem is 480 px at a 16 px root, which is the measured 472 with room to
+ * spare, and it grows with the text: 600 px at 20 px, against the 590 the
+ * sentence then needs.
+ *
+ * `rem` in a container query resolves against the ROOT font size, which is
+ * what makes this follow the reader's text size. `em` would not: in a
+ * container condition it follows the CONTAINER's own font size. Measured in
+ * Chromium with a 300 px box and `(max-width: 12em)`: no match at a 16 px
+ * container font, a match at 32 px, with the root at 16 px throughout.
+ */
+.ka-composer {
+  container: ka-composer / inline-size;
+}
+
+@container ka-composer (max-width: 30rem) {
+  /*
+   * Designsystemet's own `.ds-sr-only` in one place: off the screen, no line
+   * box, still in the accessibility tree. `position: absolute` is safe here
+   * because the box around it is a container, and a container is a containing
+   * block — see the rule in CONTRIBUTING about positioned scroll regions.
+   */
+  .ka-composer__attach-text {
+    position: absolute;
+    clip-path: inset(50%);
+    overflow: hidden;
+    inline-size: 1px;
+    block-size: 1px;
+    white-space: nowrap;
+  }
+}
+
+/*
+ * The row under the field: what you attach with at one end, what you send
+ * with at the other.
+ *
+ * `space-between` and not a spacer, because the row holds exactly two
+ * controls and the space is what separates them. The stop button is wider
+ * than the send button it replaces — it carries the word «Avbryt» — and grows
+ * to its own end without moving the paperclip.
+ */
+.ka-composer__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-size-2);
+}
+
+/*
+ * The disclaimer, in the middle of the air under the box, which is where
+ * Simen's sketch in issue 78 has it: 35 px over the line and 34 under it on a
+ * Mac at 1440.
+ *
+ * 28 px over it on a desktop window and the shell's 32 under it. The distance
+ * over it is the column's `--ds-size-3` gap plus this margin, clamped from
+ * that gap alone on a phone to `--ds-size-7` at 1200. `--ds-size-8` would
+ * centre it to the pixel, and costs the reader 4 px of the conversation on
+ * every desktop screen: 28 keeps the sticky area exactly as tall as it was
+ * with the line above the box.
+ */
+.ka-composer__disclaimer {
+  margin-block-start: calc(clamp(var(--ds-size-3), 2.4vw, var(--ds-size-7)) - var(--ds-size-3));
+  color: var(--ds-color-neutral-text-subtle);
+  text-align: center;
+}
+
+/*
+ * The follow-up questions, centred under the box (Simens issue 89).
+ *
+ * They were flush with the start of the column, under a field whose own text
+ * is set in — two edges a row apart that nearly agreed. Centred they belong
+ * to the box above them instead of arguing with it, and a row of two chips
+ * and a row of three then sit the same way.
+ */
+.ka-follow-ups {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ds-size-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ----------------------------------------------------------------- hidden */
+
+/*
+ * The pair every `display` rule above needs. Without it, hiding one of these
+ * elements with the `hidden` attribute would do nothing, because the rules
+ * above are unlayered and beat the browser's own `[hidden]` rule.
+ */
+.ka-chat[hidden],
+.ka-chat-greeting[hidden],
+.ka-kickstarters[hidden],
+.ka-kickstarters__list[hidden],
+.ka-messages[hidden],
+.ka-message[hidden],
+.ka-filter-summary[hidden],
+.ka-answer-skeleton[hidden],
+.ka-streaming-status[hidden],
+.ka-procedure[hidden],
+.ka-procedure__summary[hidden],
+.ka-sources-summary__title[hidden],
+.ka-procedure__block[hidden],
+.ka-procedure__keywords[hidden],
+.ka-procedure__label[hidden],
+.ka-procedure__steps[hidden],
+.ka-procedure__step[hidden],
+.ka-thinking[hidden],
+.ka-thinking__summary[hidden],
+.ka-thinking__steps[hidden],
+.ka-thinking__step[hidden],
+.ka-retrieval__summary[hidden],
+.ka-retrieval__keywords[hidden],
+.ka-answer-actions[hidden],
+.ka-composer-area[hidden],
+.ka-attachments[hidden],
+.ka-attachments__item[hidden],
+.ka-composer[hidden],
+.ka-composer__controls[hidden],
+.ka-follow-ups[hidden] {
+  display: none;
+}

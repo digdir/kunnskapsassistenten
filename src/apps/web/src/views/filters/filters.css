@@ -1,0 +1,568 @@
+/*
+ * Styles for FiltersView.
+ *
+ * Imported from the component, so it lands outside every layer and wins over
+ * ds.components without !important. See README, «Temaet».
+ *
+ * No px, no hex. Everything is --ds-* so the panel follows the theme, the
+ * size mode and dark mode.
+ *
+ * Every rule here that sets `display` is paired with a `[hidden]` rule.
+ * Unlayered author CSS beats the browser's own `[hidden] { display: none }`,
+ * so without the pair an element stays on screen after being hidden. See
+ * CONTRIBUTING.
+ */
+
+.filters-view {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  /*
+   * The air between the panel's blocks: the documents, each facet field, the
+   * line and «Dine dokumenter». Everything was 24 px apart, inside a block
+   * and between blocks alike, and the panel read as one tight column with
+   * nothing to say where one part ended (Simen, 30.09).
+   *
+   * 32 px on a desktop, and less on a short screen. The panel is about as
+   * wide on a phone as on a Mac — 389 to 399 px measured on all five
+   * surfaces — so what varies is the height, and every pixel of air here is
+   * a pixel more to scroll. `dvh` follows the window's height, and 3.6 of it
+   * reaches 32 at 900 px; the tokens on each side keep it on the scale, and
+   * 24 px is what it was before.
+   *
+   * Inside a block the gap stays small (`.documents-list`, the field's own
+   * label and description), so the two distances are what tell the reader
+   * which things belong together. The line between the filters and the
+   * documents is the third distance, and is made from this one; see
+   * `.filters-view__divider`.
+   */
+  --ka-filters-gap: clamp(var(--ds-size-6), 3.6dvh, var(--ds-size-8));
+
+  gap: var(--ka-filters-gap);
+  /* The slot lays its children out with align-items: start, so the view has
+     to claim the width itself. */
+  inline-size: 100%;
+  /*
+   * Air under the last thing in the panel. The content is taller than a
+   * 900 px window, so «Dine dokumenter» sat flush against the bottom edge and
+   * was cut mid-sentence, which reads as a rendering fault rather than as
+   * something to scroll to (brukerblikk, funn 7). The scrolling region itself
+   * belongs to the slot, not to the view.
+   */
+  padding-block-end: var(--ds-size-6);
+}
+
+.filters-view > .ds-btn,
+.filters-view > ds-field,
+.filters-view > section {
+  inline-size: 100%;
+}
+
+/*
+ * The line between the filters and the documents (Simens issue 76). Over it
+ * is what narrows the search; under it are the corpus, the documents behind
+ * the answer and the reader's own.
+ *
+ * Twice the air of the rhythm between two fields on each side: the gap, and
+ * a margin of the same size. That is 64 px on a desktop, where Simen's
+ * sketch measures 63 above the line and 68 below it, and it shrinks with the
+ * gap on a short screen — 52 at 720 px high — so a break is always twice a
+ * step and never a fixed number of pixels. The scale has no 64 to take
+ * instead (it goes 15, 18, 22), and a sum of two tokens would not follow the
+ * window's height.
+ *
+ * The margin replaces Designsystemet's own. The meaning is in the headings
+ * under the line; the line itself is `aria-hidden`.
+ */
+.filters-view__divider {
+  margin-block: var(--ka-filters-gap);
+}
+
+/*
+ * The way back to the thread list, drawn in the shell's view head.
+ *
+ * `.filters-view > .ds-btn` above cannot reach it there, and the head's own
+ * stretch is a default in a box this view does not own. Said here so the
+ * button cannot quietly shrink the day that default changes.
+ */
+.filters-view__back {
+  inline-size: 100%;
+}
+
+/*
+ * The corpus line and the documents behind the answer, as one block under the
+ * divider (Simens issue 76). The line says which corpus, the list under it
+ * which of its documents, so they are one step apart like the parts inside
+ * a block, and the view's larger gap goes between this and «Dine dokumenter».
+ * Alone, with the view's gap on both sides, the line hung between the divider
+ * and «Dokumenter» and belonged to neither.
+ */
+.filters-view__documents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-3);
+  inline-size: 100%;
+}
+
+.filters-view__documents[hidden] {
+  display: none;
+}
+
+/*
+ * The corpus line under the divider: the name, «Vis mer», and the detail
+ * under them. Muted, because it is context for the documents below rather
+ * than one of them.
+ *
+ * A flex row rather than running text, so the button sits at the end of the
+ * name's line instead of starting one of its own — the 32 px this exists to
+ * save (hoydebudsjett-forslag 2026-09-21, N2). It wraps: a long corpus name
+ * is information and is not cut, the same call as the filter chips.
+ *
+ * The detail takes a whole row of its own when it opens, which is what
+ * `flex-basis: 100%` says here.
+ */
+.filters-view__corpus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--ds-size-2);
+  /*
+   * Only ever between the line and the detail, because closed there is one
+   * row: the detail is `hidden`, and a `display: none` item makes no row to
+   * have a gap to. It is what keeps the opened detail clear of «Vis mindre»'s
+   * hit area, which reaches 3 px below the text — see the toggle below.
+   */
+  row-gap: var(--ds-size-1);
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+.filters-view__corpus[hidden] {
+  display: none;
+}
+
+/*
+ * «Vis mer» is a text-sized control, and the text here is 21 px high — under
+ * the 24 px WCAG 2.5.8 (Target Size, Minimum) asks of a target. Being as tall
+ * as the line is the whole point of it: Designsystemet's Button is 42 px and
+ * set the height of the row, which is most of what the filter head saved in
+ * #114.
+ *
+ * So the hit area grows and the row does not. The padding takes the box to
+ * 24 px and a negative margin of the same size hands those pixels back to the
+ * layout, so the line measures exactly what it did before.
+ *
+ * DOWNWARD only. It was measured rather than assumed while the corpus Select
+ * stood 3 px above this line: a target that grew upward had its top edge
+ * covered by the Select (elementFromPoint at the top edge returned the
+ * select). The line has had the divider over it since Simens issue 76, so
+ * either way would fit now; downward is kept because under the line there
+ * is nothing but the detail text, which is not a target.
+ *
+ * WCAG's inline exception would have covered this — the control's size is
+ * constrained by the line-height of the sentence beside it — but an exception
+ * leaves a 21 px target on screen for the reader with a tremor, and this
+ * costs two declarations.
+ */
+.filters-view__corpus-toggle {
+  /*
+   * 24 px is the success criterion's own number, so it is not a design value
+   * and has no token. It is written twice on purpose:
+   *
+   * First 3 px, fixed. The line measures 21 px here, and 21 + 3 is 24. That
+   * is the fallback for Safari 16.0–16.3, which is inside our browser list
+   * and does not know `lh` (KA CC on #159): the target fell to 21 px there.
+   *
+   * Then the same thing worked out from `1lh`, the control's own line. It
+   * overrides where it is understood, and follows the text if that should
+   * grow. In older Safari the unit is unknown, so the DECLARATION is dropped
+   * at parse time and the three fixed pixels stand.
+   *
+   * That is also why this no longer goes through a `--ka-*` property: a
+   * `var()` that is invalid at computed-value time sets the property to its
+   * initial value — 0 — rather than falling back on the declaration above.
+   */
+  padding-block-end: 3px;
+  margin-block-end: -3px;
+  /* stylelint-disable plugin/browser-compat -- `lh` is still unknown in
+     Safari 16.0–16.3, and that is the point: the two lines above are the
+     fallback, and these two override it where the unit exists. The linter
+     sees the rule and not the order, so it has to be told here. */
+  padding-block-end: max(0px, calc(24px - 1lh));
+  margin-block-end: calc(-1 * max(0px, calc(24px - 1lh)));
+  /* stylelint-enable plugin/browser-compat */
+}
+
+.filters-view__corpus-detail {
+  flex-basis: 100%;
+}
+
+.filters-view__loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-4);
+  inline-size: 100%;
+}
+
+/*
+ * The panel without facets: «Filtrering er ikke tilgjengelig ennå» and the
+ * filter still in force, in one region that focus can land on.
+ *
+ * The width is claimed so the chips wrap at the panel's edge rather than at
+ * the width of the heading above them.
+ */
+.filters-view__unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--ds-size-6);
+  inline-size: 100%;
+}
+
+/*
+ * Empty with fields on screen, and after a failed fetch once the chips are
+ * gone. Out of flow and sizeless, as `.error-state:empty` in global.css, so
+ * the view's gap is not reserved on each side of nothing. It is not a focus
+ * target while empty — «Prøv igjen» or the first field is (FiltersView) — but
+ * `display: none` is still not used, so a focus that lands here anyway is
+ * kept rather than dropped to `<body>`.
+ */
+.filters-view__unavailable:empty {
+  position: absolute;
+  block-size: 0;
+  inline-size: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+/*
+ * The note when the filter is changed in a thread that is going on and not
+ * locked (Simens issue 90): the sentence, and «Ny tråd» under it, as the lock
+ * has them. Across the panel, like the fields it stands over.
+ */
+.filters-view__changed {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--ds-size-2);
+  inline-size: 100%;
+}
+
+.filters-view__changed[hidden] {
+  display: none;
+}
+
+/* The lock: its heading, the values as tags, what it means and the way out. */
+.locked-filter {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--ds-size-2);
+  inline-size: 100%;
+}
+
+.locked-filter__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-size-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.active-filter {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--ds-size-2);
+  inline-size: 100%;
+}
+
+/*
+ * The whole width, so «Tøm» lands at the end of the row as it does over each
+ * field. A field is as wide as the panel and its label row with it; here the
+ * column's `align-items: start` would shrink the row to its two words.
+ */
+.active-filter__head {
+  align-self: stretch;
+}
+
+/*
+ * The chips on a row that wraps, which is what chip.md asks for — never a
+ * vertical list.
+ */
+.active-filter__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-size-2);
+}
+
+/* The label and its two actions share one line above the field. «Avgrenset
+   til» and its «Tøm» share one the same way. */
+.facet-field__label-row,
+.active-filter__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ds-size-2);
+  flex-wrap: wrap;
+}
+
+.facet-field__actions {
+  display: flex;
+  gap: var(--ds-size-1);
+}
+
+/*
+ * The width of the suggestion list.
+ *
+ * data-overscroll="contain" stops Designsystemet from writing the input's
+ * width onto the list as an inline style, and once that is off the list has
+ * no width at all — so one has to be set here. The design draws the list
+ * wider than the field, and the values («Nasjonal kommunikasjonsmyndighet»,
+ * «Proposisjon til Stortinget») need it.
+ *
+ * No --ds-* token exists for a popover width, and a percentage would be read
+ * against the viewport, because the list sits in the top layer with no
+ * positioned ancestor. Hence rem and min(): they still follow the root font
+ * size, which is what the size mode changes.
+ *
+ * Only `width`, never `display`: u-combobox opens and closes this element
+ * with `hidden`, and a `display` here would keep it on screen.
+ *
+ * Scoped to this view. The list is drawn in the top layer, but it stays in
+ * the DOM under the Suggestion that opened it, so the descendant selector
+ * still matches — and an unscoped rule in a file imported by a component
+ * would set the width of every Suggestion in the app, including the ones
+ * other owners build.
+ */
+/*
+ * A chip is never wider than the field it sits in.
+ *
+ * Designsystemet draws the selected values as chips with `white-space:
+ * nowrap`, a fixed height and `text-overflow: ellipsis` — a one-line pill —
+ * and puts no ceiling on the width. The chip row wraps BETWEEN chips (#91),
+ * but one chip that is wider than the panel on its own does not wrap at all:
+ * «Statsforvalteren i Østfold, Buskerud, Oslo og Akershus» measured 456 px in
+ * a 327 px field at 1440, so it ran 92 px past the panel edge with the remove
+ * cross off screen (Lars, 21.09, skjermbilde 12:22).
+ *
+ * The ellipsis is not the answer here, and that is the one real decision in
+ * this rule: an organisation's name IS the information — «Statsforvalteren i
+ * Østfold, Bu…» does not say which of the twelve statsforvaltere is filtered
+ * on — and cutting it is what WCAG 1.4.4 and 1.4.10 exist to prevent. So the
+ * text wraps inside the chip instead.
+ *
+ * `overflow-wrap: anywhere` and not `break-word`: a name can hold one long
+ * unbroken word, and `anywhere` is the value that also lets the chip's
+ * min-content width shrink, which is what keeps the ceiling below from being
+ * fought by the content.
+ *
+ * `height: auto` because Designsystemet's is fixed; the minimum keeps a
+ * one-line chip exactly as tall as it is today. The remove cross is absolute
+ * at 50% of the chip, so it stays centred over two lines, and the padding
+ * Designsystemet reserves for it holds.
+ *
+ * Scoped to this view for the same reason the list width above is: this is
+ * our panel's problem, not every Suggestion in the app. The drawer under
+ * 1139 px draws the same view, so it is covered too (measured at 1100).
+ */
+.filters-view ds-suggestion > data {
+  max-inline-size: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  height: auto;
+  min-block-size: var(--dsc-suggestion-chip-height);
+}
+
+.filters-view .ds-suggestion > u-datalist {
+  width: min(26rem, calc(100vw - var(--ds-size-8)));
+}
+
+.documents-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+}
+
+/*
+ * The Kudos list. Designsystemet draws the list itself — markers, indent,
+ * line height — so the only rule needed here is the block margin, which would
+ * otherwise be added on top of the flex gap the section already owns.
+ */
+.documents-list__list {
+  margin-block: 0;
+}
+
+/* «Viser 5 av 7 dokumenter.» and the type · virksomhet · år line under each
+   title: both are about the row, not the row itself. */
+.documents-list__count,
+.documents-list__about {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/*
+ * The upload area, drawn in Figma as a dashed drop zone. It is text and not a
+ * control until upload exists anywhere in the stack, so it is styled to look
+ * like what it is: a placeholder, not a target.
+ */
+.documents-list__upload {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-1);
+  padding: var(--ds-size-6) var(--ds-size-4);
+  border: var(--ds-border-width-default) dashed var(--ds-color-neutral-border-subtle);
+  border-radius: var(--ds-border-radius-lg);
+  background: var(--ds-color-neutral-background-tinted);
+  color: var(--ds-color-neutral-text-subtle);
+  text-align: center;
+}
+
+.filters-view[hidden],
+.filters-view__loading[hidden],
+.filters-view__unavailable[hidden],
+.locked-filter[hidden],
+.locked-filter__values[hidden],
+.active-filter[hidden],
+.active-filter__chips[hidden],
+.active-filter__head[hidden],
+.facet-field__label-row[hidden],
+.facet-field__actions[hidden],
+.documents-list[hidden],
+.documents-list__upload[hidden] {
+  display: none;
+}
+
+/*
+ * «Dine dokumenter»: the heading row, the zone and the list.
+ *
+ * The zone itself is Designsystemet's `ds-file-upload` — dashed border,
+ * tinted ground, the file input laid over the whole surface — so nothing here
+ * redraws it. What is here is the heading with its Tag beside it, and the
+ * rows under it.
+ */
+.own-documents__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-size-2);
+}
+
+/*
+ * «Dine dokumenter» where there is nowhere to upload to yet: a box of its own,
+ * as Simen drew it (30.09).
+ *
+ * Designsystemet's Card, neutral. Not its tinted variant, which paints the
+ * same surface-tinted the zone inside it has; Simen draws a lighter box
+ * around a darker zone, so the box takes the step below, background-tinted,
+ * and no border. The card's default variant writes `background` directly
+ * rather than through its variable, so it is written directly here too.
+ *
+ * The card's own padding (24 px) stays. The panel is 389–399 px wide on all
+ * five surfaces measured, so it has no reason to shrink.
+ *
+ * The card puts a margin between its children, and the section already has
+ * a gap; the margin is taken off so the gap is the one distance. The tag gets
+ * more air under it than the heading gets over the zone: it is a note about
+ * the whole box, and the heading and the zone belong together.
+ */
+.own-documents--unavailable {
+  --dsc-card-content-margin-block: 0;
+  --dsc-card-border-color: transparent;
+
+  gap: var(--ds-size-3);
+  background: var(--ds-color-background-tinted);
+}
+
+/*
+ * Across the whole box, as drawn. Designsystemet gives a tag `width:
+ * max-content`, and a width is what keeps a flex item from being stretched;
+ * `auto` hands it back to the column, which stretches it to the box.
+ */
+.own-documents__soon {
+  inline-size: auto;
+  gap: var(--ds-size-1);
+  margin-block-end: var(--ds-size-3);
+}
+
+/*
+ * The zone when there is nowhere to upload to: it looks switched off, and
+ * nothing happens under the pointer (Simen, 30.09).
+ *
+ * The ground Designsystemet gives a read-only zone, and the hover ground set
+ * to the same so the box does not light up. The dash in the subtle border
+ * colour rather than the default one, which is what makes it read as
+ * inactive: the zone is not a control, so its edge does not have to reach
+ * 3:1. The cursor goes back to the arrow, since Designsystemet's `:hover`
+ * rule makes it a hand — the other half of saying «click here».
+ *
+ * The text is left alone. What says «switched off» is the zone, the icon and
+ * the missing hover; the sentence has to be read, and keeps its colour.
+ *
+ * The same on every surface: this is a state, not a size.
+ */
+.own-documents__zone--unavailable {
+  --dsc-file-upload-background: var(--ds-color-surface-tinted);
+  --dsc-file-upload-background--hover: var(--ds-color-surface-tinted);
+  --dsc-file-upload-border-color: var(--ds-color-border-subtle);
+
+  cursor: default;
+}
+
+.own-documents__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+  inline-size: 100%;
+}
+
+.own-documents__list[hidden] {
+  display: none;
+}
+
+/*
+ * One row: what the file is on the left, the way to remove it on the right.
+ * The text column may shrink — `min-inline-size: 0` — so a long file name
+ * wraps inside the row instead of pushing «Fjern» out of the panel, the same
+ * call the filter chips make.
+ */
+.own-documents__item {
+  display: flex;
+  align-items: start;
+  gap: var(--ds-size-2);
+  inline-size: 100%;
+}
+
+.own-documents__item[hidden] {
+  display: none;
+}
+
+.own-documents__text {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  flex: 1;
+}
+
+.own-documents__text[hidden] {
+  display: none;
+}
+
+.own-documents__name {
+  overflow-wrap: anywhere;
+}
+
+.own-documents__meta {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/*
+ * A failed upload says why in the colour the rest of the app says trouble in.
+ * `danger` and not `warning`: the file is not there, and nothing about it
+ * will change on its own.
+ */
+.own-documents__error {
+  color: var(--ds-color-danger-text-default);
+}

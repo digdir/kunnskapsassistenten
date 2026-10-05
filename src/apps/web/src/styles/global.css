@@ -1,0 +1,1078 @@
+/*
+ * Import order matters, and it is documented in
+ * design/designsystemet/oppsett.md:
+ *
+ *   1. Designsystemets komponent-CSS, som også erklærer layer-rekkefølgen
+ *      @layer ds.theme, ds.base, ds.components
+ *   2. temaet, som legger seg i ds.theme.*
+ *   3. vår egen CSS, utenfor alle layers, slik at den vinner uten !important
+ */
+@import '@digdir/designsystemet-css';
+@import '../../design-tokens-build/digdir.css';
+
+/*
+ * Everything below sits OUTSIDE every layer on purpose. Unlayered author CSS
+ * beats all layered author CSS, so we never need !important to override
+ * Designsystemet.
+ *
+ * Never write px and never write hex colours. --ds-size-N and --ds-color-*
+ * follow the theme, the size mode and dark mode; fixed values do not.
+ *
+ * Slots are named after position, views after content. Never after the side a
+ * panel happens to sit on, not even in comments. See src/layout/viewModel.ts.
+ */
+
+:root {
+  /*
+   * Slot widths are NOT set here. They come from the layout model as
+   * --ka-<slot>-width, --ka-main-min-width and --ka-main-max-width, written
+   * onto .shell as an inline style by layoutStyle() in
+   * src/layout/viewModel.ts. That is what lets a slot be collapsed, resized
+   * or rearranged without CSS knowing anything about it.
+   *
+   * Gaps and padding stay here, because they are on Designsystemet's scale.
+   */
+  --ka-slot-gap: var(--ds-size-8); /* 32 px */
+  /*
+   * 20 px, Lars 23.09. It was 36, and 36 was most of a narrow panel: at 1440
+   * with both sidebars open the sources panel sits on its 336 px floor, and
+   * 72 px of padding left an excerpt 246 px to set text in — two or three
+   * words a line (measured by #4 in #24). Back then 20 px was the exception
+   * for a panel being squeezed, written as a container query under 380 px;
+   * now it is the value for both sidebars, and the query that said the same
+   * thing is gone.
+   */
+  --ka-sidebar-padding-inline: var(--ds-size-5); /* 20 px */
+  --ka-rail-padding-inline: var(--ds-size-3); /* 12 px, the 24 in railWidth */
+
+  /*
+   * How wide a hand has to be right to take hold of a panel's edge.
+   *
+   * The edge itself stays the 1 px line it has always been; this is only the
+   * part that answers the pointer. 8 px is the narrowest that is comfortable
+   * with a mouse without the grip reading as a second, thicker border, and
+   * WCAG 2.5.8 is met by the keyboard rather than by the target: a separator
+   * can be moved with the arrow keys, so the 24 px target rule's «equivalent»
+   * exception applies. See src/layout/PanelSeparator.tsx.
+   */
+  --ka-separator-grip: var(--ds-size-2); /* 8 px */
+
+  /*
+   * What separates a panel from the page, on the edge facing the answer
+   * column.
+   *
+   * `border-default` and not `border-subtle`, and the reason is measured
+   * rather than felt. The two surfaces barely differ: panel against page is
+   * 1.10:1 in light and 1.11:1 in dark, so the surfaces alone cannot carry
+   * the separation in either mode — dark just makes it obvious, which is what
+   * finding 4 caught. `border-subtle` against the page is 1.73:1 light and
+   * 2.04:1 dark, under the 3:1 WCAG 1.4.11 asks of a boundary that matters.
+   * `border-default` is 3.95:1 and 4.23:1. Measured in the built app,
+   * 2026-09-15, in both colour schemes.
+   */
+  --ka-panel-border: var(--ds-border-width-default) solid var(--ds-color-neutral-border-default);
+
+  /*
+   * The ground a scrolling region is drawn on, so a pinned head can hide what
+   * scrolls under it.
+   *
+   * A variable and not one colour, because the three regions do not share a
+   * ground: the navigation panel has its own white surface, the sources panel
+   * has none and sits on the page (Lars, 2026-09-15), and the answer column
+   * is the page. Each of them redeclares this where it declares its
+   * background, so the head cannot drift from the surface it is painted on.
+   */
+  --ka-region-surface: var(--ds-color-neutral-background-tinted);
+
+  /*
+   * The air on either side of the text in the answer column. The desktop value
+   * is the slot gap, 32 px, which is what an open panel keeps between itself
+   * and the column; on a phone it shrinks to 16 px, which is Designsystemet's
+   * `--ds-size-4` and the narrowest a line can start at without reading as
+   * pressed against the glass.
+   *
+   * `vw` in the middle, because below 774 the answer column IS the window (see
+   * `compactMaxViewport` in viewModel.ts), so 4 % of the window is 4 % of the
+   * column. Above it the clamp is already at its ceiling: 4 % of 774 is 31.
+   * Measured at 440: 17.6 px, where it was 0 and the text stood against the
+   * rails.
+   */
+  --ka-main-padding-inline: clamp(var(--ds-size-4), 4vw, var(--ds-size-8));
+
+  /*
+   * The space under the answer column's content, and the one number the
+   * compose field has to agree with: it is sticky at the bottom of `.main`,
+   * and a sticky offset is measured against the scrollport SHRUNK BY the
+   * scroller's own padding. So this sits on `.main`, the scroller, and the
+   * chat view reads it back to take the field all the way down.
+   *
+   * `env(safe-area-inset-bottom)` is the phone's home indicator. It is 0
+   * until the viewport meta says `viewport-fit=cover`, which index.html does
+   * not: without it Safari keeps the page out of the unsafe areas by itself.
+   * The term is here so the day the page is drawn edge to edge (a web app on
+   * the home screen), the field moves up with it rather than under the bar.
+   */
+  --ka-main-padding-block-end: calc(var(--ds-size-8) + env(safe-area-inset-bottom, 0px));
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ds-font-family), sans-serif;
+  font-feature-settings: 'cv05' 1; /* hale på liten l */
+}
+
+/*
+ * The skip link is Designsystemet's SkipLink, so there is nothing to style
+ * here: it brings its own screen-reader-only technique, its own focus ring
+ * and its own Norwegian-safe markup. See src/layout/Shell.tsx.
+ */
+
+/*
+ * The shell: three slots on one row, named after position.
+ *
+ * The page surface is the tinted neutral, not white: the design puts white
+ * cards on a light grey page, and a white page would make the cards vanish.
+ * The primary sidebar keeps its own white surface below.
+ */
+.shell {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  background: var(--ds-color-neutral-background-tinted);
+}
+
+/*
+ * The 32 px belongs between an OPEN panel and the answer column, and nowhere
+ * else, so it is a margin rather than `gap` on the row.
+ *
+ * `gap` cannot say that: it spaces every pair of items alike, and a collapsed
+ * rail must sit flush against the answer column. That is the whole point of
+ * the rail — Lars, 2026-09-15, on the collapsed navigation panel in dark
+ * mode: «skjult filter kolonne er ikke skjult». 32 px of tinted page beside a
+ * 67 px rail reads as a hole where a column used to be.
+ *
+ * A collapsed slot has no separator either, so `:not([data-collapsed])` is
+ * the one condition both the gap and the handle hang on.
+ */
+.primary-sidebar:not([data-collapsed]) {
+  margin-inline-end: var(--ka-slot-gap);
+}
+
+.secondary-sidebar:not([data-collapsed]) {
+  margin-inline-start: var(--ka-slot-gap);
+}
+
+/*
+ * The edge a reader can take hold of.
+ *
+ * Absolutely positioned inside the slot's landmark, over the 1 px border the
+ * panel box draws, so it takes no part in the row's arithmetic:
+ * 400 + 32 + 640 + 32 + 336 is still the sum at 1440.
+ *
+ * It was a flex item with negative margins until the `region` rule caught it
+ * (KA CC, after #50): a control outside every landmark is content nobody can
+ * reach by landmark. Inside the landmark it has to be out of flow, because
+ * the panel box beside it is the full width of the slot.
+ *
+ * Centred on the border rather than sitting beside it: the line is what the
+ * reader sees as the edge, so it has to be what they reach for. Half the grip
+ * and half the border, hence the two halves in the `calc`.
+ */
+.panel-separator {
+  position: absolute;
+  inset-block: 0;
+  inline-size: var(--ka-separator-grip);
+  cursor: col-resize;
+  /*
+   * A touch that lands here is a drag, not a scroll. Without it the browser
+   * claims the gesture and the panel never moves — WCAG 2.5.7 asks that a
+   * drag have a non-drag alternative, not that the drag itself be broken.
+   */
+  touch-action: none;
+}
+
+/*
+ * Which edge of the slot it sits on: the one facing the answer column. The
+ * panel before it draws a `border-inline-end`, the one after it a
+ * `border-inline-start`, and the grip straddles whichever it is.
+ */
+.panel-separator[data-before-main] {
+  inset-inline-end: calc(-0.5 * (var(--ka-separator-grip) - var(--ds-border-width-default)));
+}
+
+.panel-separator:not([data-before-main]) {
+  inset-inline-start: calc(-0.5 * (var(--ka-separator-grip) - var(--ds-border-width-default)));
+}
+
+/*
+ * The line the grip draws while it is being used.
+ *
+ * The panel's own border is what marks the edge the rest of the time, so this
+ * one only shows up under the pointer, under the keyboard focus, and while
+ * the edge is moving. `--ds-color-base-default` is the accent role without a
+ * family, which is what CONTRIBUTING asks of anything interactive; the panel
+ * border beside it is explicit neutral, and the two are meant to differ.
+ */
+.panel-separator::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(0.5 * (var(--ka-separator-grip) - var(--ds-border-width-focus)));
+  inline-size: var(--ds-border-width-focus);
+  background: transparent;
+}
+
+.panel-separator:hover::before,
+.panel-separator[data-dragging]::before {
+  background: var(--ds-color-base-default);
+}
+
+/*
+ * The focus ring is Designsystemet's, through `ds-focus` on the element, so
+ * there is nothing to draw here. It rings the 8 px box over its whole height,
+ * which is what makes an edge a visible target.
+ */
+
+/*
+ * `border-box`, so a slot occupies exactly the width the layout model says.
+ * With `content-box` the 36 px padding on each side was added on top, and
+ * every number in viewModel.ts was 72 px short of what it drew: a sources
+ * panel declared at 198 px collapsed measured 270, and the three slots open
+ * needed 1609 px instead of the 1464 the model promised. Measured, not
+ * reasoned about.
+ */
+.primary-sidebar,
+.secondary-sidebar {
+  box-sizing: border-box;
+  /*
+   * The landmark holds two things: the panel box, which fills it, and the
+   * separator, which hangs off the edge facing the answer column. Hence
+   * `relative` — the separator is positioned against this — and no `overflow`,
+   * so the handle's focus ring is not cut off at the slot's edge.
+   */
+  position: relative;
+  /*
+   * So the panel's own width can be asked about. The padding inside is the
+   * one thing that has to react to it, and an element cannot answer a
+   * container query about itself.
+   */
+  container-type: inline-size;
+}
+
+/*
+ * The panel box: everything the reader sees as the panel.
+ *
+ * Its own element since 2026-09-15, and only because the separator has to be
+ * inside the landmark and cannot be inside this: `overflow: hidden` would cut
+ * the handle's focus ring off at the edge, and `.sidebar-content` below puts
+ * a scrollbar exactly where the grip goes.
+ */
+.panel {
+  box-sizing: border-box;
+  block-size: 100%;
+  inline-size: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-4);
+  align-items: start;
+  padding-block: var(--ds-size-8);
+  /*
+   * The panel itself never scrolls — `.sidebar-content` below does. The head
+   * has to stay put, and a panel that scrolls as one takes its own toggle
+   * button off screen. Finding 2.
+   */
+  overflow: hidden;
+}
+
+/*
+ * The two regions inside a panel. They carry the inline padding, because the
+ * container query below has to be able to change it.
+ */
+.sidebar-header,
+.sidebar-content {
+  box-sizing: border-box;
+  inline-size: 100%;
+  padding-inline: var(--ka-sidebar-padding-inline);
+}
+
+/*
+ * The panel head: the collapse button, and what the view puts beside it.
+ *
+ * `space-between` and not a margin, so the rail — which draws the collapse
+ * button alone — is unaffected: one item in a `space-between` row sits where
+ * it would have sat anyway, and the rail's own padding is what centres it.
+ */
+.sidebar-header {
+  flex: 0 0 auto;
+  display: flex;
+  gap: var(--ds-size-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+/*
+ * The place a view may put a control of the PANEL's on the panel's own row —
+ * «Tråder» is the one that asked for it. See panelHeadContext.ts.
+ *
+ * `margin-inline-end: auto` rather than a wrapper around the collapse button:
+ * the row is `space-between`, and three items would put this one in the
+ * middle. The auto margin takes the free space after it instead, so the
+ * collapse button and this sit together at the start of the row.
+ *
+ * Empty draws nothing at all, so a panel no view has filled is the row it was
+ * before this existed — including the `space-between` with two items. `:empty`
+ * is exact: React renders nothing into an unused portal target, not even
+ * whitespace.
+ */
+.panel-head-slot {
+  display: flex;
+  gap: var(--ds-size-2);
+  align-items: center;
+  margin-inline-end: auto;
+}
+
+/*
+ * `:empty` for the unused place, `[hidden]` for one a view switches off. The
+ * pair is the rule this file keeps everywhere `display` is set on something
+ * that can be hidden: author CSS beats the browser's own
+ * `[hidden] { display: none }`.
+ */
+.panel-head-slot:empty,
+.panel-head-slot[hidden] {
+  display: none;
+}
+
+/*
+ * An empty head row in a drawer costs nothing, wrapper included.
+ *
+ * Hiding the slot is not enough: the row around it is still a flex item of
+ * `.panel`, and `.panel` has `gap: var(--ds-size-4)`. A box of zero height
+ * still gets a 16 px gap after it, so an unfilled place took 16 px off the
+ * reading window of a panel that scrolls at every width. Measured at 1100 by
+ * KA CC on #116 and confirmed here: header height 0, content 16 px down.
+ *
+ * `:has` and not a second class from the shell, because the condition is
+ * exactly «the one thing in this row is empty» and CSS can say that. The row
+ * on the row-panel is never empty — it holds the collapse button — so this is
+ * scoped to the drawer, where the row holds the slot alone.
+ *
+ * `[hidden]` beside `:empty` for the same reason the slot has both: a view
+ * that switches its own content off leaves children behind, so `:empty` would
+ * not match and the 16 px would come back.
+ */
+.drawer .sidebar-header:has(> .panel-head-slot:empty),
+.drawer .sidebar-header:has(> .panel-head-slot[hidden]) {
+  display: none;
+}
+
+/*
+ * Which slot gives way when the window runs short is written here, in three
+ * `flex` declarations, and nowhere else. Decision 2026-09-14, option A in
+ * design/visjon-og-beslutninger.md, with the answer column's floor from
+ * answers 46 and 59 left standing:
+ *
+ *   1. the answer column takes the free space and shrinks first, down to its
+ *      640 px floor — `flex-grow: 1` from a zero basis, `flex-shrink: 0`;
+ *   2. then the sources panel, from 432 down to 336 — the only item on the
+ *      row with `flex-shrink: 1`;
+ *   3. the navigation panel never gives — `flex: 0 0`.
+ *
+ * No media query and no JavaScript decides any of that. The one thing the
+ * browser cannot work out for itself is that the two sidebars stop fitting
+ * side by side below 1440, because that is collapsed state and not width;
+ * LayoutProvider owns it. See `bothSidebarsMinViewport` in viewModel.ts.
+ */
+.primary-sidebar {
+  /*
+   * `0 1` and a floor rather than `0 0`, and the floor is what makes it the
+   * same slot it was: the basis is 400 until the reader drags it wider, and a
+   * basis equal to the minimum cannot shrink. What the shrink is for is the
+   * pixel of slack a fractional window width leaves — `fittedWidths` has
+   * already made the sums fit, so the browser is the backstop and not the
+   * rule.
+   */
+  flex: 0 1 var(--ka-primary-sidebar-width);
+  min-inline-size: var(--ka-primary-sidebar-min-width);
+}
+
+.primary-sidebar > .panel {
+  --ka-region-surface: var(--ds-color-neutral-surface-default);
+  background: var(--ka-region-surface);
+  border-inline-end: var(--ka-panel-border);
+}
+
+.secondary-sidebar {
+  flex: 0 1 var(--ka-secondary-sidebar-width);
+  /*
+   * Explicit, because a flex item's own minimum is `auto` — its content —
+   * and content is the wrong floor twice over: an excerpt with a long word
+   * would hold the panel wider than the design allows, and an empty panel
+   * would let it collapse to nothing. The model says 336, or the collapsed
+   * width when it is collapsed, and the model is what draws the number.
+   */
+  min-inline-size: var(--ka-secondary-sidebar-min-width);
+}
+
+.secondary-sidebar > .panel {
+  border-inline-start: var(--ka-panel-border);
+  /*
+   * No surface of its own while it is open, and that is Lars's call on
+   * 2026-09-15: the sources belong with the answer, so this column shares the
+   * answer column's ground and the border is what marks the edge. Finding 15
+   * asked whether the asymmetry was deliberate. It is.
+   *
+   * The cards inside are drawn by the sources view on that same ground.
+   */
+  background: none;
+}
+
+/*
+ * A collapsed slot is a rail: its toggle button, centred, and nothing else.
+ *
+ * It keeps a panel surface and a border so it reads as a column folded away
+ * rather than as empty page. That is the fix Lars asked for on 2026-09-15,
+ * and the surface is what dark mode needed most: without it the collapsed
+ * navigation panel was tinted page against tinted page, and the only thing
+ * on screen was a button floating in nothing.
+ *
+ * `padding-block` is left at the open panel's 32 px on purpose, so the button
+ * does not jump up the screen the moment the panel folds.
+ *
+ * The width is `railWidth` in viewModel.ts — 42 button + 24 padding + 1
+ * border — and the padding below is the 24 in that sum. Change one and the
+ * other is wrong; tests/e2e/layout.spec.ts measures what is drawn.
+ *
+ * The logical properties are the vendor exception to the naming rule; see
+ * CONTRIBUTING.
+ */
+/*
+ * A rail keeps a surface whichever column it is, including the sources panel
+ * that has none while open. That is the point of the rail: a folded column
+ * has to read as a column, and on the page's own ground it read as a hole
+ * (Lars, 2026-09-15). Open, the sources panel is not folded away and has the
+ * answer beside it to belong to.
+ */
+.primary-sidebar[data-collapsed] > .panel,
+.secondary-sidebar[data-collapsed] > .panel {
+  align-items: center;
+  background: var(--ds-color-neutral-surface-default);
+}
+
+/*
+ * A rail is narrower than the container query's 400 px, so it would otherwise
+ * be handed the narrow-panel padding. It has its own, and it is the 24 in
+ * `railWidth`.
+ *
+ * Only the head that stands ON the row, hence `> .panel`. In drawer mode the
+ * landmark is drawn as a rail while holding an open drawer, and a descendant
+ * selector would reach into the drawer and give a 400 px panel the padding
+ * meant for a 67 px one.
+ */
+.primary-sidebar[data-collapsed] > .panel .sidebar-header,
+.secondary-sidebar[data-collapsed] > .panel .sidebar-header {
+  padding-inline: var(--ka-rail-padding-inline);
+}
+
+/* ── Drawers, below 1139 ───────────────────────────────────────────────── */
+
+/*
+ * An open sidebar below `drawerMaxViewport` is drawn OVER the answer column
+ * instead of beside it. Designsystemet's `Dialog` with `placement` set to the
+ * edge the slot stands at is a drawer already — full height, no radius on the
+ * outer edge, slide-in, backdrop, and `body:has(.ds-dialog:modal)` stopping
+ * the page behind it from scrolling. What is left here is our width and our
+ * padding.
+ *
+ * The `[open]` is load-bearing and not tidiness. `display` written on a
+ * `<dialog>` without it beats the browser's own `dialog:not([open]) { display:
+ * none }`, and the drawer would stand open on the page for ever. Same pair
+ * `.sidebar-content` needs for `[hidden]`, a hundred lines up.
+ */
+.drawer[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer {
+  padding: 0;
+  /*
+   * Its own container, so the panel inside asks about the DRAWER's width and
+   * not the rail's. The landmark around it is 67 px in drawer mode, and
+   * `@container (width < 380px)` would hand a 400 px drawer the padding meant
+   * for a narrow panel.
+   */
+  container-type: inline-size;
+}
+
+/*
+ * How wide the drawer is drawn. The number comes from `drawerWidth` through
+ * the shell's inline style, which reads `defaultLayout` rather than the width
+ * the reader may have dragged — a width chosen for a column standing beside
+ * the answer says nothing about one lying over it.
+ */
+.drawer[data-slot='primary-sidebar'] {
+  --dsc-dialog-placement-inline-max-width: var(--ka-primary-sidebar-drawer-width);
+}
+
+.drawer[data-slot='secondary-sidebar'] {
+  --dsc-dialog-placement-inline-max-width: var(--ka-secondary-sidebar-drawer-width);
+}
+
+/*
+ * The close button Designsystemet draws. It floats in the component's own
+ * stylesheet, which is meant for a `display: block` dialog; in this flex
+ * column a float does nothing, so it is placed as a flex item instead.
+ */
+.drawer > button[command='close'] {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  margin: var(--ds-size-3) var(--ds-size-3) 0 0;
+}
+
+/*
+ * `.panel` is `block-size: 100%`, which is the whole dialog — and the close
+ * button above it already took some. As a flex item it takes what is left.
+ * `min-block-size: 0` is what lets `.sidebar-content` inside it scroll rather
+ * than push the drawer taller than the screen.
+ */
+.drawer > .panel {
+  /*
+   * The ground the sticky view head is painted on, and the reason this line
+   * exists at all: `--ka-region-surface` is declared by each region WHERE it
+   * declares its own background, so the head cannot drift from the surface
+   * behind it. A drawer is a region the variable had never heard of — the
+   * declaration sits on `.primary-sidebar > .panel`, and the panel inside a
+   * drawer is a child of the `<dialog>`, not of the landmark. So it inherited
+   * the page tint from `:root` and painted a grey band across a white drawer.
+   *
+   * Measured before the fix, brukerblikk 4 funn 1: head #f3f4f4 on a #ffffff
+   * drawer in light, #192029 on rgb(32 40 52) in dark, at both 1024 and 720.
+   *
+   * From `--dsc-dialog-background` rather than from the token it happens to
+   * hold today, so the head follows the drawer if Designsystemet ever repaints
+   * it. That is the same reason the variable exists.
+   */
+  --ka-region-surface: var(--dsc-dialog-background);
+
+  flex: 1 1 auto;
+  block-size: auto;
+  min-block-size: 0;
+  padding-block-start: 0;
+}
+
+/*
+ * The view inside a sidebar.
+ *
+ * The [hidden] rule is not belt and braces. `display: flex` below is author
+ * CSS and beats the browser's own `[hidden] { display: none }`, so without
+ * this the content of a collapsed slot stays on screen while the button says
+ * «Vis kilder». Any rule that sets `display` on an element that can be
+ * hidden needs the same pair.
+ */
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-4);
+  align-items: start;
+  inline-size: 100%;
+  /*
+   * The scrolling region of the panel, and the only one.
+   *
+   * `min-block-size: 0` is not decoration: a flex child's automatic minimum
+   * is its content, so without it this box grows to fit and the panel is
+   * clipped at the window edge with nothing to scroll — which is finding 7,
+   * the navigation panel cut off mid-sentence at 991 px of content in a
+   * 900 px window.
+   */
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  /* Positioned for the reason written above `.main`: an absolutely
+     positioned descendant belongs to the region it is written in. */
+  position: relative;
+  /*
+   * Room under the last item, so it does not sit against the panel's edge
+   * when scrolled to the bottom. The slot's own `padding-block` only covers
+   * the top now; the bottom belongs to whatever scrolls.
+   */
+  padding-block-end: var(--ds-size-8);
+}
+
+.sidebar-content[hidden] {
+  display: none;
+}
+
+/*
+ * The panel's foot: the app's own settings, under the scrolling region and
+ * outside it. Only the navigation panel has one; see `foot` in Shell.tsx.
+ *
+ * The line over it is the one the view head draws under itself, so the
+ * region that scrolls is framed the same way at both ends.
+ */
+.sidebar-footer {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  /*
+   * The links sit right under the line, the colour scheme at the bottom, and
+   * the height below decides how far apart they end up. `space-between` and
+   * not a fixed gap, so the air lands between the two groups rather than
+   * under the last one.
+   */
+  justify-content: space-between;
+  gap: var(--ds-size-4);
+  inline-size: 100%;
+  /*
+   * About 240 px tall on a desktop (Simens issue 85b), and less when the
+   * window is short.
+   *
+   * The foot is taken off the thread list, which is the region that scrolls:
+   * KA CC measured 240 px here as about 180 px off the scroll area at
+   * 1440 × 900, and a window 720 tall has less to give. So the desktop value
+   * is the CEILING, not the height — `dvh` in the middle term hands the
+   * height back as the window gets shorter, and the floor is what the links
+   * and the toggle actually need to stand in.
+   *
+   * 27dvh reaches the ceiling at about 890 px of window height, which is the
+   * shortest of the two desktop sizes we measure, and gives 194 px at 720 and
+   * 228 px at 844. The floor is `--ds-size-30` (120 px), a hair over the
+   * content's own height, so nothing is ever cut off.
+   *
+   * Tokens rather than the px in the issue, as the brief asks;
+   * `--ds-size-30` is the tallest step in the scale, so the ceiling is two of
+   * them.
+   */
+  /* stylelint-disable-next-line plugin/browser-compat -- `dvh` is baseline
+     since 2022; the rule's data is behind. Same disable as in chat.css. */
+  min-block-size: clamp(var(--ds-size-30), 27dvh, calc(var(--ds-size-30) * 2));
+  padding-inline: var(--ka-sidebar-padding-inline);
+  padding-block-start: var(--ds-size-4);
+  border-block-start: var(--ka-panel-border);
+}
+
+/*
+ * Simens issue 123: the foot at the end of the scrolling region instead of
+ * below it, so the panel is one column with nothing fixed. Off by default;
+ * the hidden settings menu turns it on, see src/layout/footerMode.ts.
+ *
+ * Three things the pinned foot needs and this one does not:
+ *
+ *   - the minimum height, which existed to hold the pinned foot against the
+ *     bottom of the panel. Inside the scroller it would be dead air between
+ *     the last thread and the links;
+ *   - `space-between`, which spread the links and the colour scheme across
+ *     that height. Here they sit together at the end of the list;
+ *   - the panel's inline padding, which the scrolling region already keeps.
+ *
+ * The line over it stays. It is what separates the app's own settings from
+ * the list, whether or not the foot moves with it.
+ *
+ * No end padding here on purpose. Moving the foot inside takes BOTH
+ * `:has(> .sidebar-footer)` rules out of play — the foot is a descendant of
+ * the panel now, not a child — so the scrolling region keeps its own 32 px
+ * under its last item, and the panel keeps its own 32 px below that. Adding
+ * a third would be 80 px of air under three links.
+ */
+.sidebar-content > .sidebar-footer {
+  justify-content: start;
+  min-block-size: 0;
+  padding-inline: 0;
+  margin-block-start: var(--ds-size-6);
+}
+
+/*
+ * The three pages about Kunnskapsassistenten. A list without markers: they
+ * are links in a column, the way the old Kunnskapsassistenten draws them, and
+ * a bullet beside an icon is two markers for one item. The list keeps its
+ * role for a screen reader, which is what says how many there are.
+ */
+.sidebar-footer__links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidebar-footer__links a {
+  display: flex;
+  gap: var(--ds-size-2);
+  align-items: center;
+}
+
+/*
+ * The page the reader is on. `aria-current` is the semantics and this is only
+ * the paint, bound to the same attribute so the two cannot disagree — the
+ * same pairing the thread list makes, see threads.css.
+ *
+ * Weight and not colour: these are links, and they already carry the link
+ * colour. Making one of them a different colour would read as a different
+ * kind of thing rather than as the one you are looking at.
+ */
+.sidebar-footer__links a[aria-current='page'] {
+  font-weight: var(--ds-font-weight-semibold);
+}
+
+/*
+ * With a foot, the 32 px the region keeps under its last item and the 32 px
+ * the panel keeps under itself would be 64 px of air around one row of
+ * buttons, taken from the list that scrolls. The line already ends the
+ * region, so 16 px (`--ds-size-4`, the panel's own gap) on each side of it.
+ */
+.panel:has(> .sidebar-footer) {
+  padding-block-end: var(--ds-size-4);
+}
+
+.panel:has(> .sidebar-footer) > .sidebar-content {
+  padding-block-end: 0;
+}
+
+/*
+ * The view head: what stays put while the rest of the region scrolls.
+ *
+ * One rule for all three regions, because they asked for the same thing
+ * within a day — the answer switcher and the excerpt search in the sources
+ * panel (#54), the corpus line in the filter panel (#55), the search strip in
+ * the answer (#60). The box is the shell's and the contents are the view's;
+ * see src/layout/viewHeadContext.ts for why it cannot be the other way round.
+ *
+ * `sticky` and not a fixed band above the region, and that is what lets one
+ * rule cover the answer column as well: `.main` IS its scrolling region and
+ * has no head to sit under, so a band would mean restructuring it. Sticky
+ * also costs nothing when the region is short enough not to scroll.
+ *
+ * The ground is the region's own (`--ka-region-surface`), so content passing
+ * behind the head is actually hidden: the navigation panel's white surface,
+ * the page's tint under the sources panel and the answer.
+ *
+ * `--ka-panel-border` is the same line the panels draw against the answer
+ * column — 3.95:1 light, 4.23:1 dark, over the 3:1 WCAG 1.4.11 asks of a
+ * boundary that carries meaning. One variable, so the two cannot drift.
+ *
+ * The gap inside is the tight one, not the 48 px between a panel's blocks:
+ * everything pinned here is taken off the reading area for as long as the
+ * reader scrolls, and 48 px of that would be air. Measured by #4 at 1440 with
+ * two answers — 219 px of a 778 px region, 28 %.
+ */
+.view-head {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-3);
+  inline-size: 100%;
+  background: var(--ka-region-surface);
+  border-block-end: var(--ka-panel-border);
+  padding-block-end: var(--ds-size-3);
+}
+
+/*
+ * An empty head draws no line. The box is mounted whether or not a view fills
+ * it — it has to exist before the view can render into it — and on the
+ * untouched front page there is neither a selector nor a search to pin.
+ *
+ * `:empty` is exact here: React renders nothing into the portal target, not
+ * even whitespace, so the element really has no child nodes.
+ */
+.view-head:empty,
+.view-head[hidden] {
+  display: none;
+}
+
+/*
+ * The answer column pins its head at the top of the window, not 32 px down.
+ *
+ * A sticky element's offsets are measured against the scrollport SHRUNK BY
+ * the scroll container's own padding, so `inset-block-start: 0` in a region
+ * with `padding-block-start: 32px` pins 32 px below the top — and the answer
+ * goes on scrolling through those 32 px, in front of nothing, beside a head
+ * that is supposed to be covering it. Measured by #3 and confirmed here at
+ * 1440 with an answer on screen: the strip held `ka-message` at scroll 200
+ * and a paragraph at scroll 600.
+ *
+ * The sidebars do not have it. Their scrolling region carries no block-start
+ * padding — the panel box above it does — so 0 already means the top there.
+ * That is the shape this rule restores for the one region built differently.
+ *
+ * Cancelling the padding rather than removing it keeps the 32 px of air above
+ * the head while the reader is at the top, and costs nothing once it pins.
+ * Moving the spacing into the head instead would have pinned 32 px of air for
+ * as long as the reader scrolls, which is the height budget funn 7 and 8 are
+ * already about.
+ *
+ * **Gone since the column was split in two.** The 32 px now sits on
+ * `.main-column`, which is not the scroller, so the scrollport is no longer
+ * shrunk by it and `inset-block-start: 0` already means the top. An override
+ * left behind would have pinned the head 32 px ABOVE the region, with the
+ * answer visible in the strip over it.
+ */
+
+/*
+ * The three scrolling regions are POSITIONED, and that is not a style choice.
+ *
+ * `.ds-sr-only` is `position: absolute`. Inside an `overflow: auto` box that
+ * is itself `static`, its containing block is the nearest positioned ancestor
+ * — the document — so it is laid out against the PAGE and not against the
+ * region it is written in. Screen-reader text far down a long answer then
+ * sits below the viewport, the document grows a scrollbar of its own, and
+ * there is white under `<html>`.
+ *
+ * Measured 21.09, second answer in a thread at 900 px: `scrollHeight` 1984
+ * against an `innerHeight` of 900, with «Du skrev:» at y 1916 and
+ * «Kunnskapsassistenten svarte:» at y 1983. One declaration takes it back to
+ * 1085, which is the region's own content.
+ *
+ * All three and not only `.main`, because the reason is general: any
+ * absolutely positioned descendant — sr-only text, a tooltip, a popover —
+ * belongs to the region it is written in. A panel is one bug report away from
+ * the same thing.
+ *
+ * It changes nothing else. `position: sticky` on the view head resolves
+ * against the nearest SCROLLING ancestor, which these already were, and
+ * `scroll-padding` is a property of the scroller rather than of its
+ * containing block. Both measured after the change.
+ */
+/*
+ * The answer column is TWO boxes, and the split is the whole point.
+ *
+ * `main` is the scrolling region and fills the whole field between the
+ * panels. `.main-column` inside it is the reading width — 800 px, centred.
+ *
+ * They used to be one box, and then the grey on either side of the column was
+ * dead: the wheel does nothing unless the pointer is over a scroller, so a
+ * reader with the pointer in that margin got nothing. Lars, 21.09 on 5182:
+ * «Jeg vil kunne bruke scroll-wheelet med pilen her også – for nå er dette
+ * området ingenmannsland.»
+ *
+ * `main` keeps the id, the ref and the landmark: the skip link points at it,
+ * the `scroll-padding-block-start` the view head sets is a property of the
+ * SCROLLER, and the e2e suite measures `.main`. The inner box is a plain
+ * `div` and deliberately not a second landmark.
+ */
+.main {
+  position: relative;
+  flex: 1 0 0;
+  min-inline-size: var(--ka-main-min-width);
+  overflow-y: auto;
+  /*
+   * The END padding stays on the scroller, and only the end. When the column
+   * was split in two (21.09) both paddings moved to `.main-column`, which was
+   * right for the start — the pinned view head measures from the top of the
+   * scrollport — and wrong for the end: the compose field is sticky at the
+   * bottom with an offset of minus this padding, written for a scroller that
+   * had it. Without it the field was parked 32 px under the bottom of the
+   * window whenever the answer was taller than the window. Measured by KA CC
+   * on d78d063 at 390 × 844.
+   */
+  padding-block-end: var(--ka-main-padding-block-end);
+}
+
+/*
+ * A column of its own at least as tall as the scroller, and the view in it
+ * stretched to fill it.
+ *
+ * The chat view keeps its compose field at the bottom of a short conversation
+ * with `min-block-size: 100%`, and a percentage height only resolves against
+ * a parent whose height is known. `.main` was that parent until the split on
+ * 21.09; `.main-column` in between has no height of its own, so the 100 % came
+ * to nothing and the field stood under the last suggestion instead — 253 px
+ * above the bottom at 1440 × 900 and in the middle of a phone. So the column
+ * takes the height here, and the view in it grows into the column as a flex
+ * item: a flexed size is a real size, and the view's own `margin-block-start:
+ * auto` has room to push against again.
+ *
+ * `:last-child` is the view. The route's heading comes first and is
+ * screen-reader text, out of flow; the view head is first when it has
+ * anything in it, and must not grow.
+ */
+.main-column {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100%;
+  max-inline-size: var(--ka-main-max-width);
+  margin-inline: auto;
+  padding-block-start: var(--ds-size-8);
+  padding-inline: var(--ka-main-padding-inline);
+}
+
+.main-column > :last-child {
+  flex-grow: 1;
+}
+
+/* A plain vertical stack. Designsystemet ships no layout primitives, see
+   design/designsystemet/behov-til-komponent.md. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-4);
+  align-items: start;
+}
+
+/* ── Shared components ─────────────────────────────────────────────────── */
+
+.panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+  inline-size: 100%;
+}
+
+.panel-header__top {
+  display: flex;
+  gap: var(--ds-size-2);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.panel-header__actions {
+  display: flex;
+  gap: var(--ds-size-2);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+  align-items: start;
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/*
+ * An empty alert region must take no space and still be there.
+ *
+ * `display: none` is the one thing this rule may never say. It removes the
+ * region from the accessibility tree, and a `role="alert"` only announces
+ * content that appears inside a region that was ALREADY in the tree — so the
+ * error would arrive in silence, which is the whole failure the permanent
+ * region exists to prevent. Measured in Chrome's tree: `display: none` leaves
+ * zero alert nodes, every rule below leaves two, neither ignored.
+ *
+ * Size, not display, and out of flow. A zero-height region left in flow is
+ * still a flex item, so a panel with `gap: 32px` reserves a gap on each side
+ * of nothing; measured at 64 px between the neighbours instead of 32.
+ * `position: absolute` costs nothing and keeps the region focusable, which it
+ * has to be: it is where focus lands when the retry button unmounts itself.
+ */
+.error-state:empty {
+  position: absolute;
+  block-size: 0;
+  inline-size: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+/*
+ * Markdown answers. Designsystemet has no prose container, so the spacing
+ * between blocks is set here — see design/designsystemet/behov-til-komponent.md,
+ * question 14. Headings, paragraphs, lists, links and tables are Designsystemet
+ * components and carry their own typography; only the rhythm is ours.
+ */
+.markdown > * + * {
+  margin-block-start: var(--ds-size-4);
+}
+
+.markdown > :is(h2, h3, h4, h5, h6) {
+  margin-block-start: var(--ds-size-8);
+}
+
+/*
+ * A wide table scrolls inside its own box rather than pushing the answer
+ * column past its 800 px maximum. Table does not scale down. The box is
+ * focusable so it can be scrolled from the keyboard; ds-focus--visible gives
+ * it Designsystemet's own focus ring instead of a hand-drawn one.
+ */
+.markdown__table {
+  overflow-x: auto;
+  max-inline-size: 100%;
+}
+
+/*
+ * pre, code and blockquote have no styling in Designsystemet at all —
+ * verified across all 39 CSS files in packages/css/src.
+ *
+ * Measured while writing this: design/designsystemet/behov-til-komponent.md
+ * says data-typography="secondary" is the monospace track. It is not, at
+ * least not in the digdir theme — both primary and secondary set
+ * --ds-font-family: Inter. The theme has no monospace token at all, so code
+ * uses the CSS generic `monospace`, which is the reader's own setting rather
+ * than a typeface we picked.
+ */
+.markdown__pre {
+  overflow-x: auto;
+  padding: var(--ds-size-3);
+  border-radius: var(--ds-border-radius-md);
+  background: var(--ds-color-neutral-surface-tinted);
+  color: var(--ds-color-neutral-text-default);
+}
+
+.markdown__code {
+  font-family: monospace;
+  font-size: var(--ds-body-sm-font-size);
+}
+
+.markdown__pre .markdown__code {
+  background: none;
+  padding: 0;
+}
+
+.markdown__quote {
+  margin: 0;
+  padding-inline-start: var(--ds-size-4);
+  border-inline-start: var(--ds-size-1) solid var(--ds-color-neutral-border-subtle);
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/*
+ * A `[n]` marker in an answer. It points at an excerpt in the sources panel,
+ * and its accessible name says which document and page — see
+ * src/components/Markdown.tsx. line-height: 0 keeps the superscript from
+ * pushing the lines of a paragraph apart.
+ */
+.markdown__citation {
+  line-height: 0;
+}
+
+/*
+ * The page that stands where the app was after an error React could not
+ * recover from. See src/layout/AppErrorBoundary.tsx.
+ *
+ * The page's own ground and the answer column's air, so it reads as the app
+ * saying something and not as a browser error. Nothing here may depend on the
+ * shell, since the shell is what is gone.
+ */
+.app-crash {
+  box-sizing: border-box;
+  min-block-size: 100%;
+  padding: var(--ds-size-15) var(--ka-main-padding-inline);
+  background: var(--ds-color-neutral-background-tinted);
+}
+
+/*
+ * A reading measure, in characters because no token is a line length, and
+ * centred in the window. Everything in it starts at its edge, the button too.
+ */
+.app-crash__body {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--ds-size-4);
+  max-inline-size: 65ch;
+  margin-inline: auto;
+}
+
+/* The details box is drawn the width of its column, as Designsystemet draws it. */
+.app-crash__body > .ds-details {
+  align-self: stretch;
+}

@@ -1,0 +1,34 @@
+data: {"type":"stage","stage":"starting","iteration":0,"maxIterations":10}
+
+data: {"type":"stage","stage":"writing","iteration":0,"maxIterations":10}
+
+data: {"type":"thinking","reasoning":"Jeg vil finne DFØs årsrapport for 2024 og hente avsnittene som konkret vurderer måloppnåelse, slik at svaret bygger på rapportens egen formulering."}
+
+data: {"type":"tool-call","tool":"search","detail":"Search pass 1: found 63 chunks (63 new). 63 total seen. Auto-filtered by orgs_long: Direktoratet for forvaltning og økonomistyring. Ranking: ColBERT semantic rerank (576ms). Higher rerank= means more ","queries":["DFØ årsrapport 2024 måloppnåelse","site:dfo.no årsrapport 2024 måloppnåelse DFØ","Direktoratet for forvaltning og økonomistyring årsrapport 2024 vurdering måloppnåelse"],"durationMs":2487}
+
+data: {"type":"stage","stage":"searching","iteration":0,"maxIterations":10,"queries":["DFØ årsrapport 2024 måloppnåelse","site:dfo.no årsrapport 2024 måloppnåelse DFØ","Direktoratet for forvaltning og økonomistyring årsrapport 2024 vurdering måloppnåelse"]}
+
+data: {"type":"stage","stage":"starting","iteration":1,"maxIterations":10}
+
+data: {"type":"stage","stage":"writing","iteration":1,"maxIterations":10}
+
+data: {"type":"thinking","reasoning":"Søket identifiserer riktig årsrapport. Jeg leser nå leders beretning og resultatkapittelet, der den samlede vurderingen og eventuelle avvik normalt framgår."}
+
+data: {"type":"tool-call","tool":"read_chunks","detail":"Read 4 chunks (10904 chars this call, 10904 cumulative):\n\n--- chunk_id=515e552319f2 doc_num=372017 chunk_index=1 title=\"Årsrapport Direktoratet for forvaltning og økonomistyring 2024\" ---\nDirektoratet","durationMs":146,"chunkCount":4}
+
+data: {"type":"tool-call","tool":"search","detail":"Search pass 2: found 10 chunks (9 new). 72 total seen. Auto-filtered by title: 2024. Ranking: ColBERT semantic rerank (388ms). Higher rerank= means more semantically relevant to the query.\n1. chunk_id","queries":["\"DFØs årsrapport 2024\" \"måloppnåelsen\"","\"DFØs årsrapport 2024\" \"måloppnåelse\" \"vurderer\"","\"DFØs årsrapport 2024\" \"oppnådd\" \"mål\""],"durationMs":1351}
+
+data: {"type":"stage","stage":"reading","iteration":1,"maxIterations":10,"queries":["\"DFØs årsrapport 2024\" \"måloppnåelsen\"","\"DFØs årsrapport 2024\" \"måloppnåelse\" \"vurderer\"","\"DFØs årsrapport 2024\" \"oppnådd\" \"mål\""]}
+
+data: {"type":"tool-call","tool":"generate_response","detail":"DFØ skriver at direktoratet «i all hovedsak [har] oppnådd gode resultater» sett opp mot målene Finansdepartementet satte i tildelingsbrevet for 2024. [1]\n\nÅrsrapporten peker blant annet på stabile og ","queries":["Hva skriver DFØ i årsrapporten for 2024 om måloppnåelse?"],"durationMs":2563}
+
+data: {"type":"stage","stage":"starting","iteration":1,"maxIterations":10}
+
+data: {"type":"stage","stage":"done","iteration":1,"maxIterations":10}
+
+data: {"type":"delta","text":"DFØ skriver at direktoratet «i all hovedsak [har] oppnådd gode resultater» sett opp mot målene Finansdepartementet satte i tildelingsbrevet for 2024. [1]\n\nÅrsrapporten peker blant annet på stabile og sikre lønns- og regnskapstjenester, nye kunder og digitale forbedringer, økt tilfredshet med økonomitjenestene og positiv utvikling i brukernes vurdering av anskaffelsestjenestene. [1] Samtidig fremheves enkelte utfordringer: Kundenes vurdering av om økonomitjenestene gir effektivitet og gevinster har falt videre, og vurderingen av tilgjengeligheten og styringsstøtten fra økonomiske data er fortsatt lavere enn i 2021. DFØ understreker derfor behovet for å videreføre forbedringsarbeidet. [1]"}
+
+data: {"type":"sources","sources":[{"docNum":"372017","title":"Årsrapport Direktoratet for forvaltning og økonomistyring 2024","url":"https://kudos.dfo.no/documents/372017","marker":1,"chunkId":"515e552319f2"},{"docNum":"372017","title":"Årsrapport Direktoratet for forvaltning og økonomistyring 2024","url":"https://kudos.dfo.no/documents/372017","marker":2,"chunkId":"b00b55bedb4f"},{"docNum":"372017","title":"Årsrapport Direktoratet for forvaltning og økonomistyring 2024","url":"https://kudos.dfo.no/documents/372017","marker":3,"chunkId":"259019336ab0"},{"docNum":"372017","title":"Årsrapport Direktoratet for forvaltning og økonomistyring 2024","url":"https://kudos.dfo.no/documents/372017","marker":4,"chunkId":"4086e2c87307"}]}
+
+data: {"type":"done","conversationId":"y_1F3Mnm8vBKNjI5EhEOT","insufficient":false}
+

@@ -1,0 +1,19 @@
+# Bygget i bildet, ikke kopiert inn: en dist/ fra maskinen ville lagt seg
+# over den som bygges og gjort bildet avhengig av hvem som kjørte docker.
+dist
+node_modules
+
+.git
+.github
+.env
+.env.local
+.vscode
+
+# Testartefakter og alt som bare finnes lokalt.
+playwright-report
+test-results
+coverage
+docs
+tests
+design-tokens
+.tokens-verify

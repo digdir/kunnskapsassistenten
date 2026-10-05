@@ -1,0 +1,428 @@
+/*
+ * CSS for the sources view.
+ *
+ * It sits in the view's own folder rather than in src/styles/global.css,
+ * because that file belongs to the foundation and four workers editing one
+ * stylesheet is four conflicts. Imported from SourcesView.tsx, so it loads
+ * after global.css and, like it, OUTSIDE every layer — unlayered author CSS
+ * beats all layered author CSS, so nothing here needs !important.
+ *
+ * No px, no hex, no font names: every value is a --ds-* token, so the panel
+ * follows the theme, the size mode and dark mode.
+ *
+ * The view fills whatever width the slot gives it. The slot's width — 198 px
+ * collapsed, open width still open in question 26 — belongs to the layout.
+ */
+
+.sources-view {
+  display: flex;
+  flex-direction: column;
+  /* 48 px between the blocks of the panel, as in the `kilder` frame. */
+  gap: var(--ds-size-12);
+  inline-size: 100%;
+  /*
+   * The panel is what the cards inside it answer to, not the window.
+   *
+   * The slot is 432 px wide when there is room and shrinks to 336 when there
+   * is not, and the view can be moved to another slot entirely (answer 48), so
+   * a viewport media query would be asking the wrong question in both
+   * directions. `container-type: inline-size` costs nothing here: the width
+   * comes from the slot, never from the content.
+   */
+  container: sources / inline-size;
+  /*
+   * «Kommunikasjonsmyndighet» is 276 px wide in the document heading and the
+   * block it sits in is 262, so the title was cut off mid-word by the card's
+   * own `overflow: clip`. Measured on 1440. `break-word` rather than
+   * `anywhere`: it only breaks a word that cannot fit on a line of its own,
+   * and it leaves the min-content width alone.
+   */
+  overflow-wrap: break-word;
+}
+
+/*
+ * Author CSS sits outside every layer, so `display: flex` above beats the
+ * browser's own `[hidden] { display: none }` and the panel would stay on
+ * screen while the button said it was hidden. See CONTRIBUTING.
+ */
+.sources-view[hidden] {
+  display: none;
+}
+
+/* Which answer's sources are on screen */
+
+/*
+ * Laid out like the hit counter below it, on purpose: they are the same kind
+ * of row — a status on the left, previous and next on the right — and two
+ * rows that do the same thing should not look like two different ideas.
+ */
+.sources-answer-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-size-2);
+}
+
+.sources-answer-switcher__count {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+.sources-answer-switcher__steps {
+  display: flex;
+  gap: var(--ds-size-1);
+}
+
+/* Search */
+
+.sources-search__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-2);
+}
+
+.sources-search__description {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+.sources-search__results {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-size-2);
+  /* Reserve the row even when empty, so the layout does not jump the moment
+     the first hit count appears. */
+  min-block-size: var(--ds-size-8);
+}
+
+.sources-search__count {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+.sources-search__steps {
+  display: flex;
+  gap: var(--ds-size-1);
+}
+
+/* Document cards */
+
+.sources-documents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-6);
+}
+
+/*
+ * Figma's `document` (node 1549-46119): a blue head and a grey body, each
+ * with its own border, and the excerpts as white boxes in the body.
+ *
+ * `Card` draws one border round the whole and a rule between its blocks.
+ * Both are off here and each block draws its own, because the two halves
+ * have different borders in the design: brand3 round the head, neutral round
+ * the body. The card keeps its radius and its clipping, and each block rounds
+ * its own two corners to match, so no border is cut off at a corner.
+ *
+ * How much air, by the width of the view (Simens runde 3, and the dirigent's
+ * answer S5, 30.09). Figma draws the panel with a view of 410 px, and from
+ * there it gets Figma's own: 16 in the head, 24 / 24 / 32 in the body, 16 in
+ * each excerpt. Under that it gets `--ds-size-3` all round.
+ *
+ * Measured 05.10 against main, the quote's width: 341 at 1280, 768 and 440,
+ * 299 at 390 and 317 at 1512 are what they were. 1440 with both panels open
+ * is the one view under 320 px (295), and there the quote went from 277 to
+ * 245: the old card took 8 px at the sides in a view that narrow, and two
+ * boxes inside each other cannot. Figma's air there would leave 213 (worked
+ * out, not drawn). Brukerblikk 2026-09-15, funn 1, called 174 px thirty lines
+ * of two or three words.
+ */
+.source-document {
+  --ka-document-head-padding: var(--ds-size-3);
+  --ka-document-body-padding: var(--ds-size-3);
+  --ka-excerpt-padding: var(--ds-size-3);
+  --dsc-card-border-width: 0;
+  --dsc-card-block-border-width: 0;
+
+  background: transparent;
+}
+
+@container sources (inline-size >= 410px) {
+  .source-document {
+    --ka-document-head-padding: var(--ds-size-4);
+    --ka-document-body-padding: var(--ds-size-6) var(--ds-size-6) var(--ds-size-8);
+    --ka-excerpt-padding: var(--ds-size-4);
+  }
+}
+
+.source-document__head {
+  padding: var(--ka-document-head-padding);
+  border: var(--ds-border-width-default) solid var(--ds-color-brand3-border-subtle);
+  border-start-start-radius: var(--ds-border-radius-lg);
+  border-start-end-radius: var(--ds-border-radius-lg);
+  /*
+   * Document titles are where the long compound nouns are, and a Norwegian
+   * one does not fit on a line of a narrow panel: «kommunikasjonsmyndighet»
+   * alone is 276 px. `break-word` on the view keeps it inside the card
+   * whatever happens; this asks the browser to break it where Norwegian
+   * breaks instead, and the page says `lang="nb"` so it can. It is advice,
+   * not a rule — a build without the dictionary simply falls back to
+   * `break-word`.
+   */
+  /* stylelint-disable-next-line plugin/browser-compat -- uprefikset
+     `hyphens` kom i Safari 17; 16 har den bare som `-webkit-hyphens`. Da
+     deles ingen ord der, og avsnittet over sier hva som skjer i stedet:
+     `break-word`. Det er fallet fila alt beskriver. */
+  hyphens: auto;
+  /* The title bar is light blue in Figma without the colour being explained
+     (dokument.md says so plainly). Kept as brand3, which is where that blue
+     lives in the theme, and paired with brand3 text so it survives dark mode. */
+  background: var(--ds-color-brand3-surface-tinted);
+  color: var(--ds-color-brand3-text-default);
+}
+
+.source-document__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-4);
+  padding: var(--ka-document-body-padding);
+  border: var(--ds-border-width-default) solid var(--ds-color-neutral-border-subtle);
+  border-block-start: 0;
+  border-end-start-radius: var(--ds-border-radius-lg);
+  border-end-end-radius: var(--ds-border-radius-lg);
+  background: var(--ds-color-neutral-background-tinted);
+}
+
+/* Designsystemet spaces a block's children with a margin in `:where()`; the
+   gap above is all of it. */
+.source-document__body > * {
+  margin-block: 0;
+}
+
+.source-document__subtitle {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/*
+ * «Les dokumentet på Kudos», and the page link in an excerpt: the words, then
+ * Figma's icon for leaving the app. Designsystemet's link gives a last icon
+ * its gap and its size; this keeps the two on one line and at the start.
+ */
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  inline-size: fit-content;
+}
+
+/* Excerpts */
+
+/*
+ * Figma's `chunk`: a white box in the grey body, with the number and the
+ * toggle on one row and the quote under them when it is open (Simens issue
+ * 86). Closed, the row is all there is.
+ *
+ * The row is two elements in one grid cell. `Details` puts its summary and
+ * its content in one element, so the summary cannot share a flex row with
+ * the heading without drawing the toggle ourselves, which answer 38 rules
+ * out; and the clean way to split them, `::details-content`, is missing from
+ * Safari 16, iOS 16, Firefox 140 and Chrome 109 (stylelint, against
+ * `.browserslistrc`). That is why the toggle had a row of its own until 30.09
+ * (KA CC on #199). In one cell, the heading lies over the start of the
+ * summary row and the summary's label stands at its end: one row, as Figma
+ * draws it, and the summary is still the whole row to the pointer. The
+ * content opens under the row, in the same element as before, so the toggle
+ * stays where the pointer left it.
+ */
+.source-excerpt {
+  /* The row's height: the summary's, and so the heading's box over it. */
+  --ka-excerpt-row: var(--ds-size-10);
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: var(--ka-excerpt-padding);
+  background: var(--ds-color-neutral-surface-default);
+  border-radius: var(--ds-border-radius-lg);
+}
+
+/*
+ * An excerpt the answer never cited says so under its heading, so its row
+ * holds two lines and is a step taller. Rare: the mock has none, and live and
+ * bff number every chunk they return.
+ */
+.source-excerpt[data-uncited='true'] {
+  --ka-excerpt-row: var(--ds-size-14);
+}
+
+.source-excerpt__head {
+  grid-area: 1 / 1;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-block-size: var(--ka-excerpt-row);
+  /* Never under the summary's own label: «Åpne» with the chevron, the gap and
+     the summary's padding is 85 px from the row's end at the `md` size mode,
+     and `--ds-size-22` is 88. */
+  max-inline-size: calc(100% - var(--ds-size-22));
+  /* Over the summary, which is positioned and would otherwise paint its hover
+     surface on top of the heading; and transparent to the pointer, so a click
+     on «Utdrag 4» is a click on the row. */
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.source-excerpt__head > * {
+  margin-block: 0;
+}
+
+.source-excerpt__details {
+  grid-area: 1 / 1;
+  min-inline-size: 0;
+  --dsc-details-size: var(--ka-excerpt-row);
+  /* Across only. With Designsystemet's 8 px over and under the 27 px label
+     the summary came out 43 px, three more than the row, and the heading
+     centred in 40 stood a pixel and a half off the word beside it. */
+  --dsc-details-padding: 0 var(--ds-size-2);
+  /* Figma's toggle is a tertiary button in the accent colour. */
+  --dsc-details-summary-color: var(--ds-color-accent-text-subtle);
+  /*
+   * No surface of its own, so it takes the box's: white, and the accent one
+   * when a marker in the answer points here. The hover surface stays, because
+   * the summary is still a control.
+   */
+  --dsc-details-background: transparent;
+  --dsc-details-summary-background: transparent;
+  --dsc-details-summary-background--open: transparent;
+  --dsc-details-summary-background--hover: var(--ds-color-neutral-surface-hover);
+  border-block-width: 0;
+}
+
+/*
+ * The label, then the chevron, at the row's end: Figma puts the chevron after
+ * the word. Designsystemet draws it as the summary's `::before`, so the row
+ * is turned round rather than the chevron moved, and `flex-start` in a
+ * reversed row is the end.
+ */
+.source-excerpt__details > summary {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  border-radius: var(--ds-border-radius-default);
+  /*
+   * Out by its own padding at each end, into the box's padding, which is 12 or
+   * 16 and so has room for it.
+   *
+   * Designsystemet draws the focus ring inside the summary, 6 px of outline
+   * and inset shadow from its edge. With the summary at the box's content
+   * edge, that ring lay over the «U» of «Utdrag N», which starts on the same
+   * edge (KA CC on #229, round 1). Out here, the ring is 8 px clear of the
+   * heading at the start, as it is of «Åpne» at the end, and the heading, the
+   * quote and the label keep the edges they line up on.
+   */
+  margin-inline: calc(var(--ds-size-2) * -1);
+}
+
+/*
+ * Designsystemet indents everything under a summary by 20 px on each side and
+ * spaces it by 20 above and below. The box's padding is the indent now, so
+ * the content starts at the heading's edge, 16 px under the row as in Figma.
+ * Designsystemet writes these in `:where()`, so a plain class selector is
+ * enough to replace them.
+ */
+.source-excerpt__details > :not(summary):not(u-summary) {
+  margin-inline: 0;
+}
+
+.source-excerpt__details > :not(summary):not(u-summary):nth-child(2) {
+  margin-block-start: var(--ds-size-4);
+}
+
+.source-excerpt__details > :not(summary):not(u-summary):last-child {
+  margin-block-end: 0;
+}
+
+/* The quote's own section heading and page, the first line of the quote in
+   Figma. */
+.source-excerpt__quote-heading {
+  color: var(--ds-color-neutral-text-default);
+}
+
+/*
+  The quote keeps the chunk's paragraphs, list items and table rows as line
+  breaks (readableText.ts), and this is what draws them.
+*/
+.source-excerpt__quote {
+  white-space: pre-line;
+}
+
+/* The page link and «Tilbake til svaret», each on a line of its own under the
+   quote. */
+.source-excerpt__details .source-link,
+.source-excerpt__back {
+  margin-block-start: var(--ds-size-3);
+}
+
+.source-excerpt__page,
+.source-excerpt__uncited {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/*
+  Not a quote. Every other line in this box is text from the document, and
+  this one is the panel saying the passage could not be fetched. Italic and
+  subtle keeps the two apart without a second colour: a reader who skims the
+  panel for quotes should be able to see at a glance that this is not one.
+*/
+.source-excerpt__quote--unavailable {
+  font-style: italic;
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/*
+ * «Tilbake til svaret», last in the open quote.
+ *
+ * A block box that shrinks to its content, so it starts on a line of its own
+ * instead of running on after the page link, and still keeps the start edge
+ * the rest of the quote has.
+ */
+.source-excerpt__back {
+  display: flex;
+  inline-size: fit-content;
+}
+
+/* The excerpt a [n] marker in the answer points at. A band along the inline
+   start edge, drawn as an inset shadow so nothing shifts when it appears. */
+.source-excerpt[data-active='true'] {
+  background: var(--ds-color-accent-surface-tinted);
+  box-shadow: inset var(--ds-size-1) 0 0 0 var(--ds-color-accent-base-default);
+}
+
+/* Search matches */
+
+.sources-mark {
+  background: var(--ds-color-warning-surface-tinted);
+  color: var(--ds-color-warning-text-default);
+  border-radius: var(--ds-border-radius-sm);
+}
+
+.sources-mark[data-current='true'] {
+  background: var(--ds-color-warning-base-default);
+  color: var(--ds-color-warning-base-contrast-default);
+}
+
+/* Loading and empty */
+
+.sources-placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-8);
+}
+
+.sources-placeholder__documents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-6);
+}
+
+.sources-empty {
+  color: var(--ds-color-neutral-text-subtle);
+}

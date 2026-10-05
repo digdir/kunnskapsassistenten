@@ -1,0 +1,282 @@
+{
+  "facets": [
+    {
+      "id": "documentType",
+      "field": "type",
+      "label": "dokumenttyper",
+      "options": [
+        {
+          "value": "Tildelingsbrev",
+          "count": 3378
+        },
+        {
+          "value": "Statusrapport",
+          "count": 1709
+        },
+        {
+          "value": "Evaluering",
+          "count": 1472
+        },
+        {
+          "value": "Årsrapport",
+          "count": 1418
+        },
+        {
+          "value": "Proposisjon til Stortinget",
+          "count": 1071
+        },
+        {
+          "value": "Strategi/plan",
+          "count": 475
+        },
+        {
+          "value": "Instruks",
+          "count": 332
+        },
+        {
+          "value": "Melding til Stortinget",
+          "count": 209
+        }
+      ]
+    },
+    {
+      "id": "organisation",
+      "field": "orgs_long",
+      "label": "virksomheter",
+      "options": [
+        {
+          "value": "Kunnskapsdepartementet",
+          "count": 920
+        },
+        {
+          "value": "Justis- og beredskapsdepartementet",
+          "count": 912
+        },
+        {
+          "value": "Helse- og omsorgsdepartementet",
+          "count": 674
+        },
+        {
+          "value": "Kommunal- og distriktsdepartementet",
+          "count": 639
+        },
+        {
+          "value": "Arbeids- og inkluderingsdepartementet",
+          "count": 589
+        },
+        {
+          "value": "Nærings- og fiskeridepartementet",
+          "count": 575
+        },
+        {
+          "value": "Norges forskningsråd",
+          "count": 540
+        },
+        {
+          "value": "Politi- og lensmannsetaten",
+          "count": 534
+        },
+        {
+          "value": "Samferdselsdepartementet",
+          "count": 470
+        },
+        {
+          "value": "Helsedirektoratet",
+          "count": 436
+        }
+      ]
+    },
+    {
+      "id": "year",
+      "field": "concerned_years",
+      "valueType": "integer",
+      "label": "år",
+      "options": [
+        {
+          "value": "2035",
+          "count": 27
+        },
+        {
+          "value": "2034",
+          "count": 26
+        },
+        {
+          "value": "2033",
+          "count": 31
+        },
+        {
+          "value": "2032",
+          "count": 33
+        },
+        {
+          "value": "2031",
+          "count": 33
+        },
+        {
+          "value": "2030",
+          "count": 61
+        },
+        {
+          "value": "2029",
+          "count": 60
+        },
+        {
+          "value": "2028",
+          "count": 70
+        },
+        {
+          "value": "2027",
+          "count": 88
+        },
+        {
+          "value": "2026",
+          "count": 103
+        },
+        {
+          "value": "2025",
+          "count": 1165
+        },
+        {
+          "value": "2024",
+          "count": 1883
+        },
+        {
+          "value": "2023",
+          "count": 1851
+        },
+        {
+          "value": "2022",
+          "count": 1878
+        },
+        {
+          "value": "2021",
+          "count": 1798
+        },
+        {
+          "value": "2020",
+          "count": 1575
+        },
+        {
+          "value": "2019",
+          "count": 324
+        },
+        {
+          "value": "2018",
+          "count": 65
+        },
+        {
+          "value": "2017",
+          "count": 54
+        },
+        {
+          "value": "2016",
+          "count": 43
+        },
+        {
+          "value": "2015",
+          "count": 37
+        },
+        {
+          "value": "2014",
+          "count": 27
+        },
+        {
+          "value": "2013",
+          "count": 21
+        },
+        {
+          "value": "2012",
+          "count": 19
+        },
+        {
+          "value": "2011",
+          "count": 18
+        },
+        {
+          "value": "2010",
+          "count": 19
+        },
+        {
+          "value": "2009",
+          "count": 14
+        },
+        {
+          "value": "2008",
+          "count": 11
+        },
+        {
+          "value": "2007",
+          "count": 10
+        },
+        {
+          "value": "2006",
+          "count": 12
+        },
+        {
+          "value": "2005",
+          "count": 9
+        },
+        {
+          "value": "2004",
+          "count": 9
+        },
+        {
+          "value": "2003",
+          "count": 9
+        },
+        {
+          "value": "2002",
+          "count": 9
+        },
+        {
+          "value": "2001",
+          "count": 8
+        },
+        {
+          "value": "2000",
+          "count": 8
+        },
+        {
+          "value": "1999",
+          "count": 6
+        },
+        {
+          "value": "1998",
+          "count": 6
+        },
+        {
+          "value": "1997",
+          "count": 6
+        },
+        {
+          "value": "1996",
+          "count": 6
+        },
+        {
+          "value": "1995",
+          "count": 6
+        },
+        {
+          "value": "1994",
+          "count": 6
+        },
+        {
+          "value": "1993",
+          "count": 6
+        },
+        {
+          "value": "1992",
+          "count": 6
+        },
+        {
+          "value": "1991",
+          "count": 6
+        },
+        {
+          "value": "1990",
+          "count": 6
+        }
+      ]
+    }
+  ]
+}

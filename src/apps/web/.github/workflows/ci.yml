@@ -1,0 +1,124 @@
+# Everything CONTRIBUTING asks for before a push, run again where nobody can
+# forget it. The five local checks in the order they are listed there, then the
+# end-to-end suite against the built app.
+#
+# No secrets. The suite runs in mock mode (VITE_API_MODE is set by
+# playwright.config.ts), so CI never talks to the KA backend and never needs a
+# key. Keep it that way: a workflow that needs a secret cannot run on a fork.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # Manual, from the Actions tab. GitHub dropped the run for a push on
+  # 2026-09-15 and there was no way to ask for another: a new push, an amend,
+  # a close and reopen and an empty commit all produced nothing, while other
+  # branches got their runs. This is the handle for the next time.
+  workflow_dispatch:
+
+# A branch that gets a second push does not need the first run finished.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, tests and e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Node
+        uses: actions/setup-node@v7
+        with:
+          # The version README asks for. `cache: npm` keys on
+          # package-lock.json, which is the file `npm ci` reads anyway.
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format
+        run: npm run format:check
+
+      # Rebuilds the theme from designsystemet.config.json and fails if the
+      # result differs from what is checked in. It is here rather than left to
+      # a person because the checked-in build is what ships: nothing in the
+      # app's own build regenerates it.
+      - name: Verify the theme is the one checked in
+        run: npm run tokens:verify
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config.ts builds the app again and serves it with `vite
+      # preview`, because the built bundle is what a user gets. Chromium only;
+      # this suite tests the product, not browser compatibility.
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      # The suite writes its report outside the repository, to
+      # ~/.cache/ka-review/e2e, so that nothing it produces can break
+      # `format:check` for everyone. See the note in playwright.config.ts.
+      # upload-artifact does not expand `~`, so the shell does it here.
+      - name: Collect the Playwright report
+        if: failure()
+        run: |
+          mkdir -p ci-artifacts
+          cp -r "$HOME/.cache/ka-review/e2e" ci-artifacts/ 2>/dev/null || true
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: ci-artifacts
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # The image the Deploy workflow builds on main, built here first so a broken
+  # Dockerfile stops at the pull request and not after the merge. Nothing is
+  # pushed. A job of its own so it runs beside the checks rather than after
+  # them. Not on pushes to main: Deploy builds the same image there.
+  image:
+    name: Docker image
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build
+        run: docker build --tag ka-frontend:ci .
+
+      # Mock, no key, as in the test environment: the container starts, the
+      # server answers and the page is the built client.
+      - name: Start it and ask
+        run: |
+          docker run --detach --rm --name ka --publish 8787:8787 -e KA_MODE=mock ka-frontend:ci
+          # --retry-all-errors and not --retry-connrefused: Docker's port proxy
+          # accepts the connection before the server listens and then resets
+          # it, which curl does not count as refused. Measured on this PR.
+          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/healthz | tee healthz.json
+          grep -q '"mode":"mock"' healthz.json
+          curl -fsS localhost:8787/ | grep -q '/config.js'
+          docker stop ka
