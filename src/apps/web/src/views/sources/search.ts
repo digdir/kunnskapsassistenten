@@ -9,7 +9,7 @@ import type { SearchableItem } from '../../components';
  * one piece that has to know what a document is, which is why it stayed here
  * when the rest moved out on 2026-09-15.
  *
- * Lars asked for one mechanism, not two (answers 27 and 55): excerpts today,
+ * One mechanism was asked for, not two (answers 27 and 55): excerpts today,
  * whole documents later. Adding document bodies is one more `kind` and one
  * more loop here — the matching, the counter and the previous/next navigation
  * do not change.

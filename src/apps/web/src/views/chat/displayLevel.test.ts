@@ -11,7 +11,7 @@ import {
  * Visningsnivået: hvor mye av assistentens eget arbeid et svar viser.
  *
  * Standard er standard. Uten at noen har valgt noe, ser ingen det tekniske —
- * det var poenget med Simens issue 88, og det er også det som gjør at en
+ * det var poenget med issue 88, og det er også det som gjør at en
  * lagret verdi ingen kjenner igjen ikke får lov til å slå gjennom.
  */
 describe('visningsnivået', () => {

@@ -12,7 +12,7 @@ type SourcesSummaryProps = {
 
 /**
  * «Kilder brukt i svaret»: the documents the answer is built on, under the
- * answer, as a way into the sources panel (Simens issue 113, Figma
+ * answer, as a way into the sources panel (issue 113, Figma
  * 1712:36955).
  *
  * One row per document and not per excerpt. The `[n]` markers in the text are
@@ -35,7 +35,7 @@ type SourcesSummaryProps = {
  * bug, and a circle drawn there would knock the fix out.
  *
  * This replaced «Snarveier til dokumentene» at the top of the sources panel,
- * the same list once per panel (Simens issue 113): here it stands by the
+ * the same list once per panel (issue 113): here it stands by the
  * answer it belongs to, where the reader meets it first.
  *
  * Open from the start, as Figma draws it. «Fremgangsmåte» opens only where

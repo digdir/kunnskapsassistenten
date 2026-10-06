@@ -2,7 +2,7 @@ import { Heading } from '@digdir/designsystemet-react';
 import { Kickstarters } from './Kickstarters';
 
 type WelcomeProps = {
-  /** The signed-in user's first name. Figma hardcodes «Simen»; this does not. */
+  /** The signed-in user's first name. Figma hardcodes a name; this does not. */
   userName?: string;
   onPickKickstarter: (question: string) => void;
   /** The three suggestions for the corpus on screen. */
@@ -17,7 +17,7 @@ type WelcomeProps = {
  * nothing here». This one is the start of a conversation, and it is the
  * fullest screen in the flow rather than the emptiest.
  *
- * The greeting is two lines in Figma, «Hei, Simen 👋» and «Hva lurer du på?».
+ * The greeting is two lines in Figma, «Hei, <fornavn> 👋» and «Hva lurer du på?».
  * Without a name the first line would read «Hei,  👋», so it falls back to a
  * plain «Hei 👋». The waving hand is decorative — a screen reader announcing
  * «vinkende hånd» in the middle of a greeting adds nothing — so it is hidden

@@ -11,8 +11,9 @@ let client: UploadClient | undefined;
  * `VITE_API_MODE` is the same switch `createChatClient()` reads: mock mode
  * does the whole flow in the browser, and every other mode refuses honestly
  * because there is no endpoint (API-bestilling A3). That includes `bff`:
- * Nikolai's BFF has no upload route either, and a test that asked only
- * «is it live?» handed the pod the mock, which took files that went nowhere.
+ * the BFF in digdir/kunnskapsassistenten has no upload route either, and a
+ * test that asked only «is it live?» handed the pod the mock, which took
+ * files that went nowhere.
  * Found by #2 on 30.09. Mock is the one mode named, so a mode added later
  * refuses until someone gives it an upload.
  *

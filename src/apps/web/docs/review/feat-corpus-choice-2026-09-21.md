@@ -126,7 +126,7 @@ kan appen søke i NorQuAD mens panelet påstår Kudos.
 
 Det er ingen grunn til å holde igjen #103; det er en grunn til at #2 sin
 `feat/corpus-select` ikke bør bli liggende, og til at ingen demonstrerer
-korpusbytte for Lars i mellomtida.
+korpusbytte i mellomtida.
 
 ## Til dirigenten, praktisk
 

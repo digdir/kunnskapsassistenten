@@ -43,7 +43,7 @@ const NAV_OPEN = 400;
 /**
  * A collapsed sidebar is a rail, and both collapse to the same one.
  *
- * Decided 2026-09-15 (`rolle-5d-kollapset-rail.md`) after Lars looked at the
+ * Decided 2026-09-15 (`rolle-5d-kollapset-rail.md`) after looking at the
  * collapsed navigation panel in dark mode: 236 px of empty surface with one
  * button at the top did not read as a panel folded away. 67 is the icon-only
  * toggle button at 42 px, 12 px of padding on each side, and the rail's own
@@ -797,7 +797,7 @@ test.describe('layouten', () => {
 
 /**
  * The compose field at the bottom of the window, on the five surfaces the
- * brief on Simen's changes measures (design/_briefs/bygg/visuelt-simen-2026-09-30.md).
+ * brief on the design changes of 2026-09-30 measures.
  *
  * It was wrong twice at once without a test noticing, both since the answer
  * column was split in two on 21.09. On the start page the field stood under

@@ -45,7 +45,7 @@ test.describe('brukerblikk-funnene holder', () => {
     await expect(row).toBeVisible();
 
     /*
-     * Unntak fra dirigenten for denne påstanden (Lars, 23.09): trådradene
+     * Unntak fra dirigenten for denne påstanden (23.09): trådradene
      * skal ikke være understreket. Funnet står — en rad må se klikkbar ut —
      * men det som bærer det er nå pekerformen, hover-flata over HELE raden og
      * fokusringen, slik Designsystemets egen sidemeny gjør det. Målt, ikke

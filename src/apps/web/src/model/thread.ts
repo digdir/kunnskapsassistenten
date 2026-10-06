@@ -65,7 +65,7 @@ export interface Thread {
    *
    * On a thread the browser has just made, it is the filter the first
    * question is asked with, so the client can store it when it makes the
-   * conversation (live, `filter-value`; Simens issue 90). On a thread read
+   * conversation (live, `filter-value`; issue 90). On a thread read
    * back, it is what the backend kept.
    *
    * Absent when the thread has none, and when the client cannot know: the

@@ -120,8 +120,8 @@ export interface MockDelays {
  * How fast the mock answers, as three settings rather than a number.
  *
  * `realistic` is the default and the reason this exists: a mock that answers
- * instantly cannot show what it is supposed to show. Lars asked to see the
- * skeletons, the thinking panel and the streaming actually happen, and at
+ * instantly cannot show what it is supposed to show. The skeletons, the
+ * thinking panel and the streaming have to be visible as they happen, and at
  * 500 ms per thinking step and 18 ms per token the whole thing was over
  * before any of them registered. These numbers are what a real agent takes —
  * measured against the running stack on 2026-09-11, one question took 15,1
@@ -185,6 +185,22 @@ export const defaultMockDelays: MockDelays = mockSpeeds[defaultMockSpeed];
  * rapporten» is a real question and has to get a real answer.
  */
 export const MOCK_FAILURE_QUERY = 'simuler feil';
+
+/**
+ * Ask this and the answer ends with a link that has no space in it, longer
+ * than a phone is wide.
+ *
+ * A web address is the one thing in an answer that cannot wrap at a space,
+ * and the answers from the backend carry them. Without one in the mock, the
+ * end-to-end check that nothing scrolls sideways (tests/e2e/viewport-fit.spec.ts)
+ * could only ever measure prose. Exact match, like `MOCK_FAILURE_QUERY`, and
+ * not a thread: the thread list stays the eleven it is.
+ */
+export const MOCK_LONG_LINK_QUERY = 'simuler lang lenke';
+
+/** The paragraph `MOCK_LONG_LINK_QUERY` adds: one link, 175 characters, no space. */
+export const MOCK_LONG_LINK =
+  'https://kudos.dfo.no/dokument/987461a2-6260-4deb-ab9b-296056dac256?utdrag=arsrapport-2024-kapittel-3-maloppnaelse-og-resultater-for-kommunikasjonsmyndigheten&visning=fulltekst';
 
 /**
  * One question per error code, so each of the cases can be seen.
@@ -549,8 +565,8 @@ export class MockChatClient implements ChatClient {
       }
 
       /*
-       * A cached conversation, when the question is one of the eleven. Lars
-       * asked for «noen nye søk, cachede, så jeg kan teste selv»; see
+       * A cached conversation, when the question is one of the eleven. New
+       * cached searches were asked for, so the app can be tried by hand; see
        * conversations/scripts.ts. Everything below it — steps, answer,
        * sources, done — is the same sequence the default answer uses, so a
        * scripted turn and an unscripted one are indistinguishable to a view.
@@ -657,9 +673,12 @@ export class MockChatClient implements ChatClient {
        * panel that the text never refers to. One of the two has to give, and
        * an answer that mentions the document it was handed is the honest one.
        */
+      const longLink = params.query.trim().toLocaleLowerCase('nb-NO') === MOCK_LONG_LINK_QUERY;
       const baseAnswer = wikipedia
         ? WIKIPEDIA_MOCK_ANSWER
-        : (scripted?.answer ?? mockAnswerMarkdown);
+        : longLink
+          ? `${mockAnswerMarkdown}\n\nHele kapitlet ligger her: ${MOCK_LONG_LINK}`
+          : (scripted?.answer ?? mockAnswerMarkdown);
       const answer = withOnlyCitations(
         attachmentSentence(attached) + shiftCitations(baseAnswer, attachedExcerpts),
         cited,

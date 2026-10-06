@@ -13,7 +13,7 @@ import { ChatView } from './ChatView';
 import { ScrollToBottom } from './ScrollToBottom';
 
 /**
- * «Bla til nederst» as one button for the column (Simens runde 3, ekstra 5).
+ * «Bla til nederst» as one button for the column (runde 3, ekstra 5).
  *
  * The column is a real element with its three numbers set by hand, since
  * jsdom lays nothing out: 2000 of content in a 500 window, scrolled to the

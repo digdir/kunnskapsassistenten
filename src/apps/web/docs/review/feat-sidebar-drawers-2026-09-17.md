@@ -170,5 +170,5 @@ verdt å lese for alle som skal shimme noe senere.
 
 ## Til dirigenten
 
-Klar for Lars. «Bør» er én test i en fil som alt har seks av samme sort, og
+Klar for godkjenning. «Bør» er én test i en fil som alt har seks av samme sort, og
 ingen endring i produksjonskoden.

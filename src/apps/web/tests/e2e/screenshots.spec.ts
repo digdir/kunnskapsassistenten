@@ -6,8 +6,8 @@ import { ask, facetField, openSources, showThreads, MOCK, REAL_ANSWER } from './
  * Screenshots for the visual review, not assertions.
  *
  * The role brief asks for every view in both colour schemes, under stable
- * names, so the conductor and Lars can hold them up against the Figma images
- * in `design/omraader/`. A pixel comparison is deliberately not what this is:
+ * names, so they can be held up against the Figma images in
+ * `design/omraader/`. A pixel comparison is deliberately not what this is:
  * it would fail on every font-rendering difference between two machines, and
  * the deviations that matter are not pixels. A person looks at these, and the
  * findings go in `docs/review/visuell-<dato>.md`.

@@ -6,7 +6,7 @@ import { useDrawerMode } from './useDrawerMode';
 import type { Slot } from './viewModel';
 
 /**
- * «Ny tråd» as the whole action, and not only the link to `/` (Simen's issue
+ * «Ny tråd» as the whole action, and not only the link to `/` (issue
  * 114): an empty conversation, an empty filter, the drawer out of the way and
  * the keyboard in the compose field. The link still does the navigating, so
  * it stays a real link — middle-click and «open in new tab» work, and a
@@ -16,7 +16,7 @@ import type { Slot } from './viewModel';
  * The rest is done on the click, before the link navigates:
  *
  *   - The filter is emptied. A new thread starts from the whole corpus, which
- *     is what the reader expects to see (Simen, 114). The reader's own choice
+ *     is what the reader expects to see (issue 114). The reader's own choice
  *     goes, not only the lock: the lock goes by itself when the thread does.
  *   - An open drawer is closed. Below the drawer breakpoint the list is a
  *     modal over the conversation, and the new one would start behind it.

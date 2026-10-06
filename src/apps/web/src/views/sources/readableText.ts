@@ -4,7 +4,7 @@ import type { Excerpt, SourceDocument } from '../../model';
  * Excerpts as text a reader can read.
  *
  * The chunks are the corpus's own `content_markdown`: what Marker made of a
- * PDF. Measured on Kudos 2026-09-28 (Benjamin's `KUDOS_preprod_v4_*`), they
+ * PDF. Measured on Kudos 2026-09-28 (`KUDOS_preprod_v4_*`), they
  * carry page markers (`{5}` on a line of its own, then a line of 48 dashes),
  * pipe tables with `<br>` inside the cells, `<sup>1)</sup>` footnote marks,
  * `**bold**`, `*italic*` and `- ` lists. The heading path carries the anchor

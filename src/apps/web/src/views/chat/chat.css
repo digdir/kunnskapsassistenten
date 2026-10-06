@@ -39,7 +39,7 @@
 
 /*
  * The greeting and the suggestions stand in the middle of the room between
- * the top of the page and the top of the box (Simens issue 78): as much air
+ * the top of the page and the top of the box (issue 78): as much air
  * over «Hei» as between the last suggestion and the field.
  *
  * The `auto` here and the one on `.ka-composer-area` share the column's free
@@ -55,7 +55,7 @@
  * those 44 px — the least the page gives, so the air can never be what makes
  * the start screen scroll.
  *
- * This was 60 px on a desktop window (Simen, 30.09, about 4rem), from before
+ * This was 60 px on a desktop window (the design, 30.09, about 4rem), from before
  * the greeting was centred. Kept, it put 48 px more over «Hei» than under the
  * suggestions, and with the Kudos suggestions on 1280 × 720 it was what made
  * the page scroll by 35.
@@ -72,8 +72,8 @@
 
 /*
  * A little air over «Forslag», on top of the 32 px gap the column already
- * puts between it and the greeting. About 1rem on a desktop window (Simen,
- * 30.09), which is `--ds-size-4` exactly, and half of it on a phone — same
+ * puts between it and the greeting. About 1rem on a desktop window (the
+ * design, 30.09), which is `--ds-size-4` exactly, and half of it on a phone — same
  * `vw` reasoning as the greeting above.
  */
 .ka-kickstarters {
@@ -135,7 +135,7 @@
 
 /*
  * The reader's own question: a box at the end of the line, and the answer
- * across the column under it (Simens issue 117). Plain and larger than the
+ * across the column under it (issue 117). Plain and larger than the
  * answer, as Figma drew it, it read as a heading over the answer card.
  *
  * Three things tell the two apart, so none of them carries it alone: the
@@ -172,7 +172,7 @@
  * removed — and this one is a statement about a question that has already
  * been asked. Set a step in from the card edge, over the answer it framed.
  * It used to line up with the reader's question, which stood in the same
- * place; the question is a box at the far side now (Simens issue 117).
+ * place; the question is a box at the far side now (issue 117).
  */
 .ka-filter-summary {
   margin: 0;
@@ -294,8 +294,8 @@
 /* ---------------------------------------------------------- fremgangsmåte */
 
 /*
- * «Fremgangsmåte» over the answer at the standard display level (Simens issue
- * 88, drawn in his issue 113). It draws the same steps as the detailed panel
+ * «Fremgangsmåte» over the answer at the standard display level (issue 88,
+ * drawn in issue 113). It draws the same steps as the detailed panel
  * — the rules below name both — so switching level changes what a step SAYS
  * and never where it sits.
  */
@@ -318,7 +318,7 @@
 }
 
 /*
- * The rule Simen draws between the steps and the keywords. A border and not a
+ * The rule the design draws between the steps and the keywords. A border and not a
  * `<hr>`: it separates two blocks that are already two blocks, and an element
  * of its own would be one more thing for a screen reader to walk past.
  */
@@ -350,7 +350,7 @@
 /* ------------------------------------------------------ kilder i svaret */
 
 /*
- * «Kilder brukt i svaret» under the answer (Simens issue 113, Figma
+ * «Kilder brukt i svaret» under the answer (issue 113, Figma
  * 1712:36955): Figma's `blackbox`, a white bar over a grey body, framed and
  * rounded. The colours are Designsystemet's own Details variables, set to the
  * two surfaces Figma names, so hover, open and focus stay Designsystemet's.
@@ -567,7 +567,7 @@
 /*
  * A keyword the agent searched on can be a long phrase, and Tag is
  * `width: max-content` with no upper bound — a long one grew straight out
- * through the side of the card. Lars saw it 2026-09-15.
+ * through the side of the card. Seen 2026-09-15.
  *
  * The group already wraps between tags; this lets a single tag wrap inside
  * itself as well. `anywhere` rather than `break-word` because the worst case
@@ -742,9 +742,9 @@
   margin-block-end: calc(var(--ka-main-padding-block-end) * -1);
   /*
    * The shell's own end padding and no more, because the disclaimer stands
-   * under the box now (Simens issue 79) and the air is on both sides of it —
+   * under the box now (issue 79) and the air is on both sides of it —
    * see `.ka-composer__disclaimer`. The box keeps its 3rem of air to the
-   * bottom (Simen, 30.09): 84 px on a desktop window, with the line in it.
+   * bottom (the design, 30.09): 84 px on a desktop window, with the line in it.
    *
    * It has to be at least this much, because the padding has a second job:
    * it is what fills the pull-down above. Anything less than the shell's end
@@ -770,7 +770,7 @@
  * it here rather than with `scroll-padding` on the scroller. The padding held
  * for the field as well, the field sits in the band it keeps clear, and every
  * keystroke scrolled the column 49 px further down to bring the caret out
- * from behind itself (Simens runde 3, ekstra 1).
+ * from behind itself (runde 3, ekstra 1).
  */
 .ka-chat * {
   scroll-margin-block-end: var(--ka-composer-block-size, 0);
@@ -782,7 +782,7 @@
 }
 
 /*
- * «Bla til nederst», over the field and in the middle of it (Simens runde 3,
+ * «Bla til nederst», over the field and in the middle of it (runde 3,
  * ekstra 5). In the sticky area, so it moves with the field and stays in one
  * place wherever the reader is in the conversation.
  *
@@ -841,7 +841,7 @@
  * The three were on one row, which cost less height (høydebudsjett
  * 2026-09-21, H1) and read badly once the box was tall enough to write in:
  * the placeholder stood indented at the top and a button hung low on either
- * side, with nothing lining up (Simens issue 79). Two rows cost the 48 px
+ * side, with nothing lining up (issue 79). Two rows cost the 48 px
  * back and buy an edge the eye can follow — the field runs the full width of
  * the box, its text starts over the paperclip and ends over the send button.
  */
@@ -850,7 +850,7 @@
    * How far a tertiary icon button holds its glyph in from its own box: half
    * of what the icon leaves inside a medium control. The field is set in by
    * the same amount, so the first letter of the question starts exactly where
-   * the paperclip under it starts (Simens issue 79). A raw 12px would stop
+   * the paperclip under it starts (issue 79). A raw 12px would stop
    * following the size mode the moment anything set `data-size`.
    */
   --ka-composer-glyph-inset: calc((var(--ds-size-12) - var(--ds-icon-size)) / 2);
@@ -917,13 +917,13 @@
   /*
    * Set in at the start by exactly what the paperclip below is set in by, and
    * flush at the end, where the send button's own edge is. That is the line
-   * Simen asked for in issue 79: the text lines up with what you can see on
+   * issue 79 asks for: the text lines up with what you can see on
    * each side, the glyph on one and the filled button on the other.
    */
   padding-block: var(--ds-size-1);
   padding-inline: var(--ka-composer-glyph-inset) 0;
   /*
-   * About three lines to write in, 90 px on a Mac at 1440 × 900 (Simen,
+   * About three lines to write in, 90 px on a Mac at 1440 × 900 (the design,
    * 30.09). `--ds-size-22` is 88 px at the `md` size mode and the nearest step
    * on the scale.
    *
@@ -1032,7 +1032,7 @@
 
 /*
  * The agent choice: the name as text beside the send button, no frame and no
- * fill (Lars, 06.10). The margin puts it next to the send button and away
+ * fill (decided 06.10). The margin puts it next to the send button and away
  * from the paperclip in a row that is `space-between`. A long name, such as
  * «digdir/altinn-docs-tuned», ends in an ellipsis rather than pushing the
  * send button off a phone; the whole name is in the list.
@@ -1106,7 +1106,7 @@
 }
 
 /*
- * Round, the way Simen drew it (issue 79). `--ds-border-radius-full` and not
+ * Round, the way issue 79 draws it. `--ds-border-radius-full` and not
  * a radius of our own, so the stop button — which is wide, because it carries
  * the word «Avbryt» — becomes a pill rather than a circle with the text
  * hanging out of it.
@@ -1122,7 +1122,7 @@
  * where the glyph of an icon button starts. Designsystemet gives a button
  * with text 16 px of inline padding and an icon-only one enough to centre the
  * glyph in 48, which is 12 — so without this the icon sat 5 px to the right
- * of the text above it, which is the one edge Simens issue 79 is about
+ * of the text above it, which is the one edge issue 79 is about
  * (measured by KA CC in bff mode: 565 against 560 at 1440).
  *
  * `:not([data-icon])` because the icon-only button must keep its own padding:
@@ -1149,7 +1149,7 @@
 /*
  * A control that is coming: out of focus, and still readable.
  *
- * Simen asked for it to stand back (issue 79), and drew it pale blue. That
+ * Issue 79 asks for it to stand back, and draws it pale blue. That
  * is Designsystemet's disabled tertiary button in the accent colour, and this
  * is that button, with one thing changed: how far it fades.
  *
@@ -1238,7 +1238,7 @@
 
 /*
  * The disclaimer, in the middle of the air under the box, which is where
- * Simen's sketch in issue 78 has it: 35 px over the line and 34 under it on a
+ * the sketch in issue 78 has it: 35 px over the line and 34 under it on a
  * Mac at 1440.
  *
  * 28 px over it on a desktop window and the shell's 32 under it. The distance
@@ -1255,7 +1255,7 @@
 }
 
 /*
- * The follow-up questions, centred under the box (Simens issue 89).
+ * The follow-up questions, centred under the box (issue 89).
  *
  * They were flush with the start of the column, under a field whose own text
  * is set in — two edges a row apart that nearly agreed. Centred they belong

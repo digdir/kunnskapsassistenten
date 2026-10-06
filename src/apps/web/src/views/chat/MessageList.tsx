@@ -112,7 +112,7 @@ export function MessageList({
               <span className="ds-sr-only">Du skrev:</span>
               {/*
                 The reader's words in a box of their own, at the end of the
-                line, in the size the answer is written in (Simens issue
+                line, in the size the answer is written in (issue
                 117). Set larger and bare above the answer, as Figma had it,
                 the question read as a heading over the card. A box at the
                 far side is what other chats do and what a reader already

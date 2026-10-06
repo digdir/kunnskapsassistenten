@@ -87,12 +87,12 @@ test.describe('hovedkolonnen', () => {
 
       // «Fremgangsmåte» arrives with the answer, open, with the steps and the
       // words the search ran on. The hit count is on the detailed level since
-      // Simens issue 88; there is a test of its own for that below.
+      // Issue 88; there is a test of its own for that below.
       await expect(page.getByText('Fremgangsmåte')).toBeVisible();
       await expect(page.getByText('Nøkkelord som ble brukt i søket')).toBeVisible();
 
       // Og ingenting av maskineriet: ingen tenketid, ingen telling av biter.
-      // Det er hele poenget med standardnivået (Simens issue 88).
+      // Det er hele poenget med standardnivået (issue 88).
       await expect(page.getByText(/\d+ treff i \d+ dokument(er)?/)).toHaveCount(0);
       await expect(page.getByText(/Tenkte i \d+ sekunder?/)).toHaveCount(0);
 
@@ -101,7 +101,7 @@ test.describe('hovedkolonnen', () => {
   );
 
   /**
-   * Den skjulte innstillingsmenyen (Lars, 30.09).
+   * Den skjulte innstillingsmenyen (valgt 30.09).
    *
    * «Standard er standard. Uten adressen ser ingen at menyen finnes.» Den er
    * ikke i sida i det hele tatt før hashen ber om den, og valget står i
@@ -399,7 +399,7 @@ test.describe('hovedkolonnen', () => {
     REAL_ANSWER,
     async ({ page }, testInfo) => {
       covers(testInfo, 'tenketiden er målt, ikke summert');
-      // Tallet står bare på det detaljerte nivået (Simens issue 88).
+      // Tallet står bare på det detaljerte nivået (issue 88).
       await showDetailedAnswers(page);
       await page.goto('/');
 
@@ -536,7 +536,7 @@ test.describe('hovedkolonnen', () => {
   );
 
   /**
-   * Simens issue 117: the reader's question read as a heading over the
+   * Issue 117: the reader's question read as a heading over the
    * answer. #237 put it in a box at the end of the line, at most 85 % of the
    * column, and the answer across the column under it. The side and the width
    * are two of the three things that tell the two apart, and both are CSS:
@@ -605,7 +605,7 @@ test.describe('hovedkolonnen', () => {
   }
 
   /**
-   * Simens runde 3, ekstra 1: writing in the field while not at the bottom
+   * Runde 3, ekstra 1: writing in the field while not at the bottom
    * scrolled the main column 49 px towards the end for every key. The guard
    * for WCAG 2.4.11 was `scroll-padding` on the scroller, the field sits in
    * the band that padding keeps clear, and every keystroke asked the browser

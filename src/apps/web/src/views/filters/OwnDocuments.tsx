@@ -119,7 +119,7 @@ export function OwnDocuments() {
 
   if (unavailable !== undefined) {
     /*
-     * Nowhere to upload to yet, drawn the way Simen drew it (30.09): a box of
+     * Nowhere to upload to yet, drawn the way the design has it (30.09): a box of
      * its own with «Kommer snart» over the heading, and a zone that looks
      * switched off — neutral, tinted, a thin grey dash, and no hover. A
      * dashed box that lights up under the pointer says «drop here».

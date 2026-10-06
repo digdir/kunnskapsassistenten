@@ -7,7 +7,7 @@ import { omProsjektetParts } from './omProsjektetParts';
 import { onboardingParts } from './onboardingParts';
 
 /**
- * Simens issue 85d: innholdet fra den gamle Kunnskapsassistenten, vist hos
+ * Issue 85d: innholdet fra den gamle Kunnskapsassistenten, vist hos
  * oss med typografien fra Designsystemet. Det som måles her, er at teksten kom
  * med, at overskriftene henger sammen, og at det som var brettet sammen i den
  * gamle fortsatt er det.

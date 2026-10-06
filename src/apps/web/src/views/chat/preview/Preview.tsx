@@ -93,7 +93,7 @@ export function Preview() {
           </nav>
 
           <main className="main" id="main-content" ref={mainScroll}>
-            <ChatView client={scenario.client} key={id} thread={scenario.thread} userName="Simen" />
+            <ChatView client={scenario.client} key={id} thread={scenario.thread} userName="Ola" />
           </main>
         </div>
       </MainScrollContext>

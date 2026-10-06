@@ -10,7 +10,7 @@ import { EXCERPT_UNAVAILABLE, SourceExcerpt } from './SourceExcerpt';
  * der hver kilde kom med tittel og Kudos-lenke og uten `excerpt`.
  *
  * Lukket viser utdraget bare raden med «Utdrag N» og «Åpne», uansett om
- * teksten finnes (Simens issue 86, 30.09). Før sto overskriftsstien og de
+ * teksten finnes (issue 86, 30.09). Før sto overskriftsstien og de
  * første linjene der, og da måtte setningen stå der også (KA CC på #182).
  * Nå står den der teksten ellers ville stått: i innholdet, når utdraget er
  * åpnet.

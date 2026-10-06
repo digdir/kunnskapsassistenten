@@ -27,7 +27,7 @@ type AnswerActionsProps = {
  * What a reader can do with a finished answer: copy it (answer 15), copy a
  * link to the thread (answer 16), and search in it. «Bla til nederst»
  * (answer 17) used to be here too, once per answer; it is one control for the
- * whole column now, over the compose field (Simens issue, runde 3, ekstra 5).
+ * whole column now, over the compose field (issue, runde 3, ekstra 5).
  *
  * Copying takes the sources with it. An answer pasted into a submission
  * without its provenance is the one thing KA is not for (reise 13, 14 and 20

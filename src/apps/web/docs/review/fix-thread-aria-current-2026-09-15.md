@@ -83,7 +83,7 @@ den påstanden den skulle bære.
 
 ## Til dirigenten
 
-- **PR #63 er klar for Lars.** Ingen blokkerende, ingen «bør».
+- **PR #63 er klar for godkjenning.** Ingen blokkerende, ingen «bør».
 - Jeg fjerner `fixme`-en i en egen liten PR rett etter denne, ikke ved å pushe
   til #5 sin gren: `tests/` er min, og en push dit ville dessuten gjort
   målingen deres på 124/124 ugyldig.

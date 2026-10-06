@@ -13,7 +13,7 @@ i e2e-suiten; ingenting under er en regresjon. Det er ting som ser rart ut.
 `design/skjermbilder-frontend/blikk/raa/` med målinger i `maalinger.json`.
 De 20 nummererte under er bevisene.
 
-Kollapset-rail-saken Lars fant er utelatt, den ligger hos #5 (rolle-5d).
+Kollapset-rail-saken som ble meldt, er utelatt; den ligger hos #5 (rolle-5d).
 
 ## Sammendrag
 
@@ -100,7 +100,7 @@ panel. I mørk modus er panelet `rgb(32, 40, 52)` og siden `rgb(25, 32, 41)`.
 Det eneste som skiller dem er den 1 px kanten, som selv ligger på **1,84** mot
 panelet.
 
-Det er samme familie som det Lars fant kl. 02, men gjelder det **åpne**
+Det er samme familie som det som ble funnet kl. 02, men gjelder det **åpne**
 panelet, ikke railen: en kolonne som ikke oppleves som en egen flate. Enten
 mer forskjell på flatene i mørk, eller en kant som faktisk skiller.
 

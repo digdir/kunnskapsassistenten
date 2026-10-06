@@ -239,8 +239,7 @@ const HEADING_MARKER = /#+\s+/;
  * limit of doing this here: nothing in the string says whether «Referanser»
  * sits under «Noter» or beside it. Showing all three beats showing one and
  * dropping two, and beats showing the markers. The lasting fix is the backend
- * sending clean text per level; noted in
- * design/utkast-til-benjamin-2026-09-14.md.
+ * sending clean text per level; noted in the backend request from 2026-09-14.
  *
  * Nothing else is cleaned. This is not Markdown rendering and not HTML
  * sanitising — it is one field, with one measured defect in it.
@@ -289,7 +288,7 @@ export function toSourceDocuments(chunks: McpChunk[], dataset?: string): SourceD
     const documentId = chunk.doc_num ?? chunk.chunk_id ?? `doc-${index}`;
     // The chunk's own address when it has one, and otherwise the corpus's
     // template with the document's number: Kudos chunks carry `doc_num` and
-    // no `url` (Simens issue 92). See documentUrls.ts.
+    // no `url` (issue 92). See documentUrls.ts.
     const url = chunk.url ?? documentUrl(dataset, chunk.doc_num);
     const excerpt: Excerpt = {
       id: chunk.chunk_id ?? `${documentId}-${index}`,

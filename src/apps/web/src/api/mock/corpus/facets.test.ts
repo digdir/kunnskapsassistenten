@@ -113,7 +113,7 @@ describe('facetsFor', () => {
   });
 
   it('tilbyr ikke år som ikke har kommet ennå', () => {
-    // Simens issue 75, som i tynnserveren og BFF-en. Mock-korpuset har to
+    // Issue 75, som i tynnserveren og BFF-en. Mock-korpuset har to
     // budsjettforslag «for 2027», og de er fortsatt søkbare. Men 2027 er ikke
     // noe å avgrense til i 2026.
     const withPlan = [...documents, { ...documents[0]!, id: '6', year: 2027 }];

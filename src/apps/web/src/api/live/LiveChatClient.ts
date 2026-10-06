@@ -263,8 +263,8 @@ export class LiveChatClient implements ChatClient {
           */
           ...(corpusKey ? { tags: [`${CORPUS_TAG_PREFIX}${corpusKey}`] } : {}),
           /*
-            The filter the thread is started with, which locks it (Simens
-            issue 90), the way the BFF locks a thread it was asked with.
+            The filter the thread is started with, which locks it (issue 90),
+            the way the BFF locks a thread it was asked with.
 
             The backend does not keep the filter a question is asked with —
             measured against the local stack on 05.10: a turn sent with
@@ -511,7 +511,7 @@ export class LiveChatClient implements ChatClient {
   /**
    * A thread read back, with what this browser wrote down for its answers:
    * the sources, «Fremgangsmåte», the hits and how long the agent thought
-   * (sourceStore.ts, src/decisions/0008, Simens issue 88).
+   * (sourceStore.ts, src/decisions/0008, issue 88).
    *
    * Only where the backend gave none: the day it keeps its chunks
    * (headless-rag #21), what it says wins and this adds nothing. Only a

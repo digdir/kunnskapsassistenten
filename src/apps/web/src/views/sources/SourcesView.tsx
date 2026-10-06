@@ -560,7 +560,7 @@ export function SourcesView({
         {/* «Kilder», visible, as Figma has it over the search (node 1549-46119)
             and as the navigation panel has «Filtrering»: the same
             `PanelHeader` at the same size, so the two panels start alike.
-            Lars, 30.09: nearer the design. It was a screen-reader-only
+            Decided 30.09: nearer the design. It was a screen-reader-only
             heading before, on the grounds that the toggle carried the word;
             the toggle is an icon, and says it only in its tooltip.
 

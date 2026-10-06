@@ -45,8 +45,7 @@ export type Corpus = {
  * against another corpus would produce a conversation whose citations point
  * into two different document sets, with nothing on screen saying which is
  * which. So the address goes to `/` and the next question starts a thread
- * bound to the new corpus. No confirmation — Lars 21.09, via the brief: just
- * switch.
+ * bound to the new corpus. No confirmation — decided 21.09: just switch.
  *
  * The navigation lives here rather than in the store for the same reason the
  * store is not a context: routes are the shell's, and a module under src/api

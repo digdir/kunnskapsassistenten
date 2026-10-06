@@ -123,8 +123,8 @@
  * the body. The card keeps its radius and its clipping, and each block rounds
  * its own two corners to match, so no border is cut off at a corner.
  *
- * How much air, by the width of the view (Simens runde 3, and the dirigent's
- * answer S5, 30.09). Figma draws the panel with a view of 410 px, and from
+ * How much air, by the width of the view (runde 3, and the conductor's answer
+ * S5, 30.09). Figma draws the panel with a view of 410 px, and from
  * there it gets Figma's own: 16 in the head, 24 / 24 / 32 in the body, 16 in
  * each excerpt. Under that it gets `--ds-size-3` all round.
  *
@@ -217,7 +217,7 @@
 
 /*
  * Figma's `chunk`: a white box in the grey body, with the number and the
- * toggle on one row and the quote under them when it is open (Simens issue
+ * toggle on one row and the quote under them when it is open (issue
  * 86). Closed, the row is all there is.
  *
  * The row is two elements in one grid cell. `Details` puts its summary and

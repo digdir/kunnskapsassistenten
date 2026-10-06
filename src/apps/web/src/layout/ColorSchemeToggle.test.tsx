@@ -8,7 +8,7 @@ import { LayoutProvider } from './LayoutProvider';
 import { Shell } from './Shell';
 
 /**
- * Simens issue 85: lys og mørk modus valgt av leseren, ikke bare fulgt fra
+ * Issue 85: lys og mørk modus valgt av leseren, ikke bare fulgt fra
  * systemet. Det selve fargene gjør, er temaets sak og målt i nettleseren; det
  * som måles her, er valget, at det lagres, og hvor kontrollen står.
  */

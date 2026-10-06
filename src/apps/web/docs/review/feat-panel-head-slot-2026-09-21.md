@@ -164,7 +164,7 @@ Effekten er målt i nettleseren, her.
 
 ## Hva serien har spart så langt
 
-Mot grunnlinja på `main 0855670`, med definisjonen Lars valgte 21.09:
+Mot grunnlinja på `main 0855670`, med definisjonen som ble valgt 21.09:
 
 | Del                           | Grunnlinje | Nå (main `3dc64a3`) |
 | ----------------------------- | ---------- | ------------------- |

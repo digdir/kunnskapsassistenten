@@ -59,7 +59,8 @@ som bestått.
 Standard er mock: svar fra `src/api/mock/`, ingen backend, ingen nøkkel. Live
 lokalt trenger en kjørende backend og en nøkkel i `.env.local` (se
 `.env.example`), og startes med `VITE_API_MODE=live npm run dev`.
-`VITE_API_MODE=bff` går mot Nikolais BFF i stedet; se `docs/bff-modus.md`.
+`VITE_API_MODE=bff` går mot BFF-en i digdir/kunnskapsassistenten i stedet; se
+`docs/bff-modus.md`.
 
 ## Utrulling
 

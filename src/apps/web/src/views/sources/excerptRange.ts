@@ -8,7 +8,7 @@
  * the reader meets two numbering systems with no way to tell them apart.
  * «Kilder brukt i svaret» under the answer has it. It lives here because the
  * excerpts and their numbers are this panel's, and the shortcut list that
- * had it first stood here until Simens issue 113.
+ * had it first stood here until issue 113.
  */
 export function excerptRange(numbers: (number | undefined)[]): string {
   const sorted = numbers.filter((number) => number !== undefined).sort((a, b) => a - b);

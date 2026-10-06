@@ -92,7 +92,7 @@ test.describe('samtalen', () => {
     covers(testInfo, 'mocken husker samtalen over reload');
 
     // Tenketiden, som er det denne sammenlikner over reloaden, står bare på
-    // det detaljerte nivået (Simens issue 88).
+    // det detaljerte nivået (issue 88).
     await showDetailedAnswers(page);
     await page.goto('/');
     await ask(page, 'Hvordan jobber Nkom med måloppnåelse?');
@@ -233,7 +233,7 @@ test.describe('samtalen', () => {
     REAL_ANSWER,
     async ({ page }, testInfo) => {
       covers(testInfo, 'tenkepanelet: sammenlagt tilstand');
-      // Tenkepanelet er det detaljerte nivået (Simens issue 88). Standard
+      // Tenkepanelet er det detaljerte nivået (issue 88). Standard
       // tegner «Fremgangsmåte», som står åpent og ikke sier noen tid.
       await showDetailedAnswers(page);
       await page.goto('/');
@@ -330,7 +330,7 @@ test.describe('samtalen', () => {
     MOCK,
     async ({ page }, testInfo) => {
       covers(testInfo, 'filter → spørring');
-      // Tellingen står bare på det detaljerte nivået (Simens issue 88).
+      // Tellingen står bare på det detaljerte nivået (issue 88).
       await showDetailedAnswers(page);
       await page.goto('/');
 

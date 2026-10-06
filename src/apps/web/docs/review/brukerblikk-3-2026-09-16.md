@@ -133,8 +133,8 @@ feilkodene og avklaringen sender det samme steget, uansett hva som ble spurt
 om. En som ser på feilskjermene leser en setning om et spørsmål som aldri ble
 stilt.
 
-Bare mock, så det når ikke live. Men feilskjermene er nettopp det designere og
-Lars ser på for å vurdere feiltekstene, og dette står midt i dem.
+Bare mock, så det når ikke live. Men feilskjermene er nettopp det som leses når
+feiltekstene skal vurderes, og dette står midt i dem.
 
 Samme sted: på disse turene heter panelet bare «Tenkte», uten tid, mens et
 vanlig svar sier «Tenkte i 2 sekunder». Tida kommer i `done`-ramma, og en feil
@@ -297,8 +297,8 @@ To ting så feil ut i nettleseren og viste seg å være avgjort:
 
 - **Kildepanelet har ingen egen flate mens det er åpent** — hvert punkt i det
   måler skallets bakgrunn (#f3f4f4 lys, #192029 mørk), mens
-  navigasjonspanelet måler sin egen (#ffffff / #202834). Det er Lars sin
-  avgjørelse 15.09, skrevet i `global.css`: kildene hører til svaret og deler
+  navigasjonspanelet måler sin egen (#ffffff / #202834). Det er avgjørelsen
+  fra 15.09, skrevet i `global.css`: kildene hører til svaret og deler
   grunn med det. Kollapset får den samme kolonnen flate igjen, som er den
   andre halvdelen av samme avgjørelse.
 - **Skillene som forsvinner ut av tab-rekkefølgen når de ikke kan gjøre noe**
@@ -319,7 +319,7 @@ Rangert neste-liste, billigst og viktigst først:
 4. **Funn 6** — behold tenkepanelet på en stoppet tur etter reload. Samme
    lagringssti som #76 nettopp rørte.
 5. **Funn 5** — avkort trådtittelen til to linjer til noen lager titler.
-6. **Funn 2** — din og Lars sin avgjørelse, ikke en oppgave: skal fire varig
+6. **Funn 2** — en avgjørelse, ikke en oppgave: skal fire varig
    avslåtte knapper stå på 1440, og skal navigasjonspanelet kunne bli
    smalere enn 400? Begge deler endrer hva #50 er verdt på den bredden
    designet er tegnet i.

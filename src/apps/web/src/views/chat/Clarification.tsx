@@ -16,7 +16,7 @@ type ClarificationProps = {
  * text read as a question to the reader rather than as a short answer, and
  * that is the `Tag`: «Trenger avklaring», above the question.
  *
- * **`info` and not `neutral`** (Simens issue 112). A grey tag looks like a
+ * **`info` and not `neutral`** (issue 112). A grey tag looks like a
  * label on an answer, and this is not an answer — the conversation stops here
  * until the reader says something. `info` is Designsystemet's «here is
  * something you need to know», which is what this is; `warning` would say
@@ -30,7 +30,7 @@ type ClarificationProps = {
  * no citations, which leaves any bracketed number in the text as plain text —
  * the right outcome when there is no excerpt behind it.
  *
- * **No action row at all** (Simens issue 112). It held «Kopier spørsmålet» and
+ * **No action row at all** (issue 112). It held «Kopier spørsmålet» and
  * the time the assistant asked. Neither is what the reader is here to do: the
  * one move from this card is to answer the question, and the field below is
  * waiting for it with the caret already in it. The time goes with the button

@@ -9,7 +9,7 @@ import { ColorSchemeToggle } from './ColorSchemeToggle';
  *
  * The links first, right under the line the foot draws against the thread
  * list, and the colour scheme under them — the order the old
- * Kunnskapsassistenten has (Simens issue 85c,
+ * Kunnskapsassistenten has (issue 85c,
  * design/_sources/eksisterende-ka-sider/lenkene-i-foten.png), with the
  * setting last because it is the one thing here that changes the app rather
  * than going somewhere.

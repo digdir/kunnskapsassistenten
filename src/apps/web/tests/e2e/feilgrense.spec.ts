@@ -6,9 +6,9 @@ import { ANSWER_TIMEOUT, composer, MOCK } from './helpers';
  * The page that stands where the app was, after an error React cannot recover
  * from (#221).
  *
- * Lars got a white page in the test environment on 30.09, starting a new
+ * A white page appeared in the test environment on 30.09, starting a new
  * thread: `NotFoundError: Failed to execute 'removeChild' on 'Node'`. The cause
- * in his browser is not known. The mechanism is: something outside React —
+ * in that browser is not known. The mechanism is: something outside React —
  * a page translator, an extension — replaces text nodes while an answer
  * streams, and React, removing a node that is no longer where it left it,
  * throws in its commit phase and unmounts the whole root. Measured by #5 in

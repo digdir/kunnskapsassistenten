@@ -21,13 +21,13 @@ const AT_1920 = 1920;
 describe('widthRange', () => {
   it('lets the navigation panel grow into what the answer column is not using', () => {
     // 1920 − 432 (sources) − 32 − 32 (two gaps) − 640 (the answer column's
-    // floor) = 784. The panel has no ceiling of its own (Simens issue 80), so
+    // floor) = 784. The panel has no ceiling of its own (issue 80), so
     // this is the ceiling.
     expect(widthRange(bothOpen, 'primary-sidebar', AT_1920)).toEqual({ min: 400, max: 784 });
   });
 
   it('gives either panel all the window has once the other is a rail', () => {
-    // Window − 67 (the rail) − 32 (this panel's gap) − 640. Simens issue 80
+    // Window − 67 (the rail) − 32 (this panel's gap) − 640. Issue 80
     // asked for at least half the window; the answer column's 640 floor
     // allows that from 1478 up, so 1512 gets it and 1440 falls 19 short.
     const sourcesOpen = withCollapsed(

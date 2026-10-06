@@ -220,7 +220,7 @@ bare når ingenting i ressursgruppa henter med passordet.
 
 ## Delt hemmelighet
 
-Til Entra er koblet på: én lenke med en hemmelighet, som Lars deler selv, og
+Til Entra er koblet på: én lenke med en hemmelighet, som deles for hånd, og
 som virker fra hvor som helst. Koden er `server/access.ts`.
 
 - `?secret=` på en hvilken som helst adresse sammenlignes i konstant tid.
@@ -286,7 +286,7 @@ Oppskriften kjøres ovenfra og ned, i ett skall, fra repo-rota. Alt havner i
 `rg-ka-test`, også registeret bildene ligger i; se
 [Hvorfor eget register](#hvorfor-eget-register). Ressursgruppa finnes
 (`norwayeast`, taggene `prosjekt=kunnskapsassistenten` og `miljo=test`), så
-oppskriften lager den ikke. `rg-ka-app` er Nikolais og brukes ikke her. Bytt
+oppskriften lager den ikke. `rg-ka-app` hører til en annen app og brukes ikke her. Bytt
 verdiene i steg 0 hvis det blir andre.
 
 ### Rettigheter du trenger først
@@ -312,8 +312,8 @@ oppskriften.
 ### Steg 0: verdiene, og en sjekk
 
 **Hver `az`-kommando i dokumentet har `--subscription "$SUB"`.**
-Standardabonnementet på maskinen kan være et helt annet teams. Hos Lars var
-det `dis-core-prod` 28.09, og uten parameteren ville kommandoene skrevet dit.
+Standardabonnementet på maskinen kan være et helt annet teams. Målt 28.09 sto
+det på `dis-core-prod`, og uten parameteren ville kommandoene skrevet dit.
 Oppskriften bruker ikke `az account set`, fordi den endrer standardvalget for
 alle skall på maskinen.
 
@@ -478,9 +478,9 @@ det nye repoet. Resten står.
 ## Hvorfor eget register
 
 Bildene ligger i et register malen lager i `rg-ka-test`, og ikke i det delte
-`altinnaicontainers`. Der bygger også Nikolais `ka-app`, og `AcrPush` gjelder
-hele registeret den gis på: en kjøring fra `main` her kunne da ha overskrevet
-bildene hans. Utrullingen skal bare kunne skrive til sine egne.
+`altinnaicontainers`. Der bygger også `ka-app` i digdir/kunnskapsassistenten, og
+`AcrPush` gjelder hele registeret den gis på: en kjøring fra `main` her kunne
+da ha overskrevet bildene der. Utrullingen skal bare kunne skrive til sine egne.
 
 Alternativene, og hvorfor de ikke ble valgt:
 
@@ -579,14 +579,14 @@ FQDN=$(az containerapp show --subscription "$SUB" -n $APP -g $RG --query propert
 echo "https://$FQDN/.auth/login/aad/callback"
 ```
 
-**Anbefalt: Nikolais registrering.** `altinn-ai-assistant-ka-sso` har
+**Anbefalt: den eksisterende registreringen.** `altinn-ai-assistant-ka-sso` har
 admin-samtykke. Legges vår redirect-URI og en egen secret til der, trengs ikke
 nytt samtykke. Det må eieren av registreringen eller en admin gjøre. Microsoft
 anbefaler egen registrering per app og miljø; delt er valgt fordi en ny trenger
 admin-samtykke vi ikke har.
 
 **Alternativ: en ny registrering.** Vanlige brukere kan lage registreringer i
-tenanten, så Lars kan lage den selv i Entra-portalen: **App-registreringer → Ny
+tenanten, så den kan lages i Entra-portalen: **App-registreringer → Ny
 registrering**, «Bare kontoer i denne organisasjonskatalogen», plattform
 **Web** med redirect-URI-en over. Slå så på ID-tokens og lag en client secret.
 Men brukere kan ikke samtykke selv i tenanten, så ingen kan logge inn før en
@@ -776,8 +776,9 @@ kilden bak ruta og klienten endres ikke. Koden er `server/facets.ts`.
 samlinger, og frontenden står mot internett; i dag ligger den bare i
 backenden, som har intern adresse. Rutene gjør bare søk, så frontenden trenger
 en nøkkel som bare kan søke (`documents:search`) i dokumentsamlingen og i
-bitsamlingen, og ikke i noe annet. Hvordan den skaffes, avgjør Lars. Lokalt kan
-adminnøkkelen fra `.env.benjamin` brukes, som i `docs/kjoremiljo-og-korpus.md`.
+bitsamlingen, og ikke i noe annet. Hvordan den skaffes, er ikke avgjort. Lokalt
+kan adminnøkkelen fra `.env.benjamin` brukes, som i
+`docs/kjoremiljo-og-korpus.md`.
 
 I mock svarer ruta 404 og spør ikke Typesense, som resten av `/api/`.
 Dev-serveren svarer på den samme ruta med de samme variablene fra
@@ -913,8 +914,8 @@ selv og treffer ingenting.
 
 **Spørsmål svarer ikke mot den hostede backenden.**
 `test.rag.digdir.cloud` avviser `agent-rag-graph-bundled` med
-`mode_not_allowed`, og det er agenten klienten spør. Målt av Nikolai med to
-nøkler, så det er backendens oppsett og ikke et nøkkelomfang. Til Benjamin
+`mode_not_allowed`, og det er agenten klienten spør. Målt med to
+nøkler, så det er backendens oppsett og ikke et nøkkelomfang. Til backenden
 åpner den, er `KA_MODE=mock` det som gir et miljø der noen kan se produktet;
 alt annet enn selve svaret virker også i live: tråder, filter, korpusvelger og
 opplasting i ærlig utilgjengelig-tilstand.

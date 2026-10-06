@@ -79,5 +79,5 @@ knappen står stille, går den 1 → 2 → 3 → 4 → 5 uten hull.
 
 ## Til dirigenten
 
-**PR #60 er klar for Lars.** Rebasen er den grundigste i bølgen: den bar to
+**PR #60 er klar for godkjenning.** Rebasen er den grundigste i bølgen: den bar to
 fikser fra en fil som ble tømt, og begge er verifisert på linjenivå.

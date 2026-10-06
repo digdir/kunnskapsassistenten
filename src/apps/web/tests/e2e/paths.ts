@@ -159,8 +159,8 @@ function findDesignFolder(): string | undefined {
  *
  * - `design`: the reference images the build rules ask for,
  *   `design/skjermbilder-frontend/e2e/<view>-<modus>.png`, always the same
- *   names, so the conductor and Lars can compare them against the Figma
- *   images in the `skjermbilder` folders under `design/omraader/`. A run that
+ *   names, so they can be compared against the Figma images in the
+ *   `skjermbilder` folders under `design/omraader/`. A run that
  *   asks for this and finds no `design/INDEX.md` stops, rather than quietly
  *   writing nothing.
  * - an absolute path: that folder, for a run whose pictures are not the

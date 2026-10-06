@@ -17,8 +17,8 @@ export const MAX_EXCERPT_IDS = 20;
 
 /**
  * What a chunk id is made of. Kudos's are twelve hex digits; the rest of the
- * set is what Nikolai's BFF accepts, so an id one of them takes, the other
- * does too. The server refuses anything else before Typesense is asked, and
+ * set is what the BFF in digdir/kunnskapsassistenten accepts, so an id one of
+ * them takes, the other does too. The server refuses anything else before Typesense is asked, and
  * the client never sends it.
  */
 export const CHUNK_ID = /^[A-Za-z0-9._:-]{1,128}$/;

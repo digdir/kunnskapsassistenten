@@ -228,7 +228,7 @@ describe('under brytepunktet, der panelet er en skuff', () => {
 describe('sammenleggingsknappen på panelraden', () => {
   /*
    * «Skjul» on screen before the icon while the panel is open, and the button
-   * at the end of the row (Lars 06.10). The name is still the whole string in
+   * at the end of the row (decided 06.10). The name is still the whole string in
    * `aria-label`, and it starts with the word that is drawn, so what a
    * sighted reader sees is what a voice user says (WCAG 2.5.3).
    *

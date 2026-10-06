@@ -16,8 +16,8 @@ type AppErrorBoundaryState = { failure: Failure | undefined };
  * The last line before a white page.
  *
  * An error React cannot recover from unmounts the whole root, and what the
- * reader sees is an empty window with nothing to click. Lars got exactly that
- * in the test environment on 30.09, starting a new thread: `NotFoundError:
+ * reader sees is an empty window with nothing to click. That happened in the
+ * test environment on 30.09, starting a new thread: `NotFoundError:
  * Failed to execute 'removeChild' on 'Node'`. That one is thrown in React's
  * commit phase when something outside React has moved or replaced a node
  * React still thinks it owns — a page translator or an extension rewriting

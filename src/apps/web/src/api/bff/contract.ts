@@ -1,6 +1,6 @@
 /**
- * The wire format between the browser and Nikolai's BFF, as that server
- * writes it.
+ * The wire format between the browser and the BFF in
+ * digdir/kunnskapsassistenten, as that server writes it.
  *
  * Copied from `src/packages/contract/src/index.ts` in digdir/kunnskapsassistenten,
  * branch `feat/ny-klient` (`9172aeb`), and only the parts this client reads.

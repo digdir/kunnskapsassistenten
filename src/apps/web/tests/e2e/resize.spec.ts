@@ -11,7 +11,7 @@ import { walkWithTab } from './helpers';
 /**
  * The edges between the panels, which the reader can move.
  *
- * Lars's vision asks for columns that can be resized in the GUI, and punkt 24
+ * The vision asks for columns that can be resized in the GUI, and punkt 24
  * of the brukerreise list calls it essential: the answer and the source it
  * rests on have to be readable side by side, and 640 px of answer beside
  * 336 px of excerpt is not always the split a reader wants.
@@ -32,7 +32,7 @@ const SOURCES_FLOOR = 336;
 const RAIL = 67;
 
 /**
- * The widest a panel can be. Since Simens issue 80, round 2, a panel has no
+ * The widest a panel can be. Since issue 80, round 2, a panel has no
  * ceiling of its own — the 480 and the 560 are gone — and takes what the
  * window leaves when the answer column stands on its floor, 640. The other
  * sidebar takes 67 as a rail, flush against the column, or its own width and
@@ -43,7 +43,7 @@ const NAV_WIDEST_1680_BESIDE_SOURCES = 544; // 1680 − 432 − 32 − 640 − 3
 
 /**
  * Where a drag folds the navigation panel away, and where it opens it again
- * (Simens issue 80, round 2). It folds when the width the drag asks for is
+ * (issue 80, round 2). It folds when the width the drag asks for is
  * under half its floor, 200, and opens again at half the floor and 16 more,
  * so a hand hovering at the line does not make it flicker.
  */
@@ -183,7 +183,7 @@ test.describe('panelbredder', () => {
 
   /*
    * A panel dragged past half its floor folds away, and the drag goes on:
-   * dragged back, it opens again before the pointer is let go (Simens issue
+   * dragged back, it opens again before the pointer is let go (issue
    * 80, round 2). The press is at x 400, the panel's edge, so the width the
    * drag asks for is the pointer's x.
    */
@@ -245,7 +245,7 @@ test.describe('panelbredder', () => {
 
   /*
    * The pointer path without a drag (WCAG 2.5.7). It was two arrow buttons in
-   * the panel head until Simens issue 81 took them away; now a click on the
+   * the panel head until issue 81 took them away; now a click on the
    * edge itself does it. One click takes the panel as wide as it can be, the
    * next one back to the default. #202.
    */
@@ -320,7 +320,7 @@ test.describe('panelbredder', () => {
     //
     // Brukerblikk 3, funn 2: fire varig avslåtte knapper på den bredden alle
     // Figma-rammene er tegnet i. Avslått er noe som går over — dette gjør det
-    // ikke, og da er det ingen kontroll, bare noe som ser ødelagt ut. Lars
+    // ikke, og da er det ingen kontroll, bare noe som ser ødelagt ut. Valgt
     // 17.09, beslutning 9 alternativ (c).
     for (const panel of ['tråder og filter', 'kilder'] as const) {
       await expect(separator(page, panel)).toHaveCount(0);
@@ -418,7 +418,7 @@ test.describe('panelbredder', () => {
     await page.keyboard.press('End');
     // 1536 − 400 (the navigation panel) − 64 (two gaps) − 640 (the answer
     // column's floor) = 432. The window is the only ceiling there is since
-    // Simens issue 80, round 2.
+    // Issue 80, round 2.
     await expectPanelWidth(page, '.secondary-sidebar', SOURCES_DEFAULT, 'kildepanelet på End');
     await expect(handle).toHaveAttribute('aria-valuenow', String(SOURCES_DEFAULT));
   });

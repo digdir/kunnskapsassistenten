@@ -16,7 +16,7 @@ export type InfoPageEntry = {
 
 /**
  * The three pages about Kunnskapsassistenten itself, in the order the old
- * Kunnskapsassistenten lists them at the foot of its sidebar (Simens issue
+ * Kunnskapsassistenten lists them at the foot of its sidebar (issue
  * 85, design/_sources/eksisterende-ka-sider/lenkene-i-foten.png).
  *
  * One list and not two, because the address, the name and the icon are needed

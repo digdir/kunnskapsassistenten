@@ -169,7 +169,7 @@ ved siden av `filterSummary`, som har samme form.
 
 ## Til dirigenten
 
-- **PR #57 er klar for Lars.** Ingen blokkerende, to «bør» som begge er
+- **PR #57 er klar for godkjenning.** Ingen blokkerende, to «bør» som begge er
   rutine og tekst, to «kan».
 - **Funn 1 skal ikke rettes mer.** Det som er gjort er en forbedring på egne
   premisser; symptomet fantes ikke. Be #3 legge den fra seg.

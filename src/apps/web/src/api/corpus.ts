@@ -3,9 +3,9 @@ import { kaEnv } from './runtimeConfig';
 /**
  * Which corpus the assistant searches, chosen at runtime.
  *
- * Lars 21.09: «Jeg vil kunne velge hvilke korpuser jeg bruker» — the NorQuAD
- * wiki corpus and the Kudos pilot separately, in one frontend, without
- * restarting the dev server.
+ * Decided 21.09: the reader picks which corpus to use — the NorQuAD wiki
+ * corpus and the Kudos pilot separately, in one frontend, without restarting
+ * the dev server.
  *
  * Two halves that are deliberately apart. The LIST is configuration and comes
  * from the environment, because which datasets a deployment can reach is a

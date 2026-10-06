@@ -28,7 +28,7 @@ describe('Clarification', () => {
   it('merker spørsmålet med info og ikke med nøytral', () => {
     /*
      * En grå merkelapp ser ut som en etikett på et svar, og dette er ikke et
-     * svar — samtalen står stille til leseren sier noe (Simens issue 112).
+     * svar — samtalen står stille til leseren sier noe (issue 112).
      * `info` er Designsystemets «her er noe du må vite»; `warning` ville sagt
      * at noe hadde gått galt, og det har det ikke.
      */
@@ -44,8 +44,8 @@ describe('Clarification', () => {
     /*
      * Raden holdt «Kopier spørsmålet» og klokkeslettet assistenten spurte på.
      * Ingen av delene er det leseren er her for: det ene trekket fra dette
-     * kortet er å svare, og feltet under venter med markøren i seg (Simens
-     * issue 112).
+     * kortet er å svare, og feltet under venter med markøren i seg (issue
+     * 112).
      */
     const { container } = render(<Clarification question={question} />);
 

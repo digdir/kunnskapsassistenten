@@ -21,7 +21,7 @@
    * The air between the panel's blocks: the documents, each facet field, the
    * line and «Dine dokumenter». Everything was 24 px apart, inside a block
    * and between blocks alike, and the panel read as one tight column with
-   * nothing to say where one part ended (Simen, 30.09).
+   * nothing to say where one part ended (the design, 30.09).
    *
    * 32 px on a desktop, and less on a short screen. The panel is about as
    * wide on a phone as on a Mac — 389 to 399 px measured on all five
@@ -59,13 +59,13 @@
 }
 
 /*
- * The line between the filters and the documents (Simens issue 76). Over it
+ * The line between the filters and the documents (issue 76). Over it
  * is what narrows the search; under it are the corpus, the documents behind
  * the answer and the reader's own.
  *
  * Twice the air of the rhythm between two fields on each side: the gap, and
- * a margin of the same size. That is 64 px on a desktop, where Simen's
- * sketch measures 63 above the line and 68 below it, and it shrinks with the
+ * a margin of the same size. That is 64 px on a desktop, where the sketch
+ * measures 63 above the line and 68 below it, and it shrinks with the
  * gap on a short screen — 52 at 720 px high — so a break is always twice a
  * step and never a fixed number of pixels. The scale has no 64 to take
  * instead (it goes 15, 18, 22), and a sum of two tokens would not follow the
@@ -91,7 +91,7 @@
 
 /*
  * The corpus line and the documents behind the answer, as one block under the
- * divider (Simens issue 76). The line says which corpus, the list under it
+ * divider (issue 76). The line says which corpus, the list under it
  * which of its documents, so they are one step apart like the parts inside
  * a block, and the view's larger gap goes between this and «Dine dokumenter».
  * Alone, with the view's gap on both sides, the line hung between the divider
@@ -154,7 +154,7 @@
  * DOWNWARD only. It was measured rather than assumed while the corpus Select
  * stood 3 px above this line: a target that grew upward had its top edge
  * covered by the Select (elementFromPoint at the top edge returned the
- * select). The line has had the divider over it since Simens issue 76, so
+ * select). The line has had the divider over it since issue 76, so
  * either way would fit now; downward is kept because under the line there
  * is nothing but the detail text, which is not a target.
  *
@@ -236,7 +236,7 @@
 
 /*
  * The note when the filter is changed in a thread that is going on and not
- * locked (Simens issue 90): the sentence, and «Ny tråd» under it, as the lock
+ * locked (issue 90): the sentence, and «Ny tråd» under it, as the lock
  * has them. Across the panel, like the fields it stands over.
  */
 .filters-view__changed {
@@ -344,7 +344,7 @@
  * but one chip that is wider than the panel on its own does not wrap at all:
  * «Statsforvalteren i Østfold, Buskerud, Oslo og Akershus» measured 456 px in
  * a 327 px field at 1440, so it ran 92 px past the panel edge with the remove
- * cross off screen (Lars, 21.09, skjermbilde 12:22).
+ * cross off screen (measured 21.09, skjermbilde 12:22).
  *
  * The ellipsis is not the answer here, and that is the one real decision in
  * this rule: an organisation's name IS the information — «Statsforvalteren i
@@ -449,10 +449,10 @@
 
 /*
  * «Dine dokumenter» where there is nowhere to upload to yet: a box of its own,
- * as Simen drew it (30.09).
+ * as the design has it (30.09).
  *
  * Designsystemet's Card, neutral. Not its tinted variant, which paints the
- * same surface-tinted the zone inside it has; Simen draws a lighter box
+ * same surface-tinted the zone inside it has; the design draws a lighter box
  * around a darker zone, so the box takes the step below, background-tinted,
  * and no border. The card's default variant writes `background` directly
  * rather than through its variable, so it is written directly here too.
@@ -486,7 +486,7 @@
 
 /*
  * The zone when there is nowhere to upload to: it looks switched off, and
- * nothing happens under the pointer (Simen, 30.09).
+ * nothing happens under the pointer (the design, 30.09).
  *
  * The ground Designsystemet gives a read-only zone, and the hover ground set
  * to the same so the box does not light up. The dash in the subtle border

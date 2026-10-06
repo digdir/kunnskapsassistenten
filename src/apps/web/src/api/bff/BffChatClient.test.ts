@@ -16,8 +16,9 @@ import { activeCorpusKey, corpusOption } from '../corpus';
 import { provideDraft, resetDraftSources } from '../session';
 
 /**
- * Fixturene er tatt opp fra Nikolais BFF (`8639267`, med rettelsen for plan og
- * svar) mot hele Kudos lokalt, 2026-09-28, med én cookie-jar: ett spørsmål
+ * Fixturene er tatt opp fra BFF-en i digdir/kunnskapsassistenten (`8639267`,
+ * med rettelsen for plan og svar) mot hele Kudos lokalt, 2026-09-28, med én
+ * cookie-jar: ett spørsmål
  * med `filter: { type: ['Årsrapport'] }`, og så lista og samtalen det ga.
  * `facets.json` er kuttet til ti virksomheter; resten er som det kom.
  */

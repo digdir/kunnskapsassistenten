@@ -58,7 +58,7 @@ export type FacetFieldProps = {
 /**
  * One filter dimension as a multi-select dropdown.
  *
- * Designsystemet's Suggestion with `multiple`, decided by Lars. Three things
+ * Designsystemet's Suggestion with `multiple`, as decided. Three things
  * are worth knowing about it, all from design/designsystemet/suggestion.md:
  *
  *   1. Selected values render as chips inside the field. That is the chip
@@ -108,8 +108,7 @@ export function FacetField({ ref, facet, selected, onChange }: FacetFieldProps) 
   };
 
   /*
-   * The label for the selected state (question 4, which Lars has not
-   * answered).
+   * The label for the selected state (question 4, still unanswered).
    * Chosen: the dimension name stays the field's Label, and the state goes in
    * the description under it. Renaming a control as its value changes is what
    * the Figma sketch does with «Alle valgt», and it breaks the promise a

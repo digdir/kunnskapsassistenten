@@ -167,7 +167,7 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 /**
- * The client against Nikolai's BFF (`apps/server` in digdir/kunnskapsassistenten).
+ * The client against the BFF in digdir/kunnskapsassistenten (`apps/server`).
  *
  * The BFF holds the API key and the sign-in, and the identity comes from the
  * session cookie rather than from anything this client sends — so there is

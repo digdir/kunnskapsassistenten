@@ -5,10 +5,11 @@ import { kaEnv } from './runtimeConfig';
  *
  * The chunks the backend returns carry the document's number (`doc_num`) and,
  * for Kudos, no address: measured in the test environment 30.09, every source
- * said «Dokumentet har ingen offentlig lenke» (Simens issue 92). The address
+ * said «Dokumentet har ingen offentlig lenke» (issue 92). The address
  * is knowledge about a corpus, so it is configuration and not code, like the
  * filter fields (src/decisions/0004-corpus-knowledge-and-facets.md).
- * Nikolai's BFF reads it the same way, from `KUDOS_BASE`.
+ * The BFF in digdir/kunnskapsassistenten reads it the same way, from
+ * `KUDOS_BASE`.
  *
  * `VITE_KA_DOCUMENT_URLS`, in the grammar of `VITE_KA_DATASETS`: semicolons
  * between datasets, the first `=` after the key, and `{doc_num}` where the

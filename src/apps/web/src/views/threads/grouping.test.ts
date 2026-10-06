@@ -16,7 +16,7 @@ function daysBefore(days: number, hour = 9): Thread {
 }
 
 describe('groupThreads', () => {
-  it('follows the periods Lars decided: today, 7 days, 30 days, month, year', () => {
+  it('follows the periods decided: today, 7 days, 30 days, month, year', () => {
     const groups = groupThreads(
       [daysBefore(0), daysBefore(3), daysBefore(20), daysBefore(48), daysBefore(310)],
       NOW,

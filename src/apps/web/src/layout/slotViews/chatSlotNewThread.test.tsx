@@ -16,7 +16,7 @@ import type { Layout } from '../viewModel';
 import { ChatSlotView } from './ChatSlotView';
 
 /**
- * «Ny tråd» after a conversation started on this page (Simen's issue 114).
+ * «Ny tråd» after a conversation started on this page (issue 114).
  *
  * The thread list and the chat slot side by side under the real provider,
  * which is how the shell mounts them: the link is the thread list's own, the
@@ -269,7 +269,7 @@ describe('«Ny tråd» after a conversation started on this page', () => {
 
   /*
    * Above an empty list the way to a new thread is the empty state's own
-   * (Simen's issue 82), and it is the same action: the same link, and the same
+   * (issue 82), and it is the same action: the same link, and the same
    * click.
    */
   it('is the same action from the empty state, as «Start din første tråd»', () => {

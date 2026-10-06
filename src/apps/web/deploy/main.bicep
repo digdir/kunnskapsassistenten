@@ -1,7 +1,7 @@
 // Testmiljø for KA-frontenden: én Container App med den bygde klienten og
 // serveren som holder API-nøkkelen, og en identitet GitHub ruller ut med.
 //
-// Kopi av Nikolais `src/deploy/main.bicep` fra digdir/kunnskapsassistenten,
+// Kopi av `src/deploy/main.bicep` fra digdir/kunnskapsassistenten,
 // tilpasset vår app. Det som er tatt bort er Supabase, Typesense og
 // øktnøkkelen. Innlogging med Entra er plattformens egen («Easy Auth») og slås
 // på med `entraClientId`; uten den er appen åpen som før. Se «Innlogging» i
@@ -13,8 +13,8 @@
 //   2. med `imageTag`: selve appen.
 //
 // Registeret er vårt eget og ikke det delte `altinnaicontainers`. Der bygger
-// også Nikolais `ka-app`, og AcrPush på det registeret ville latt en kjøring
-// fra `main` her overskrive bildene hans. Grunnlaget står i docs/deploy.md,
+// også `ka-app` i digdir/kunnskapsassistenten, og AcrPush på det registeret
+// ville latt en kjøring fra `main` her overskrive bildene der. Grunnlaget står i docs/deploy.md,
 // «Hvorfor eget register».
 //
 // IKKE KJØRT. Første utrulling gjør et menneske med Contributor på

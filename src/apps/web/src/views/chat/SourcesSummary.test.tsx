@@ -7,7 +7,7 @@ import { SourcesSummary } from './SourcesSummary';
 import { CLOSING_QUESTION } from './text';
 
 /**
- * «Kilder brukt i svaret», Simens issue 113: dokumentene svaret bygger på,
+ * «Kilder brukt i svaret», issue 113: dokumentene svaret bygger på,
  * under svaret, som en vei inn i kildepanelet.
  */
 function documentWith(id: string, title: string, numbers: (number | undefined)[]): SourceDocument {
@@ -74,7 +74,7 @@ describe('SourcesSummary', () => {
   it('sier at et opplastet dokument er ditt, uten å endre synlig tekst', () => {
     // Et filnavn kan se ut akkurat som et korpusdokument, og en liste med
     // lenker leses ut av sammenheng. Dette sto i «Snarveier til dokumentene»
-    // til lista ble tatt ut av kildepanelet (Simens issue 113).
+    // til lista ble tatt ut av kildepanelet (issue 113).
     const own = userDocumentSource(
       {
         id: 'doc-egen',

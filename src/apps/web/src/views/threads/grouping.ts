@@ -1,7 +1,7 @@
 import type { Thread } from '../../model';
 
 /**
- * Period grouping for the thread list, decided by Lars 2026-09-11
+ * Period grouping for the thread list, decided 2026-09-11
  * (design/svar-skjema.md, answer 6):
  *
  *   I dag · Siste 7 dager · Siste 30 dager · the month before by name

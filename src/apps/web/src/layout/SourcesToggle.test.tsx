@@ -12,7 +12,7 @@ import { useLayout } from './useLayout';
 /**
  * The button that opens the sources panel says what it does and nothing
  * more: no count of the documents behind it, on screen or in its name
- * (Simen's issue 87).
+ * (issue 87).
  *
  * Measured on the rail, with an answer's sources recorded, because that is
  * the one state the count used to appear in.

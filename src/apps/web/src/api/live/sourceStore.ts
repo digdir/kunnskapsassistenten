@@ -4,7 +4,7 @@ import type { McpChunk } from './mcp';
 /**
  * What each answer was built from and how, kept in this browser, so the
  * sources and «Fremgangsmåte» come back when the page is loaded again
- * (Simens runde 3, ekstra 2, and Simens issue 88; src/decisions/0008).
+ * (runde 3, ekstra 2, and issue 88; src/decisions/0008).
  *
  * The backend keeps the answer's text and nothing else: a thread read back
  * has `chunks: []` on every message (headless-rag #21), and no steps at all.

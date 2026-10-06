@@ -92,7 +92,7 @@ const greeting = () => screen.queryByText(/Hva lurer du på\?/u);
 
 describe('hovedkolonnen mens tråden hentes', () => {
   it('sier at samtalen hentes, i stedet for å hilse på nytt', async () => {
-    show({ loading: true, userName: 'Simen' });
+    show({ loading: true, userName: 'Ola' });
 
     expect(await screen.findByText('Henter samtalen')).toBeTruthy();
     expect(greeting()).toBeNull();
@@ -124,7 +124,7 @@ describe('hovedkolonnen mens tråden hentes', () => {
   });
 
   it('hilser fortsatt på en forside uten adresse', () => {
-    show({ userName: 'Simen' });
+    show({ userName: 'Ola' });
 
     expect(greeting()).toBeTruthy();
     expect(screen.queryByText('Henter samtalen')).toBeNull();

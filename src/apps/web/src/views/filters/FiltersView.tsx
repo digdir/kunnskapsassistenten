@@ -48,7 +48,7 @@ import './filters.css';
 
 /**
  * What the panel says when the filter is changed in a thread that is going on
- * and not locked (Simens issue 90). The first two sentences are also what a
+ * and not locked (issue 90). The first two sentences are also what a
  * screen reader is told when it appears.
  */
 const CHANGED_IN_THREAD =
@@ -110,7 +110,7 @@ export function FiltersView({
 
   /*
    * A thread that is going on, and what its filter was when it came on screen
-   * (Simens issue 90).
+   * (issue 90).
    *
    * A locked thread cannot have its filter changed: the fields are not drawn.
    * One that is not — started without a filter, or in a mode that keeps none
@@ -137,7 +137,7 @@ export function FiltersView({
    * conversation, the drawer out of the way and the keyboard in the compose
    * field, as the thread list's — and the reader's filter kept, which is the
    * difference. `useNewThread` empties it, because a new thread from the list
-   * starts from the whole corpus (Simen, 114); from here the reader has just
+   * starts from the whole corpus (issue 114); from here the reader has just
    * said which filter they want, and is starting over to use it.
    *
    * A plain link to `/` did not do it. The chat slot keys `/` on «Ny tråd»
@@ -314,7 +314,7 @@ export function FiltersView({
   // sets it, and it is in the OTHER view. So this runs on mount and no later.
   //
   // Only when focus really was dropped. «Ny tråd» in the thread list switches
-  // here too (Simen's issue 75, round 2), and the focus that click asked for
+  // here too (issue 75, round 2), and the focus that click asked for
   // is the compose field's, which the chat slot takes in an effect of its
   // own in the same commit. Whichever of the two effects runs first, the
   // field keeps it: taken first, it is not on the body when this runs; taken
@@ -460,7 +460,7 @@ export function FiltersView({
         says whether the panel is open at all. Sitting in the view head it
         also cost 48 px of a head that took 137 of the scrolling window, and
         the panel scrolls at every width we draw — N1 in
-        design/hoydebudsjett-forslag-2026-09-21.md, Lars said yes on 21.09.
+        design/hoydebudsjett-forslag-2026-09-21.md, decided on 21.09.
 
         Written first in this view so the tab order matches what the reader
         sees: the head row is drawn above the scrolling region, and a portal
@@ -496,7 +496,7 @@ export function FiltersView({
           platform (select.md).
 
           Its description used to be the corpus line. The line has moved
-          under the divider (Simens issue 76), and the options already say
+          under the divider (issue 76), and the options already say
           what each corpus is — «Kudos, 938 dokumenter» — so the field stands
           without one.
 
@@ -545,7 +545,7 @@ export function FiltersView({
 
       {/*
         The note for a thread that is not locked, where the lock would have
-        stood, and with the same way out (Simens issue 90). Designsystemet's
+        stood, and with the same way out (issue 90). Designsystemet's
         info alert: it is something to know, not something that went wrong.
         It is not a live region; the panel's own region says it, from
         `change`, so it is said once and not again on every render.
@@ -631,8 +631,8 @@ export function FiltersView({
       {/*
         The line, and everything under it is about documents: which corpus,
         the ones behind the answer, and the reader's own. Everything over it
-        narrows the search. The filters come first, as Simen drew it (Simens
-        issue 76, 30.09), and the line is the break between the two — the
+        narrows the search. The filters come first, as the design has it
+        (issue 76, 30.09), and the line is the break between the two — the
         one place in the panel with more air than between two fields. See
         `.filters-view__divider`.
       */}
@@ -649,8 +649,8 @@ export function FiltersView({
         where there is no facet aggregation to read.
 
         No longer pinned in the head. It was, so that «3 av 6 valgt» said
-        three of six of what (brukerblikk runde 2, funn 4); Simen moved it
-        down with the documents, and the fields still say what they narrow
+        three of six of what (brukerblikk runde 2, funn 4); the design moved
+        it down with the documents, and the fields still say what they narrow
         in their own labels.
       */}
       <div className="filters-view__documents">
@@ -662,7 +662,7 @@ export function FiltersView({
 
           This reverses brukerblikk runde 2, funn 4, and on purpose: that put
           the list above the facets so its first row was visible in a 900 px
-          window with nothing scrolled. Simen's sketch (30.09) puts the
+          window with nothing scrolled. The sketch of 30.09 puts the
           filters first, and after an answer the first row now starts at
           y = 919 in a 1440 × 900 window (mock, with the corpus chooser), so
           the reader scrolls to it.

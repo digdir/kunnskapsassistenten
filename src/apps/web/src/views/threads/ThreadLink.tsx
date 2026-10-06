@@ -31,7 +31,7 @@ type Anchor = { top: number; left: number };
  * One thread's row: the title on one line, and under it when it was last
  * touched and which corpus it was asked of.
  *
- * THE WHOLE ROW IS THE LINK (Lars, 23.09). The time and the corpus used to
+ * THE WHOLE ROW IS THE LINK (decided 23.09). The time and the corpus used to
  * sit beside it, outside the link, so the bottom half of every row was dead
  * to the pointer. They are inside it now, and the name is still the title
  * alone: `aria-labelledby` points at the title span, so a screen reader says
@@ -40,7 +40,7 @@ type Anchor = { top: number; left: number };
  * can ask for by voice. That is the reason the two were kept out of the link
  * in #67 and #106, and it still holds; only the click surface changed.
  *
- * One line, always, with an ellipsis (Lars, 23.09). `Thread.title` is the
+ * One line, always, with an ellipsis (decided 23.09). `Thread.title` is the
  * reader's own question until a backend writes a real title, so an untitled
  * thread was the one row that took two lines where «NKOM måloppnåelse» took
  * one. The whole title stays in the DOM and is read by a screen reader; what

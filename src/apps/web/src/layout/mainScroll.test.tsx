@@ -10,7 +10,7 @@ import { Shell } from './Shell';
  * What the shell does with the answer from `useScrollTabStop` for the answer
  * column, the same way sidebarScroll.test.tsx covers the panels.
  *
- * It matters from Simens issue 85d on: `/om-prosjektet` is the first page in
+ * It matters from issue 85d on: `/om-prosjektet` is the first page in
  * here made of prose alone, and a region that scrolls with nothing to tab to
  * cannot be scrolled from the keyboard at all (WCAG 2.1.1).
  *

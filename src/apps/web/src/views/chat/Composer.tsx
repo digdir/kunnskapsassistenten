@@ -308,7 +308,7 @@ export function Composer({
 
           They sat beside it, and the box had grown tall enough that the
           placeholder stood indented at the top with a button pinned low on
-          either side (Simens issue 79). On a row of their own the field
+          either side (issue 79). On a row of their own the field
           takes the full width of the box, and the reader's text starts
           where the paperclip starts and ends where the send button ends.
         */}
@@ -355,7 +355,7 @@ export function Composer({
             is worth knowing about.
 
             And it says it out loud there: the sentence is ON the button, the
-            way Simen drew it, so the row reads «paperclip, coming soon» at a
+            way the design draws it, so the row reads «paperclip, coming soon» at a
             glance instead of hiding that behind a hover. No `aria-label` in
             that state, so the accessible name is the sentence on screen
             (WCAG 2.5.3). Where uploading does work, the paperclip is a
@@ -368,8 +368,7 @@ export function Composer({
             that way it is still the button's accessible name, and WCAG 2.5.3
             asks nothing of a control with no visible label.
 
-            In the accent colour while it is coming, the way Simen draws it in
-            issue 79: pale blue, like the send button beside it before there
+            In the accent colour while it is coming, the way issue 79 draws it: pale blue, like the send button beside it before there
             is anything to send. That is Designsystemet's own disabled
             tertiary button, lightened less than it lightens it — see
             chat.css for why. A working paperclip stays neutral.
@@ -450,7 +449,7 @@ export function Composer({
         <ul className="ka-follow-ups">
           {FOLLOW_UP_QUESTIONS.map((question) => (
             <li key={question}>
-              <Chip.Button onClick={() => trySubmit(() => onFollowUp(question))}>
+              <Chip.Button data-wrap="wrap" onClick={() => trySubmit(() => onFollowUp(question))}>
                 {question}
               </Chip.Button>
             </li>
@@ -470,7 +469,7 @@ export function Composer({
         description for screen readers, and in the skip link that does the
         same jump.
 
-        Under the box, where Simen draws it in issue 79, which turns round
+        Under the box, where issue 79 draws it, which turns round
         the «above» from issue 89. Last in the sticky area rather than just
         under the frame, with the follow-up questions between the two, which
         is the order of issue-89a: the area is pinned to the bottom and grows

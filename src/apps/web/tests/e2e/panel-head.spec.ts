@@ -88,7 +88,7 @@ test.describe('panelraden', () => {
       const controls = await headControls(page);
 
       // Two: «Skjul tråder og filter» and «Tråder». The narrower and wider
-      // arrows went with Simens issue 81 (#202). Without this the assertion
+      // arrows went with issue 81 (#202). Without this the assertion
       // below would still stand, true of an empty list.
       expect(controls.map((control) => control.navn)).toHaveLength(2);
 

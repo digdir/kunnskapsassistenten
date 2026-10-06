@@ -3,7 +3,7 @@ import type { StreamEvent, ThinkingStep } from '../../model';
 /**
  * What one answer showed while it was being written, taken from the events on
  * their way to the chat, so it can be written down with the answer
- * (sourceStore.ts, Simens issue 88).
+ * (sourceStore.ts, issue 88).
  *
  * The steps, as they arrived, and how long the agent thought: from the first
  * step to the first word of the answer. That is the interval `useChat`

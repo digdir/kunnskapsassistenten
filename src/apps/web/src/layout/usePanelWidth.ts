@@ -34,8 +34,8 @@ export type PanelWidth = {
  * can also be operated with a single pointer WITHOUT dragging, and a keyboard
  * does not answer that — that is 2.1.1's question. The people 2.5.7 is for
  * use a pointer and can click; a head pointer, a tremor, a joystick. Found by
- * KA CC reviewing PR #50. It was two buttons in the panel head until Simens
- * issue 81; it is a click on the edge now. See PanelSeparator.tsx.
+ * KA CC reviewing PR #50. It was two buttons in the panel head until issue
+ * 81; it is a click on the edge now. See PanelSeparator.tsx.
  */
 export function usePanelWidth(slot: SidebarSlot): PanelWidth {
   const { layout, setWidth: write } = useLayout();

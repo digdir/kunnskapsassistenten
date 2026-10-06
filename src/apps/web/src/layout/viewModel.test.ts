@@ -173,7 +173,7 @@ describe('withWidth', () => {
   });
 
   it('keeps a width wider than the window, and leaves the drawing to fittedWidths', () => {
-    // The sidebars have no ceiling of their own since Simens issue 80. The
+    // The sidebars have no ceiling of their own since issue 80. The
     // model keeps what it was given; what is drawn is what the window holds:
     // 1920 − 67 (the rail) − 32 − 640 = 1181.
     const wide = withWidth(defaultLayout, 'primary-sidebar', 5000);

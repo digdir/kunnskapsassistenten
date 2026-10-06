@@ -7,7 +7,7 @@ import { LayoutProvider } from './LayoutProvider';
 import { Shell } from './Shell';
 
 /**
- * A drag that folds a panel goes on until the pointer is let go (Simens issue
+ * A drag that folds a panel goes on until the pointer is let go (issue
  * 80, round 2). PanelSeparator.test.tsx measures the arithmetic; this is the
  * slot's half: the separator has to outlive the fold, because a rail draws
  * none, and the focus has to land somewhere when it finally goes.

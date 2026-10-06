@@ -155,7 +155,7 @@ describe('toSourceDocuments', () => {
     expect(toSourceDocuments(chunks)[0].excerpts[0].heading).toBe('Mål');
   });
 
-  it('bygger lenka fra doc_num når bitene ikke har url (Simens issue 92)', () => {
+  it('bygger lenka fra doc_num når bitene ikke har url (issue 92)', () => {
     vi.stubEnv('VITE_KA_DOCUMENT_URLS', 'kudos-full=https://kudos.dfo.no/documents/{doc_num}');
     const [document] = toSourceDocuments(
       [{ chunk_id: 'c1', doc_num: '372017', title: 'Årsrapport', url: null }],

@@ -462,7 +462,8 @@ test.describe('skallet', () => {
        * `position: absolute`, og i en `overflow: auto`-region som selv er
        * `static` blir containing block hele dokumentet. Skjermlesertekst langt
        * nede i det andre svaret havnet da på y 1916 og 1983 i et vindu på 900,
-       * og `scrollHeight` ble 1984. Hvitt felt under `html`, som Lars så.
+       * og `scrollHeight` ble 1984. Hvitt felt under `html`, som ble sett på
+       * skjermen.
        *
        * To svar og ikke ett, fordi ett svar ikke er høyt nok til å skyve teksten
        * forbi vindusbunnen. Testen måler nettopp det tilfellet som var rødt.
@@ -502,8 +503,8 @@ test.describe('skallet', () => {
       /*
        * Hjulet gjør ingenting uten at pekeren står over en ruller. Da kolonnen
        * og rulleregionen var samme boks, var det grå på hver side av de 800 px
-       * dødt: Lars, 21.09 på 5182, «Jeg vil kunne bruke scroll-wheelet med pilen
-       * her også – for nå er dette området ingenmannsland.»
+       * dødt: meldt 21.09 på 5182, hjulet skulle virke med pekeren der også,
+       * for området var ingenmannsland.
        *
        * Pekeren settes midt mellom kolonnens ytterkant og kildepanelet, altså i
        * det som var ingenmannsland. Målt her framfor regnet ut: hvor bred margen

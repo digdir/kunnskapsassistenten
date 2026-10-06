@@ -632,7 +632,7 @@ describe('tråden heter det backenden kaller den', () => {
 
   /*
    * Filteret tråden startes med, lagret med samtalen, så den låses som bak
-   * BFF-en (Simens issue 90). Målt mot den lokale stacken 05.10: backenden
+   * BFF-en (issue 90). Målt mot den lokale stacken 05.10: backenden
    * tar vare på `filter-value` fra opprettelsen, men ikke på filteret et
    * spørsmål stilles med.
    */

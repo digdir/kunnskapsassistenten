@@ -64,8 +64,8 @@ function StepQueries({ id, queries }: { id: string; queries: string[] }) {
 /**
  * «Tenker …»: what the agent is doing while the search takes its time.
  *
- * Lars, 2026-09-15: «når søkingen tar lang tid vil jeg gjerne vite hva
- * modellen driver med». The steps have been in the stream and in the model
+ * Asked for 2026-09-15: when the search takes a long time, the reader wants
+ * to know what the model is doing. The steps have been in the stream and in the model
  * all along (`agent/thinking` → `StreamEvent` → `Message.thinkingSteps`);
  * until now nothing drew them, so a long search was a blank card.
  *

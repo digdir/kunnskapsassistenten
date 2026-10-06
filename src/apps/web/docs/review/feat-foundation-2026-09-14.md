@@ -98,7 +98,7 @@ navigasjonspanelet betaler for sin egen ramme — og `global.css` sier det rett
 ut: «the slots share the derivation, not the result». Verdt å vite at den
 gamle begrunnelsen for 198 var det motsatte, symmetri, og at forskjellen er
 synlig: `layout-1280-begge-kollapset-lys.png`. Ingen endring foreslått, men
-Lars bør se bildet.
+bildet bør ses på.
 
 ## Det som er riktig, og hvor jeg sjekket det
 
@@ -158,5 +158,5 @@ er lagt til. Alle 22 layoutbildene er tatt om igjen.
    236, og tallene ved 1280 med kildepanelet åpent er
    236 + 32 + 640 + 32 + 340. Briefen er din; to filer som er uenige om det
    samme tallet er verdt fem minutter nå.
-3. **Ikke klar for Lars ennå.** Med funn 1 rettet er den det: alt annet i
+3. **Ikke klar for godkjenning ennå.** Med funn 1 rettet er den det: alt annet i
    beslutningen er bygget, målt og grønt.

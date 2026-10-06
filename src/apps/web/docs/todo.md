@@ -10,7 +10,7 @@ backlog: en sak står her fordi noen har sett den og sagt «ikke nå».
       `X-User-Id`, og den er en tilfeldig verdi i `localStorage` under
       `ka.user.v1`. En annen nettleser ser derfor ikke tråden, og en delt
       lenke fører ikke fram.
-      Lars 22.09: vent med skjuling, avklares når UI-et fikses.
+      Valgt 22.09: vent med skjuling, avklares når UI-et fikses.
 
 - [ ] **Stedfortreder-vinduet: lenken er død i et brøkdels sekund.**
       Adressen skrives når spørsmålet sendes og flyttes til backendens id når

@@ -21,7 +21,7 @@ export type InfoPageProps = {
 
 /**
  * A page of text in the answer column: onboarding, the changelog, about the
- * project. The words come from the old Kunnskapsassistenten (Simens issue
+ * project. The words come from the old Kunnskapsassistenten (issue
  * 85); see the `*Parts.ts` files beside this one.
  *
  * Drawn by `Markdown`, which is the one place the mapping from markdown onto

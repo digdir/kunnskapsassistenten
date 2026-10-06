@@ -130,8 +130,8 @@ describe('/api/facets', () => {
           field: 'concerned_years',
           label: 'år',
           // Nyeste først, og bare fra 1990 til i år: «2436», «1989» og «0» er
-          // støy, og «2035» og «2036» er år som ikke har kommet (Simens
-          // issue 75: sluttåret i en plan eller et tildelingsbrev).
+          // støy, og «2035» og «2036» er år som ikke har kommet (issue 75:
+          // sluttåret i en plan eller et tildelingsbrev).
           options: [
             { value: '2024', count: 1883 },
             { value: '2023', count: 1851 },
@@ -279,8 +279,8 @@ describe('/api/facets', () => {
   });
 
   it('spør Typesense én gang for mange forespørsler, også samtidige', async () => {
-    // Panelet spør ved hvert klikk, og det skal ikke bli et kall til Benjamins
-    // Typesense hver gang.
+    // Panelet spør ved hvert klikk, og det skal ikke bli et kall til Typesense
+    // hver gang.
     await start();
 
     await Promise.all([
@@ -426,7 +426,7 @@ describe('policyen', () => {
   });
 
   it('slutter i år, ikke på et år fram i tid', () => {
-    // Simens issue 75: filteret viste 2027–2035, fordi en plan eller et
+    // Issue 75: filteret viste 2027–2035, fordi en plan eller et
     // tildelingsbrev nevner sluttåret sitt. Det finnes ingen dokumenter FRA
     // de årene ennå, så de er ikke noe å avgrense til.
     expect(

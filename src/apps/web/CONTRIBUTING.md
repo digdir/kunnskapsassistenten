@@ -1,7 +1,7 @@
 # Bidra til kunnskapsassistenten-frontend
 
 Kortversjonen av byggereglene. Fullversjonen er `design/_briefs/bygg/regler.md`
-i Lars sin lokale `design/`-mappe, og den er fasit der de er uenige.
+i den lokale `design/`-mappa, og den er fasit der de er uenige.
 
 ## Navn
 
@@ -150,11 +150,12 @@ uten tilgjengelighet er utelukket.
 - Commit-melding på **norsk** med ekte æøå, trailer
   `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`.
 - Push til origin, **åpne PR som draft tidlig**, og oppdater den.
-- **Aldri merge.** Lars merger. Rebase på `main` når dirigenten sier det.
+- **Aldri merge.** Dirigenten merger. Rebase på `main` når dirigenten sier det.
 - PR-beskrivelsen dekker **kun** det som er i PR-en. Kort. Ingen
   AI-attribusjon, ingen «oppfølging» eller «test-plan» — sånt sier du til
   dirigenten.
-- Kommentarer i egen PR er greit. Ingen andre GitHub-poster uten ja fra Lars.
+- Kommentarer i egen PR er greit. Ingen andre GitHub-poster uten ja via
+  dirigenten.
 
 ## Grønt før push
 

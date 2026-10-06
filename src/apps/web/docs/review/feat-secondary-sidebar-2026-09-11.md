@@ -287,7 +287,7 @@ overskriften over ville gitt samme struktur uten landemerket.
 
 ## Til dirigenten
 
-- **PR-en er ikke klar for Lars.** Funn 1 til 3 er alle i `SourcesView.tsx` og
+- **PR-en er ikke klar for godkjenning.** Funn 1 til 3 er alle i `SourcesView.tsx` og
   har samme rot: `reveal()` gjør to ting (rull og fokuser), og tre av fire
   kallsteder vil bare ha det ene. Å dele den i to funksjoner løser funn 1, 4
   og 5 samtidig.

@@ -7,7 +7,7 @@ type ScrollToBottomProps = {
 };
 
 /**
- * «Bla til nederst», once for the whole column (Simens runde 3, ekstra 5).
+ * «Bla til nederst», once for the whole column (runde 3, ekstra 5).
  *
  * It was a button in every answer's action row, which put one in each chat
  * block and none where the reader was when they wanted it: halfway up a long

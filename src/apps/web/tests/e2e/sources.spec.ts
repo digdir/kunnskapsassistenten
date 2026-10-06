@@ -233,7 +233,7 @@ test.describe('kildepanelet', () => {
   );
 
   /**
-   * Simens issue 113: «Kilder brukt i svaret» under the answer is the way into
+   * Issue 113: «Kilder brukt i svaret» under the answer is the way into
    * the panel, and «Snarveier til dokumentene» is gone from it. A title takes
    * the route a `[n]` marker takes: the panel opens on the document's first
    * excerpt with the focus in it, and Escape comes back to the title.

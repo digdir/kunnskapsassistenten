@@ -1,10 +1,10 @@
 /**
- * Dark mode. Lars decided 2026-09-11 that KA ships it, straight from the
+ * Dark mode. Decided 2026-09-11 that KA ships it, straight from the
  * Digdir theme's tokens — the theme carries 147 light/dark variables, so the
  * cost is verifying screens, not building anything.
  *
  * The visible control is `ColorSchemeToggle`, at the foot of the navigation
- * panel (Simens issue 85). The console command it was until then still works:
+ * panel (issue 85). The console command it was until then still works:
  *
  *   window.ka.colorScheme.set('dark' | 'light' | 'auto')
  *   window.ka.colorScheme.get()

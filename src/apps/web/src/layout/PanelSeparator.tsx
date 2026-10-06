@@ -30,7 +30,7 @@ const CLICK_SLOP = 4;
 
 /**
  * How far back past the fold line a drag has to come before a panel it folded
- * opens again. Simens issue 80, round 2: the drag goes on after the fold, and
+ * opens again. Issue 80, round 2: the drag goes on after the fold, and
  * dragging back toward the answer column opens the panel before the pointer is
  * let go.
  *
@@ -57,8 +57,8 @@ const REOPEN_MARGIN = 16;
  *
  * The pointer path without a drag is a click on the edge itself: it moves the
  * edge between the width the design draws and the widest the window has room
- * for. It used to be two arrow buttons in the panel head, which Simen asked
- * to have removed (Simens issue 81); a click here keeps 2.5.7 without them,
+ * for. It used to be two arrow buttons in the panel head, which were asked
+ * removed (issue 81); a click here keeps 2.5.7 without them,
  * and without a second control for the same edge. The conductor's option A,
  * 30.09.
  *
@@ -133,7 +133,7 @@ export function PanelSeparator({
 
     /*
      * Dragged past the middle of its own floor, the panel folds away instead
-     * of stopping at the floor. Simens issue 80: a panel narrower than its
+     * of stopping at the floor. Issue 80: a panel narrower than its
      * content can be read in is a state nobody wants, so the edge does not
      * stop in one; it either holds the floor or the panel goes. Half the
      * floor is where VS Code's split view snaps a view shut, and it keeps
@@ -146,7 +146,7 @@ export function PanelSeparator({
      * pressed against on the way. The pointer path for this without a drag
      * is the collapse button, which is what WCAG 2.5.7 asks.
      *
-     * The drag does not end there (Simens issue 80, round 2). The slot keeps
+     * The drag does not end there (issue 80, round 2). The slot keeps
      * this element while the pointer is held, over the rail, and the panel
      * opens again once the pointer is back REOPEN_MARGIN past the same line.
      * It opens where the pointer says, which is the floor, and follows the
@@ -249,7 +249,7 @@ export function PanelSeparator({
    * goes is the grip and the `col-resize` cursor over it, both of which
    * promised a drag this window cannot deliver. The boundary stays.
    *
-   * Brukerblikk 3, funn 2, Lars 17.09 decision 9 option (c). It is the state
+   * Brukerblikk 3, funn 2, decision 9 option (c) on 17.09. It is the state
    * at 1440 × 900 with both sidebars open — the width every Figma frame is
    * drawn in — so it is not a corner case.
    *

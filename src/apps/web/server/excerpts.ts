@@ -8,8 +8,9 @@ import { parseCollections } from './facets.ts';
  *
  * A bridge, like `/api/facets` (src/decisions/0008). The MCP answer names
  * its chunks and leaves their text out, and headless-rag has no route that
- * hands a caller the text of a chunk by id. Nikolai's BFF looks the same ids
- * up in the same collection, so both clients show the same passage.
+ * hands a caller the text of a chunk by id. The BFF in
+ * digdir/kunnskapsassistenten looks the same ids up in the same collection,
+ * so both clients show the same passage.
  *
  * Answered here and never forwarded, like `/api/facets` (app.ts).
  *

@@ -157,7 +157,7 @@ export function AnswerMessage({
    * How much of the assistant's own work this answer shows. `standard` draws
    * «Fremgangsmåte» over the answer and nothing technical; `detaljert` draws
    * the thinking panel and the hit count, which is what everyone saw before
-   * the level existed. See displayLevel.ts and Simens issue 88.
+   * the level existed. See displayLevel.ts and issue 88.
    */
   const detailed = useDisplayLevel() === 'detaljert';
 
@@ -355,7 +355,7 @@ export function AnswerMessage({
               The hit count and the search words, inside the card under the
               answer. Detailed only: at standard the procedure above the
               answer has already said what the answer was built on, in the
-              words a reader has seen before (Simens issue 88).
+              words a reader has seen before (issue 88).
             */}
             {detailed && message.retrieval && !streaming ? (
               <RetrievalPanel retrieval={message.retrieval} />
@@ -380,7 +380,7 @@ export function AnswerMessage({
 
             {/*
               The documents the answer rests on, under it and over the closing
-              question, as Simen draws it in issue 113. Only once the answer is
+              question, as issue 113 draws it. Only once the answer is
               done: the sources arrive in the last frame, and a list that grew
               while the text was still being written would move under it.
             */}

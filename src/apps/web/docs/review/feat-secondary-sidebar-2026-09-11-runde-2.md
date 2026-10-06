@@ -233,7 +233,7 @@ havner ikke i produksjonsbygget.
 
 ## Til dirigenten
 
-- **PR #2 er klar for Lars.** Ingen blokkerende igjen. Funn A og B er én linje
+- **PR #2 er klar for godkjenning.** Ingen blokkerende igjen. Funn A og B er én linje
   hver og bør inn først; funn B er synlig for designeren.
 - **`README.md` og `viewModel.ts` er uenige om bredden på åpent kildepanel.**
   README linje 205 sier «Verdien i `defaultLayout` er **483 px**»,

@@ -34,7 +34,7 @@ const UPLOAD_ERROR_TEXT: Record<UploadErrorCode, string> = {
  * What the zone says where there is nowhere to upload to yet.
  *
  * Not the `unavailable` sentence above, which is a refusal: nothing was tried
- * here, so there is nothing to refuse. It is Simen's wording (30.09), and it
+ * here, so there is nothing to refuse. It is the design's wording (30.09), and it
  * is word for word what the compose field's paper clip says (#3,
  * src/views/chat/attachmentText.ts): one missing feature, one sentence,
  * wherever the reader meets it (KA CC, 30.09). Two views may not import each

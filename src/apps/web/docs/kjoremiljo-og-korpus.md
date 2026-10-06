@@ -10,7 +10,7 @@ det som er målt. Hvorfor fasettene ikke kommer fra backenden står i
 
 ## Det store korpuset
 
-**Hele Kudos er 10 064 dokumenter**, ferdig indeksert av Benjamin i Typesense
+**Hele Kudos er 10 064 dokumenter**, ferdig indeksert i Typesense
 som `KUDOS_preprod_v4_*` på `typesense-test.digdir.cloud`:
 
 | samling    | antall    |
@@ -40,7 +40,7 @@ navn. De to nakne linjene `url` og `key` nederst er ColBERT-reranker-en
 
 1. **Backenden.** Klon `digdir/digdir-headless-rag`, bytt til grenen
    `fix/mcp-retrieve-filter-by` og følg `docs/runbooks/kudos-full-lokalt.md`
-   der: stacken med compose, `.env.benjamin` fra Benjamin i repo-rota, og
+   der: stacken med compose, `.env.benjamin` i repo-rota, og
    `scripts/kudos-full/seed.sh`. Siste linje fra skriptet skal vise treff.
 2. **Frontenden**, med API-nøkkelen fra backendens `E2E_API_KEY`. `read -rs`
    leser den uten å vise den og uten å legge den i historikken. `npm ci` tok

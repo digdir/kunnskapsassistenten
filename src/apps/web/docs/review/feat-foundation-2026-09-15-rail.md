@@ -124,7 +124,7 @@ Tre tester i `tests/e2e/layout.spec.ts`, på `chore/e2e-rail`:
 
 ## Til dirigenten
 
-1. **Klar for Lars.** De to funnene er kommentarer, ikke oppførsel, og kan
+1. **Klar for godkjenning.** De to funnene er kommentarer, ikke oppførsel, og kan
    like gjerne tas som en liten oppfølging som før merge.
 2. **Erstatningstestene ligger på `chore/e2e-rail`** og er grønne mot denne
    branchen. De er røde mot `main` til #20 er inne, så merg #20 først.

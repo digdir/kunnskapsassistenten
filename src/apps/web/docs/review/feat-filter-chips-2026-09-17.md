@@ -124,7 +124,7 @@ Verdt å vite den dagen en rad får en sterkere flatefarge.
 ### 2. «Trykk for å fjerne fra år»
 
 To av tre leser naturlig. Den tredje, «fra år», er tynn norsk. «fra årstall»
-eller «fra filteret år» er en mulighet. #2 og Lars avgjør; det er ikke galt,
+eller «fra filteret år» er en mulighet. #2 og dirigenten avgjør; det er ikke galt,
 bare stramt.
 
 ### 3. Fokusringen har ingen automatisk vakt
@@ -146,5 +146,5 @@ neste PR.
 
 ## Til dirigenten
 
-Klar for Lars. Den ene «bør» er én linje i en kommentar. De tre «kan» kan alle
+Klar for godkjenning. Den ene «bør» er én linje i en kommentar. De tre «kan» kan alle
 vente, og den siste av dem er min egen oppfølging.

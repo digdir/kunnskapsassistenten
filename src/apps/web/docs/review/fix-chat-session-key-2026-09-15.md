@@ -96,5 +96,5 @@ rekkefølge og id-er å bli enig om. Verdt å vite at kanten finnes.
 
 ## Til dirigenten
 
-**PR #66 er klar for Lars.** Den retter en ekte feil som testen fant, og full
+**PR #66 er klar for godkjenning.** Den retter en ekte feil som testen fant, og full
 suite er kjørt (123 + 1 hoppet). Når den er merget rebaser jeg #65 og kjører CI.

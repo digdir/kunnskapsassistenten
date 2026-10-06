@@ -1,7 +1,7 @@
 # BFF-modus
 
-`VITE_API_MODE=bff` lar klienten snakke med Nikolais BFF (`src/apps/server` i
-`digdir/kunnskapsassistenten`) i stedet for rett med backenden. BFF-en holder
+`VITE_API_MODE=bff` lar klienten snakke med BFF-en i `digdir/kunnskapsassistenten`
+(`src/apps/server`) i stedet for rett med backenden. BFF-en holder
 API-nøkkelen og innloggingen, og identiteten kommer fra økta. Klienten sender
 spørsmålet, samtale-id-en og filteret, ikke tenant, datasett eller
 `X-User-Id`. Bakgrunnen står i `src/decisions/0005-client-behind-the-bff.md`.

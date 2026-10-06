@@ -63,7 +63,7 @@ describe('FiltersView', () => {
   });
 
   /*
-   * The filters first and the documents under the line (Simens issue 76,
+   * The filters first and the documents under the line (issue 76,
    * 30.09): the corpus line, then «Dokumenter» and «Fra Kudos», then «Dine
    * dokumenter». The line is decoration and says nothing to a screen reader;
    * the headings under it do that.
@@ -106,7 +106,7 @@ describe('FiltersView', () => {
 /*
  * A switch here from the thread list takes focus back to «Tråder», because
  * the button that was pressed went away with its view. «Ny tråd» switches
- * here too (Simens issue 75, round 2), and then the focus belongs to the
+ * here too (issue 75, round 2), and then the focus belongs to the
  * compose field the click asked for.
  */
 describe('focus on a switch from the thread list', () => {

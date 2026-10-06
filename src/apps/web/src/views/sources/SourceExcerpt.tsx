@@ -53,7 +53,7 @@ export const EXCERPT_UNAVAILABLE = 'Utdraget er ikke tilgjengelig.';
  * number as the `[n]` marker in the answer (answer 19), it is the scroll
  * target, and it sits in a heading so a screen reader user can reach it by
  * navigating headings rather than by reading the panel top to bottom. Figma
- * puts a relevance tag there; Simen asked for «Utdrag N» instead (issue 86),
+ * puts a relevance tag there; issue 86 asks for «Utdrag N» instead,
  * and the tag went because every level of it was worked out from the order
  * the chunks came in, not from a score (`relevanceFromRank`).
  *
@@ -63,10 +63,10 @@ export const EXCERPT_UNAVAILABLE = 'Utdraget er ikke tilgjengelig.';
  * at it, so it gets no scroll target and says plainly, on the same row, that
  * the answer did not use it.
  *
- * Closed, the row is all there is (Simens issue 86). Figma clips the closed
+ * Closed, the row is all there is (issue 86). Figma clips the closed
  * quote and fades it out; the heading path and the first lines stood there
- * too until 30.09, and Simen asked for the box to hold nothing it was not
- * asked to show.
+ * too until 30.09, and the box was asked to hold nothing it was not asked to
+ * show.
  *
  * Getting here is one click on a `[n]` marker; getting back was eight
  * Shift+Tab that ended somewhere else entirely, and Escape did nothing
@@ -112,8 +112,8 @@ export function SourceExcerpt({
   /*
     A link of its own only when it goes further than the document's does.
 
-    The document's link is at the end of the document, once (Lars, 30.09, on
-    Simens issue 92). An excerpt that linked to the same address said it again
+    The document's link is at the end of the document, once (decided 30.09, on
+    issue 92). An excerpt that linked to the same address said it again
     under every quote — in live and bff mode `kudosUrl` IS the document's
     address — and Figma's own note on the link says that it belongs a level up
     when it only opens the document. A file URL with `#page=N` opens the page

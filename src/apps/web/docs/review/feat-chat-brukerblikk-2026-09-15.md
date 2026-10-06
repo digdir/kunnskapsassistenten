@@ -112,7 +112,7 @@ for å se det.
 
 ## Til dirigenten
 
-1. **Klar for Lars.** De to «kan»-ene kan tas når som helst, eller ikke.
+1. **Klar for godkjenning.** De to «kan»-ene kan tas når som helst, eller ikke.
 2. **PR #26 var ikke merget** da du sa den var det — den sto åpen, så `main`
    hadde railen uten erstatningstestene mine. Den er nå rebaset på ny `main`,
    viser bare mine to filer, og er `MERGEABLE`.

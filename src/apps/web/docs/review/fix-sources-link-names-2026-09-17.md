@@ -124,6 +124,6 @@ skrev i #93.
 
 ## Til dirigenten
 
-Klar for Lars. «Bør» krever ingen endring i produksjonskoden — den er riktig —
+Klar for godkjenning. «Bør» krever ingen endring i produksjonskoden — den er riktig —
 bare i det som vokter den, og halvparten av den jobben er min. Jeg tar
 e2e-siden i PR-en jeg har i kø; unit-siden er tre linjer hos #4.

@@ -411,7 +411,7 @@ describe('SourcesView, the panel head that stays put', () => {
 
   it('holds only the panel heading on a page with nothing to search', () => {
     // «Kilder» is visible and in the head from the first render, as Figma has
-    // it and as the navigation panel has «Filtrering» (Lars, 30.09). There is
+    // it and as the navigation panel has «Filtrering» (30.09). There is
     // no search field before there is anything to search.
     render(<Harness answers={[]} />);
 
@@ -596,8 +596,8 @@ describe('SourcesView, Kudos-lenker som skiller seg fra hverandre', () => {
    *
    * Every excerpt links to its document in live and bff mode, and to nothing
    * more. Only a file URL with `#page=N` goes further (kudosLink.ts), and that
-   * is the one excerpt here with a link of its own (Lars, 30.09, on Simens
-   * issue 92).
+   * is the one excerpt here with a link of its own (decided 30.09, on issue
+   * 92).
    */
   function withKudosLinks(): SourceDocument[] {
     const url = (id: string) => `https://kudos.dfo.no/dokument/${id}`;
@@ -649,7 +649,7 @@ describe('SourcesView, Kudos-lenker som skiller seg fra hverandre', () => {
   it('gir et utdrag egen lenke bare når den åpner siden sitatet står på', () => {
     // Utdrag 1 og 3 lenker til dokumentet og ikke lenger: den lenka står én
     // gang, nederst i dokumentet. Før sto den samme adressen under hvert
-    // sitat og én gang til under dokumentet (Lars 30.09, Simens issue 92).
+    // sitat og én gang til under dokumentet (valgt 30.09, issue 92).
     render(<SourcesView documents={withKudosLinks()} />);
 
     expect(screen.queryByRole('link', { name: /utdrag 1,/ })).toBeNull();

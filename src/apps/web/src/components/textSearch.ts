@@ -1,7 +1,7 @@
 /**
  * Finding a string in a piece of text, and saying where it was found.
  *
- * Lars asked for **one** search mechanism, not two (answers 27 and 55): the
+ * **One** search mechanism was asked for, not two (answers 27 and 55): the
  * sources panel searches excerpts today, the answer and whole documents are
  * next. That is why this is not «excerpt search» — it knows nothing about
  * excerpts, documents or sources. It takes a flat list of pieces of text with

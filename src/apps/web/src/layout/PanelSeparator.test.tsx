@@ -203,7 +203,7 @@ describe('a window with no room in it', () => {
     // panel's own border draws it, and `.panel-separator::before` only lights
     // up under the pointer, under focus and while dragging. What goes is the
     // grip and the `col-resize` cursor, which promised a drag this window
-    // cannot deliver. Brukerblikk 3, funn 2; Lars 17.09.
+    // cannot deliver. Brukerblikk 3, funn 2; decided 17.09.
     draw('primary-sidebar', { width: 1440 });
     expect(screen.queryByRole('separator')).toBeNull();
 
@@ -254,8 +254,8 @@ describe('a window with no room in it', () => {
 });
 
 /**
- * The pointer on the edge. Simens issue 80: a panel dragged too narrow to
- * read folds away. Simens issue 81: a click is the path without a drag.
+ * The pointer on the edge. Issue 80: a panel dragged too narrow to
+ * read folds away. Issue 81: a click is the path without a drag.
  *
  * jsdom does no layout, so what is measured here is the arithmetic on
  * `clientX` and what the drag leaves in the layout, not the pixels on
@@ -348,7 +348,7 @@ describe('the pointer on the edge', () => {
   });
 
   /*
-   * Simens issue 80, round 2: the drag goes on after the fold, and dragging
+   * Issue 80, round 2: the drag goes on after the fold, and dragging
    * back opens the panel before the pointer is let go. The line is the same
    * both ways, half the floor, and the panel opens 16 px back past it.
    */
@@ -418,7 +418,7 @@ describe('the pointer on the edge', () => {
   });
 
   /*
-   * Simens issue 81 took the arrow buttons out of the panel head, and they
+   * Issue 81 took the arrow buttons out of the panel head, and they
    * were the pointer path without a drag that WCAG 2.5.7 asks for. A click on
    * the edge is that path now: it goes between the design's width and the
    * widest the window has room for (the conductor's option A, 30.09).

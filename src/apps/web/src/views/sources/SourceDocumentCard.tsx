@@ -41,17 +41,17 @@ type SourceDocumentCardProps = {
  * excerpts as white boxes, then the way to the document itself.
  *
  * `Card` plus two `Card.Block`s, because that is Designsystemet's shape for a
- * box in parts. The head is the title and nothing else, as in Figma (Lars,
+ * box in parts. The head is the title and nothing else, as in Figma (decided
  * 30.09); what the document is — type, publisher, year — opens the body, in
  * small print over the excerpts it describes.
  *
  * No «N utdrag» any more. It stood in the head to say how many excerpts the
- * card held, and with the excerpts closed to one row each (Simens issue 86)
+ * card held, and with the excerpts closed to one row each (issue 86)
  * they now stand right under it and say so themselves, each with its own
  * number. The shortcut list above still says which numbers each document has.
  *
- * The document's link is the last thing in the body, once per document (Lars,
- * 30.09, on Simens issue 92). An excerpt carries a link of its own only when
+ * The document's link is the last thing in the body, once per document
+ * (decided 30.09, on issue 92). An excerpt carries a link of its own only when
  * it opens the page the quote is on; see `SourceExcerpt`.
  *
  * The link deliberately sits OUTSIDE the heading. `Card` delegates a click

@@ -75,7 +75,7 @@ eier bare denne mappa.
 | [`brukerblikk-8-2026-09-23.md`](brukerblikk-8-2026-09-23.md)                                     | Brukerblikk runde 8: en lenke appen skriver til seg selv, og ikke kan følge                            |
 | [`fix-thread-identity-2026-09-23.md`](fix-thread-identity-2026-09-23.md)                         | PR #156 og #157, tråden får et navn den kan svare på: og en sammenslåing som måtte måles for seg       |
 | [`chore-lint-and-hooks-2026-09-23.md`](chore-lint-and-hooks-2026-09-23.md)                       | PR #159 og #161, linteren og hookene: en port er en exit-kode, og installerbarhet er en port           |
-| [`feat-thread-list-lars-2026-09-23.md`](feat-thread-list-lars-2026-09-23.md)                     | PR #160, trådlista slik Lars ba om: boksen som måtte bli en del av raden                               |
+| [`feat-thread-list-2026-09-23.md`](feat-thread-list-2026-09-23.md)                               | PR #160, trådlista slik den ble bestilt: boksen som måtte bli en del av raden                          |
 
 ## Sånn går en review
 
@@ -125,13 +125,13 @@ eier bare denne mappa.
    egen seksjon si hva som er riktig, med hvor du sjekket det. Avslutt med
    «Til dirigenten» for det som er en avgjørelse og ikke en kodeendring.
 8. **Legg funnene som én samlet kommentar i PR-en.** Ikke som GitHub-review
-   med approve eller request changes; det gjør Lars.
+   med approve eller request changes; det gjør dirigenten.
 
    Maestri mister meldinger, så **PR-kommentaren er dommen**. Dirigenten får
    én linje i tillegg, ikke i stedet.
 
 9. **Rapporter til dirigenten** med antall funn per alvor og om PR-en er klar
-   for Lars.
+   for godkjenning.
 
 ### Alvorsgradene
 

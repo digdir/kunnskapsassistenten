@@ -160,7 +160,7 @@ Og dagens fire, sett med brukerens øyne:
 - **Breddekontrollene (#93).** Panelhodene er rene i den tilstanden der de før
   sto fire døde knapper. Merk at de forsvinner fra navigasjonspanelets hode når
   du åpner kildepanelet — altså fra et panel du ikke rørte. Det er avgjørelsen
-  (Lars 17.09, 9c), ikke en feil, men det er verdt å vite at det ser sånn ut.
+  (17.09, 9c), ikke en feil, men det er verdt å vite at det ser sånn ut.
 - **Chip-navn (#91) og lenkenavn (#92)** endrer ingenting synlig, som er
   poenget med begge. Den synlige flata er den samme, målt i anmeldelsene.
 

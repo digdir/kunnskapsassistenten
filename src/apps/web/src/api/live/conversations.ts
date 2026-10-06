@@ -151,7 +151,7 @@ export function threadFromConversation(conversation: ApiConversation): Thread {
  *
  * The stored chunk has no address, only the document's number, so the link
  * is built from the corpus's template the way the live stream builds it
- * (Simens issue 92, documentUrls.ts). A corpus with no template gets no
+ * (issue 92, documentUrls.ts). A corpus with no template gets no
  * link, and the panel draws that honestly.
  */
 export function sourcesFromChunks(
@@ -304,7 +304,7 @@ function bareName(name: string): string {
 
 /**
  * The filter a conversation was made with, by dimension, or undefined when it
- * has none (Simens issue 90).
+ * has none (issue 90).
  *
  * The backend keeps `filter-value` from the create call on a message of its
  * own, and gives its keys back in kebab case: `documentType` comes back as

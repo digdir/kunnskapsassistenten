@@ -9,7 +9,7 @@ import { MIN_QUERY_LENGTH, findHits } from './textSearch';
 /**
  * Renders an answer's markdown onto Designsystemet components.
  *
- * Lars settled the answer structure on 2026-09-11 (answer 14): a heading plus
+ * The answer structure was settled on 2026-09-11 (answer 14): a heading plus
  * paragraphs, with markdown lists and simple tables inside the flow. The
  * mapping below is the one in design/designsystemet/behov-til-komponent.md.
  *

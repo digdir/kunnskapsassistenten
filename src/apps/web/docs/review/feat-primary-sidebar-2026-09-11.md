@@ -306,8 +306,8 @@ tekst og i alle `aria-label`. `grep` etter venstre/høyre/left/right i
 
 - **Spørsmål 4 er fortsatt ubesvart.** #2 har valgt at feltetiketten alltid er
   dimensjonsnavnet og at tilstanden («Alle valgt» / «3 av 6 valgt») står i
-  `Field.Description`. Begrunnelsen i koden er god og bør bli Lars sitt svar,
-  men noen må si det.
+  `Field.Description`. Begrunnelsen i koden er god og bør bli svaret, men noen
+  må si det.
 - **`ArrowLeftIcon as BackIcon` må inn i `src/components/icons.ts`** (#5) før
   funn 3 kan rettes.
 - **Ingen branch monterer viewene.** `src/layout/viewComponents.ts` peker på
@@ -324,7 +324,7 @@ tekst og i alle `aria-label`. `grep` etter venstre/høyre/left/right i
 - **Footer-lenkene «Endringslogg» og «Om prosjektet»** er tegnet i fasiten og
   står som «ja» i `skal-dette-implementeres.md` (rad 107–108), men er ikke
   bygget. Det er allerede notert i `visjon-og-beslutninger.md` som et åpent
-  spørsmål til Lars om hvor de skal peke. Ikke et funn mot #2.
+  spørsmål om hvor de skal peke. Ikke et funn mot #2.
 - **`--ds-font-size-6`, 21 px mot 30 px**, treffer «Filtrering» direkte og
   venter på #5 sitt tokens-arbeid (funn 10).
 

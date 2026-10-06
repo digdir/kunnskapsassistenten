@@ -263,7 +263,7 @@ test.describe('skuffer under 1139', () => {
 
     // Up to the widest the window allows, which is remembered in ka.layout.v1:
     // 1920 − 67 (the sources rail) − 32 − 640 (the answer column's floor).
-    // There is no ceiling of the panel's own since Simens issue 80, round 2.
+    // There is no ceiling of the panel's own since issue 80, round 2.
     const handle = page.getByRole('separator', { name: 'Endre bredde på tråder og filter' });
     await handle.focus();
     await page.keyboard.press('End');

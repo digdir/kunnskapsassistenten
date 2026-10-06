@@ -6,7 +6,7 @@ import { AppErrorBoundary } from './AppErrorBoundary';
  * The page that stands where the app was, instead of a white window.
  *
  * What this measures is the boundary: that an error below it gives a page with
- * a name, a way out and the error text. The error Lars actually got is thrown
+ * a name, a way out and the error text. The error actually seen is thrown
  * by the DOM in a real browser, in React's commit phase, and is measured there
  * (design/_briefs/bygg/maalt-hvit-skjerm-ny-traad.md). jsdom has no page
  * translator to move nodes from under React.

@@ -17,7 +17,7 @@ import type { ViewHeadContextValue } from './viewHeadContext';
  * every width we draw, 1920 included (988 px of content in 958). The button
  * is one control that belongs to the PANEL rather than to what is in it, so
  * it belongs on the panel's row. Measured in
- * design/hoydebudsjett-forslag-2026-09-21.md, N1; Lars said yes on 21.09.
+ * design/hoydebudsjett-forslag-2026-09-21.md, N1; decided on 21.09.
  *
  * Same shape as the view head, and that is on purpose: a view fills it with
  * `PanelHead` exactly the way it fills the other with `ViewHead`, and neither

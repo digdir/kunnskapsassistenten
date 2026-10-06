@@ -146,7 +146,7 @@ test.describe('trådlista mens en samtale pågår', () => {
  * A search that stands when the list empties.
  *
  * The search field is not drawn over a list known to be empty (#209, the same
- * thought as Simens issue 82). A query that stood when the last thread went —
+ * thought as issue 82). A query that stood when the last thread went —
  * deleted mid-search — then went with the field out of sight, but not out of
  * the state, and came back invisibly with the next thread and filtered it
  * away: an empty field, no rows, and «Ingen treff». Measured by #2 with a fake
@@ -158,7 +158,7 @@ test.describe('trådlista mens en samtale pågår', () => {
  * over a change to it.
  *
  * The next question is asked straight from the field on `/`, and not through
- * «Start din første tråd». Since the follow-up to Simens issue 75 that link
+ * «Start din første tråd». Since the follow-up to issue 75 that link
  * turns the panel to the filters, which unmounts the list and drops the query
  * by itself, so going through it could not show the bug. Asking from the
  * field, with the list still open, is the way a reader still meets it.
@@ -198,7 +198,7 @@ test.describe('et søk når lista blir tom', () => {
 
       // The empty state stands alone: no search field over an empty list.
       await expect(panel.getByRole('link', { name: /^Start din første tråd/ })).toBeVisible();
-      // Alone: the heading and the line under it went with Simens issue 82.
+      // Alone: the heading and the line under it went with issue 82.
       await expect(panel.getByText('Ingen tråder ennå')).toHaveCount(0);
       await expect(search).toHaveCount(0);
 

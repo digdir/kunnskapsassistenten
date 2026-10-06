@@ -73,16 +73,16 @@ function worthShowing(keywords: readonly string[], question?: string): string[] 
 /**
  * «Fremgangsmåte»: what the assistant set out to do, in its own words.
  *
- * The standard half of the display level (Simens issue 88), drawn after his
- * sketch in issue 113: one panel over the answer card with the steps under
+ * The standard half of the display level (issue 88), drawn after the sketch
+ * in issue 113: one panel over the answer card with the steps under
  * «Tenker …», which becomes «Tenkte» when the answer starts, and the search
  * words under «Nøkkelord som ble brukt i søket».
  *
  * It draws the same steps the detailed panel draws, and nothing else from
  * them: no per-step detail, no per-step search strings, no times. What a step
  * SAYS is the agent's plan read back — «Jeg søker i korpuset», «Jeg leser
- * årsrapporten» — and that is what Simen asked to keep. What a step measured
- * is machinery, and that is what he asked to lose. The hit count goes with
+ * årsrapporten» — and that is what issue 88 asks to keep. What a step
+ * measured is machinery, and that is what it asks to lose. The hit count goes with
  * it: «10 treff i 3 dokumenter» counts chunks, and a chunk is not a thing a
  * reader has ever seen.
  *
@@ -167,7 +167,7 @@ export function ProcedurePanel({ steps, status, retrieval, question }: Procedure
 
         {/*
           The words the search actually ran on, with the rule above them that
-          Simen draws. Plain Tags: they are not clickable (answer 13), and
+          the design draws. Plain Tags: they are not clickable (answer 13), and
           they wrap inside themselves rather than running out through the side
           of the panel — see `ka-tag--wrapping`.
 

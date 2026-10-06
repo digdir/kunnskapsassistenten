@@ -5,7 +5,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
  * A shared secret in front of the test environment, until the Entra login
  * is connected (docs/deploy.md, «Delt hemmelighet»).
  *
- * Lars shares one link, `https://<adressen>/?secret=…`. The first visit sets
+ * One link is shared by hand, `https://<adressen>/?secret=…`. The first visit sets
  * a cookie and sends the reader on to the same address without the secret,
  * so it is not left in the address bar, in the history or in a `Referer`.
  * Without the cookie, everything but `/healthz` answers 401. With

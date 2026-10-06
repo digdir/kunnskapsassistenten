@@ -76,7 +76,7 @@ describe('vedlegg der tjenesten ikke har opplasting', () => {
      * arbeid for ingenting (KA CC på #125). `aria-disabled` og ikke
      * `disabled`, så kontrollen er fortsatt nåbar og kan si det den sier.
      *
-     * Setningen står nå PÅ knappen, slik Simen tegnet den (issue 79), og ikke
+     * Setningen står nå PÅ knappen, slik issue 79 tegner den, og ikke
      * i et `aria-label`. Da er navnet det samme som teksten på skjermen, som
      * er det WCAG 2.5.3 ber om av en kontroll noen kan si høyt.
      */

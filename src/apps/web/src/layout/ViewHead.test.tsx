@@ -159,7 +159,7 @@ describe('view-hodet i skallet', () => {
 
     // Nothing has been asked, so there is no answer selector and no search to
     // pin. «Kilder» is there from the first render, visible, as Figma has it
-    // and as the navigation panel has «Filtrering» (Lars, 30.09, answer S1).
+    // and as the navigation panel has «Filtrering» (30.09, answer S1).
     const head = document.querySelector('aside.secondary-sidebar .view-head');
     expect(head?.querySelector('h2')?.textContent).toBe('Kilder');
     expect(head?.querySelector('input')).toBeNull();

@@ -15,7 +15,7 @@ import {
  *
  *   the model's own floors — 400 for the navigation panel, 336 for the
  *   sources panel — which are the widths the design was drawn for. Neither
- *   has a ceiling of its own since Simens issue 80;
+ *   has a ceiling of its own since issue 80;
  *
  *   and what is left in the window once the OTHER panel and the answer
  *   column's 640 px floor have had theirs. A drag takes its room from the

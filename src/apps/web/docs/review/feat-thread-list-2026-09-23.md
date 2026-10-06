@@ -1,12 +1,11 @@
-# PR #160: trådlista slik Lars ba om, og boksen som måtte bli en del av raden
+# PR #160: trådlista slik den ble bestilt, og boksen som måtte bli en del av raden
 
-Anmeldt av KA CC 2026-09-23. `feat/thread-list-lars-2026-09-23`, fem runder,
-merget som `056c3e5`.
-Sju punkter fra Lars, pluss understreken, og en hover-boks som skulle vise det
+Anmeldt av KA CC 2026-09-23. Fem runder, merget som `056c3e5`.
+Sju punkter fra bestillingen, pluss understreken, og en hover-boks som skulle vise det
 én linje med ellipse kutter bort. Punktene holdt hver gang de ble målt.
 Boksen trengte fire runder, og kommentarene en femte.
 
-## Lars sine punkter, målt
+## Punktene, målt
 
 Målt i runde 2 og 3, med samme resultat begge gangene:
 
@@ -24,14 +23,14 @@ Målt i runde 2 og 3, med samme resultat begge gangene:
 
 Raden er 44 px uansett tittel (målt 43,5), og lista er 503 px der den var
 624 (#2 sitt tall). Den hvilende raden har ingenting som skiller en tittel fra
-brødtekst — det er valget Lars tok, og det er verdt å vite at det er det raden
+brødtekst — det er valget som ble tatt, og det er verdt å vite at det er det raden
 hviler på: lenkefargen, pekeren, hover-flata og fokusringen bærer
 invitasjonen.
 
 ## Runde 1: `060188a`, to ting før e2e
 
-**Sidemargen gjelder begge panelene**, og det er riktig lest: Lars nevnte
-variabelen, ikke trådpanelet. Men da ble beholderspørringen
+**Sidemargen gjelder begge panelene**, og det er riktig lest: bestillingen
+nevnte variabelen, ikke trådpanelet. Men da ble beholderspørringen
 `@container (width < 380px)` død — den satte 20 px på det klemte kildepanelet,
 og det er nå verdien overalt. Den ble fjernet.
 

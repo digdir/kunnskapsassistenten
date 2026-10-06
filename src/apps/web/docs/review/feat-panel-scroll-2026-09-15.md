@@ -20,12 +20,12 @@
 Kildepanelet åpnet med en kildemarkør, 1440, som er tilstanden funnet ble
 gjort i:
 
-| Funn                                         | Før                                            | Etter                                                                                |
-| -------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------ |
-| **2** «Skjul kilder» ruller ut av vinduet    | knappen på **y = −955**, panelet rullet 987 px | knappen på **y = 32, i vinduet**, mens `.sidebar-content` er rullet 756 px           |
-| **7** innholdet klippet uten rulleindikasjon | hele plassen rullet                            | rullingen ligger på innholdsregionen, hodet står                                     |
-| **4** navigasjonspanelet uten flate i mørk   | kant **1,73:1** mot grunnen, 1,91 mot flata    | kant **3,95:1** mot grunnen i lys, **4,23:1** i mørk                                 |
-| **15** kildepanelet uten egen flate          | asymmetrisk med vilje                          | Lars sin linje: panelet deler hovedkolonnens grunn. Målt `rgba(0, 0, 0, 0)` på begge |
+| Funn                                         | Før                                            | Etter                                                                             |
+| -------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------- |
+| **2** «Skjul kilder» ruller ut av vinduet    | knappen på **y = −955**, panelet rullet 987 px | knappen på **y = 32, i vinduet**, mens `.sidebar-content` er rullet 756 px        |
+| **7** innholdet klippet uten rulleindikasjon | hele plassen rullet                            | rullingen ligger på innholdsregionen, hodet står                                  |
+| **4** navigasjonspanelet uten flate i mørk   | kant **1,73:1** mot grunnen, 1,91 mot flata    | kant **3,95:1** mot grunnen i lys, **4,23:1** i mørk                              |
+| **15** kildepanelet uten egen flate          | asymmetrisk med vilje                          | Valgt linje: panelet deler hovedkolonnens grunn. Målt `rgba(0, 0, 0, 0)` på begge |
 
 Funn 4 er verdt en setning ekstra. Flata mot grunnen er fortsatt 1,10 i lys
 og 1,11 i mørk — det er kanten som gjør jobben nå, og den er over 3:1 i begge
@@ -40,7 +40,7 @@ kildepanelet ikke har det. Den står i `global.css`:
 
 > A rail keeps a surface whichever column it is, including the sources panel
 > that has none while open. That is the point of the rail: a folded column has
-> to read as a column, and on the page's own ground it read as a hole (Lars,
+> to read as a column, and on the page's own ground it read as a hole (decided
 > 2026-09-15). Open, the sources panel is not folded away and has the answer
 > beside it to belong to.
 
@@ -99,7 +99,7 @@ inversjonen inn der terskelen står.
 
 ## Til dirigenten
 
-1. **Klar for Lars.**
+1. **Klar for godkjenning.**
 2. Funn 1 er en åtte-pikslers inversjon og ikke noe som haster. Verdt å ta
    når noen likevel er inne i den terskelen.
 3. Med #24 og #31 sammen er brukerblikk-funn 1 nede fra 174 til **277 px** på

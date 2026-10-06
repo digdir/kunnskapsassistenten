@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { SidebarFooter } from './SidebarFooter';
 
 /**
- * Simens issue 85c: de tre sidene fra den gamle Kunnskapsassistenten skal
+ * Issue 85c: de tre sidene fra den gamle Kunnskapsassistenten skal
  * være å nå fra foten av navigasjonspanelet.
  */
 function open(at: string) {

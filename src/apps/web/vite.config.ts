@@ -84,8 +84,9 @@ function facetsInDevelopment(env: Record<string, string>): Plugin {
  * exposes VITE_-prefixed variables to client code, so these two cannot end up
  * in the bundle even by accident.
  *
- * In `bff` mode the proxy goes to Nikolai's BFF instead, and only there:
- * KA_BFF_URL, `:8788` by default, with no key, because the BFF holds its own.
+ * In `bff` mode the proxy goes to the BFF in digdir/kunnskapsassistenten
+ * instead, and only there: KA_BFF_URL, `:8788` by default, with no key,
+ * because the BFF holds its own.
  * KA_API_URL and KA_API_KEY are not read at all in that mode. They sit in
  * `.env.local` for live, and read here they sent a bff-mode page straight to
  * the backend, which answered 401 «Invalid or missing API key» — and the

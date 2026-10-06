@@ -1,7 +1,7 @@
 /**
  * The view model for the layout: slots, views, and which view sits where.
  *
- * Naming follows the rule Lars set on 2026-09-11 (design/_briefs/bygg/regler.md):
+ * Naming follows the rule set on 2026-09-11 (design/_briefs/bygg/regler.md):
  * code is English, everything the user sees or hears is Norwegian. Slots are
  * named after position, views after content — the same split VS Code makes.
  *
@@ -167,8 +167,8 @@ export type Layout = {
  * How wide a collapsed sidebar is: a rail holding its toggle button, and
  * nothing else.
  *
- * Decided 2026-09-15, after Lars looked at the collapsed navigation panel in
- * dark mode and said the hidden column did not read as hidden. It was 236 px
+ * Decided 2026-09-15, after the collapsed navigation panel was looked at in
+ * dark mode and the hidden column did not read as hidden. It was 236 px
  * of empty surface with one button at the top, and the point of collapsing a
  * panel is to give the space back.
  *
@@ -214,7 +214,7 @@ export const defaultLayout: Layout = {
       activeView: 'filters',
       collapsed: false,
       // Every width here is what the slot OCCUPIES, padding included, because
-      // the CSS is border-box. 400 = the 328 inner width Lars settled on
+      // the CSS is border-box. 400 = the 328 inner width settled on
       // 2026-09-11 (answer 59b) plus the 36 px padding on each side, and 400
       // is also what the page template draws the navigation panel at.
       //
@@ -227,7 +227,7 @@ export const defaultLayout: Layout = {
       // narrowed, because 328 inner is what the filter controls were drawn
       // for.
       //
-      // No ceiling of its own. It was 480 until Simens issue 80 asked for
+      // No ceiling of its own. It was 480 until issue 80 asked for
       // panels that can take at least half the window, since readers work in
       // different ways. The window is the ceiling now, and `widthRange` in
       // resize.ts works it out: what is left once the other panel and the
@@ -298,7 +298,7 @@ export const defaultLayout: Layout = {
       // window may squeeze it to.
       //
       // No ceiling of its own, for the same reason as the navigation panel's
-      // and for this panel above all (Simens issue 80): a reader reading the
+      // and for this panel above all (issue 80): a reader reading the
       // documents behind an answer wants room for them. It was 560, the top
       // of the `kilder` organism frame, until then.
       sizing: {
@@ -321,7 +321,7 @@ export const slotOrder: Slot[] = ['primary-sidebar', 'main', 'secondary-sidebar'
  * Only between open panels. A collapsed sidebar is a rail and sits flush
  * against the answer column, with no gap at all (decision 2026-09-15): a
  * rail already reads as an edge, and 32 px of tinted page beside a 67 px
- * rail reads as the hole Lars saw rather than as a collapsed column.
+ * rail reads as a hole rather than as a collapsed column.
  *
  * It mirrors `--ka-slot-gap` in src/styles/global.css, which is
  * `var(--ds-size-8)` — 32 px. The number has to exist twice because the
@@ -390,7 +390,7 @@ export const narrowViewportQuery = `(width < ${bothSidebarsMinViewport}px)`;
  * Below it an open sidebar is drawn OVER the answer column instead of beside
  * it. Nothing else changes: the rails stay, the toggle buttons keep their
  * place, and `aria-expanded` still means what it meant. Measured in PR #39;
- * decision Lars 17.09, beslutning 13.
+ * decided 17.09, beslutning 13.
  */
 export const drawerMaxViewport =
   slotFloor(defaultLayout.slots['primary-sidebar'].sizing) +

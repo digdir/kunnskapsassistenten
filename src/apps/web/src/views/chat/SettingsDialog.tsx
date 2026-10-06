@@ -28,7 +28,7 @@ const OPTIONS: { value: DisplayLevel; label: string; description: string }[] = [
 ];
 
 /**
- * Simens issue 123, which asks whether the panel's foot has to be pinned at
+ * Issue 123, which asks whether the panel's foot has to be pinned at
  * all or whether the whole panel could be one container with nothing fixed.
  * Both are here so the two can be compared on the same page.
  */
@@ -48,9 +48,9 @@ const FOOTER_OPTIONS: { value: FooterMode; label: string; description: string }[
 /**
  * The hidden settings menu.
  *
- * Lars, 30.09: «kanskje egentlig bare at jeg kan skrive noe i urlen for å få
- * opp en settings-meny. Jeg ser for meg at vi vil ha en sånn senere, så lag
- * den i det samme type designet, men ikke gjør for mye ut av det heller.»
+ * Asked for 30.09: a settings menu reachable by typing something in the
+ * address, in the same design as the rest, kept small — more settings are
+ * expected later.
  *
  * So: one Designsystemet `Dialog`, a `Fieldset` of radios per setting, and
  * nothing else. It held one setting when it was built and took the second

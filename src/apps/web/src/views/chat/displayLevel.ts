@@ -1,11 +1,10 @@
 /**
  * How much of the assistant's own work the answer shows.
  *
- * Lars, 30.09: «Det tekniske i svarene kan være nyttig for feks meg eller
- * andre utviklere som ønsker "verbose" eller "debug"-aktige tilbakemeldinger
- * på hva som skjer akkurat nå.» Simen asked for the opposite in his issue 88:
- * a procedure over the answer with the steps in plain language and none of
- * the machinery. Both are right for their reader, so it is a setting.
+ * Meldt 30.09: the technical side of an answer is useful to developers who
+ * want verbose or debug-like feedback on what is happening right now. Issue
+ * 88 asks for the opposite: a procedure over the answer with the steps in
+ * plain language and none of the machinery. Both are right for their reader, so it is a setting.
  *
  * Two levels and no more. `standard` is what everyone gets: what the agent
  * tried to do, and what the answer was built from. `detaljert` is what the

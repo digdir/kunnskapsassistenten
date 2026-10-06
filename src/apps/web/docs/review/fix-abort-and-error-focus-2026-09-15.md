@@ -130,6 +130,6 @@ egen PR, ikke i denne.
 
 ## Til dirigenten
 
-- **PR #59 er klar for Lars.** Ingen blokkerende, én «bør» som er én ref.
+- **PR #59 er klar for godkjenning.** Ingen blokkerende, én «bør» som er én ref.
 - Den ene røde i første e2e-kjøring var **min test**, ikke PR-en. Jeg retter
   den sammen med e2e-dekningen for `aria-current`.

@@ -46,11 +46,11 @@
 }
 
 /*
- * The label over a group of rows (Lars, 23.09): bigger than the `2xs` it was,
+ * The label over a group of rows (decided 23.09): bigger than the `2xs` it was,
  * and in the text colour rather than the subtle one, so it reads as a
  * heading. Designsystemet's Heading carries the size; the colour is set here
- * because `PanelHeader` — which used to wrap it, and whose box Lars asked to
- * remove — is the shell's and paints its own.
+ * because `PanelHeader` — which used to wrap it, and whose box was asked
+ * removed — is the shell's and paints its own.
  */
 .threads-view__group-title {
   color: var(--ds-color-neutral-text-default);
@@ -224,13 +224,13 @@
  * «open in new tab» work, the history gets an entry, and a screen reader says
  * «lenke» — and what carries the invitation visually is the link colour, the
  * pointer cursor, a hover surface across the whole row and the focus ring
- * (Lars, 23.09). The e2e guard for funn 8 measures those instead.
+ * (decided 23.09). The e2e guard for funn 8 measures those instead.
  *
- * The WHOLE row is inside the link now (Lars, 23.09), so this is a column:
+ * The WHOLE row is inside the link now (decided 23.09), so this is a column:
  * the title on one line, the time and the corpus under it. The bottom of the
  * row used to be outside the link and dead to the pointer.
  *
- * `padding-block-end: 0` (Lars, 23.09): the two lines belong to each other
+ * `padding-block-end: 0` (decided 23.09): the two lines belong to each other
  * and read as one row, and the panel is over its height budget, so the air
  * under the metadata is the air to give up. The gap between rows is the
  * list's own `gap`, which is still there.
@@ -244,7 +244,7 @@
 }
 
 /*
- * One line, always, with an ellipsis (Lars, 23.09).
+ * One line, always, with an ellipsis (decided 23.09).
  *
  * `Thread.title` is the reader's own question until a backend writes titles,
  * so the thread they just started was the row that took two lines where

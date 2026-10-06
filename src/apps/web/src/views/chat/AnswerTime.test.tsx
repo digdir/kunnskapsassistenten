@@ -203,8 +203,7 @@ describe('AnswerTime', () => {
   it('stempler ikke en tur som spurte tilbake', () => {
     /*
      * En avklaring fikk stempel fra 2026-09-16, fordi en gjenopprettet samtale
-     * som endte i en avklaring ellers hadde et hull. Simen snudde det i issue
-     * 112: klokkeslettet sto i en knapperad som ikke lenger er der, og det er
+     * som endte i en avklaring ellers hadde et hull. Issue 112 snudde det: klokkeslettet sto i en knapperad som ikke lenger er der, og det er
      * ikke det leseren er her for. Det ene trekket fra kortet er å svare.
      *
      * Hullet er ikke et hull i praksis: leserens eget spørsmål over kortet har

@@ -10,7 +10,7 @@ grønne (4173).
 
 ## Gevinsten, målt mot grunnlinja
 
-Grunnlinja er målt på `main 0855670` med definisjonen Lars valgte 21.09
+Grunnlinja er målt på `main 0855670` med definisjonen som ble valgt 21.09
 (leservindu = alt mellom hodet og skrivefeltet). Tallene her er målt på
 sammenslåingen, i mock, på tre bredder.
 

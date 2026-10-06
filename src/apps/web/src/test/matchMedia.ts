@@ -108,9 +108,12 @@ export function setViewportWidth(width: number): void {
   viewportWidth = width;
   // The layout asks the window itself as well as the media query: a panel the
   // reader has dragged wider is drawn at what fits, and that is arithmetic on
-  // `innerWidth`. See src/layout/useViewportWidth.ts. Setting one without the
-  // other would leave a test in a 1440 px window that answers 1024 to half
-  // the questions.
+  // the layout viewport's width, `documentElement.clientWidth`. See
+  // src/layout/useViewportWidth.ts. jsdom has no layout and answers 0 there,
+  // so the getter below answers this. `innerWidth` follows too, as a window
+  // that is not zoomed has the two the same. Setting one without the other
+  // would leave a test in a 1440 px window that answers 1024 to half the
+  // questions.
   window.innerWidth = width;
   window.dispatchEvent(new Event('resize'));
 
@@ -133,5 +136,10 @@ export function resetViewport(): void {
 
 install();
 // jsdom opens at 1024 and the design's window is 1440. The queries answered
-// 1440 from the first line of this module; `innerWidth` has to say the same.
+// 1440 from the first line of this module; `innerWidth` and the layout
+// viewport have to say the same.
 window.innerWidth = viewportWidth;
+Object.defineProperty(document.documentElement, 'clientWidth', {
+  configurable: true,
+  get: () => viewportWidth,
+});

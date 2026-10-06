@@ -7,7 +7,7 @@ import type { SourceDocument } from '../../model';
  *
  * The MCP answer names its chunks and leaves their text out, so every excerpt
  * in live arrived with an empty `text` and nothing saying why — the sources
- * panel drew the heading path and a blank box (Simens issue 86d). This fills
+ * panel drew the heading path and a blank box (issue 86d). This fills
  * the text in, or says it could not be had.
  */
 

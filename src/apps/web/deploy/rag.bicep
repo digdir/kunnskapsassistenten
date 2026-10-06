@@ -1,6 +1,6 @@
 // Vår egen digdir-headless-rag i testmiljøet: backenden frontenden spør når
 // den står i live. Samme bilde og samme korpus som lokalt (tenant `kudos`,
-// datasett `kudos-full` mot Benjamins Typesense), i det samme Container
+// datasett `kudos-full` mot den eksterne Typesense-instansen), i det samme Container
 // Apps-miljøet som frontenden, og bare med intern adresse.
 //
 // Lages i tillegg til main.bicep, som må være kjørt først: miljøet og
@@ -58,7 +58,7 @@ param postgresDatabase string = 'datahike'
 param tenant string = 'kudos'
 param dataset string = 'kudos-full'
 
-@description('Benjamins Typesense, som vert:port uten skjema.')
+@description('Typesense-instansen korpuset ligger i, som vert:port uten skjema.')
 param typesenseHost string
 param typesenseTls string = 'true'
 param collectionPrefix string

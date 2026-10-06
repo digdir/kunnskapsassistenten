@@ -127,7 +127,7 @@ describe('Dine dokumenter', () => {
 
     // Seksjonen skjules ikke — leseren skal vite at dette finnes.
     expect(screen.getByRole('heading', { name: 'Dine dokumenter' })).toBeTruthy();
-    // Simens ordlyd, og samme setning som binderset i skrivefeltet (#3).
+    // Ordlyden fra designet, og samme setning som binderset i skrivefeltet (#3).
     expect(screen.getByText('Snart kan du laste opp dokumenter her')).toBeTruthy();
     expect(screen.getByText('Kommer snart')).toBeTruthy();
 

@@ -107,10 +107,10 @@ test.describe('navigasjonspanelet', () => {
   );
 
   /*
-   * The filters first, and the corpus's documents under the line (Simens
-   * issue 76b, round 2). This test used to hold the opposite: that the list
+   * The filters first, and the corpus's documents under the line (issue 76b,
+   * round 2). This test used to hold the opposite: that the list
    * of documents from Kudos stood above the fold in a 900 px window
-   * (brukerblikk runde 2, funn 4). Simen has moved the corpus line and the
+   * (brukerblikk runde 2, funn 4). The design moved the corpus line and the
    * list under the line before «Dine dokumenter», so the fields the reader
    * narrows with are what the panel opens on, and the list is what the answer
    * found. No new line of its own: the one line in the panel is the one that
@@ -120,7 +120,7 @@ test.describe('navigasjonspanelet', () => {
     'filtrene står over skillelinja, og dokumentene fra Kudos under den',
     REAL_ANSWER,
     async ({ page }, testInfo) => {
-      covers(testInfo, 'Simens issue 76b: filtrene øverst, dokumentene under skillelinja');
+      covers(testInfo, 'issue 76b: filtrene øverst, dokumentene under skillelinja');
       await page.goto('/');
       await ask(page, 'Hvordan jobber Nkom med måloppnåelse?');
 
@@ -326,7 +326,7 @@ test.describe('navigasjonspanelet', () => {
           insideLink: element.closest('a') !== null,
         }));
 
-        // Unntak fra dirigenten for denne påstanden (Lars, 23.09): hele raden
+        // Unntak fra dirigenten for denne påstanden (23.09): hele raden
         // er lenka nå, tidsstempelet med, så den som trykker under tittelen
         // åpner tråden i stedet for ingenting. Navnet er fortsatt tittelen
         // alene — se påstanden nederst i testen.

@@ -36,8 +36,9 @@ export {
  * and a browser could not call it directly anyway.
  * See design/eksisterende/api-for-frontend.md.
  *
- * `bff` is the third: Nikolai's BFF in front of the backend, holding the key
- * and the sign-in, and serving this client from its own origin
+ * `bff` is the third: the BFF in digdir/kunnskapsassistenten in front of the
+ * backend, holding the key and the sign-in, and serving this client from its
+ * own origin
  * (src/decisions/0005-client-behind-the-bff.md).
  */
 export function createChatClient(): ChatClient {

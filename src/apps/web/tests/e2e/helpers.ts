@@ -33,7 +33,7 @@ export const REAL_ANSWER = { tag: '@ekte-svar' };
 /**
  * Asks for the detailed display level before the page loads.
  *
- * `standard` is what everyone gets since Simens issue 88: «Fremgangsmåte»
+ * `standard` is what everyone gets since issue 88: «Fremgangsmåte»
  * over the answer with the steps in plain language, and none of the machinery
  * — no thought time, no hit count, no search strings. The assertions that read
  * exactly those things are still right; they are just about the other level,

@@ -5,7 +5,7 @@ import type { ChatClient } from '../../api/chatClient';
 import { emptyFilterSelection, type FilterSelection, type Thread } from '../../model';
 
 /**
- * Changing the filter in a thread that is going on (Simens issue 90).
+ * Changing the filter in a thread that is going on (issue 90).
  *
  * Through the whole app, as threadFilterLock.test.tsx does, with the same
  * client: the real mock, with `createThread` recorded so a test can see what

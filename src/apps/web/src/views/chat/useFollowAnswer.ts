@@ -1,12 +1,24 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
-/** How close to the end still counts as «at the bottom», in CSS pixels. */
-const SLACK = 24;
+/**
+ * How close to the end still counts as «at the bottom», in CSS pixels: a line
+ * of the answer and half a wheel step.
+ *
+ * Near enough that a reader would take it for the bottom (chosen 06.10, for
+ * digdir/kunnskapsassistenten#126), and then the column follows what the
+ * reader sends as it follows what arrives. Measured in the column at 1440 ×
+ * 900 and 390 × 844, the same on both: a line of the answer is 30.6 px, a
+ * wheel step 100 px in Chromium and an arrow key 40 px. A reader who stops
+ * half a step short has the last line under the edge and sees the end of the
+ * text above it. It was 24, and 30 short of the bottom a question went 372 px
+ * below the edge with «Bla til nederst» showing.
+ */
+const SLACK = 80;
 
 /**
  * Keeps the main column at its bottom while an answer arrives, if that is
- * where the reader already was — and leaves it alone otherwise (Simens
- * runde 3, ekstra 4). Returns whether the column is at its bottom, which is
+ * where the reader already was — and leaves it alone otherwise (runde 3,
+ * ekstra 4). Returns whether the column is at its bottom, which is
  * what «Bla til nederst» is drawn from (answer 17): a control that does
  * nothing is worse than no control.
  *

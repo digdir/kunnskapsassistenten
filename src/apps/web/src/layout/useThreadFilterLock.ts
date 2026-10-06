@@ -39,7 +39,7 @@ export function lockOf(detail: ThreadDetail | null | undefined): FilterSelection
  * conversation from its first question — it remembers the filter when it
  * makes it, which is before it says the id — so the thread is read back once
  * it has one, and what the backend says is the lock. Live does the same since
- * Simens issue 90: it stores the filter with the conversation it makes
+ * Issue 90: it stores the filter with the conversation it makes
  * (`filter-value`) and reads it back. Nothing is guessed from which client
  * this is; the mock keeps no filter on a thread and says none. `stillOpen` is
  * asked when the answer comes, so a reader who has moved on is not given a

@@ -1045,10 +1045,10 @@ describe('ChatView', () => {
   it('har feltet over knappene, med binders først og send sist', () => {
     /*
      * Knappene sto i feltraden, fordi en rad for seg kostet 48 px av den
-     * klebrige bunnen på hver skjerm (høydebudsjett 2026-09-21, H1). Simen så
-     * hva det kostet i stedet: boksen er høy nok til å skrive i, så
+     * klebrige bunnen på hver skjerm (høydebudsjett 2026-09-21, H1). Designet
+     * viste hva det kostet i stedet: boksen er høy nok til å skrive i, så
      * plassholderen sto innrykket øverst med en knapp lavt på hver side og
-     * ingenting på linje (Simens issue 79). Nå tar feltet hele bredden av
+     * ingenting på linje (issue 79). Nå tar feltet hele bredden av
      * boksen, og de to knappene står på raden under, en i hver ende.
      *
      * Kantene teksten skal møte er CSS og måles i nettleseren, ikke her: på
@@ -1080,8 +1080,8 @@ describe('ChatView', () => {
 
   it('har oppfølgingsspørsmålene rett under boksen og ansvarsteksten sist', async () => {
     /*
-     * Simen flyttet ansvarsteksten over boksen i issue 89 og tilbake under
-     * den i issue 79. Oppfølgingsspørsmålene står rett under boksen, som i
+     * Ansvarsteksten ble flyttet over boksen i issue 89 og tilbake under den i
+     * issue 79. Oppfølgingsspørsmålene står rett under boksen, som i
      * issue-89a, og ansvarsteksten sist: området er festet i bunnen og vokser
      * oppover, så den siste linja er den som aldri flytter seg. Luften er
      * CSS; det denne testen holder fast, er rekkefølgen.

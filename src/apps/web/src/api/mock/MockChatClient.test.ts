@@ -8,7 +8,13 @@ import {
 } from '../../model';
 import { KICKSTARTERS } from '../../views/chat/text';
 import { scriptedFor } from './conversations';
-import { MOCK_CLARIFICATION_QUERY, MOCK_ERROR_QUERIES, MockChatClient } from './MockChatClient';
+import {
+  MOCK_CLARIFICATION_QUERY,
+  MOCK_ERROR_QUERIES,
+  MOCK_LONG_LINK,
+  MOCK_LONG_LINK_QUERY,
+  MockChatClient,
+} from './MockChatClient';
 import { mockAnswerMarkdown, nkomThinkingSteps, threads } from './fixtures';
 import { resetMockThreads } from './sessionThreads';
 
@@ -120,6 +126,21 @@ describe('MockChatClient.ask', () => {
       .join('');
 
     expect(text).toBe(mockAnswerMarkdown);
+  });
+
+  it('ends the answer with a long link without spaces when asked to', async () => {
+    const events = await collect(client.ask({ query: 'Simuler lang lenke' }));
+    const text = events
+      .filter((event) => event.type === 'token')
+      .map((event) => event.text)
+      .join('');
+
+    expect(MOCK_LONG_LINK).not.toMatch(/\s/u);
+    expect(MOCK_LONG_LINK.length).toBeGreaterThan(160);
+    expect(text.startsWith(mockAnswerMarkdown)).toBe(true);
+    expect(text.endsWith(MOCK_LONG_LINK)).toBe(true);
+    expect(events.at(-1)?.type).toBe('done');
+    expect(MOCK_LONG_LINK_QUERY).toBe('simuler lang lenke');
   });
 
   it('resolves every [n] in the answer to an excerpt', async () => {

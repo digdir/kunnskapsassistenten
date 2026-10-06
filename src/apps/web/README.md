@@ -1,6 +1,6 @@
 # Kunnskapsassistenten, frontend
 
-> Kopiert fra [larsekhansen/kunnskapsassistenten-frontend](https://github.com/larsekhansen/kunnskapsassistenten-frontend) på `c1b668f` 6. oktober 2026, uten historikken. Historikken står der.
+> Kopiert fra [larsekhansen/kunnskapsassistenten-frontend](https://github.com/larsekhansen/kunnskapsassistenten-frontend) på `c728387` 6. oktober 2026, uten historikken. Historikken står der.
 
 [![CI](https://github.com/larsekhansen/kunnskapsassistenten-frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/larsekhansen/kunnskapsassistenten-frontend/actions/workflows/ci.yml)
 
@@ -97,7 +97,7 @@ undermappe eies av én arbeider, se `CONTRIBUTING.md`.
 
 ## Naming
 
-Regelen er Lars sin, satt 2026-09-11:
+Regelen ble satt 2026-09-11:
 
 - **Kode, filnavn, mapper, CSS-klasser, CSS-variabler, typer og ruter:
   engelsk.**
@@ -264,8 +264,8 @@ Det var de ikke før: med `content-box` ble de 36 px paddingen på hver side lag
 utenpå, og hvert tall i modellen var 72 px kortere enn det tegnet. Målt, ikke
 resonnert fram.
 
-Navigasjonspanelets 400 er de 328 Lars satte (svar 59b) pluss paddingen, og
-400 er også det malen tegner panelet som. Taket på 480 er Lars sitt, satt da
+Navigasjonspanelets 400 er de 328 som ble satt (svar 59b) pluss paddingen, og
+400 er også det malen tegner panelet som. Taket på 480 ble satt da
 skillene kom; kildepanelets tak på 560 er toppen av `kilder`-rammen i
 designet, den bredeste den kolonnen er tegnet noe sted.
 
@@ -365,7 +365,7 @@ gapet en `margin` på panelet og ikke `gap` på rada: `gap` sier det samme om
 alle par, og en rail skal ligge klemt inntil.
 
 Det var 236 og 198 fram til 2026-09-15, brede nok til å tegne hver sin etikett
-på én linje. Lars så det i mørk modus: 236 px tom flate med én knapp øverst
+på én linje. Sett i mørk modus: 236 px tom flate med én knapp øverst
 leses som et hull, ikke som en kolonne som er lagt sammen. Poenget med å
 kollapse et panel er å gi plassen tilbake.
 
@@ -464,7 +464,7 @@ sida er 3,95:1 og 4,23:1, over de 3:1 WCAG 1.4.11 ber om for en grense som
 betyr noe. `border-subtle`, som sto der før, er 1,73:1 og 2,04:1. Målt i bygget
 app 2026-09-15. Funn 4.
 
-**Kildepanelet har ingen egen flate når det er åpent** (Lars, 2026-09-15):
+**Kildepanelet har ingen egen flate når det er åpent** (valgt 2026-09-15):
 kildene hører sammen med svaret, så kolonnen deler hovedkolonnens grunn og
 kanten markerer skillet. Funn 15 spurte om asymmetrien var med vilje. Den er
 det. Kollapset er det en rail, og da har det flate som den andre — en kolonne
@@ -696,7 +696,7 @@ står i `src/decisions/0007-display-level.md`; koden ligger i
 
 ### Foten i navigasjonspanelet
 
-Samme meny holder et valg til, fra Simens issue 123:
+Samme meny holder et valg til, fra issue 123:
 
 | Valg         | Hva som skjer                                                                             |
 | ------------ | ----------------------------------------------------------------------------------------- |
@@ -1200,7 +1200,7 @@ til våre. Se kommentaren i fila.
 
 ## Mørk modus
 
-**Avgjort av Lars 2026-09-11: KA leverer mørk modus**, rett fra Digdir-temaets
+**Avgjort 2026-09-11: KA leverer mørk modus**, rett fra Digdir-temaets
 tokens. Temaet har allerede 147 variabler i lys og mørk utgave, så kostnaden er
 å verifisere skjermene, ikke å bygge noe.
 
@@ -1245,13 +1245,13 @@ Versjonen er pinnet fordi en major i ruteren flytter API. Oppgrader bevisst.
 
 ## Designgrunnlaget
 
-Spesifikasjonene ligger **ikke** i dette repoet. De ligger i Lars sin lokale
-`design/`-mappe i paraplymappa `kunnskapsassistenten/`, som ikke er et
+Spesifikasjonene ligger **ikke** i dette repoet. De ligger i den lokale
+`design/`-mappa i paraplymappa `kunnskapsassistenten/`, som ikke er et
 git-repo:
 
 | Fil                                  | Innhold                                                                                 |
 | ------------------------------------ | --------------------------------------------------------------------------------------- |
-| `design/visjon-og-beslutninger.md`   | Det Lars har bestemt, med dato                                                          |
+| `design/visjon-og-beslutninger.md`   | Det som er bestemt, med dato                                                            |
 | `design/skal-dette-implementeres.md` | Spørsmålsliste med fasit, og bygg-rekkefølgen for første versjon                        |
 | `design/designsystemet/`             | Designsystemet kartlagt fra kildekoden: alle 42 komponenter, oppsett, behov → komponent |
 | `design/omraader/`                   | Figma-spesifikasjoner per område                                                        |

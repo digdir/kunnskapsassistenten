@@ -88,7 +88,7 @@ export function facetsFor(
       const value = valueOf(document, dimension);
       // No year that has not come yet, as the server's policy: two budget
       // proposals «for 2027» are in this corpus, and 2027 is nothing to narrow
-      // to in 2026 (Simens issue 75). The documents stay searchable, and a
+      // to in 2026 (issue 75). The documents stay searchable, and a
       // year already ticked is still counted, so it can be seen and undone.
       if (dimension === 'year' && document.year > thisYear && !selection.year.includes(value)) {
         continue;

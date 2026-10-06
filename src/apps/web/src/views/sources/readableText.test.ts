@@ -4,7 +4,7 @@ import { readableDocuments, readableExcerptText, readableHeading } from './reada
 
 /*
  * Real chunks from Kudos, cut short: `metadata` and `content_markdown` as they
- * stand in Benjamin's `KUDOS_preprod_v4_*` chunk collection, read 2026-09-28.
+ * stand in the `KUDOS_preprod_v4_*` chunk collection, read 2026-09-28.
  * The id in each comment is `doc_num/chunk_index`.
  */
 

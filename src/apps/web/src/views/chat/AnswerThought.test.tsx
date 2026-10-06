@@ -51,7 +51,7 @@ function show(message: Message) {
 
 describe('«Tenkte i N sekunder» over et svar', () => {
   /*
-   * Tenkepanelet er det detaljerte nivået etter Simens issue 88. Standard
+   * Tenkepanelet er det detaljerte nivået etter issue 88. Standard
    * tegner «Fremgangsmåte» i stedet, uten tider — så disse påstandene, som
    * handler om tallet, hører hjemme på nivået som viser det.
    */

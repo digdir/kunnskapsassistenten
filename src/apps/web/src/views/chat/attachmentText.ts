@@ -52,7 +52,7 @@ export const ATTACH_LABEL = 'Legg ved dokument (PDF eller .docx)';
  * cannot have made the reader do work for nothing (KA CC on #125).
  *
  * Written on the button rather than hidden in an `aria-label`, which is how
- * Simen drew it (issue 79): a paperclip alone says «attach», and the one
+ * issue 79 draws it: a paperclip alone says «attach», and the one
  * thing worth knowing here is that attaching is coming rather than broken.
  * Visible text and no label means the accessible name IS the sentence on
  * screen, which is what WCAG 2.5.3 asks of a control someone can say out

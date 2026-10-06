@@ -97,7 +97,7 @@ describe('ThreadsView', () => {
 
 /*
  * «Ny tråd» moves into the empty state as «Start din første tråd», and is
- * taken away from above it (Simen, 30.09). Only for a list known to be empty:
+ * taken away from above it (the design, 30.09). Only for a list known to be empty:
  * loading or not, the reader can always start a thread.
  */
 describe('the way to a new thread', () => {
@@ -107,7 +107,7 @@ describe('the way to a new thread', () => {
     const start = screen.getByRole('link', { name: /Start din første tråd/ });
     expect(start.getAttribute('href')).toBe('/');
     expect(screen.queryByRole('link', { name: /Ny tråd/ })).toBeNull();
-    // Alone (Simens issue 82, round 2): no heading and no sentence over it.
+    // Alone (issue 82, round 2): no heading and no sentence over it.
     expect(screen.queryByText('Ingen tråder ennå')).toBeNull();
     expect(screen.queryByText('Still et spørsmål, så havner samtalen her.')).toBeNull();
     expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
@@ -156,7 +156,7 @@ describe('the search field', () => {
 });
 
 /*
- * A new thread takes the panel to the filters (Simens issue 75, round 2):
+ * A new thread takes the panel to the filters (issue 75, round 2):
  * the reader narrows the corpus there before the first question, and the list
  * has nothing new to show until it is asked.
  */

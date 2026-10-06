@@ -64,7 +64,7 @@ export function ChatSlotView() {
   // the router never sees (see `startThread`), so to the router the page is
   // still `/` — and «Ny tråd», a link to `/`, changed neither the route nor
   // the key. Nothing remounted, and the old conversation, its sources and its
-  // filter stayed on screen under an address that said `/` (Simen's issue
+  // filter stayed on screen under an address that said `/` (issue
   // 114; measured in mock, bff and live).
   //
   // It was `location.key` for a while, which every navigation mints a new one
@@ -202,7 +202,7 @@ function ChatSlot({ threadId }: { threadId?: string }) {
   /*
     What the first question is asked with, for the thread it starts: a client
     that keeps a filter on a thread stores it when it makes the conversation
-    (live, Simens issue 90). The context and not `useFilterSelection()`, for
+    (live, issue 90). The context and not `useFilterSelection()`, for
     the reason useThreadFilterLock gives: the page is mounted on its own in
     tests.
   */
@@ -299,8 +299,8 @@ function ChatSlot({ threadId }: { threadId?: string }) {
   useEffect(() => () => addressesWrittenHere.clear(), []);
 
   /*
-   * The keyboard in the compose field, when «Ny tråd» asked for it (Simen's
-   * issue 114). See useNewThread.ts.
+   * The keyboard in the compose field, when «Ny tråd» asked for it (issue
+   * 114). See useNewThread.ts.
    *
    * On mount, because this is the new conversation the link navigated to,
    * and the field is the old one's until it has mounted. By now the drawer

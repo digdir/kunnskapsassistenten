@@ -15,8 +15,9 @@ import { currentYear } from '../shared/years.ts';
  * The backend has no facet API over HTTP, so in live the panel had nothing to
  * draw — not even a filter the reader had already set, which then could be
  * neither seen nor removed. This route answers in the generic format
- * (shared/facets.ts), the same as Nikolai's BFF, and the day the backend can
- * count facets, the source changes behind it and the client does not.
+ * (shared/facets.ts), the same as the BFF in digdir/kunnskapsassistenten, and
+ * the day the backend can count facets, the source changes behind it and the
+ * client does not.
  *
  * Answered here and never forwarded: it is the one path under `/api/` that
  * is this server's own (app.ts).

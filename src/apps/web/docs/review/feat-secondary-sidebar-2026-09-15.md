@@ -84,7 +84,7 @@ inline-size` på selve viewet, og terskelen `< 320px`. Det er det riktige
 
 ## Til dirigenten
 
-1. **Klar for Lars.**
+1. **Klar for godkjenning.**
 2. **Funn 1 er ikke lukket, det er halvert.** 174 → 246 px er så langt kortene
    rekker. Skal utdragene leses komfortabelt på 1440, er neste trekk
    panelbredden, og det er din beslutning og ikke #4 sin. Jeg ville latt det

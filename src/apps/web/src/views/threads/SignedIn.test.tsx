@@ -18,7 +18,7 @@ describe('SignedIn', () => {
 
   it('empties what this browser kept of the answers before it signs out', () => {
     // ka.sources.v1 holds what came of the reader's questions, per browser
-    // and not per user (src/decisions/0008). Lars said yes on 5.10.
+    // and not per user (src/decisions/0008). Valgt 5.10.
     localStorage.setItem('ka.sources.v1', '{"threads":{"conv-1":{"usedAt":1,"answers":{}}}}');
     render(<SignedIn session={{ name: 'Kari Nordmann', logoutUrl: '/auth/logout' }} />);
     // jsdom does not navigate; this keeps it from saying so in the console.

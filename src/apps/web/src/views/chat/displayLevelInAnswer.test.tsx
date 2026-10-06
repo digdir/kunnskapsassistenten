@@ -113,7 +113,7 @@ describe('visningsnivået i svaret', () => {
 
   it('viser «Fremgangsmåte», stegene og nøkkelordene, uten det tekniske, på standard', () => {
     /*
-     * Simens issue 88, tegnet i issue 113: ett panel over svarkortet, med
+     * Issue 88, tegnet i issue 113: ett panel over svarkortet, med
      * stegene under «Tenkte» og søkeordene under «Nøkkelord som ble brukt i
      * søket». Stegene sier hva assistenten prøver å gjøre, og nøkkelordene er
      * det svaret kan etterprøves mot. Tiden, treffene og det hvert steg målte

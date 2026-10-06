@@ -1,8 +1,7 @@
 # PR #159 og #161: linteren og hookene som bærer den
 
-Anmeldt av KA CC 2026-09-23. To PR-er fra samme oppdrag fra Lars: «installere
-en slags linter som forteller deg sånt, så du slipper å sjekke selv», og så
-«noen pre-commit hooks med stylelint». Den første lager porten, den andre
+Anmeldt av KA CC 2026-09-23. To PR-er fra samme oppdrag: en linter som sier fra
+om slikt, så ingen trenger å sjekke selv, og så pre-commit-hooks med stylelint. Den første lager porten, den andre
 flytter den til der man committer.
 
 ## #159, en linter som sier fra om CSS nettleserne ikke støtter
@@ -27,7 +26,7 @@ og avslutter med 0 er en linter ingen oppdager at de har brutt, og det er
 samme klasse som unit-saken fra #117.
 
 Det beste i PR-en er sammenligningen av de to tilleggene, målt mot vår egen
-CSS: det caniuse-baserte fanget **ikke** det Lars faktisk så, og meldte fire
+CSS: det caniuse-baserte fanget **ikke** det som faktisk var feil, og meldte fire
 ting ingen kan gjøre noe med. Nøkkelen i det valgte er
 `allow: { prefix: false }`: MDN fører `line-clamp` som støttet i alle motorer
 _med_ `-webkit-`, og med standardinnstillingen tier linteren om nøyaktig den
@@ -43,7 +42,7 @@ det eneste stedet i repoet som sa hvilke nettlesere vi støtter. Jeg fant ingen
 uttalt policy i `README.md`, `CONTRIBUTING.md` eller `design/`.
 
 Rettet i `216f5a2`: `.browserslistrc` med `defaults, not dead, Safari >= 16,
-iOS >= 16`, bekreftet av Lars, og med grunnen i fila. At den ligger for seg
+iOS >= 16`, bekreftet, og med grunnen i fila. At den ligger for seg
 selv er riktig av den grunnen som står der: JSON tåler ikke en begrunnelse.
 
 ### kan: `&&` skjulte CSS-feil bak JS-feil

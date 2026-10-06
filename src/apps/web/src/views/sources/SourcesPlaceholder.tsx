@@ -9,7 +9,7 @@ const DOCUMENT_PLACEHOLDERS = ['a', 'b', 'c', 'd'];
  * It mirrors the shape of the real content, one block per document card, so
  * the layout does not jump when the sources arrive. The shortcut list it drew
  * first went with the list itself: the documents are named under each answer
- * now, in «Kilder brukt i svaret» (Simens issue 113).
+ * now, in «Kilder brukt i svaret» (issue 113).
  *
  * `Skeleton` sets `aria-hidden` on itself, always and in code. That means a
  * screen reader is told nothing at all unless we say it ourselves, and in

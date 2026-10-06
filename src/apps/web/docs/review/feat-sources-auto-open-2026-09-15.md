@@ -118,7 +118,7 @@ uendret forankret, som er riktig.
 
 ## Til dirigenten
 
-1. **Klar for Lars.**
+1. **Klar for godkjenning.**
 2. Begge unntakene i `tests/` var riktige å gi, og begge er skrevet slik at
    neste person skjønner hvorfor. Jeg har lagt mine egne målinger i rapporten
    så påstandene ikke hviler på én måling gjort én gang.

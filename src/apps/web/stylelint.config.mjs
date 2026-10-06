@@ -1,9 +1,8 @@
 /**
  * En linter som sier fra om CSS nettleserne våre ikke støtter.
  *
- * Bedt om av Lars 23.09: «line-clamp fungerer ikke … kanskje du skal
- * installere en slags linter som forteller deg sånt, så du slipper å sjekke
- * selv.» Det er den jobben denne fila har, og ikke noe annet: her er ingen
+ * Bedt om 23.09, etter at `line-clamp` ikke virket: en linter skal si fra om
+ * slikt, så ingen trenger å sjekke selv. Det er den jobben denne fila har, og ikke noe annet: her er ingen
  * stilregler, ingen sortering og ingen meninger om navn. Designsystemet
  * bestemmer hvordan CSS-en vår ser ut, og en linter som også hadde en mening
  * om det ville brukt tiden sin på å krangle med den.
@@ -39,7 +38,7 @@ export default {
          * MDN fører `line-clamp` som støttet fra Chrome 6 og Safari 5 — MED
          * `-webkit-`-prefiks, i hver eneste motor. Med `prefix: true`, som er
          * standarden, teller det som støtte, og da tier linteren om nøyaktig
-         * den skrivemåten Lars så ikke virket. Med `false` teller en
+         * den skrivemåten som ikke virket. Med `false` teller en
          * prefikset oppføring ikke som støtte for den uprefiksede
          * egenskapen, og da sies det fra.
          *

@@ -216,7 +216,7 @@ describe('deleting a thread', () => {
 
   /*
    * Over an empty list «Ny tråd» says «Start din første tråd» instead, and
-   * it is the same link in the same place (Simens issue 82, round 2) — so
+   * it is the same link in the same place (issue 82, round 2) — so
    * that is where focus goes when the last row does.
    */
   it('puts focus on «Start din første tråd» when the last one is deleted', () => {

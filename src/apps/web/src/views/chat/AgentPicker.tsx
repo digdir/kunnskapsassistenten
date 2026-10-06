@@ -13,7 +13,7 @@ type AgentPickerProps = {
 
 /**
  * Which agent answers, chosen in the compose field beside the send button,
- * the way claude.ai chooses its model (Lars, 06.10).
+ * the way claude.ai chooses its model (decided 06.10).
  *
  * The button is the agent's name and nothing else: no frame and no fill
  * (`tertiary`), because «it is information until you press it». It opens a

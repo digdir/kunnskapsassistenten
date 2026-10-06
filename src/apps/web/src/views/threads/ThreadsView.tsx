@@ -79,7 +79,7 @@ export function ThreadsView({
   const startNewThread = useNewThread();
 
   /*
-   * And the panel goes to the filters (Simens issue 75, round 2). A new
+   * And the panel goes to the filters (issue 75, round 2). A new
    * thread starts from the whole corpus, and the filter view is where the
    * reader narrows it before the first question; the thread list has nothing
    * new to show until that question is asked.
@@ -283,7 +283,7 @@ export function ThreadsView({
         marked (answer 7).
 
         Over an empty list it is «Start din første tråd», and it is alone
-        there (Simens issue 82, round 2): «Ingen tråder ennå» and the sentence
+        there (issue 82, round 2): «Ingen tråder ennå» and the sentence
         under it said twice what the button says once. The same link with
         other words rather than a second link further down, so it stands
         exactly where «Ny tråd» stands — lower down, it had the hit count's
@@ -303,7 +303,7 @@ export function ThreadsView({
       </Button>
 
       {/*
-        «Tidligere tråder» is gone from the screen (Lars, 23.09): the panel is
+        «Tidligere tråder» is gone from the screen (decided 23.09): the panel is
         a list of threads, the search field says «Søk i tråder», and the
         groups under it name themselves. It stays for a screen reader, and
         that is measured rather than kept out of habit — the group headings
@@ -321,7 +321,7 @@ export function ThreadsView({
         does nothing because the list filters as the user types.
 
         Not drawn over a list known to be empty (KA CC on #197, the same
-        thought as Simen's issue 82): there is nothing to search, and «Start
+        thought as issue 82): there is nothing to search, and «Start
         din første tråd» should stand alone. While the list loads, or could
         not be fetched, it stays, as «Ny tråd» does.
       */}
@@ -388,7 +388,7 @@ export function ThreadsView({
       {groups.map((group) => (
         <section key={group.id} className="threads-view__group">
           {/*
-            The heading on its own, without `PanelHeader` (Lars, 23.09):
+            The heading on its own, without `PanelHeader` (decided 23.09):
             bigger, in the default text colour, and without the box that
             component draws around a panel's top. It is a label over a group
             of rows, not the head of a panel — the panel's head is the row

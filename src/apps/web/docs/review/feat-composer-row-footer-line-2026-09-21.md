@@ -5,8 +5,8 @@ konflikt. Fire porter grønne, 700 enhetstester og 145 e2e grønne på 4173.
 
 ## Gevinsten, mot grunnlinja
 
-Grunnlinja er `main 0855670`, med definisjonen Lars valgte 21.09: leservinduet
-er alt mellom hodet og skrivefeltet.
+Grunnlinja er `main 0855670`, med definisjonen som ble valgt 21.09:
+leservinduet er alt mellom hodet og skrivefeltet.
 
 | Del                           | Grunnlinje    | Nå               |
 | ----------------------------- | ------------- | ---------------- |
@@ -65,5 +65,5 @@ Ingen blokkerende, ingen bør. Tre «kan»:
 3. **Figma-avviket er ikke skrevet ned der fasiten bor.**
    `design/omraader/molecules/skjermer/chat-input.md` beskriver fortsatt
    `secondaryButtons` som «binders-ikon nede til venstre», altså raden som er
-   borte. Avviket er besluttet (H1′, Lars 21.09) og begrunnet i koden, men
+   borte. Avviket er besluttet (H1′, 21.09) og begrunnet i koden, men
    spesifikasjonsfila sier noe annet enn appen.

@@ -71,4 +71,4 @@ historie 1789 1914» — tankestreken er borte mellom årstallene, mens den stå
 riktig i stien rett under. Tittelen kommer fra backendens `title`/`doc_title`.
 Samme form finnes i mock, der `kudos-korpus.json` har «Årsrapport Nasjonal
 kommunikasjonsmyndighet 2025» med dobbelt mellomrom. Begge er data og ikke
-kode. Logget til Benjamin-lista og fixturene.
+kode. Logget til backend-lista og fixturene.

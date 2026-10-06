@@ -134,7 +134,7 @@ før fiksen.
 
 ## Til dirigenten
 
-- Ingen funn. Klar for Lars.
+- Ingen funn. Klar for godkjenning.
 - En advarsel fra `lint` står igjen etter #139 og er ikke denne PR-ens:
   `CorpusDisclaimer.tsx:24` eksporterer `sourcesDisclaimer` fra en fil som
   også eksporterer en komponent, som slår av Fast Refresh for den fila.

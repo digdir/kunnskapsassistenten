@@ -95,5 +95,5 @@ ubevist rase likevel er verdt å tette: kostnaden ved å ta feil er null.
 
 ## Til dirigenten
 
-Klar for Lars. Ingen blokkerende, ingen «bør». De to «kan» kan tas når noen
+Klar for godkjenning. Ingen blokkerende, ingen «bør». De to «kan» kan tas når noen
 likevel er inne i fila; de er ikke verdt en runde alene.

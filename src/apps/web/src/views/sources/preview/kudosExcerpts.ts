@@ -3,7 +3,7 @@ import type { SourceDocument } from '../../../model';
 /**
  * Real Kudos chunks, as they reach the panel: `metadata` through
  * `parseHeadingPath` for the heading, `content_markdown` for the text. Read
- * from Benjamin's `KUDOS_preprod_v4_*` chunk collection 2026-09-28 and cut
+ * from the `KUDOS_preprod_v4_*` chunk collection 2026-09-28 and cut
  * short; the ids are `doc_num/chunk_index`.
  *
  * Live sends the heading but not yet the text (API-bestilling A1), and the BFF

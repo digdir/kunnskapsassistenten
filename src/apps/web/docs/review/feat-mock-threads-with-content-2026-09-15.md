@@ -121,7 +121,7 @@ reload, så tilstanden uten reload har aldri vært målt.
 
 ## Til dirigenten
 
-- **PR #58 er klar for Lars.** Ingen blokkerende, én «bør» (en kommentar og en
+- **PR #58 er klar for godkjenning.** Ingen blokkerende, én «bør» (en kommentar og en
   test som beskriver noe annet enn koden gjør), én «kan» som er eldre enn
   PR-en.
 - **Funn 2 hører hjemme hos #2 eller #5**, ikke hos #5 sin PR her: en fersk

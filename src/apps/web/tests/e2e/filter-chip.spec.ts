@@ -10,7 +10,7 @@ import { chooseFacetValue, MOCK } from './helpers';
  * width. The chip row wraps BETWEEN chips (#91), but one chip that is wider
  * than the panel on its own did not wrap at all — «Statsforvalteren i
  * Østfold, Buskerd, Oslo og Akershus» measured 456 px in a 327 px field at
- * 1440 and ran 92 px past the panel edge, remove cross off screen (Lars,
+ * 1440 and ran 92 px past the panel edge, remove cross off screen (measured
  * 21.09, skjermbilde 12:22). `src/views/filters/filters.css` puts the ceiling
  * on and wraps the text inside the chip instead of cutting it.
  *
@@ -27,7 +27,7 @@ import { chooseFacetValue, MOCK } from './helpers';
  */
 
 /**
- * The organisation from Lars's screenshot, the longest name in the corpus as
+ * The organisation from the screenshot, the longest name in the corpus as
  * rendered.
  *
  * «Buskerd» is not a typo in this file. Kudos itself spells the owner's

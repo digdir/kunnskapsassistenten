@@ -1,5 +1,6 @@
 # Testmiljøet: én container med den bygde klienten og serveren som holder
-# API-nøkkelen. Samme mønster som Nikolais ka-app, og av samme grunn — samme
+# API-nøkkelen. Samme mønster som `ka-app` i digdir/kunnskapsassistenten, og av
+# samme grunn — samme
 # origin er det som gjør at nøkkelen aldri når nettleseren.
 
 # Node 24, som `engines` krever og CI bygger og tester på. Serveren kjører

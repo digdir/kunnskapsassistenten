@@ -4,8 +4,7 @@ import type { Message } from '../../model';
 import { MessageList } from './MessageList';
 
 /**
- * The reader's question and the answer under it are told apart (Simens
- * issue 117). Plain and larger than the answer, the question read as a
+ * The reader's question and the answer under it are told apart (issue 117). Plain and larger than the answer, the question read as a
  * heading over the answer card; it is a box at the end of the line now.
  *
  * What the eye sees is measured in the browser — the side, the ground, the
