@@ -635,7 +635,7 @@ body {
   gap: var(--ds-size-4);
   inline-size: 100%;
   /*
-   * As tall as the links and the colour scheme, and no taller (Lars 06.10).
+   * As tall as the links and the colour scheme, and no taller (chosen 06.10).
    * Every pixel here is taken off the thread list above, which is the region
    * that scrolls.
    */
@@ -646,9 +646,10 @@ body {
 }
 
 /*
- * Simens issue 123: the foot at the end of the scrolling region instead of
- * below it, so the panel is one column with nothing fixed. Off by default;
- * the hidden settings menu turns it on, see src/layout/footerMode.ts.
+ * The foot at the end of the scrolling region instead of below it, so the
+ * panel is one column with nothing fixed (digdir/kunnskapsassistenten#123).
+ * The default; «Festet» in the hidden settings menu pins it instead, see
+ * src/layout/footerMode.ts.
  *
  * The panel's inline padding is the one thing the pinned foot needs and this
  * one does not: the scrolling region already keeps it.
@@ -656,15 +657,21 @@ body {
  * The line over it stays. It is what separates the app's own settings from
  * the list, whether or not the foot moves with it.
  *
- * No end padding here on purpose. Moving the foot inside takes BOTH
- * `:has(> .sidebar-footer)` rules out of play — the foot is a descendant of
- * the panel now, not a child — so the scrolling region keeps its own 32 px
- * under its last item, and the panel keeps its own 32 px below that. Adding
- * a third would be 80 px of air under three links.
+ * Under it, 16 px to the panel's edge, the same as under the pinned foot
+ * (chosen 06.10: less air under it). The region's own 32 px under its last
+ * item and the panel's 32 px below that made 64 px under the colour scheme.
  */
 .sidebar-content > .sidebar-footer {
   padding-inline: 0;
   margin-block-start: var(--ds-size-6);
+}
+
+.sidebar-content:has(> .sidebar-footer) {
+  padding-block-end: 0;
+}
+
+.panel:has(> .sidebar-content > .sidebar-footer) {
+  padding-block-end: var(--ds-size-4);
 }
 
 /*

@@ -1,16 +1,17 @@
 /**
  * Whether the navigation panel's foot stays put or scrolls with the list.
  *
- * Simens issue 123: he asks whether the foot has to be pinned at all, or
- * whether the whole panel could be one container with nothing fixed, and he
- * wants to compare the two. So it is a setting rather than a rewrite — both
- * can stand on the same page and be looked at side by side.
+ * digdir/kunnskapsassistenten#123 asks whether the foot has to be pinned at
+ * all, or whether the whole panel could be one container with nothing fixed.
+ * It is a setting rather than a rewrite, so both can stand on the same page
+ * and be looked at side by side.
  *
- * `pinned` is the default and is what everyone sees. It is what shipped with
- * Simens issue 85: the foot sits below the scrolling region, outside it, so
- * the links and the colour scheme are where they were however far the thread
- * list has been scrolled. `scrolls` puts the foot at the end of the scrolling
- * region instead, so the panel is one column and nothing is fixed.
+ * `scrolls` is the default (chosen 06.10): the foot is at the end of the
+ * scrolling region, so the panel is one column and nothing is fixed.
+ * `pinned` keeps the foot below the scrolling region, outside it, so the links
+ * and the colour scheme are where they were however far the thread list has
+ * been scrolled. It was the default before, and a browser that has it stored
+ * keeps it.
  *
  * Shaped exactly like `src/views/chat/displayLevel.ts`, down to the storage
  * guard and the `useSyncExternalStore` subscription, because it is the same
@@ -30,7 +31,7 @@ export type FooterMode = 'pinned' | 'scrolls';
 
 export const FOOTER_MODE_STORAGE_KEY = 'ka.footer-mode';
 
-const DEFAULT_MODE: FooterMode = 'pinned';
+const DEFAULT_MODE: FooterMode = 'scrolls';
 
 function isFooterMode(value: unknown): value is FooterMode {
   return value === 'pinned' || value === 'scrolls';

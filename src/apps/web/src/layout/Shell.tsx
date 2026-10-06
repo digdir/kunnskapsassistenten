@@ -616,17 +616,16 @@ function Sidebar({
    * opens as a drawer to steer from. Not on a rail: three choices do not fit
    * in 67 px, and a rail is one button (railWidth).
    *
-   * Pinned below the scrolling region, like the head above it, so it is where
-   * it is however long the thread list grows. That is the default and was the
-   * only way until Simens issue 123; `footScrolls` just below is the other.
+   * At the end of the scrolling region by default, or pinned below it when
+   * that is chosen in #innstillinger; see `footScrolls` just below.
    */
   const foot = slot === 'primary-sidebar' ? <SidebarFooter /> : null;
 
   /*
-   * Simens issue 123: pinned below the scrolling region, or at the end of it
-   * and scrolling with the list. A setting rather than a rewrite, so both can
-   * be compared on the same page; see footerMode.ts. `pinned` is the default
-   * and is what shipped with issue 85.
+   * At the end of the scrolling region and scrolling with the list, or pinned
+   * below it (digdir/kunnskapsassistenten#123). A setting rather than a
+   * rewrite, so both can be compared on the same page; see footerMode.ts.
+   * Scrolling is the default (chosen 06.10).
    *
    * One DEFINITION for both places, so the two cannot drift apart. Not one
    * mounting: React gives a new parent a new mount, so switching tears the

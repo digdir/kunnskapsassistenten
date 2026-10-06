@@ -8,8 +8,8 @@ import {
 } from './footerMode';
 
 /**
- * Simens issue 123, lagringen og standarden. Hvor foten faktisk tegnes, står
- * i sidebarFooterMode.test.tsx.
+ * Valget for foten (digdir/kunnskapsassistenten#123): lagringen og
+ * standarden. Hvor foten faktisk tegnes, står i sidebarFooterMode.test.tsx.
  */
 beforeEach(() => {
   localStorage.clear();
@@ -17,22 +17,29 @@ beforeEach(() => {
 });
 
 describe('footerMode', () => {
-  it('står på festet til noen velger noe annet', () => {
+  it('står på «ruller med» til noen velger noe annet', () => {
+    expect(getFooterMode()).toBe('scrolls');
+  });
+
+  it('beholder «festet» for den som har valgt det', () => {
+    // Festet var standard før 06.10. Et valg som er lagret, står.
+    localStorage.setItem(FOOTER_MODE_STORAGE_KEY, 'pinned');
+
     expect(getFooterMode()).toBe('pinned');
   });
 
   it('husker valget i nettleseren', () => {
-    setFooterMode('scrolls');
+    setFooterMode('pinned');
 
-    expect(localStorage.getItem(FOOTER_MODE_STORAGE_KEY)).toBe('scrolls');
+    expect(localStorage.getItem(FOOTER_MODE_STORAGE_KEY)).toBe('pinned');
     resetFooterMode();
-    expect(getFooterMode()).toBe('scrolls');
+    expect(getFooterMode()).toBe('pinned');
   });
 
   it('ser bort fra noe lagret som ikke er en modus', () => {
     localStorage.setItem(FOOTER_MODE_STORAGE_KEY, 'midt-på');
 
-    expect(getFooterMode()).toBe('pinned');
+    expect(getFooterMode()).toBe('scrolls');
   });
 
   it('sier fra når koden setter noe annet enn de to', () => {

@@ -7,9 +7,10 @@ import { Shell } from './Shell';
 import { resetFooterMode, setFooterMode } from './footerMode';
 
 /**
- * Simens issue 123: foten festet under rullefeltet, eller sist inne i det og
- * rullende med lista. Her måles hvor den havner, ikke hvordan den ser ut —
- * tallene for begge står i PR-en.
+ * Foten sist i rullefeltet og rullende med lista, som er standard, eller
+ * festet under rullefeltet når det er valgt i #innstillinger
+ * (digdir/kunnskapsassistenten#123). Her måles hvor den havner, ikke hvordan
+ * den ser ut; tallene for begge står i PR-en.
  */
 globalThis.ResizeObserver ??= class {
   observe() {}
@@ -40,32 +41,32 @@ beforeEach(() => {
 });
 
 describe('hvor foten står', () => {
-  it('står utenfor rullefeltet som standard', () => {
+  it('står sist inne i rullefeltet som standard', () => {
+    open();
+
+    const region = scroller();
+    expect(foot()).not.toBeNull();
+    // Sist, ikke hvor som helst: den skal følge etter den siste tråden.
+    expect(region?.lastElementChild).toBe(foot());
+  });
+
+  it('står utenfor rullefeltet når valget er «festet»', () => {
+    setFooterMode('pinned');
     open();
 
     expect(foot()).not.toBeNull();
     expect(scroller()?.contains(foot()!)).toBe(false);
   });
 
-  it('står sist inne i rullefeltet når valget er «ruller med»', () => {
-    setFooterMode('scrolls');
-    open();
-
-    const region = scroller();
-    expect(region?.contains(foot()!)).toBe(true);
-    // Sist, ikke hvor som helst: den skal følge etter den siste tråden.
-    expect(region?.lastElementChild).toBe(foot());
-  });
-
   it('flytter seg når menyen endrer valget, uten at siden lastes på nytt', () => {
     open();
-    expect(scroller()?.contains(foot()!)).toBe(false);
+    expect(scroller()?.contains(foot()!)).toBe(true);
 
     act(() => {
-      setFooterMode('scrolls');
+      setFooterMode('pinned');
     });
 
-    expect(scroller()?.contains(foot()!)).toBe(true);
+    expect(scroller()?.contains(foot()!)).toBe(false);
   });
 
   it('har de samme lenkene i begge, og bare ett sett', () => {
@@ -96,8 +97,8 @@ describe('hvor foten står', () => {
  * var alle 22 testene grønne.
  */
 describe('foten i skuffen', () => {
-  function openDrawer(mode: 'pinned' | 'scrolls') {
-    setFooterMode(mode);
+  function openDrawer(mode?: 'pinned' | 'scrolls') {
+    if (mode) setFooterMode(mode);
     open(440);
     act(() => {
       screen.getByRole('button', { name: 'Vis tråder og filter' }).click();
@@ -122,8 +123,8 @@ describe('foten i skuffen', () => {
     }
   });
 
-  it('ligger i rullefeltet i skuffen når valget er «ruller med»', () => {
-    const drawer = openDrawer('scrolls');
+  it('ligger i rullefeltet i skuffen som standard', () => {
+    const drawer = openDrawer();
 
     const region = drawer.querySelector('.sidebar-content');
     const inDrawer = drawer.querySelector('.sidebar-footer');
@@ -131,7 +132,7 @@ describe('foten i skuffen', () => {
     expect(region?.lastElementChild).toBe(inDrawer);
   });
 
-  it('ligger utenfor rullefeltet i skuffen som standard', () => {
+  it('ligger utenfor rullefeltet i skuffen når valget er «festet»', () => {
     const drawer = openDrawer('pinned');
 
     const region = drawer.querySelector('.sidebar-content');
