@@ -211,6 +211,9 @@ app.post('/api/ask', async (c) => {
     async start(controller) {
       const send = (obj: unknown) =>
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+      const noteSources = conversationId
+        ? sourceStore.answerSources(conversationId)
+        : undefined;
       try {
         if (created) send({ type: 'conversation', ...created });
         for await (const event of ask(
@@ -221,9 +224,7 @@ app.post('/api/ask', async (c) => {
           model,
           filterBy,
         )) {
-          if (event.type === 'sources' && conversationId) {
-            sourceStore.remember(conversationId, event.sources);
-          }
+          noteSources?.(event);
           send(event);
         }
       } catch (err) {
