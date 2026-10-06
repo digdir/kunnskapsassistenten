@@ -170,7 +170,7 @@ chunk.
   store is still shared, so the next person to use the same browser can read the
   previous one's search words and the agent's plan in the developer tools. What a
   sign-out in Azure does to `localStorage` is not measured.
-- **The store is cleared on «Logg ut»** (Lars said yes on 5.10). That applies
+- **The store is cleared on «Logg ut»** (decided 5.10). That applies
   where there is a sign-out, that is, in bff mode (`/auth/logout`,
   `beforeLogout` in `apps/web/src/api/session.ts`). The store is cleared in the
   click, before the browser follows the link. Today only live mode writes to the

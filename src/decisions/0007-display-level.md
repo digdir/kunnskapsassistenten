@@ -14,18 +14,14 @@ strings and the details under each step. Inside the card stands
 
 Two readers want different parts of that. Issue 88 in
 `digdir/kunnskapsassistenten` asks for «Fremgangsmåte» above the answer, and
-simpler thinking steps without technical details. Lars, 30.09: «Det tekniske i
-svarene kan være nyttig for feks meg eller andre utviklere som ønsker "verbose"
-eller "debug"-aktige tilbakemeldinger på hva som skjer akkurat nå.» (The
-technical part of the answers can be useful for developers who want verbose or
-debug-like feedback on what is happening right now.)
+simpler thinking steps without technical details. Reported 30.09: the technical
+part of the answers can be useful for developers who want verbose or debug-like
+feedback on what is happening right now.
 
 Both are right for their reader, and they cannot both be right at once on the
-same screen. Lars asked for a choice, and for it not to take up room: «kanskje
-egentlig bare at jeg kan skrive noe i urlen for å få opp en settings-meny … lag
-den i det samme type designet, men ikke gjør for mye ut av det heller.» (Perhaps
-just something to type in the URL to bring up a settings menu, in the same kind
-of design, without making too much of it.)
+same screen. A choice was asked for, and for it not to take up room: something
+to type in the URL to bring up a settings menu, in the same kind of design,
+without making too much of it.
 
 There is one setting in the client already, dark mode, and it has no menu at
 all. It is a console command, `window.ka.colorScheme.set`, because no button had

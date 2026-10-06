@@ -1,6 +1,6 @@
 # 0005 — Our client as `apps/web`, behind the BFF in this repository
 
-**Status:** direction chosen by Lars; the details below are proposed and not
+**Status:** direction chosen; the details below are proposed and not
 agreed with the owners of this repository · **Date:** 2026-09-28 ·
 **Corrected:** 2026-10-05
 
@@ -14,15 +14,10 @@ correction stands where the claim stood. The current picture for the move is
 
 ## Decision
 
-> «Vi sikter på å overta /web i digdir/kunnskapsassistenten/src/apps. …
-> Jeg antar /server er backend for frontend. Men det må funke bra.»
->
-> «Vi kan vel se for oss en merge hvor vi beholder det beste fra mitt og
-> hans.» (Lars, 2026-09-28)
-
-In English: we aim to take over `/web` in `digdir/kunnskapsassistenten/src/apps`;
-`/server` is assumed to be the backend-for-frontend, but it has to work well; and
-the merge should keep the best of both.
+Chosen 2026-09-28: we take over `/web` in
+`digdir/kunnskapsassistenten/src/apps`, with `/server` as the
+backend-for-frontend in front of the backend. The merge keeps the best of both
+clients, and the result has to work well.
 
 `digdir/kunnskapsassistenten/src` has three parts:
 
@@ -179,7 +174,7 @@ measured that this is not true in the way it was meant:
 Both bring the commits along. The difference is whether the history of a
 single file can be followed afterwards, and it is `subtree` that cannot.
 
-**Lars chose a third way on 2026-10-05: one copy, without history** (D1 in the
+**A third way was chosen on 2026-10-05: one copy, without history** (D1 in the
 plan). The source and the SHA are in the commit message and in the README in
 `apps/web`, so whoever looks finds the way to the archived repository. Then
 neither of the two rows above is what happens — they stay because they are
