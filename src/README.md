@@ -54,12 +54,57 @@ godtas uten verifisering. Derfor må noe på serversiden _være_ identiteten. Se
 
 ## Komme i gang
 
+Fra en ny klone til appen på din maskin, med testene. Hver blokk kjøres for
+seg, og alle kommandoene etter `cd` kjøres i `src/`. Målt 06.10 på macOS med
+Node 24.21.0 og npm 11.19.0.
+
+### 1. Klonen og Node 24
+
+`mise.toml` låser Node-versjonen. Med [mise](https://mise.jdx.dev) aktivert i
+skallet:
+
 ```sh
-mise install && mise trust                       # node 24, kjører TypeScript direkte
-npm install
-cp apps/server/.env.example apps/server/.env     # sett DIGDIR_API_BASE og DIGDIR_API_KEY
-npm run doctor                                   # sjekker backenden før du starter
-npm run dev                                      # server :8787, SPA :5173
+git clone https://github.com/digdir/kunnskapsassistenten.git
+cd kunnskapsassistenten/src
+mise trust
+mise install
+node --version
+```
+
+Den siste skal skrive `v24.21.0`. Har du Node 24 fra før, holder det:
+`engines` krever `>=24`, og `.npmrc` har `engine-strict`.
+
+### 2. Avhengighetene
+
+```sh
+npm ci
+```
+
+Én låsefil for hele workspace-et: BFF-en i `apps/server`, klienten i
+`apps/web` og typene mellom dem i `packages/contract`.
+
+`npm ci` kjører `prepare` i `apps/web`, og den legger `pre-commit` og
+`pre-push` i `.git/hooks` for hele repoet. `pre-commit` kjører lint-staged på
+filene som committes, og `pre-push` typesjekker klienten. npm 11 kjører ikke
+installasjonsskript fra avhengigheter som ikke er godkjent i `allowScripts`, og
+sier på slutten fra om `simple-git-hooks` og `fsevents`. Krokene kommer likevel,
+fra `prepare`, og resten av oppskriften virker uten de to skriptene.
+
+### 3. BFF-en mot en backend
+
+```sh
+cp apps/server/.env.example apps/server/.env
+```
+
+Fyll inn `DIGDIR_API_BASE` og `DIGDIR_API_KEY` i `apps/server/.env`. Er
+datasettet et annet enn standarden, også `DIGDIR_TENANT` og
+`DIGDIR_DATASET_CONFIG_KEY`. `KA_FILTER_FIELDS` og `KA_DATASETS` gir klienten
+feltene i filteret og navnet på korpuset. Typesense (`TYPESENSE_API_HOST`,
+`TYPESENSE_API_KEY_ADMIN` og `KUDOS_DOCS_COLLECTION`) er valgfritt. Nøkkelen
+blir i BFF-en og når aldri nettleseren.
+
+```sh
+npm run doctor
 ```
 
 `npm run doctor` er den raske måten å finne ut hvorfor ingenting virker.
@@ -77,6 +122,61 @@ To backender, styrt av `DIGDIR_API_BASE`:
 Nøkler gjelder per miljø: en som er laget lokalt autentiserer ikke mot den
 utrullede backenden. Typesense er valgfritt. Uten det kjører appen fint, men
 filterraden skjules og kildekortene viser ingen utdrag.
+
+### 4. BFF-en og klienten sammen
+
+```sh
+VITE_API_MODE=bff KA_BFF_URL=http://localhost:8787 npm run dev
+```
+
+BFF-en starter på `PORT` fra `.env` (8787), og klienten på
+<http://localhost:5173>, med `/api` og `/auth` sendt videre til BFF-en.
+`KA_BFF_URL` må med, for ellers ser klienten etter BFF-en på 8788. Er 5173
+opptatt, velger Vite neste ledige port og skriver den ut.
+
+### 5. Klienten alene, uten backend
+
+```sh
+npm run dev:web
+```
+
+Klienten i mock på <http://localhost:5173>: svarene er skrevet på forhånd, men
+dokumentene er ekte, og filtrene virker. Den trenger verken `.env` eller
+backend.
+
+### 6. Testene
+
+```sh
+npm run format:check
+npm run typecheck
+npm test
+npm run lint --workspace apps/web
+npm run build
+```
+
+`npm test` kjører serverens tester med `node --test` og klientens med vitest.
+
+End-to-end med Playwright. Suiten bygger klienten i mock og tester den på
+port 4173, eller på den `KA_E2E_PORT` sier.
+
+```sh
+npx playwright install chromium
+npm run test:e2e --workspace apps/web
+```
+
+### 7. Bildet
+
+Det samme bildet som utrullingen bruker: BFF-en med den bygde klienten, fra
+samme origin.
+
+```sh
+docker build --tag ka .
+docker run --rm --detach --name ka --publish 8787:8787 -e AUTH_MODE=off -e APP_ORIGIN=http://localhost:8787 -e DIGDIR_API_KEY=unused ka
+curl -fsS --retry 15 --retry-all-errors --retry-delay 1 http://localhost:8787/api/health
+docker stop ka
+```
+
+`curl` skal skrive `{"ok":true}`.
 
 ## Kommandoer
 

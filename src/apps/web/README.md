@@ -16,18 +16,10 @@ Navnereglene står under [Naming](#naming), og kortversjonen av arbeidsreglene i
 
 ## Kom i gang
 
-**Designer, eller ny her?** Start med [docs/kom-i-gang.md](docs/kom-i-gang.md):
-installere, kjøre appen, endre den med Claude Code og få endringen ut på
-testadressen.
-
-```sh
-npm install
-npm run dev
-```
-
-Utviklingsserveren svarer på <http://localhost:5173>.
-
-Node 24 eller nyere, som i CI og bildet.
+I monorepoet står oppskriften i
+[`src/README.md`, «Komme i gang»](../../README.md#komme-i-gang): Node 24,
+`npm ci` i `src/`, BFF-en og klienten, testene og bildet. Skriptene under
+kjøres fra `src/` med `--workspace apps/web`.
 
 | Skript                  | Gjør                                                                                             |
 | ----------------------- | ------------------------------------------------------------------------------------------------ |
