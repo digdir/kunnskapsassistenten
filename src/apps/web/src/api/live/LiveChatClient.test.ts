@@ -768,7 +768,7 @@ describe('tråden heter det backenden kaller den', () => {
 
 /**
  * Fasettene i live, fra vår egen server (server/facets.ts). Formatet er det
- * generiske fra 0001, det samme BFF-en svarer med, så mappingen er den samme.
+ * generiske fra src/decisions/0004, det samme BFF-en svarer med, så mappingen er den samme.
  */
 describe('fasettene i live', () => {
   afterEach(() => vi.unstubAllGlobals());

@@ -38,14 +38,14 @@ export {
  *
  * `bff` is the third: Nikolai's BFF in front of the backend, holding the key
  * and the sign-in, and serving this client from its own origin
- * (docs/arkitektur/0002-klienten-bak-bff.md).
+ * (src/decisions/0005-client-behind-the-bff.md).
  */
 export function createChatClient(): ChatClient {
   const env = kaEnv();
   const mode = env.VITE_API_MODE ?? 'mock';
   if (mode === 'bff') {
     const bff = new BffChatClient({ datasetConfigKey: activeCorpusKey });
-    // The corpus's name comes from the BFF (docs/arkitektur/0003); ask for it
+    // The corpus's name comes from the BFF (src/decisions/0006); ask for it
     // now rather than when the filter panel first draws.
     bff.prime();
     return bff;

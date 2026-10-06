@@ -6,7 +6,7 @@ import { parseCollections } from './facets.ts';
  * The text of the chunks an answer was built from, looked up by their ids in
  * the dataset's chunks collection in Typesense.
  *
- * A bridge, like `/api/facets` (docs/arkitektur/0005). The MCP answer names
+ * A bridge, like `/api/facets` (src/decisions/0008). The MCP answer names
  * its chunks and leaves their text out, and headless-rag has no route that
  * hands a caller the text of a chunk by id. Nikolai's BFF looks the same ids
  * up in the same collection, so both clients show the same passage.

@@ -1,5 +1,5 @@
 /**
- * Facets in the generic format from docs/arkitektur/0001, which is also the
+ * Facets in the generic format from src/decisions/0004, which is also the
  * one Nikolai's BFF answers `GET /api/facets` with (src/api/bff/contract.ts).
  *
  * The contract between whoever counts the facets and the client that draws

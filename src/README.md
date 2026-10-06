@@ -146,7 +146,9 @@ bestemmes av Entra ID og ikke av appen. `AUTH_MODE=off` nekter å starte hvis
 
 [`decisions/`](decisions/) er på engelsk, som resten av koden og som
 `digdir-headless-rag`: hvorfor Preact, hvorfor en BFF, hvorfor `/api/mcp`
-framfor `/v1`.
+framfor `/v1`. 0004–0008 kom med klienten i `apps/web`: hvor kunnskapen om et
+korpus skal bo, klienten bak BFF-en, filterfelt og korpusnavn fra BFF-en,
+visningsnivået, og teksten i utdragene og kildene etter ny innlasting.
 
 [`deploy/README.md`](deploy/README.md) dekker utrulling til Azure og
 innlogging.

@@ -101,7 +101,7 @@ export type LiveChatClientOptions = {
  * can be listed by.
  *
  * `listFacets` asks our own server, which counts the facets from Typesense
- * until the backend can (server/facets.ts, docs/arkitektur/0001).
+ * until the backend can (server/facets.ts, src/decisions/0004).
  */
 /**
  * The conversation the questions that follow belong to.
@@ -511,7 +511,7 @@ export class LiveChatClient implements ChatClient {
   /**
    * A thread read back, with what this browser wrote down for its answers:
    * the sources, «Fremgangsmåte», the hits and how long the agent thought
-   * (sourceStore.ts, docs/arkitektur/0005, Simens issue 88).
+   * (sourceStore.ts, src/decisions/0008, Simens issue 88).
    *
    * Only where the backend gave none: the day it keeps its chunks
    * (headless-rag #21), what it says wins and this adds nothing. Only a
@@ -726,7 +726,7 @@ async function* readFrame(
   hooks?.remember(conversationId, finalAnswerText(result.content) || finalText, chunks, retrieval);
 
   // After the answer's text, so the reader is reading while the excerpts'
-  // text is looked up (docs/arkitektur/0005).
+  // text is looked up (src/decisions/0008).
   const documents = hooks ? await hooks.withTexts(listed) : listed;
 
   yield {

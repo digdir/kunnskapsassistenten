@@ -4,7 +4,7 @@ import { documentUrl, parseDocumentUrls } from './documentUrls';
 /**
  * Simens issue 92: kildene i testmiljøet hadde ingen lenke til Kudos, fordi
  * bitene har `doc_num` og ingen `url`. Adressen er kunnskap om korpuset, så
- * den er oppsett per datasett (0001), og koden setter bare nummeret inn.
+ * den er oppsett per datasett (src/decisions/0004), og koden setter bare nummeret inn.
  *
  * To maler, fordi Kudos gir samme dokument to former for nummer: et tall
  * (`/documents/370449` gir 301 til dokumentet) og en UUID (`/documents/<uuid>`

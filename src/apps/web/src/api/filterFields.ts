@@ -12,7 +12,7 @@ import { kaEnv } from './runtimeConfig';
  * year at all.
  *
  * **That translation is knowledge about a corpus, so it is configuration and
- * not code** (docs/arkitektur/0001-fasetter-og-korpuskunnskap.md, alternative
+ * not code** (src/decisions/0004-corpus-knowledge-and-facets.md, alternative
  * D: the mechanism ships in code, the policy lives per dataset). A field name
  * written into `src/` would be a frontend that only works against Kudos, and
  * the next corpus would be a pull request rather than an environment

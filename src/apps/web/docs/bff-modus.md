@@ -4,7 +4,7 @@
 `digdir/kunnskapsassistenten`) i stedet for rett med backenden. BFF-en holder
 API-nøkkelen og innloggingen, og identiteten kommer fra økta. Klienten sender
 spørsmålet, samtale-id-en og filteret, ikke tenant, datasett eller
-`X-User-Id`. Bakgrunnen står i `docs/arkitektur/0002-klienten-bak-bff.md`.
+`X-User-Id`. Bakgrunnen står i `src/decisions/0005-client-behind-the-bff.md`.
 
 | BFF-en                         | i klienten                                                                      |
 | ------------------------------ | ------------------------------------------------------------------------------- |
@@ -18,7 +18,7 @@ BFF-en svarer fra ett datasett, satt i dens egen `.env`
 (`DIGDIR_DATASET_CONFIG_KEY`). Feltene og korpusnavnet setter den med
 `KA_FILTER_FIELDS` og `KA_DATASETS`, med samme grammatikk som klientens
 variabler, og klienten henter dem derfra
-(`docs/arkitektur/0003-felt-og-korpus-fra-bff.md`). Klienten trenger da
+(`src/decisions/0006-filter-fields-and-corpus-from-the-bff.md`). Klienten trenger da
 verken `VITE_KA_FILTER_FIELDS`, `VITE_KA_DATASETS` eller
 `VITE_KA_DATASET_CONFIG_KEY`. Mot en BFF som ikke sender `id` på fasettene,
 bruker klienten fortsatt `VITE_KA_FILTER_FIELDS`. Det blir ingen

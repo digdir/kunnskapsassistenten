@@ -6,7 +6,7 @@
  * branch `feat/ny-klient` (`9172aeb`), and only the parts this client reads.
  * A copy and not a dependency, because the package is not published: the day
  * this client moves into that repo as `apps/web`, the import replaces this
- * file (docs/arkitektur/0002-klienten-bak-bff.md).
+ * file (src/decisions/0005-client-behind-the-bff.md).
  *
  * The shapes are the package's, under names with `Bff` in front, so that
  * import is a list of `Source as BffSource` and nothing else changes. One
@@ -125,7 +125,7 @@ export interface BffConversationDetail {
  *
  * The BFF on `8639267` predates it and sends no `id`. `fieldsFromFacets`
  * still checks for one, and without it the field names come from this build
- * (docs/arkitektur/0003).
+ * (src/decisions/0006).
  */
 export interface BffFacet {
   /** Which of the three dimensions. */

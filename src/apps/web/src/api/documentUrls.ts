@@ -7,7 +7,7 @@ import { kaEnv } from './runtimeConfig';
  * for Kudos, no address: measured in the test environment 30.09, every source
  * said «Dokumentet har ingen offentlig lenke» (Simens issue 92). The address
  * is knowledge about a corpus, so it is configuration and not code, like the
- * filter fields (docs/arkitektur/0001-fasetter-og-korpuskunnskap.md).
+ * filter fields (src/decisions/0004-corpus-knowledge-and-facets.md).
  * Nikolai's BFF reads it the same way, from `KUDOS_BASE`.
  *
  * `VITE_KA_DOCUMENT_URLS`, in the grammar of `VITE_KA_DATASETS`: semicolons

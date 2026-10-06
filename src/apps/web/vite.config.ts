@@ -12,7 +12,7 @@ import { FACETS_PATH, facetConfigFrom, facetRoute } from './server/facets.ts';
  * It has to run before the first paint, so it is a classic blocking script
  * and not part of the module bundle, which runs after parsing. It used to be
  * inline in index.html; the BFF's `script-src 'self'` refuses that
- * (docs/arkitektur/0002). Vite only bundles module scripts, so this emits the
+ * (src/decisions/0005). Vite only bundles module scripts, so this emits the
  * file itself — under /assets/ with a content hash, because /assets/ is the
  * one path the BFF serves files from, and our own server caches it for good
  * there (server/static.ts). In development it is served from src/ as it is.

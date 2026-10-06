@@ -9,7 +9,7 @@ da noe ble bestemt.
 - **Rapporter** som HTML, med datoen først i filnavnet. De åpnes rett i
   nettleseren og henter ingenting utenfra.
 
-Større arkitekturvalg står som ADR i [`../arkitektur/`](../arkitektur/README.md).
+Større arkitekturvalg står som ADR i [`src/decisions/`](../../../../decisions/).
 Loggen peker dit i stedet for å gjenta dem.
 
 ## Rapportene

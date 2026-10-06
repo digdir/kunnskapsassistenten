@@ -4,7 +4,7 @@ import type { McpChunk } from './mcp';
 /**
  * What each answer was built from and how, kept in this browser, so the
  * sources and «Fremgangsmåte» come back when the page is loaded again
- * (Simens runde 3, ekstra 2, and Simens issue 88; docs/arkitektur/0005).
+ * (Simens runde 3, ekstra 2, and Simens issue 88; src/decisions/0008).
  *
  * The backend keeps the answer's text and nothing else: a thread read back
  * has `chunks: []` on every message (headless-rag #21), and no steps at all.
@@ -285,7 +285,7 @@ export function recallThread(
  *
  * The store is per browser and not per user, and part of it comes of the
  * reader's own questions: the search words and the agent's plan
- * (docs/arkitektur/0005, «Hva som ligger i lageret»). The next person to sign
+ * (src/decisions/0008, «What the store holds»). The next person to sign
  * in on the same browser should not find them. Fails quietly, like the rest
  * of this file: storage that cannot be reached has nothing to forget.
  */

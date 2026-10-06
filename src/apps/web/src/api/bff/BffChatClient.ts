@@ -169,7 +169,7 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
  * session cookie rather than from anything this client sends — so there is
  * no `X-User-Id` here, and no tenant or dataset on the wire. The browser
  * sends a question; the server decides what it is asked of
- * (docs/arkitektur/0002-klienten-bak-bff.md).
+ * (src/decisions/0005-client-behind-the-bff.md).
  */
 export class BffChatClient implements ChatClient {
   readonly #basePath: string;

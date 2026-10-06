@@ -337,7 +337,7 @@ describe('datasetArguments', () => {
  *
  * Feltnavna under er Kudos sine, og de står HER med vilje: i en test er de et
  * eksempel på en konfigurasjon, mens i `src/` ville de vært en frontend som
- * bare virker mot ett korpus (docs/arkitektur/0001).
+ * bare virker mot ett korpus (src/decisions/0004).
  */
 const kudosFields: DatasetFilterFields = {
   documentType: { field: 'type' },

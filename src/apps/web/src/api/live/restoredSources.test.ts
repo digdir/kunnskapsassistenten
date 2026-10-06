@@ -5,7 +5,7 @@ import { SOURCES_STORAGE_KEY, answerFingerprint, recallThread } from './sourceSt
 
 /**
  * The excerpts' text, and the sources after a reload, in live
- * (docs/arkitektur/0005).
+ * (src/decisions/0008).
  *
  * A fake backend and a fake /api/excerpts. The answer and its chunks are
  * shaped after a real one from :8080 on 30.09: the chunks carry id, document

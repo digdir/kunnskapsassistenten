@@ -1,6 +1,6 @@
 /**
  * The contract of `GET /api/excerpts` (server/excerpts.ts,
- * docs/arkitektur/0005), shared by the server that answers it and the client
+ * src/decisions/0008), shared by the server that answers it and the client
  * that asks, so the two cannot disagree about what a request may hold.
  */
 

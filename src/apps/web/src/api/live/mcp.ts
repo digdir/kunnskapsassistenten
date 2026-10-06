@@ -104,7 +104,7 @@ export type FilterArguments =
  * - a dimension with nothing ticked — no restriction on that one
  * - a dimension with no configured field — this corpus has not said what it
  *   calls it, and a guessed name would filter on a field Typesense does not
- *   have. Silence is the honest answer (docs/arkitektur/0001)
+ *   have. Silence is the honest answer (src/decisions/0004)
  * - no configured fields at all, which includes the dataset the backend
  *   picked for itself
  *
@@ -295,7 +295,7 @@ export function toSourceDocuments(chunks: McpChunk[], dataset?: string): SourceD
       id: chunk.chunk_id ?? `${documentId}-${index}`,
       // backend: mangler, se API-bestilling A1 — structuredContent.chunks
       // carries id, title and length, never the passage itself. The client
-      // looks the text up by id afterwards (excerpts.ts, docs/arkitektur/0005).
+      // looks the text up by id afterwards (excerpts.ts, src/decisions/0008).
       text: '',
       heading: parseHeadingPath(chunk.metadata),
       relevance: relevanceFromRank(index, chunks.length),

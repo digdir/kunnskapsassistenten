@@ -6,7 +6,7 @@ tallene forklarer ting som ser ut som feil og ikke er det.
 
 `docs/deploy.md` har kommandoene for Azure og for containeren. Denne fila er
 det som er målt. Hvorfor fasettene ikke kommer fra backenden står i
-`docs/arkitektur/0001-fasetter-og-korpuskunnskap.md`.
+`src/decisions/0004-corpus-knowledge-and-facets.md`.
 
 ## Det store korpuset
 

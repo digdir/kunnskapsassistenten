@@ -70,7 +70,7 @@ export interface Thread {
    *
    * Absent when the thread has none, and when the client cannot know: the
    * mock keeps no filter on a thread, the BFF keeps it in memory
-   * (docs/arkitektur/0003-felt-og-korpus-fra-bff.md), and a live thread from
+   * (src/decisions/0006-filter-fields-and-corpus-from-the-bff.md), and a live thread from
    * before #90 was made without one.
    */
   filter?: FilterSelection;

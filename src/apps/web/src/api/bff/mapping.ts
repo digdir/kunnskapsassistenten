@@ -30,7 +30,7 @@ import type {
  * The reader's filter, as `POST /api/ask` takes it: `{ type: ['Årsrapport'] }`.
  *
  * Keyed by the corpus's own field names from `VITE_KA_FILTER_FIELDS`, the same
- * translation the live client makes (docs/arkitektur/0001). `value-type` has
+ * translation the live client makes (src/decisions/0004). `value-type` has
  * no place here: the BFF's contract is field to values and nothing else, and
  * the BFF decides what goes on to the backend.
  *
@@ -360,7 +360,7 @@ export class BffTurnState {
  * type (D16), so the corpus's field names are the deployment's and nothing is
  * baked into this build. Undefined, and not `{}`, for a BFF that tags none —
  * the one on `8639267` — so the caller can tell «no fields» from «ask the
- * build» (docs/arkitektur/0003-felt-og-korpus-fra-bff.md).
+ * build» (src/decisions/0006-filter-fields-and-corpus-from-the-bff.md).
  */
 export function fieldsFromFacets(facets: BffFacet[]): DatasetFilterFields | undefined {
   const fields: DatasetFilterFields = {};

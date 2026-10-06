@@ -11,7 +11,7 @@ import { currentYear } from '../shared/years.ts';
 /**
  * The filter panel's facets, counted by this server from Typesense.
  *
- * A bridge, and meant as one (docs/arkitektur/0001, «Neste steg», item 3).
+ * A bridge, and meant as one (src/decisions/0004, «Next steps», item 3).
  * The backend has no facet API over HTTP, so in live the panel had nothing to
  * draw — not even a filter the reader had already set, which then could be
  * neither seen nor removed. This route answers in the generic format
@@ -118,7 +118,7 @@ const LABELS: Record<FilterDimension, string> = {
 
 /**
  * The first year a year facet keeps. Kudos's `concerned_years` holds parse
- * noise like «2436» (docs/arkitektur/0001), and has more than 500 distinct
+ * noise like «2436» (src/decisions/0004), and has more than 500 distinct
  * values where a real span has a few dozen.
  */
 export const FIRST_YEAR = 1990;
@@ -142,7 +142,7 @@ const TIMEOUT_MS = 10_000;
  * from `FIRST_YEAR` up to this year, newest first; everything else by count,
  * most first, and then alphabetically so equal counts keep one order.
  *
- * «This year» was a fixed 2035, the span 0001 named, and the filter offered
+ * «This year» was a fixed 2035, the span src/decisions/0004 named, and the filter offered
  * 2027–2035. It is read on every load now, so it moves on New Year without a
  * deploy. See shared/years.ts.
  */

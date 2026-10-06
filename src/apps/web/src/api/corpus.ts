@@ -373,7 +373,7 @@ export function activeCorpus(): ActiveCorpusSnapshot {
  * fact and not the reader's choice, and the next page load asks again.
  *
  * Only in bff mode; the mock and live keep their own lists
- * (docs/arkitektur/0003-felt-og-korpus-fra-bff.md).
+ * (src/decisions/0006-filter-fields-and-corpus-from-the-bff.md).
  */
 export function adoptServerCorpus(corpus: CorpusOption): void {
   if (kaEnv().VITE_API_MODE !== 'bff' || !corpus.key || !corpus.label) return;

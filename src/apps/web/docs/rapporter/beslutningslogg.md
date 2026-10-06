@@ -54,7 +54,7 @@ føres, står i [README](README.md). PR-numrene uten repo foran er i dette repoe
 - **Et filter backenden avviser, vises som det og ikke som en generell feil**
   ([#240](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/240)).
 - **Teksten i utdragene, og kildene og stegene etter ny innlasting, i live**
-  ([ADR 0005](../arkitektur/0005-utdragstekst-og-kilder-etter-innlasting.md),
+  ([ADR 0008](../../../../decisions/0008-excerpt-text-and-sources-after-reload.md),
   [#227](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/227),
   [#233](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/233)).
 
@@ -64,7 +64,7 @@ føres, står i [README](README.md). PR-numrene uten repo foran er i dette repoe
   testmiljøet.** Main rulles ut dit etter hver runde, og punktet kvitteres ut
   med en lenke til PR-en.
 - **Visningsnivå, og en skjult meny å velge det i**
-  ([ADR 0004](../arkitektur/0004-visningsnivaa.md)).
+  ([ADR 0007](../../../../decisions/0007-display-level.md)).
 - **En feil React ikke kommer seg fra, gir en side med «Last inn på nytt»** og
   ikke en hvit skjerm
   ([#221](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/221)).
@@ -72,7 +72,7 @@ føres, står i [README](README.md). PR-numrene uten repo foran er i dette repoe
 ## 2026-09-29
 
 - **Filterfelt og korpusnavn kommer fra BFF-en**
-  ([ADR 0003](../arkitektur/0003-felt-og-korpus-fra-bff.md)).
+  ([ADR 0006](../../../../decisions/0006-filter-fields-and-corpus-from-the-bff.md)).
 - **Filterlåsen og navnet og «Logg ut» bak BFF-en**
   ([#181](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/181),
   [#183](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/183)).
@@ -80,11 +80,11 @@ føres, står i [README](README.md). PR-numrene uten repo foran er i dette repoe
 ## 2026-09-28
 
 - **Klienten vår skal bli `apps/web` i digdir/kunnskapsassistenten, bak BFF-en
-  som står** ([ADR 0002](../arkitektur/0002-klienten-bak-bff.md),
+  som står** ([ADR 0005](../../../../decisions/0005-client-behind-the-bff.md),
   [#163](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/163)).
 - **Testmiljøet får sin egen headless-rag** med hele Kudos og databasen i
   Postgres ([deploy-backend.md](../deploy-backend.md)). Det delte testmiljøet
   tok ikke imot filteret og svarte ikke med agentene.
 - **Hvor kunnskapen om et korpus skal bo** er foreslått, men ikke valgt
-  ([ADR 0001](../arkitektur/0001-fasetter-og-korpuskunnskap.md), skrevet 24.09
+  ([ADR 0004](../../../../decisions/0004-corpus-knowledge-and-facets.md), skrevet 24.09
   og merget med #163).

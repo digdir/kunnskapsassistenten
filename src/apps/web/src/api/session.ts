@@ -13,7 +13,7 @@ export type Session = {
 /**
  * The reader's session, when there is one to show.
  *
- * Only the BFF signs anybody in (Entra, `docs/arkitektur/0002`), and it says
+ * Only the BFF signs anybody in (Entra, `src/decisions/0005`), and it says
  * who in `GET /api/me`. With `AUTH_MODE=off` — the local pod — it says
  * `authEnabled: false` and has no user, and then there is nothing to show:
  * a «Logg ut» with no session behind it would sign nobody out.
@@ -50,7 +50,7 @@ export async function fetchSession(signal?: AbortSignal): Promise<Session | unde
  * What «Logg ut» does in this browser before the BFF ends the session.
  *
  * It empties the answer store (`ka.sources.v1`), which keeps what came of the
- * reader's questions per browser and not per user (docs/arkitektur/0005).
+ * reader's questions per browser and not per user (src/decisions/0008).
  * Lars said yes to this on 5.10. Synchronous, and called from the link's
  * click, so it is done before the browser follows the link to
  * `/auth/logout`.

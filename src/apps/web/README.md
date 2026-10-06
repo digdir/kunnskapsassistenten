@@ -699,7 +699,7 @@ og den som vil ha det tekniske, er en utvikler som har fått adressen.
 
 Hash og ikke spørring, fordi en hash aldri når serveren, ikke bytter rute, og
 ikke følger med en lenke til en tråd noen limer inn et annet sted. Bakgrunnen
-står i `docs/arkitektur/0004-visningsnivaa.md`; koden ligger i
+står i `src/decisions/0007-display-level.md`; koden ligger i
 `src/views/chat/displayLevel.ts`, `ProcedurePanel.tsx` og `SettingsDialog.tsx`.
 
 ### Foten i navigasjonspanelet

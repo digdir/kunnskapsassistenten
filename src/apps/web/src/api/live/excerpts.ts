@@ -3,7 +3,7 @@ import type { SourceDocument } from '../../model';
 
 /**
  * The text of an answer's chunks, from our own server's `/api/excerpts`
- * (server/excerpts.ts, docs/arkitektur/0005).
+ * (server/excerpts.ts, src/decisions/0008).
  *
  * The MCP answer names its chunks and leaves their text out, so every excerpt
  * in live arrived with an empty `text` and nothing saying why — the sources

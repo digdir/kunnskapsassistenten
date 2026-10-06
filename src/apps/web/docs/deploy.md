@@ -753,7 +753,7 @@ oppsett ser ut som om det peker på pilotkorpuset og svarer fra demodataene.
 
 Backenden har ikke noe fasett-API, så serveren teller fasettene selv fra
 Typesense og svarer på `GET /api/facets?dataset=…` uten å sende den videre.
-Det er broen i `docs/arkitektur/0001-fasetter-og-korpuskunnskap.md`, og
+Det er broen i `src/decisions/0004-corpus-knowledge-and-facets.md`, og
 formatet er det samme som BFF-en bruker. Den dagen backenden kan telle, byttes
 kilden bak ruta og klienten endres ikke. Koden er `server/facets.ts`.
 
@@ -788,7 +788,7 @@ Dev-serveren svarer på den samme ruta med de samme variablene fra
 Svaret fra backenden sier hvilke biter det bygger på, men ikke hva som står i
 dem. Serveren slår derfor opp teksten selv i bitsamlingen i Typesense og
 svarer på `GET /api/excerpts?dataset=…&ids=…` uten å sende den videre. Det er
-broen i `docs/arkitektur/0005-utdragstekst-og-kilder-etter-innlasting.md`.
+broen i `src/decisions/0008-excerpt-text-and-sources-after-reload.md`.
 Koden er `server/excerpts.ts`.
 
 - **Samme** `TYPESENSE_URL` og `TYPESENSE_API_KEY` som fasettene, og
