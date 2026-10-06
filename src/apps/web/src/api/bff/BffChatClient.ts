@@ -12,6 +12,7 @@ import type { DatasetFilterFields } from '../filterFields';
 import { FILTER_REFUSED_MESSAGES, errorFromBackend, errorFromStatus } from '../backendErrors';
 import { adoptServerCorpus } from '../corpus';
 import { createSseDecoder } from '../live/sse';
+import { keepDraft, noteQuestionInFlight } from '../session';
 import type {
   BffAskRequest,
   BffCapabilities,
@@ -47,10 +48,11 @@ export type BffChatClientOptions = {
   /** Defaults to the deployment's configuration, as in live. */
   filterFields?: (datasetKey: string | undefined) => DatasetFilterFields | undefined;
   /**
-   * What a 401 does. Defaults to the BFF's own sign-in, which comes back to
-   * the page the reader was on. An option so a test can see it happen.
+   * What a 401 does, with the address to come back to. Defaults to the BFF's
+   * own sign-in, which comes back there. An option so a test can see it
+   * happen.
    */
-  onUnauthorized?: () => void;
+  onUnauthorized?: (returnTo: string) => void;
   /**
    * How long to wait between asking whether the BFF's startup probe has
    * finished. See `#capabilities` and `SETTLE_DELAYS_MS`.
@@ -61,17 +63,17 @@ export type BffChatClientOptions = {
 let redirecting = false;
 
 /**
- * To the BFF's sign-in, and back to where the reader was.
+ * To the BFF's sign-in, and back to `returnTo`: where the reader was, or where
+ * the draft kept for them belongs (session.ts, `keepDraft`).
  *
  * Once per page: several calls fail with 401 at once when a session runs
  * out, and one navigation is enough. Not from `/auth/` itself, which would
  * loop.
  */
-function toLogin(): void {
+function toLogin(returnTo: string): void {
   if (redirecting || window.location.pathname.startsWith('/auth/')) return;
   redirecting = true;
-  const next = encodeURIComponent(window.location.pathname + window.location.search);
-  window.location.assign(`/auth/login?next=${next}`);
+  window.location.assign(`/auth/login?next=${encodeURIComponent(returnTo)}`);
 }
 
 /**
@@ -173,7 +175,7 @@ export class BffChatClient implements ChatClient {
   readonly #basePath: string;
   readonly #corpusKey: () => string | undefined;
   readonly #filterFields: (datasetKey: string | undefined) => DatasetFilterFields | undefined;
-  readonly #onUnauthorized: () => void;
+  readonly #onUnauthorized: (returnTo: string) => void;
   readonly #settleDelaysMs: number[];
 
   constructor(options: BffChatClientOptions = {}) {
@@ -184,13 +186,16 @@ export class BffChatClient implements ChatClient {
     this.#settleDelaysMs = options.settleDelaysMs ?? SETTLE_DELAYS_MS;
   }
 
-  /** Every call goes through here, so a 401 anywhere leads to sign-in. */
+  /**
+   * Every call goes through here, so a 401 anywhere leads to sign-in, with
+   * what the reader had written kept for when they are back (session.ts).
+   */
   async #fetch(path: string, init?: RequestInit): Promise<Response> {
     const response = await fetch(`${this.#basePath}${path}`, {
       ...init,
       headers: { 'Content-Type': 'application/json', ...init?.headers },
     });
-    if (response.status === 401) this.#onUnauthorized();
+    if (response.status === 401) this.#onUnauthorized(keepDraft());
     return response;
   }
 
@@ -325,14 +330,26 @@ export class BffChatClient implements ChatClient {
     // when the answer is done: the address should not wait for fifteen
     // seconds of answer.
     const creating = conversationId ? undefined : awaitCreation();
+    let named = false;
     const made = (id: string) => {
+      named = true;
       openConversation = id;
       creating?.settle(id);
     };
+    // The field is empty by now, so a 401 before the answer has to keep the
+    // question itself. Any 401 while it is out, not only the one on `/ask`:
+    // the filter can ask for the capabilities and the facets first. A
+    // question that starts a thread belongs on the front page until the BFF
+    // has named its conversation: the address it is under until then is a
+    // stand-in that leads nowhere after the sign-in.
+    const arrived = noteQuestionInFlight(params.query, () =>
+      creating && !named ? '/' : undefined,
+    );
 
     try {
       yield* this.#stream(params, conversationId, corpusKey, askedOf, made);
     } finally {
+      arrived();
       if (creating) {
         // Nothing was made if the BFF never said so. Settling twice is a
         // no-op, so this only matters for a question that failed first.
@@ -517,6 +534,9 @@ async function errorFromResponse(response: Response): Promise<ChatError> {
   }
   if (body.code === 'filter-invalid-value') {
     return { code: 'filter-refused', message: FILTER_REFUSED_MESSAGES.invalidValue };
+  }
+  if (body.code === 'filter-unknown-field') {
+    return { code: 'filter-refused', message: FILTER_REFUSED_MESSAGES.unknownField };
   }
   if (typeof body.error !== 'string' || !body.error.trim()) return fromStatus;
   const fromText = errorFromBackend(body.error);

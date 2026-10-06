@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="nb">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gjenstår før sammenslåingen</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f8fb;
+        --surface: #ffffff;
+        --surface-2: #eef2f7;
+        --text: #1a2230;
+        --text-2: #4a5568;
+        --muted: #5f6a7a;
+        --line: #d9e0ea;
+        --line-strong: #b8c3d3;
+        --accent: #0062ba;
+        --ok: #0b6b3a;
+        --ok-bg: #e2f4ea;
+        --partly: #8a5300;
+        --partly-bg: #fdf0d8;
+        --todo: #8c1d18;
+        --todo-bg: #fbe4e2;
+        --none: #4a5568;
+        --none-bg: #eceff4;
+        --code-bg: #eef2f7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --bg: #0f141b;
+          --surface: #161d27;
+          --surface-2: #1c2531;
+          --text: #e6ebf2;
+          --text-2: #b7c1cf;
+          --muted: #8d99a9;
+          --line: #2a3442;
+          --line-strong: #3a4657;
+          --accent: #7fb6f2;
+          --ok: #7ad3a1;
+          --ok-bg: #143223;
+          --partly: #f0c372;
+          --partly-bg: #3a2b12;
+          --todo: #f2a29c;
+          --todo-bg: #3b1a18;
+          --none: #b7c1cf;
+          --none-bg: #232c38;
+          --code-bg: #1f2833;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          'Helvetica Neue',
+          Arial,
+          sans-serif;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding-inline: 20px;
+        padding-block: 40px 64px;
+        display: grid;
+        gap: 40px;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 2px;
+      }
+      code,
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.88em;
+      }
+      code {
+        background: var(--code-bg);
+        border-radius: 4px;
+        padding: 0.05em 0.35em;
+        overflow-wrap: anywhere;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        text-wrap: balance;
+        letter-spacing: -0.01em;
+      }
+      h1 {
+        font-size: clamp(1.6rem, 1.2rem + 1.8vw, 2.3rem);
+        line-height: 1.15;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      h3 {
+        font-size: 1rem;
+      }
+      p {
+        margin: 0;
+        max-width: 72ch;
+      }
+      header {
+        display: grid;
+        gap: 14px;
+      }
+      .eyebrow {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .lede {
+        font-size: 1.05rem;
+        color: var(--text-2);
+      }
+      .facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 24px;
+        font-size: 0.86rem;
+        color: var(--muted);
+      }
+      section {
+        display: grid;
+        gap: 14px;
+      }
+      .section-head {
+        display: grid;
+        gap: 6px;
+      }
+      .section-head p {
+        color: var(--text-2);
+      }
+      .summary {
+        display: grid;
+        gap: 10px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--accent);
+        border-radius: 8px;
+        padding: 18px 20px;
+      }
+      .summary ul {
+        margin: 0;
+        padding-left: 1.1em;
+        display: grid;
+        gap: 8px;
+        max-width: 82ch;
+      }
+      .table-wrap {
+        overflow-x: auto;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .table-wrap:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+      table.wide {
+        min-width: 1040px;
+      }
+      table.mid {
+        min-width: 820px;
+      }
+      thead th {
+        background: var(--surface-2);
+        color: var(--text-2);
+        font-weight: 600;
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line-strong);
+        white-space: nowrap;
+      }
+      tbody td {
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+      td.num {
+        font-variant-numeric: tabular-nums;
+        color: var(--muted);
+        font-weight: 600;
+        width: 2.5em;
+      }
+      td.feature strong {
+        display: block;
+      }
+      td.feature .why,
+      td .note {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      td.size {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        white-space: nowrap;
+        text-align: center;
+      }
+      .pill {
+        display: inline-block;
+        font-size: 0.74rem;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 2px 9px;
+        white-space: nowrap;
+      }
+      .pill.ok {
+        color: var(--ok);
+        background: var(--ok-bg);
+      }
+      .pill.partly {
+        color: var(--partly);
+        background: var(--partly-bg);
+      }
+      .pill.todo {
+        color: var(--todo);
+        background: var(--todo-bg);
+      }
+      .pill.none {
+        color: var(--none);
+        background: var(--none-bg);
+      }
+      .sides {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
+        align-items: start;
+      }
+      .side {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px 18px;
+        display: grid;
+        gap: 10px;
+      }
+      .side ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+      .side li {
+        display: grid;
+        gap: 3px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      .side li:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+      }
+      .side li .row {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .side li .row strong {
+        font-weight: 600;
+      }
+      .side li p {
+        color: var(--text-2);
+        font-size: 0.86rem;
+      }
+      details {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      details > summary {
+        cursor: pointer;
+        padding: 14px 16px;
+        font-weight: 600;
+      }
+      details > .inner {
+        padding: 0 16px 16px;
+        display: grid;
+        gap: 10px;
+      }
+      details .table-wrap {
+        border-radius: 6px;
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        display: grid;
+        gap: 4px;
+      }
+      @media (max-width: 640px) {
+        .page {
+          padding-inline: 16px;
+          padding-block: 28px 48px;
+          gap: 32px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header>
+        <div class="eyebrow">Rapport · 6. oktober 2026, oppdatert kl. 13:48</div>
+        <h1>Det som gjenstår før klienten erstatter src/apps/web</h1>
+        <p class="lede">
+          Hva klienten og BFF-en i
+          <a href="https://github.com/digdir/kunnskapsassistenten">digdir/kunnskapsassistenten</a>
+          har som klienten vår mangler, og som vi vil ha på plass før sammenslåingen. Etterpå står
+          det side om side hva hver av dem har som den andre ikke har.
+        </p>
+        <div class="facts">
+          <span>Eksisterende: <code>main</code> 8639267 (25.09)</span>
+          <span>Vår: <code>main</code> 6ce60a1</span>
+          <span
+            >Sammenslåingen:
+            <a href="https://github.com/digdir/kunnskapsassistenten/pull/129">utkast-PR #129</a>
+            (9172aeb)</span
+          >
+          <span>Lest i koden. Det som er målt, står med dato.</span>
+        </div>
+      </header>
+
+      <section>
+        <div class="summary">
+          <h2>Kort fortalt</h2>
+          <ul>
+            <li>
+              <strong>Gjort i dag:</strong> testene på at svarteksten ikke kan kjøre skript (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/254"
+                >#254</a
+              >,
+              <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/258"
+                >#258</a
+              >), kontrakttypene i klienten er like pakken (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/255"
+                >#255</a
+              >), utkastet tas vare på når økta går ut (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/259"
+                >#259</a
+              >), en <code>javascript:</code>-lenke blir tekst (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/256"
+                >#256</a
+              >), og et ukjent filterfelt gir en egen feilmelding (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/260"
+                >#260</a
+              >). Alt er ute i testmiljøet.
+            </li>
+            <li>
+              <strong>Klar, men venter på en avgjørelse:</strong> advarselen når svaret mangler
+              kilder (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
+                >#257</a
+              >). Svarkortet blir 92 px høyere på 1440 og 284 px høyere på en telefon (390), og
+              høyden på telefon skal vurderes først.
+            </li>
+            <li>
+              <strong>Flyttet til etter sammenslåingen:</strong> lenken til tilbakemelding under
+              hvert svar. Den skal tenkes nytt, fordi den gir mye støy under hvert svar.
+            </li>
+            <li>
+              <strong>Venter på en avgjørelse:</strong> hvor agentvalget skal stå (1), versjonen av
+              Node og TypeScript (6), og én kom-i-gang og én serie med arkitekturvalg (7).
+            </li>
+            <li>
+              <strong>Funnet underveis:</strong> en feil i BFF-en som gir et svar feil kilder etter
+              ny innlasting. Se «Funnet underveis» under.
+            </li>
+            <li>
+              <strong>Allerede løst i #129:</strong> stegene mens svaret lages, at bildet bygges mot
+              BFF-en, CI for klienten, og fem endringer i BFF-en, som svarteksten og kildene per
+              bit.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="gjenstaar">
+        <div class="section-head">
+          <h2>Gjenstår før sammenslåingen</h2>
+          <p>
+            Omfang: <span class="mono">L</span> lite (timer), <span class="mono">M</span> middels
+            (en til to dager). Stiene hos dem er relative til <code>src/apps/web/src/</code> og
+            <code>src/apps/server/src/</code>.
+          </p>
+        </div>
+        <div
+          class="table-wrap"
+          tabindex="0"
+          role="group"
+          aria-label="Tabell: Gjenstår før sammenslåingen"
+        >
+          <table class="wide">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Hva</th>
+                <th>Hos dem i dag</th>
+                <th>Hos oss nå</th>
+                <th>Omfang</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="num">1</td>
+                <td class="feature">
+                  <strong>Velge agent og modus</strong
+                  ><span class="why"
+                    >Slik velger man en annen agent enn standarden, og det brukes til
+                    sammenligning.</span
+                  >
+                </td>
+                <td>
+                  Nedtrekket «Agent:» fra <code>GET /api/models</code>, med modusene under
+                  «Avansert». Valget går som <code>model</code> i
+                  <code>POST /api/ask</code> (<code>App.tsx</code>). BFF-en godtar
+                  <code>model</code> når <code>/api/models</code> er kalt i samme prosess.
+                </td>
+                <td>Mangler. Ingen kall til <code>/api/models</code>.</td>
+                <td class="size">M</td>
+                <td>
+                  <span class="pill todo">Avgjørelse</span
+                  ><span class="note">Hvor valget skal stå, for eksempel i innstillingene.</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="num">2</td>
+                <td class="feature">
+                  <strong>Lenke til tilbakemelding under svaret</strong
+                  ><span class="why">Brukerne har lenken i dag.</span>
+                </td>
+                <td>
+                  «Fant du det du lette etter? Gi tilbakemelding her», til
+                  <code>/tilbakemelding</code> (<code>App.tsx</code>).
+                </td>
+                <td>Mangler. Skjemaet nevnes bare i endringsloggen.</td>
+                <td class="size">L</td>
+                <td>
+                  <span class="pill none">Etter</span
+                  ><span class="note">Flyttet til etter sammenslåingen, og skal tenkes nytt.</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="num">3</td>
+                <td class="feature">
+                  <strong>Advarsel når svaret mangler kilder</strong
+                  ><span class="why"
+                    >Uten den ser et svar uten kilder ut som et svar med kilder.</span
+                  >
+                </td>
+                <td>
+                  «Svaret har ingen kilder fra dokumentgrunnlaget. Kontroller det mot
+                  originaldokumentene før du bruker det.» Vises mens svaret kommer. BFF-en sender
+                  også <code>done.insufficient</code>.
+                </td>
+                <td>
+                  Advarselen er laget (<a
+                    href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
+                    >#257</a
+                  >): over svaret, med samme tekst som den eksisterende. Bak BFF-en står den bare
+                  mens samtalen pågår, fordi kildene ikke lagres per svar.
+                </td>
+                <td class="size">L</td>
+                <td>
+                  <span class="pill partly">Klar</span
+                  ><span class="note">Venter på en avgjørelse om høyden på telefon.</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="num">4</td>
+                <td class="feature">
+                  <strong>Tester på at svarteksten ikke kan kjøre skript</strong
+                  ><span class="why">Billig, og den eksisterende har vernet under test.</span>
+                </td>
+                <td>
+                  <code>markdown.test.ts</code>: fire tester på <code>marked</code> og DOMPurify
+                  (skript, <code>onerror</code>, <code>javascript:</code>-lenke og iframe).
+                </td>
+                <td>
+                  Gjort: testene dekker skript, <code>onerror</code>, iframe, og lenker med
+                  <code>javascript:</code>, <code>vbscript:</code> og <code>data:</code> (<a
+                    href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/254"
+                    >#254</a
+                  >,
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/258"
+                    >#258</a
+                  >).
+                </td>
+                <td class="size">L</td>
+                <td><span class="pill ok">Gjort</span></td>
+              </tr>
+              <tr>
+                <td class="num">5</td>
+                <td class="feature">
+                  <strong>Klienten bruker typene i <code>packages/contract</code></strong
+                  ><span class="why">Klienten og serveren skal sjekkes mot de samme typene.</span>
+                </td>
+                <td><code>packages/contract</code>, brukt av både klienten og serveren.</td>
+                <td>
+                  Kopien i <code>api/bff/contract.ts</code> er lik pakken (<a
+                    href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/255"
+                    >#255</a
+                  >). Byttet til pakken trenger at <code>ConversationDetail</code> i pakken får
+                  <code>sources</code>.
+                </td>
+                <td class="size">L</td>
+                <td>
+                  <span class="pill partly">Delvis</span
+                  ><span class="note">Gjort hos oss. Byttet trenger én linje i pakken.</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="num">6</td>
+                <td class="feature">
+                  <strong>Én versjon av Node og TypeScript i workspace-et</strong
+                  ><span class="why">Ellers bygger klienten og serveren med ulike verktøy.</span>
+                </td>
+                <td>
+                  <code>mise.toml</code> låser Node 22.23.2, <code>engines</code> er
+                  <code>&gt;=22.18</code>, og TypeScript 5 og Prettier står i rota.
+                </td>
+                <td>
+                  Delvis. Klienten krever Node 22.18 som resten, og CI-jobben for klienten kjører
+                  Node 22. Klienten har TypeScript 6.
+                </td>
+                <td class="size">M</td>
+                <td>
+                  <span class="pill todo">Avgjørelse</span
+                  ><span class="note">TypeScript 5 i rota, 6 i klienten.</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="num">7</td>
+                <td class="feature">
+                  <strong>Én kom-i-gang og én serie med arkitekturvalg</strong
+                  ><span class="why">Én oppskrift med workspace-kommandoene.</span>
+                </td>
+                <td>
+                  <code>src/decisions/0001–0003</code> på engelsk, og «Komme i gang» i
+                  <code>src/README.md</code> med <code>npm run doctor</code>.
+                </td>
+                <td><code>docs/arkitektur/0001–0005</code> på norsk, og egne kom-i-gang-sider.</td>
+                <td class="size">L</td>
+                <td><span class="pill todo">Avgjørelse</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="lede" style="font-size: 0.92rem">
+          Utkastet i skrivefeltet tas nå vare på når økta går ut (<a
+            href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/259"
+            >#259</a
+          >), og settes inn igjen etter innloggingen. Det gjelder også et spørsmål som ble sendt i
+          det økta gikk ut.
+        </p>
+
+        <div class="summary">
+          <h2 id="funnet">Funnet underveis</h2>
+          <ul>
+            <li>
+              <strong>Feil kilder etter ny innlasting bak BFF-en.</strong> I
+              <code>sourceStore.ts</code> hopper <code>remember</code> over et tomt sett med kilder.
+              Har det siste svaret ingen kilder, får det kildene til svaret før etter ny innlasting.
+              Målt lokalt mot BFF-en i #129, og koden er den samme på <code>main</code> 8639267. Det
+              må rettes i BFF-en.
+            </li>
+            <li>
+              <strong>Et ukjent filterfelt</strong> ga «svarte med feil (400)». Nå får leseren en
+              egen tekst (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/260"
+                >#260</a
+              >).
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="side-om-side">
+        <div class="section-head">
+          <h2>Side om side</h2>
+          <p>
+            Venstre: det den eksisterende har som vår ikke har. Høyre: det vår har som den
+            eksisterende ikke har. Merket med hva som skjer med det.
+          </p>
+        </div>
+        <div class="sides">
+          <div class="side">
+            <h3>Hos dem, ikke hos oss</h3>
+            <ul>
+              <li>
+                <div class="row">
+                  <strong>Valg av agent og modus</strong><span class="pill todo">Før</span>
+                </div>
+                <p>Fra <code>/api/models</code>, under «Avansert».</p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>Lenke til tilbakemelding</strong><span class="pill none">Etter</span>
+                </div>
+                <p>Under hvert svar. Den skal tenkes nytt etter sammenslåingen.</p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>Advarsel i svaret når kildene mangler</strong
+                  ><span class="pill partly">Klar</span>
+                </div>
+                <p>
+                  Laget i
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
+                    >#257</a
+                  >, og venter på en avgjørelse om høyden på telefon.
+                </p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>Tester på skript i svarteksten</strong><span class="pill ok">Gjort</span>
+                </div>
+                <p>Våre dekker også <code>vbscript:</code> og <code>data:</code>.</p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>Felles typer fra <code>packages/contract</code></strong
+                  ><span class="pill partly">Delvis</span>
+                </div>
+                <p>Kopien er lik pakken. Byttet trenger én linje i pakken.</p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>Én Node- og TypeScript-versjon</strong
+                  ><span class="pill partly">Delvis</span>
+                </div>
+                <p>Node er samkjørt, TypeScript ikke.</p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>Kom-i-gang med <code>npm run doctor</code></strong
+                  ><span class="pill todo">Før</span>
+                </div>
+                <p><code>doctor</code> følger med BFF-en, men oppskriften må samles.</p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>Stegene mens svaret lages</strong><span class="pill ok">Løst i #129</span>
+                </div>
+                <p>Vår viser agentens egne steg med tenkestegene fra BFF-en.</p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>Bildet bygges mot BFF-en</strong><span class="pill ok">Løst i #129</span>
+                </div>
+                <p><code>VITE_API_MODE=bff</code> i <code>src/Dockerfile</code>.</p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>CI for klienten i monorepoet</strong
+                  ><span class="pill ok">Løst i #129</span>
+                </div>
+                <p>
+                  Jobbene <code>web</code> og <code>image</code>, grønne, og CodeQL uten nye
+                  varsler.
+                </p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>«doc_num» på kortene, og søk på det</strong
+                  ><span class="pill none">Etter</span>
+                </div>
+                <p>Vår viser nummeret bare når to titler er like.</p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>«Steg N av M»</strong><span class="pill none">Etter</span>
+                </div>
+                <p>Tenkepanelet viser alt hvert steg.</p>
+              </li>
+              <li>
+                <div class="row">
+                  <strong>Drift i BFF-en</strong><span class="pill ok">Følger med</span>
+                </div>
+                <p>
+                  Helsesjekk, oppstartslogg, <code>doctor</code>, sikkerhetshoder og servertester.
+                  De ligger i BFF-en og kommer med i sammenslåingen.
+                </p>
+              </li>
+            </ul>
+          </div>
+          <div class="side">
+            <h3>Hos oss, ikke hos dem</h3>
+            <ul>
+              <li>
+                <div class="row"><strong>Kjører uten backend</strong></div>
+                <p>En mock med et utdrag av Kudos, til demo, utvikling og e2e.</p>
+              </li>
+              <li>
+                <div class="row"><strong>Ruter</strong></div>
+                <p>
+                  <code>/threads/&lt;id&gt;</code> åpner tråden, og det finnes infosider, en
+                  404-side og en egen sidetittel per rute.
+                </p>
+              </li>
+              <li>
+                <div class="row"><strong>Tenkepanel</strong></div>
+                <p>Agentens steg, søk og varighet, med to visningsnivåer.</p>
+              </li>
+              <li>
+                <div class="row"><strong>Kilder</strong></div>
+                <p>
+                  Klikkbare <code>[n]</code> til utdraget, kilder per svar, «Kilder brukt i svaret»
+                  under svaret, og søk i svaret og i kildene.
+                </p>
+              </li>
+              <li>
+                <div class="row"><strong>Samtalen</strong></div>
+                <p>
+                  Forslag til spørsmål, oppfølgingsforslag, «Generer på nytt» og kort for avklaring.
+                </p>
+              </li>
+              <li>
+                <div class="row"><strong>Filtre</strong></div>
+                <p>Antall som følger valgene, lås med beskjed, og avvisning med egne ord.</p>
+              </li>
+              <li>
+                <div class="row"><strong>Tråder</strong></div>
+                <p>Bekreftelse før sletting, tilbakerulling ved feil, og gruppert etter tid.</p>
+              </li>
+              <li>
+                <div class="row"><strong>Feilmeldinger</strong></div>
+                <p>Egne norske tekster for hver feil, i stedet for teksten fra serveren.</p>
+              </li>
+              <li>
+                <div class="row"><strong>Oppsett</strong></div>
+                <p>
+                  Paneler som endrer bredde, skuffer på smal skjerm, hurtigtast til skrivefeltet, og
+                  lys og mørk modus.
+                </p>
+              </li>
+              <li>
+                <div class="row"><strong>Universell utforming</strong></div>
+                <p>Designsystemet i React, og axe i e2e-testene.</p>
+              </li>
+              <li>
+                <div class="row"><strong>Testene</strong></div>
+                <p>
+                  1 551 enhetstester i 144 filer (kjørt 5. oktober) og 144 e2e-tester i 17 filer
+                  (talt i koden), mot 55 tester i 4 filer hos dem.
+                </p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="detaljer">
+        <div class="section-head">
+          <h2>Detaljer</h2>
+          <p>Det som er løst i #129, og det som ikke trengs før sammenslåingen.</p>
+        </div>
+
+        <details>
+          <summary>BFF-endringene i #129 (19 commits)</summary>
+          <div class="inner">
+            <p>
+              Alle er bare i <code>apps/server</code>, <code>packages/contract</code> og
+              <code>deploy</code>.
+            </p>
+            <div
+              class="table-wrap"
+              tabindex="0"
+              role="group"
+              aria-label="Tabell: BFF-endringene i #129"
+            >
+              <table class="mid">
+                <thead>
+                  <tr>
+                    <th>Endring</th>
+                    <th>Commits</th>
+                    <th>Hva klienten får</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="feature"><strong>Svarteksten, ikke planen</strong></td>
+                    <td class="size">1</td>
+                    <td>
+                      Svarteksten i stedet for agentens plan. Uten endringen kom planen, 306–382
+                      tegn, der svaret skulle stå (målt 29.09). Det gjelder begge klientene.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Filterkjeden</strong></td>
+                    <td class="size">7</td>
+                    <td>
+                      Felt og datasettnavn fra oppsett, alle fasettverdiene, år med
+                      <code>value-type</code>, og 400 for et ukjent felt eller for mange verdier.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Proben og infrastrukturen</strong></td>
+                    <td class="size">7</td>
+                    <td>
+                      Hurtigbuffer på <code>/assets/</code>, 404 for ukjente
+                      <code>/api/</code>-stier, en probe som svarer innenfor taket, og
+                      <code>KA_CAPABILITIES</code> i malen.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Kilder og feil</strong></td>
+                    <td class="size">3</td>
+                    <td>
+                      Kilder per bit, så hver <code>[n]</code> har sitt utdrag. Feilkoden følger
+                      med. Dokumentlenker for begge formene av <code>doc_num</code>.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Tenkestegene</strong></td>
+                    <td class="size">1</td>
+                    <td>
+                      Hendelsene <code>thinking</code> og <code>tool-call</code>, med agentens egne
+                      ord, søkene og tiden hvert kall tok.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary>Etter sammenslåingen</summary>
+          <div class="inner">
+            <div
+              class="table-wrap"
+              tabindex="0"
+              role="group"
+              aria-label="Tabell: Etter sammenslåingen"
+            >
+              <table class="mid">
+                <thead>
+                  <tr>
+                    <th>Hva</th>
+                    <th>Hos dem i dag</th>
+                    <th>Hos oss nå</th>
+                    <th>Omfang</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="feature"><strong>Teller i skrivefeltet</strong></td>
+                    <td>Ingen. BFF-en avviser over 4 000 tegn.</td>
+                    <td>Mangler. Avvisningen vises med egne ord.</td>
+                    <td class="size">L</td>
+                  </tr>
+                  <tr>
+                    <td class="feature">
+                      <strong>Dokumentnummer på kortene, og søk på det</strong>
+                    </td>
+                    <td>«doc_num: N» på hvert kort.</td>
+                    <td>Delvis: bare når to titler i samme svar er like.</td>
+                    <td class="size">L</td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>«Steg N av M»</strong></td>
+                    <td>Fra <code>iteration</code> og <code>maxIterations</code>.</td>
+                    <td>Mangler. Tenkepanelet viser hvert steg.</td>
+                    <td class="size">L</td>
+                  </tr>
+                  <tr>
+                    <td class="feature">
+                      <strong><code>insufficient</code> fra backenden</strong>
+                    </td>
+                    <td>Sendes, men leses ikke.</td>
+                    <td>Leses ikke.</td>
+                    <td class="size">L</td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Kilder og steg når en tråd åpnes igjen</strong></td>
+                    <td>Bare siste svar, fra BFF-ens minne.</td>
+                    <td>
+                      Det samme bak BFF-en. Venter på at headless-rag lagrer bitene (<a
+                        href="https://github.com/digdir/digdir-headless-rag/issues/21"
+                        >#21</a
+                      >).
+                    </td>
+                    <td class="size">M</td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Svar som avbrytes av ny innlasting</strong></td>
+                    <td>Ikke målt.</td>
+                    <td>Ikke målt bak BFF-en.</td>
+                    <td class="size">L–M</td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Velge datasett</strong></td>
+                    <td>Ett datasett, satt i miljøet.</td>
+                    <td>
+                      Velger mot backenden direkte. Bak BFF-en: navnet fra
+                      <code>/api/capabilities</code>.
+                    </td>
+                    <td class="size">S</td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Feilrapportering</strong></td>
+                    <td><code>console.error</code> i BFF-en.</td>
+                    <td>Feilside, men ingenting sendes.</td>
+                    <td class="size">M</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary>Trengs ikke i klienten</summary>
+          <div class="inner">
+            <div
+              class="table-wrap"
+              tabindex="0"
+              role="group"
+              aria-label="Tabell: Trengs ikke i klienten"
+            >
+              <table class="mid">
+                <thead>
+                  <tr>
+                    <th>Hva</th>
+                    <th>Hos dem i dag</th>
+                    <th>Hvorfor ikke</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="feature"><strong>«Vis andres tråder»</strong></td>
+                    <td>
+                      En lenke med forklaring. <code>othersThreads</code> er alltid
+                      <code>false</code>.
+                    </td>
+                    <td>API-et kan ikke liste andres tråder ennå.</td>
+                  </tr>
+                  <tr>
+                    <td class="feature">
+                      <strong><code>threadTitles</code></strong>
+                    </td>
+                    <td>Ingen av klientene leser den.</td>
+                    <td>Backenden lager ikke titler i dag.</td>
+                  </tr>
+                  <tr>
+                    <td class="feature">
+                      <strong><code>npm run doctor</code></strong>
+                    </td>
+                    <td>Sjekker nøkkelen, agenten, samtale-API-et og Typesense.</td>
+                    <td>Ligger i BFF-en og følger med.</td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Oppstartslogg</strong></td>
+                    <td>Adresse, backend, verktøy, datasett, innlogging og proben.</td>
+                    <td>Ligger i BFF-en og følger med.</td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Helsesjekk</strong></td>
+                    <td><code>GET /api/health</code> og <code>HEALTHCHECK</code> i bildet.</td>
+                    <td>Følger med. Utrullingen skal sjekke <code>/api/health</code>.</td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Servertestene</strong></td>
+                    <td>63 tester i 8 filer, og et opptak av strømmen.</td>
+                    <td>Hører til BFF-en og følger med.</td>
+                  </tr>
+                  <tr>
+                    <td class="feature"><strong>Sikkerhetshoder, CSP, CSRF og tak</strong></td>
+                    <td>CSP, HSTS, CSRF, 64 kB kropp og 4 000 tegn per spørsmål.</td>
+                    <td>
+                      Ligger i BFF-en. Klienten holder seg innenfor (0 CSP-brudd, målt 29.09).
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature">
+                      <strong><code>.editorconfig</code></strong>
+                    </td>
+                    <td>For hele <code>src/</code>.</td>
+                    <td>Følger med repoet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <footer>
+        <span
+          >Laget 6. oktober 2026 fra koden på <code>main</code> 8639267 i
+          digdir/kunnskapsassistenten, <code>main</code> 6ce60a1 her, og utkast-PR #129 (9172aeb).
+          «Målt» betyr kjørt mot en lokal backend eller testmiljøet. Alt annet er lest i
+          koden.</span
+        >
+        <span
+          >Beslutningene bak står i <a href="beslutningslogg.md">beslutningsloggen</a> og i
+          <a href="../arkitektur/README.md">arkitekturvalgene</a>.</span
+        >
+      </footer>
+    </main>
+  </body>
+</html>

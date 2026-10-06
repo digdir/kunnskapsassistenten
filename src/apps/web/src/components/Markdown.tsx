@@ -346,7 +346,11 @@ export function Markdown({
       ul: ({ children: content }) => <List.Unordered>{content}</List.Unordered>,
       ol: ({ children: content }) => <List.Ordered>{content}</List.Ordered>,
       li: ({ children: content }) => <List.Item>{decorate(content)}</List.Item>,
-      a: ({ children: content, href }) => <Link href={href}>{content}</Link>,
+      // An empty `href` is an address react-markdown refused, such as
+      // `javascript:`, or none at all. Drawn as a link it would point at the
+      // page the reader is on, so only its text stays.
+      a: ({ children: content, href }) =>
+        href ? <Link href={href}>{content}</Link> : <>{content}</>,
       // A wide table gets its own scroll box, and a scrollable box must be
       // reachable by keyboard and carry a name. Pattern from
       // design/designsystemet/behov-til-komponent.md, question 14. A group

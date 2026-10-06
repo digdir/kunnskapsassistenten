@@ -12,6 +12,7 @@ import askTooManyValues from './fixtures/ask-too-many-values.json';
 import capabilitiesD16 from './fixtures/capabilities-d16.json';
 import facetsD16 from './fixtures/facets-d16.json';
 import { activeCorpusKey, corpusOption } from '../corpus';
+import { provideDraft, resetDraftSources } from '../session';
 
 /**
  * Fixturene er tatt opp fra Nikolais BFF (`8639267`, med rettelsen for plan og
@@ -284,6 +285,110 @@ describe('BffChatClient.ask, strømmen', () => {
       { type: 'error', error: { code: 'unauthorized' }, corpusKey: 'kudos-full' },
     ]);
     expect(onUnauthorized).toHaveBeenCalledOnce();
+  });
+});
+
+describe('BffChatClient, utkastet når økta går ut', () => {
+  const kept = () => JSON.parse(sessionStorage.getItem('ka.draft.v1') ?? 'null') as unknown;
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    resetDraftSources();
+    // Where the shell files a new thread until the BFF names it.
+    window.history.replaceState(null, '', '/threads/stand-in');
+  });
+
+  afterEach(() => {
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('tar vare på spørsmålet når /ask svarer 401, for feltet ble tømt da det ble sendt', async () => {
+    window.history.replaceState(null, '', '/threads/conv-1');
+    fakeBff({ 'POST /api/ask': () => json({ error: 'Ikke innlogget.' }, 401) });
+    provideDraft(() => '');
+    // Read when the browser is sent away, not after: that is when it has to be there.
+    let atRedirect: unknown;
+    const onUnauthorized = vi.fn(() => {
+      atRedirect = kept();
+    });
+
+    await drain(
+      client({ onUnauthorized }).ask({ query: 'Hva skriver DFØ?', conversationId: 'conv-1' }),
+    );
+
+    expect(onUnauthorized).toHaveBeenCalledExactlyOnceWith('/threads/conv-1');
+    expect(atRedirect).toEqual({ text: 'Hva skriver DFØ?', path: '/threads/conv-1' });
+  });
+
+  it('sender et spørsmål som skulle starte en tråd, tilbake til forsiden med spørsmålet', async () => {
+    // The stand-in address leads to «Fant ikke tråden» after the sign-in,
+    // since the BFF never made the conversation (measured 2026-10-06).
+    fakeBff({ 'POST /api/ask': () => json({ error: 'Ikke innlogget.' }, 401) });
+    const onUnauthorized = vi.fn();
+
+    await drain(client({ onUnauthorized }).ask({ query: 'Hva skriver DFØ?' }));
+
+    expect(onUnauthorized).toHaveBeenCalledExactlyOnceWith('/');
+    expect(kept()).toEqual({ text: 'Hva skriver DFØ?', path: '/' });
+  });
+
+  it('sender leseren tilbake til den nye tråden når BFF-en har navngitt den før 401-en', async () => {
+    // The answer holds after the `conversation` event, so the question is
+    // still on its way when the other call gets its 401.
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    const frames = [
+      sse({ type: 'conversation', id: 'conv-new', topic: 'Hva skriver DFØ?' }),
+      sse({ type: 'done', conversationId: 'conv-new', insufficient: false }),
+    ];
+    const held = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        if (frames.length === 1) await released;
+        const frame = frames.shift();
+        if (frame === undefined) return controller.close();
+        controller.enqueue(new TextEncoder().encode(frame));
+      },
+    });
+    fakeBff({
+      'POST /api/ask': () =>
+        new Response(held, { headers: { 'Content-Type': 'text/event-stream' } }),
+      'GET /api/conversations': () => json({ error: 'Ikke innlogget.' }, 401),
+    });
+    const onUnauthorized = vi.fn();
+    const bff = client({ onUnauthorized });
+
+    // In the shell's order: wait for the name, then ask.
+    const created = bff.createThread(threadFromQuestion('Hva skriver DFØ?'));
+    const asked = drain(bff.ask({ query: 'Hva skriver DFØ?' }));
+    await expect(created).resolves.toMatchObject({ id: 'conv-new' });
+    // The shell moves the thread to its real address once it is named.
+    window.history.replaceState(null, '', '/threads/conv-new');
+    await bff.listThreads();
+    release();
+    await asked;
+
+    expect(onUnauthorized).toHaveBeenCalledExactlyOnceWith('/threads/conv-new');
+    expect(kept()).toEqual({ text: 'Hva skriver DFØ?', path: '/threads/conv-new' });
+  });
+
+  it('tar vare på teksten i feltet når et annet kall svarer 401', async () => {
+    fakeBff({ 'GET /api/conversations': () => json({ error: 'Ikke innlogget.' }, 401) });
+    provideDraft(() => 'Et spørsmål under arbeid');
+    const onUnauthorized = vi.fn();
+
+    await client({ onUnauthorized }).listThreads();
+
+    expect(onUnauthorized).toHaveBeenCalledExactlyOnceWith('/threads/stand-in');
+    expect(kept()).toEqual({ text: 'Et spørsmål under arbeid', path: '/threads/stand-in' });
+  });
+
+  it('lagrer ingenting når feltet er tomt og ingenting er på vei', async () => {
+    fakeBff({ 'GET /api/conversations': () => json({ error: 'Ikke innlogget.' }, 401) });
+    provideDraft(() => '');
+
+    await client({ onUnauthorized: vi.fn() }).listThreads();
+
+    expect(sessionStorage.getItem('ka.draft.v1')).toBeNull();
   });
 });
 
@@ -589,6 +694,30 @@ describe('BffChatClient, felt og korpus fra BFF-en (D16)', () => {
         code: 'filter-refused',
         message:
           'Et av valgene i filteret har tegn eller en lengde søket ikke tar imot. Fjern det valget.',
+      },
+    });
+  });
+
+  it('sier med egne ord at filteret har et felt som ikke finnes, når BFF-en nekter feltet', async () => {
+    // The BFF's own sentence, from `FilterUnknownField` in apps/server/src/facets.ts.
+    fromBff({
+      'POST /api/ask': () =>
+        json(
+          {
+            error:
+              'Filteret har feltet «documentType», som ikke finnes. Feltene er «type», som i field i /api/facets.',
+            code: 'filter-unknown-field',
+            field: 'documentType',
+          },
+          400,
+        ),
+    });
+    const events = await drain(noBuildConfig().ask({ query: 'x', filters: documentType(['a']) }));
+    expect(events.at(-1)).toMatchObject({
+      type: 'error',
+      error: {
+        code: 'filter-refused',
+        message: 'Filteret bruker et felt som ikke finnes i innholdet det søkes i.',
       },
     });
   });

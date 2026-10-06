@@ -2,11 +2,8 @@
 # API-nøkkelen. Samme mønster som Nikolais ka-app, og av samme grunn — samme
 # origin er det som gjør at nøkkelen aldri når nettleseren.
 
-# Node 24 og ikke 22, selv om `engines` tillater 22.18: 24 er det CI bygger og
-# tester på, og et bilde på en annen versjon enn den testede er en forskjell
-# ingen har målt. Serveren kjører TypeScript direkte med Nodes egen
-# typestripping, som finnes fra 22.18 — så 22 ville virket, det er ikke
-# grunnen til å bli på 24.
+# Node 24, som `engines` krever og CI bygger og tester på. Serveren kjører
+# TypeScript direkte med Nodes egen typestripping.
 FROM node:24-alpine AS build
 WORKDIR /app
 

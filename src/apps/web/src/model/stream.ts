@@ -30,8 +30,9 @@ import type { SourceDocument } from './source';
  * `thread-not-found` is a follow-up in a thread the BFF no longer has, most
  * likely deleted elsewhere; asking again there gets the same answer.
  * `filter-refused` is the BFF turning the reader's filter away — more than
- * 100 values in one field, or a value the backend does not take — and it
- * too comes back the same until the filter is changed.
+ * 100 values in one field, a value the backend does not take, or a field the
+ * corpus does not have — and it too comes back the same until the filter is
+ * changed.
  */
 const CHAT_ERROR_CODES = [
   'aborted',

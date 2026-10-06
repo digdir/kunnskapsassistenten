@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Thread } from '../model';
 import { mockThreadDetail, mockThreadList, resetMockThreads } from './mock/sessionThreads';
+import { provideDraft, resetDraftSources } from './session';
 import {
   bffThreadActions,
   createThreadActions,
@@ -76,6 +77,30 @@ describe('the BFF’s rename and delete', () => {
 
     await expect(bffThreadActions().remove(thread)).rejects.toThrow('401');
     expect(assign).toHaveBeenCalledWith('/auth/login?next=%2Fthreads%2Fconv-1');
+  });
+
+  it('keeps what is in the compose field before it goes to the sign-in', async () => {
+    sessionStorage.clear();
+    resetDraftSources();
+    let atRedirect: string | null = null;
+    vi.stubGlobal('location', {
+      ...window.location,
+      pathname: '/threads/conv-1',
+      search: '',
+      assign: () => {
+        atRedirect = sessionStorage.getItem('ka.draft.v1');
+      },
+    });
+    const gone = provideDraft(() => 'Et spørsmål under arbeid');
+    fetchMock.mockResolvedValue(new Response('{}', { status: 401 }));
+
+    await expect(bffThreadActions().rename(thread, 'Nkom 2024')).rejects.toThrow('401');
+    gone();
+
+    expect(JSON.parse(atRedirect ?? 'null')).toEqual({
+      text: 'Et spørsmål under arbeid',
+      path: '/threads/conv-1',
+    });
   });
 });
 

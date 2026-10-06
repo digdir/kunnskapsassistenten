@@ -1,5 +1,6 @@
 import { Button, Chip, Paragraph, Textfield } from '@digdir/designsystemet-react';
 import {
+  useEffect,
   useId,
   useRef,
   useState,
@@ -10,6 +11,7 @@ import {
   type RefObject,
 } from 'react';
 import { UPLOAD_ACCEPT } from '../../model';
+import { provideDraft, takeDraft } from '../../api/session';
 import { COMPOSER_ID } from '../../layout/ids';
 import { PaperclipIcon, PaperplaneIcon, StopIcon } from '@navikt/aksel-icons';
 import {
@@ -123,6 +125,31 @@ export function Composer({
 }: ComposerProps) {
   const busy = status === 'pending' || status === 'streaming';
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /*
+   * What the reader had written when the session ran out (api/session.ts).
+   *
+   * The field says how its text can be read, so a 401 can keep it before the
+   * browser leaves for sign-in. The latest value is in a ref because the 401
+   * reads it outside any render.
+   *
+   * When the field arrives, a draft kept for this page is put back, once:
+   * `takeDraft` removes it as it reads it. Only into an empty field, and it
+   * is not sent: the reader came back to sign in, not to ask, and decides
+   * that themselves.
+   */
+  const latestValue = useRef(value);
+  useEffect(() => {
+    latestValue.current = value;
+  }, [value]);
+  useEffect(() => provideDraft(() => latestValue.current), []);
+  useEffect(() => {
+    if (latestValue.current.trim() !== '') return;
+    const kept = takeDraft();
+    if (kept !== undefined) onChange(kept);
+    // `onChange` is the chat view's state setter and does not change. Were
+    // it to, running again would find the draft already taken.
+  }, [onChange]);
   // Nesting counter, not a boolean: dragging over a child fires `dragleave`
   // on the parent, so a boolean flickers the hint off every time the pointer
   // crosses the field or a chip.

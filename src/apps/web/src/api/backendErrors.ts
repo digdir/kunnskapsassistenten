@@ -105,14 +105,20 @@ const KNOWN_TEXTS: { pattern: RegExp; error: (match: RegExpMatchArray) => ChatEr
 
 /**
  * What the reader is told when the service turns their filter away, behind
- * the BFF (`filter-too-many-values`, `filter-invalid-value`) and behind the
- * backend itself (`invalid_overrides`). One wording for both, so a reader
- * reads the same thing whichever of the two said no.
+ * the BFF (`filter-too-many-values`, `filter-invalid-value`,
+ * `filter-unknown-field`) and behind the backend itself
+ * (`invalid_overrides`). One wording for both, so a reader reads the same
+ * thing whichever of the two said no.
+ *
+ * `unknownField` is a field name the corpus does not have. The reader did not
+ * choose the name, the build or the BFF did, but the filter is what they can
+ * change, and the advice under it says so.
  */
 export const FILTER_REFUSED_MESSAGES = {
   tooManyValues: 'Filteret har mer enn 100 verdier valgt i ett felt. Velg høyst 100, eller alle.',
   invalidValue:
     'Et av valgene i filteret har tegn eller en lengde søket ikke tar imot. Fjern det valget.',
+  unknownField: 'Filteret bruker et felt som ikke finnes i innholdet det søkes i.',
 } as const;
 
 /**

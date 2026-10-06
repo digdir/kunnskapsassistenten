@@ -2,15 +2,19 @@
  * The wire format between the browser and Nikolai's BFF, as that server
  * writes it.
  *
- * Copied from `packages/contract/src/index.ts` in digdir/kunnskapsassistenten
- * (`8639267`), and only the parts this client reads. A copy and not a
- * dependency, because the package is not published: the day this client
- * moves into that repo as `apps/web`, the import replaces this file
- * (docs/arkitektur/0002-klienten-bak-bff.md).
+ * Copied from `src/packages/contract/src/index.ts` in digdir/kunnskapsassistenten,
+ * branch `feat/ny-klient` (`9172aeb`), and only the parts this client reads.
+ * A copy and not a dependency, because the package is not published: the day
+ * this client moves into that repo as `apps/web`, the import replaces this
+ * file (docs/arkitektur/0002-klienten-bak-bff.md).
  *
- * The response shapes around the types (`{ conversations }`, `{ facets }`,
- * `{ capabilities, settled }`) are not in the package; they are read off
- * `apps/server/src/server.ts` and checked against a running BFF on
+ * The shapes are the package's, under names with `Bff` in front, so that
+ * import is a list of `Source as BffSource` and nothing else changes. One
+ * field is here and not there: `sources` on `BffConversationDetail`, which
+ * the BFF on that branch sends and the package does not declare yet.
+ *
+ * The `{ conversations }` around the list is not in the package; it is read
+ * off `apps/server/src/server.ts` and checked against a running BFF on
  * 2026-09-28 — see the fixtures beside this file.
  */
 
@@ -48,18 +52,18 @@ export type BffTurnEvent =
       queries?: string[];
     }
   /**
-   * Agentens egne ord om hva den holder på med, ett per `agent/thinking`.
+   * The agent's own words about what it is doing, one per `agent/thinking`.
    *
-   * `stage` sier hvilken fase agenten er i og ingenting om hva den gjorde.
-   * Det var alt BFF-en sendte, så panelet fikk fire faste setninger, mens
-   * live — som leser de samme rammene rett fra backenden — viste agentens
-   * resonnement, hva hvert verktøykall fant og hvor lang tid det tok.
+   * `stage` says which phase the agent is in and nothing about what it did.
+   * That was all the BFF sent, so the panel drew four fixed sentences, while
+   * live — reading the same frames straight from the backend — showed the
+   * agent's reasoning, what each tool call found and how long it took.
    */
   | { type: 'thinking'; reasoning: string }
   /**
-   * Ett verktøykall, slik `agent/turn-completed` meldte det. Ett per kall og
-   * ikke per ramme: en ramme bærer flere, og tre `read_chunks` på rad er
-   * vanlig.
+   * One tool call, as `agent/turn-completed` reported it. One per call and
+   * not per frame: a frame carries several, and three `read_chunks` in a row
+   * is ordinary.
    */
   | {
       type: 'tool-call';
@@ -103,6 +107,9 @@ export interface BffConversationDetail {
   /**
    * The LAST answer's sources, kept in the BFF's memory. Empty after a
    * restart, and never there for the earlier answers.
+   *
+   * Not in the package's `ConversationDetail`, but the BFF on `feat/ny-klient`
+   * sends it (`sourceStore.recall` in `apps/server/src/server.ts`).
    */
   sources?: BffSource[];
   /** The filter the thread was started with. The BFF holds it for the thread. */
@@ -113,12 +120,16 @@ export interface BffConversationDetail {
  * One entry of `GET /api/facets`.
  *
  * `id` and `valueType` come from the BFF's `KA_FILTER_FIELDS` (D16, the pod's
- * `bff/filterkjede`). A BFF without them is the one on `8639267`, and then the
- * field names come from this build instead (docs/arkitektur/0003).
+ * `bff/filterkjede`). That BFF sends only the fields it has an id for, so the
+ * package has `id` as required, and so does this copy.
+ *
+ * The BFF on `8639267` predates it and sends no `id`. `fieldsFromFacets`
+ * still checks for one, and without it the field names come from this build
+ * (docs/arkitektur/0003).
  */
 export interface BffFacet {
   /** Which of the three dimensions. */
-  id?: FilterDimension;
+  id: FilterDimension;
   field: string;
   valueType?: 'integer' | 'string';
   /** Norwegian noun in lower case: «dokumenttyper», «år». */
@@ -141,13 +152,31 @@ export interface BffCapabilities {
   dataset?: BffDataset;
 }
 
-/**
- * `400` from `POST /api/ask` for a filter the backend would refuse: more
- * values in one field than it takes, or a value it does not accept.
- */
-export interface BffFilterRefused {
+/** `400` from `POST /api/ask` when a value is one the backend refuses. */
+export interface BffFilterInvalidValue {
   error: string;
-  code: 'filter-too-many-values' | 'filter-invalid-value';
+  code: 'filter-invalid-value';
   field: string;
-  max?: number;
 }
+
+/**
+ * `400` from `POST /api/ask` when the filter has a key that is not one of the
+ * corpus's field names (`field` in `/api/facets`), such as a dimension id.
+ */
+export interface BffFilterUnknownField {
+  error: string;
+  code: 'filter-unknown-field';
+  field: string;
+}
+
+/** `400` from `POST /api/ask` when one field has more values than the backend takes. */
+export interface BffFilterTooManyValues {
+  error: string;
+  code: 'filter-too-many-values';
+  field: string;
+  max: number;
+}
+
+/** A filter the BFF refused, told apart by `code`. */
+export type BffFilterRefused =
+  BffFilterInvalidValue | BffFilterUnknownField | BffFilterTooManyValues;
