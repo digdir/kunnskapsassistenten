@@ -19,10 +19,10 @@
     "format:check": "prettier --check ."
   },
   "engines": {
-    "node": ">=22.18"
+    "node": ">=24"
   },
   "devDependencies": {
     "prettier": "^3.9.6",
-    "typescript": "^5.7.2"
+    "typescript": "~6.0.2"
   }
 }

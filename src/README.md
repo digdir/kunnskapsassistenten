@@ -55,7 +55,7 @@ godtas uten verifisering. Derfor må noe på serversiden _være_ identiteten. Se
 ## Komme i gang
 
 ```sh
-mise install && mise trust                       # node 22.18+, kjører TypeScript direkte
+mise install && mise trust                       # node 24, kjører TypeScript direkte
 npm install
 cp apps/server/.env.example apps/server/.env     # sett DIGDIR_API_BASE og DIGDIR_API_KEY
 npm run doctor                                   # sjekker backenden før du starter

@@ -1,5 +1,5 @@
-# Node 22.18+ runs the server's TypeScript directly, so only the SPA is built.
-FROM node:22.23.2-alpine AS build
+# Node 24 runs the server's TypeScript directly, so only the SPA is built.
+FROM node:24.21.0-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/contract/package.json packages/contract/
@@ -10,7 +10,7 @@ COPY . .
 # The client reads VITE_API_MODE when it is built, and defaults to its mock.
 RUN VITE_API_MODE=bff npm run build
 
-FROM node:22.23.2-alpine AS runtime
+FROM node:24.21.0-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY package.json package-lock.json ./
