@@ -43,6 +43,8 @@ import { KudosDocuments } from './DocumentsList';
 import { OwnDocuments } from './OwnDocuments';
 import { CorpusLine } from './CorpusLine';
 import { FacetField, type FacetFieldHandle } from './FacetField';
+import { YearRangeField } from './YearRangeField';
+import { useFlag } from '../../flags';
 import { LockedFilter } from './LockedFilter';
 import './filters.css';
 
@@ -274,6 +276,7 @@ export function FiltersView({
   const unavailableRef = useRef<HTMLDivElement>(null);
   const retryRef = useRef<HTMLButtonElement>(null);
   const firstFieldRef = useRef<FacetFieldHandle>(null);
+  const yearRanges = useFlag('year-ranges');
   /** Set by ActiveFilter when it went away holding focus; read below. */
   const activeFilterLostFocus = useRef(false);
   const onActiveFilterLostFocus = useCallback(() => {
@@ -618,15 +621,19 @@ export function FiltersView({
       </div>
 
       {!locked &&
-        facets?.map((facet, index) => (
-          <FacetField
-            key={facet.dimension}
-            ref={index === 0 ? firstFieldRef : undefined}
-            facet={facet}
-            selected={chosen[facet.dimension]}
-            onChange={(values) => change({ ...chosen, [facet.dimension]: values })}
-          />
-        ))}
+        facets?.map((facet, index) => {
+          /* Behind `year-ranges` (#115): the year field takes periods. */
+          const Field = facet.dimension === 'year' && yearRanges ? YearRangeField : FacetField;
+          return (
+            <Field
+              key={facet.dimension}
+              ref={index === 0 ? firstFieldRef : undefined}
+              facet={facet}
+              selected={chosen[facet.dimension]}
+              onChange={(values) => change({ ...chosen, [facet.dimension]: values })}
+            />
+          );
+        })}
 
       {/*
         The line, and everything under it is about documents: which corpus,

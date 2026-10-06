@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useFlag } from '../flags';
 import {
   emptyFilterSelection,
   type AnswerSources,
@@ -25,6 +26,7 @@ import {
   withActiveView,
   withCollapsed,
   withAllSidebarsCollapsed,
+  withFiltersBesideSources,
   withOneSidebarOpen,
   withViewMoved,
   withWidth,
@@ -127,6 +129,30 @@ export function LayoutProvider({
    * sources would open the panel in the face of somebody who had just shut it.
    */
   const [sourcesDismissed, setSourcesDismissed] = useState(restored?.sourcesDismissed ?? false);
+  /*
+   * The trial with the filters over the sources (flag `filters-right-panel`,
+   * digdir/kunnskapsassistenten#84). What is shown is derived from the layout
+   * and not stored in it, so turning the flag off puts everything back where
+   * it was, and what is written to storage is the same either way.
+   *
+   * Starting the trial opens the panel the filters are now in, or nobody
+   * finds them before the first question: on a page load unless the reader
+   * has shut that panel themselves, and always when the flag is turned on
+   * while the page is open. Only where both sidebars fit. In a narrower
+   * window the navigation panel stays the one that is open, as it is
+   * without the flag. Adjusted during render with a remembered previous
+   * value, as the narrow rule below.
+   */
+  const filtersBeside = useFlag('filters-right-panel');
+  const [appliedFiltersBeside, setAppliedFiltersBeside] = useState<boolean | null>(null);
+  if (filtersBeside !== appliedFiltersBeside) {
+    const firstRender = appliedFiltersBeside === null;
+    setAppliedFiltersBeside(filtersBeside);
+    if (filtersBeside && !narrow && !drawer && !(firstRender && sourcesDismissed)) {
+      setLayout((current) => withCollapsed(current, 'secondary-sidebar', false));
+    }
+  }
+
   // The view the user last switched each slot to. Empty on a page load, which
   // is the whole point: a view that mounts because the default layout opened
   // on it must not take focus off the skip link.
@@ -327,9 +353,14 @@ export function LayoutProvider({
   useEffect(() => writeStoredLayout(layout, sourcesDismissed), [layout, sourcesDismissed]);
   useEffect(() => writeStoredFilter(selection), [selection]);
 
+  const shown = useMemo(
+    () => (filtersBeside ? withFiltersBesideSources(layout) : layout),
+    [filtersBeside, layout],
+  );
+
   const value = useMemo(
     () => ({
-      layout,
+      layout: shown,
       setActiveView,
       setCollapsed,
       toggleCollapsed,
@@ -337,7 +368,7 @@ export function LayoutProvider({
       moveView,
       isSwitchedByUser,
     }),
-    [layout, setActiveView, setCollapsed, toggleCollapsed, setWidth, moveView, isSwitchedByUser],
+    [shown, setActiveView, setCollapsed, toggleCollapsed, setWidth, moveView, isSwitchedByUser],
   );
 
   const citation = useMemo(

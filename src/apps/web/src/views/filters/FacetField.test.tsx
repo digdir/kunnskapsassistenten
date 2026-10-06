@@ -69,6 +69,54 @@ describe('FacetField', () => {
     });
   });
 
+  /*
+   * «Velg alle» and then another field narrowing the list. A field where
+   * every value is ticked is left out of the question (askedSelection), so
+   * the facets are counted without it, and in mock a value with no documents
+   * under the other fields is not listed: 259 organisations ticked, 136
+   * listed under the year 2024. The field said «259 av 136 valgt» with the
+   * limit warning, while the question went without organisations at all
+   * (design/measurements/select-all-then-narrow.md).
+   */
+  describe('when the list holds fewer values than are ticked', () => {
+    const listed: FilterFacet = {
+      dimension: 'organisation',
+      label: 'Virksomheter',
+      values: Array.from({ length: 136 }, (_, index) => ({
+        value: `Virksomhet ${index + 1}`,
+        label: `Virksomhet ${index + 1}`,
+      })),
+    };
+    const ticked = Array.from({ length: 259 }, (_, index) => `Virksomhet ${index + 1}`);
+
+    it('says all are chosen, as the question does, with no warning and no «Velg alle»', () => {
+      render(<FacetField facet={listed} selected={ticked} onChange={() => {}} />);
+
+      expect(screen.getByText('Alle 136 valgt, altså ingen avgrensning')).toBeTruthy();
+      expect(screen.queryByText(/^Høyst 100 kan brukes i ett felt/)).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Velg alle virksomheter' })).toBeNull();
+    });
+
+    it('keeps what is ticked and not listed when «Velg alle» adds the rest', () => {
+      // «Velg alle» used to replace the choice with the list on screen, and
+      // the values not listed under the other fields were gone for good.
+      const seen: string[][] = [];
+      render(
+        <FacetField
+          facet={listed}
+          selected={['Virksomhet 200', 'Virksomhet 1']}
+          onChange={(values) => seen.push(values)}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Velg alle virksomheter' }));
+
+      expect(seen.at(-1)).toHaveLength(137);
+      expect(seen.at(-1)).toContain('Virksomhet 200');
+      expect(seen.at(-1)).toContain('Virksomhet 136');
+    });
+  });
+
   it('teller opp et delvis utvalg', () => {
     render(<Harness partial />);
 

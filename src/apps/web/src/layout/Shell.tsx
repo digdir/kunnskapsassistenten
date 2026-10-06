@@ -25,12 +25,21 @@ import { useScrollTabStop } from './useScrollTabStop';
 import { useOpenThreadRegistry } from './useOpenThread';
 import { useCitation } from './useCitation';
 import { useComposerRegistry } from './useComposerPresence';
+import { useCompactMode } from './useCompactMode';
 import { useDrawerMode } from './useDrawerMode';
 import { useLayout } from './useLayout';
 import { useViewportWidth } from './useViewportWidth';
 import { ViewHeadContext, type ViewHeadContextValue } from './viewHeadContext';
 import { viewComponents } from './viewComponents';
-import { drawerPlacement, layoutStyle, slotLabel, views } from './viewModel';
+import './stackedView.css';
+import {
+  drawerPlacement,
+  layoutStyle,
+  slotLabel,
+  views,
+  type SlotViewProps,
+  type ViewId,
+} from './viewModel';
 
 export type ShellProps = {
   /**
@@ -76,6 +85,13 @@ export function Shell({ routeOwnsMain = false }: ShellProps) {
    * be two subscriptions to the same fact.
    */
   const drawer = useDrawerMode();
+  /*
+   * Below 774, with the flag `mobile-top-row` on, the rails leave the row too
+   * and stand in a bar above the answer column. A narrower case of drawer mode
+   * rather than a third layout: the panels open as the same drawers, and only
+   * where the buttons stand changes. See `compactMaxViewport` in viewModel.ts.
+   */
+  const compact = useCompactMode();
   // The main slot owns the scroll, so the element is handed to the views
   // rather than looked up from inside them. See scrollContext.ts.
   const mainScroll = useRef<HTMLElement | null>(null);
@@ -178,7 +194,8 @@ export function Shell({ routeOwnsMain = false }: ShellProps) {
           <div
             className="shell"
             data-drawer={drawer || undefined}
-            style={layoutStyle(layout, viewport, drawer)}
+            data-compact={compact || undefined}
+            style={layoutStyle(layout, viewport, drawer, compact)}
           >
             <Sidebar slot="primary-sidebar" element="nav" drawer={drawer} />
 
@@ -375,6 +392,48 @@ function MainSlot() {
   );
 }
 
+/**
+ * One view of a stacked slot (`SlotState.stacked`), in a box of its own with
+ * its own pinned head.
+ *
+ * Its own head, because two views writing into one would pin both titles and
+ * both toolbars at once. Pinned inside its own box, so the head of the view
+ * the reader is in stays at the top and is pushed away by the next one. The
+ * region's `scroll-padding` is the slot's to set; this reports its height.
+ */
+function StackedView({
+  id,
+  onHeadHeight,
+  ...props
+}: Omit<SlotViewProps, 'view'> & {
+  id: ViewId;
+  onHeadHeight: (id: ViewId, height: number) => void;
+}) {
+  const [element, setElement] = useHeadBox();
+  const head = useMemo(() => ({ element }), [element]);
+  const View = viewComponents[id];
+
+  useEffect(() => {
+    // jsdom has no ResizeObserver, and nothing there scrolls or paints.
+    if (element === null || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => onHeadHeight(id, element.offsetHeight));
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      onHeadHeight(id, 0);
+    };
+  }, [element, id, onHeadHeight]);
+
+  return (
+    <div className="stacked-view" data-view={id}>
+      <div className="view-head" ref={setElement} />
+      <ViewHeadContext value={head}>
+        <View view={id} {...props} />
+      </ViewHeadContext>
+    </div>
+  );
+}
+
 function Sidebar({
   slot,
   element: Element,
@@ -446,6 +505,21 @@ function Sidebar({
    */
   const [panelHeadElement, panelHeadRef] = useHeadBox();
   const panelHead = useMemo(() => ({ element: panelHeadElement }), [panelHeadElement]);
+
+  /*
+   * A stacked slot has a head per view and one scrolling region. The region
+   * keeps focus clear of the tallest of them: a little more than needed in
+   * the shorter one's box, never less than needed in the taller one's.
+   * WCAG 2.4.11, as in `useViewHeadBox`.
+   */
+  const headHeights = useRef<Partial<Record<ViewId, number>>>({});
+  const setHeadHeight = useCallback((id: ViewId, height: number) => {
+    headHeights.current[id] = height;
+    const region = content.current;
+    if (!region) return;
+    const tallest = Math.max(0, ...Object.values(headHeights.current).map((h) => h ?? 0));
+    region.style.scrollPaddingBlockStart = tallest > 0 ? `${Math.round(tallest)}px` : '';
+  }, []);
 
   /**
    * Whether the keyboard focus is anywhere inside this slot — the toggle
@@ -679,22 +753,47 @@ function Sidebar({
 
         Empty until a view fills it, and an empty head draws no line.
       */}
-      <div className="view-head" ref={viewHeadRef} />
-
-      <ViewHeadContext value={viewHead}>
+      {state.stacked ? (
+        /*
+          Every view at once, one under the other (`SlotState.stacked`). None
+          of them switches to another: they are all on screen already.
+        */
         <PanelHeadContext value={panelHead}>
-          <ActiveView
-            view={state.activeView}
-            collapsed={state.collapsed}
-            onCollapsedChange={(collapsed) => setCollapsed(slot, collapsed)}
-            activeCitationNumber={activeCitation?.number}
-            activeCitationNonce={activeCitation?.nonce}
-            siblingViews={state.views.filter((id) => id !== state.activeView)}
-            onShowView={(view) => setActiveView(slot, view)}
-            switchedByUser={isSwitchedByUser(slot)}
-          />
+          {state.views.map((id) => (
+            <StackedView
+              key={id}
+              id={id}
+              onHeadHeight={setHeadHeight}
+              collapsed={state.collapsed}
+              onCollapsedChange={(collapsed) => setCollapsed(slot, collapsed)}
+              activeCitationNumber={activeCitation?.number}
+              activeCitationNonce={activeCitation?.nonce}
+              siblingViews={[]}
+              onShowView={(view) => setActiveView(slot, view)}
+              switchedByUser={false}
+            />
+          ))}
         </PanelHeadContext>
-      </ViewHeadContext>
+      ) : (
+        <>
+          <div className="view-head" ref={viewHeadRef} />
+
+          <ViewHeadContext value={viewHead}>
+            <PanelHeadContext value={panelHead}>
+              <ActiveView
+                view={state.activeView}
+                collapsed={state.collapsed}
+                onCollapsedChange={(collapsed) => setCollapsed(slot, collapsed)}
+                activeCitationNumber={activeCitation?.number}
+                activeCitationNonce={activeCitation?.nonce}
+                siblingViews={state.views.filter((id) => id !== state.activeView)}
+                onShowView={(view) => setActiveView(slot, view)}
+                switchedByUser={isSwitchedByUser(slot)}
+              />
+            </PanelHeadContext>
+          </ViewHeadContext>
+        </>
+      )}
 
       {/* Last in the scrolling region, so it follows the list down. */}
       {footScrolls ? foot : null}

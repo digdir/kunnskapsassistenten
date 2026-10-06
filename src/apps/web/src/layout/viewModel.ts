@@ -154,6 +154,12 @@ export type SlotState = {
   /** Collapsed to a single button? */
   collapsed: boolean;
   sizing: SlotSizing;
+  /**
+   * Draw every view in `views` at once, one under the other, instead of the
+   * active one alone. Each gets its own pinned head. Only the trial with the
+   * filters beside the sources sets it (`withFiltersBesideSources`).
+   */
+  stacked?: boolean;
 };
 
 export type Layout = {
@@ -410,6 +416,33 @@ export const drawerMaxViewport =
 export const drawerViewportQuery = `(width < ${drawerMaxViewport}px)`;
 
 /**
+ * The narrowest window where the two rails still belong beside the answer
+ * column, with the flag `mobile-top-row` on (digdir/kunnskapsassistenten#120).
+ *
+ * The narrowest of the three states in `drawerMaxViewport`: both panels
+ * folded to rails, and the answer column on its floor between them.
+ *
+ *   67 + 640 + 67 = 774
+ *
+ * Below it every pixel a rail stands on is taken out of an answer column that
+ * is already under its floor: at 393 the rails take 134 px and the column gets
+ * 259. With the flag on, the rails leave the row there: the answer column
+ * takes the whole width, and the two toggle buttons stand in a bar above it and
+ * open the same drawers as before.
+ *
+ * Summed from the model like the other two, so it moves if a rail or the floor
+ * does. 1440 at 200 % zoom is 720 and lands under it, which is the point: a
+ * reader who zooms that far needs the width most.
+ */
+export const compactMaxViewport =
+  slotRail(defaultLayout.slots['primary-sidebar'].sizing) +
+  slotFloor(defaultLayout.slots.main.sizing) +
+  slotRail(defaultLayout.slots['secondary-sidebar'].sizing);
+
+/** True while the window is narrow enough for the bar, flag or not. */
+export const compactViewportQuery = `(width < ${compactMaxViewport}px)`;
+
+/**
  * Which edge a drawer slides in from, in Designsystemet's own words.
  *
  * `left` and `right` are the vendor's values for `Dialog`'s `placement`, and
@@ -598,6 +631,46 @@ export function withViewMoved(layout: Layout, view: ViewId, target: Slot): Layou
   };
 }
 
+/**
+ * The filters over the sources in the secondary sidebar, both drawn at once,
+ * and the threads alone in the primary one. The trial behind the flag
+ * `filters-right-panel` (digdir/kunnskapsassistenten#84): whether a reader
+ * wants the filter and the sources in view together once there is an answer.
+ *
+ * The same views and the same state behind them, only another place: the
+ * filter store and the lock per thread do not know which panel they are in.
+ * Whether the secondary sidebar is open is left as it is. The provider opens
+ * it when the trial starts, and the reader may close it like any other.
+ */
+export function withFiltersBesideSources(layout: Layout): Layout {
+  const source = slotOf(layout, 'filters');
+  if (source === undefined || source === 'secondary-sidebar') return layout;
+
+  const from = layout.slots[source];
+  const remaining: ViewId[] = from.views.filter((id) => id !== 'filters');
+  const to = layout.slots['secondary-sidebar'];
+
+  return {
+    ...layout,
+    slots: {
+      ...layout.slots,
+      [source]: {
+        ...from,
+        views: remaining,
+        activeView: remaining.includes(from.activeView)
+          ? from.activeView
+          : (remaining[0] ?? from.activeView),
+      },
+      'secondary-sidebar': {
+        ...to,
+        // Filters first: drawn on top, and first in the name, «Filter og kilder».
+        views: ['filters', ...to.views.filter((id) => id !== 'filters')],
+        stacked: true,
+      },
+    },
+  };
+}
+
 /** What a slot takes up on the row right now, collapsed or open. */
 export function slotOccupied(state: SlotState): number {
   const sizing = state.sizing;
@@ -692,6 +765,7 @@ export function layoutStyle(
   layout: Layout,
   viewport: number,
   drawer = false,
+  compact = false,
 ): Record<string, string> {
   const style: Record<string, string> = {};
   const fitted = fittedWidths(layout, viewport);
@@ -719,10 +793,11 @@ export function layoutStyle(
      * 67 needs 774. Under the floor the column simply gets what is left and
      * the text wraps; nothing is clipped and nothing scrolls sideways.
      */
-    const rails = sidebarSlots.reduce(
-      (total, slot) => total + slotRail(layout.slots[slot].sizing),
-      0,
-    );
+    // In the bar (`compactMaxViewport`) the rails stand above the answer
+    // column and not beside it, so nothing on the row is theirs.
+    const rails = compact
+      ? 0
+      : sidebarSlots.reduce((total, slot) => total + slotRail(layout.slots[slot].sizing), 0);
     const room = Math.max(0, viewport - rails);
     style['--ka-main-min-width'] = `${drawer ? Math.min(main.minWidth, room) : main.minWidth}px`;
     style['--ka-main-max-width'] = `${main.maxWidth}px`;

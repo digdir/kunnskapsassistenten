@@ -6,45 +6,24 @@ import {
   ValidationMessage,
 } from '@digdir/designsystemet-react';
 import { useImperativeHandle, useRef, type Ref } from 'react';
+import { useFlag } from '../../flags';
 import type { FilterFacet } from '../../model';
-
-/**
- * Norwegian screen reader strings for the multi-select.
- *
- * Measured, not guessed: with `lang="nb"` and Designsystemet 1.21.0, only the
- * clear and toggle buttons get Norwegian names. Everything u-combobox writes
- * for the selected values stays English — the chip container is announced as
- * «Selected», the input's `aria-description` as «No selected», and a chip as
- * «…, Press to remove». In a service that has to be Norwegian all the way
- * into the accessible names, that is a defect, not a detail.
- *
- * `data-sr-*` is u-combobox's own override: the keys are its observed
- * attributes, and an empty value falls back to the English default. See
- * @u-elements/u-combobox, `TEXTS` and `observedAttributes`.
- */
-const SCREEN_READER_TEXTS = {
-  'data-sr-items': 'Valgte verdier',
-  'data-sr-empty': 'Ingen verdier er valgt',
-  'data-sr-found': '%d valgt, naviger bakover for å endre',
-  'data-sr-added': 'Lagt til',
-  'data-sr-removed': 'Fjernet',
-  'data-sr-invalid': 'Ugyldig verdi',
-  'data-sr-of': 'av',
-};
+import { MAX_VALUES_PER_FIELD, SCREEN_READER_TEXTS } from './suggestionField';
 
 /** What the view may do with a field from outside: put the keyboard in it. */
 export type FacetFieldHandle = { focus: () => void };
 
 /**
- * The most values one field can be narrowed to.
- *
- * The backend's rule and not ours: headless-rag #15 takes 1 to 100 values per
- * field, and the BFF answers more with `400 filter-too-many-values` instead of
- * cutting the list without a word, as it used to
- * (design/_briefs/bygg/form-d16-filtre-2026-09-29.md). The reader is told
- * here, before the question, rather than by an error after it.
+ * From how many chosen values the `compact-filter-chips` flag (#116) draws
+ * one chip instead of one per value. Every value chosen always does.
  */
-const MAX_VALUES_PER_FIELD = 100;
+const COMPACT_FROM = 6;
+
+/**
+ * The value of the one chip that stands for all the chosen values. Not a
+ * value any facet can hold: no key the backend sends starts with a null.
+ */
+const SUMMARY_VALUE = '\u0000chosen';
 
 export type FacetFieldProps = {
   /** For the view's focus handling after the active filter goes (ActiveFilter). */
@@ -80,7 +59,31 @@ export function FacetField({ ref, facet, selected, onChange }: FacetFieldProps) 
   useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }), []);
   const total = facet.values.length;
   const chosen = selected.length;
-  const allChosen = chosen === total;
+  /*
+   * Every value the list holds is ticked, which is the rule the question
+   * leaves the field out by (`askedSelection`), so the field and the question
+   * say the same. Not `chosen === total`: the list can hold fewer values than
+   * are ticked. A field where everything is ticked is not sent, so the facets
+   * are counted without it, and in mock a value with no documents under the
+   * other fields is not listed — 259 ticked, 136 listed. That read «259 av
+   * 136 valgt» with the limit warning while the question went without the
+   * field (design/measurements/select-all-then-narrow.md).
+   */
+  const allChosen = total > 0 && facet.values.every((value) => selected.includes(value.value));
+  const dimension = facet.label.toLocaleLowerCase('nb-NO');
+
+  /*
+   * Behind `compact-filter-chips` (#116): with every value or many of them
+   * chosen, one chip says so — «Alle dokumenttyper», «12 virksomheter» —
+   * instead of fifty to four hundred chips stacked over the panel. Removing
+   * it removes them all.
+   *
+   * The cost, while the chip stands: u-combobox ticks an option only when a
+   * chip carries its value, so the list shows no ticks. Choosing a value that
+   * is already chosen changes nothing.
+   */
+  const compactFlag = useFlag('compact-filter-chips');
+  const compact = compactFlag && chosen > 0 && (allChosen || chosen >= COMPACT_FROM);
 
   /*
    * Suggestion must be given `{ label, value }`, not bare strings: a bare
@@ -88,10 +91,12 @@ export function FacetField({ ref, facet, selected, onChange }: FacetFieldProps) 
    * key («arsrapport») instead of the name («Årsrapport»). Measured, not
    * assumed — see `sanitizeItems` in the component.
    */
-  const selectedItems = selected.map((value) => ({
-    value,
-    label: facet.values.find((candidate) => candidate.value === value)?.label ?? value,
-  }));
+  const selectedItems = compact
+    ? [{ value: SUMMARY_VALUE, label: allChosen ? `Alle ${dimension}` : `${chosen} ${dimension}` }]
+    : selected.map((value) => ({
+        value,
+        label: facet.values.find((candidate) => candidate.value === value)?.label ?? value,
+      }));
 
   /*
    * Which dimension a chip is removed from, in the chip's own name.
@@ -197,7 +202,14 @@ export function FacetField({ ref, facet, selected, onChange }: FacetFieldProps) 
               data-color="neutral"
               data-size="sm"
               aria-label={`Velg alle ${facet.label.toLocaleLowerCase('nb-NO')}`}
-              onClick={() => changeFromButton(facet.values.map((value) => value.value))}
+              onClick={() =>
+                // Adds to the choice and never takes from it: a value ticked
+                // and not in the list now is kept, so «Velg alle» under a
+                // narrowing does not shrink the filter for later.
+                changeFromButton([
+                  ...new Set([...selected, ...facet.values.map((value) => value.value)]),
+                ])
+              }
             >
               Velg alle
             </Button>
@@ -232,7 +244,13 @@ export function FacetField({ ref, facet, selected, onChange }: FacetFieldProps) 
       <Suggestion
         multiple
         selected={selectedItems}
-        onSelectedChange={(items) => change(items.map((item) => item.value))}
+        onSelectedChange={(items) =>
+          change([
+            ...new Set(
+              items.flatMap((item) => (item.value === SUMMARY_VALUE ? selected : [item.value])),
+            ),
+          ])
+        }
         {...screenReaderTexts}
       >
         {/*

@@ -10,6 +10,7 @@ import {
   slotLabel,
   slotOf,
   withCollapsed,
+  withFiltersBesideSources,
   withOneSidebarOpen,
   withViewMoved,
   withWidth,
@@ -195,5 +196,38 @@ describe('withWidth', () => {
 
   it('ignores the answer column, which has no width of its own', () => {
     expect(withWidth(defaultLayout, 'main', 700)).toBe(defaultLayout);
+  });
+});
+
+describe('withFiltersBesideSources', () => {
+  it('puts the filters over the sources, and leaves the threads alone on the other side', () => {
+    const layout = withFiltersBesideSources(defaultLayout);
+
+    expect(layout.slots['primary-sidebar'].views).toEqual(['threads']);
+    expect(layout.slots['primary-sidebar'].activeView).toBe('threads');
+    expect(layout.slots['secondary-sidebar'].views).toEqual(['filters', 'sources']);
+    expect(layout.slots['secondary-sidebar'].stacked).toBe(true);
+  });
+
+  it('names both sides after what is in them now', () => {
+    const layout = withFiltersBesideSources(defaultLayout);
+
+    expect(slotLabel(layout, 'primary-sidebar')).toBe('Tråder');
+    expect(slotLabel(layout, 'secondary-sidebar')).toBe('Filter og kilder');
+  });
+
+  it("opens and shuts nothing: that is the reader's, and the provider's", () => {
+    const shut = withCollapsed(defaultLayout, 'primary-sidebar', true);
+    const layout = withFiltersBesideSources(shut);
+
+    expect(layout.slots['primary-sidebar'].collapsed).toBe(true);
+    expect(layout.slots['secondary-sidebar'].collapsed).toBe(
+      defaultLayout.slots['secondary-sidebar'].collapsed,
+    );
+  });
+
+  it('changes nothing when the filters are there already', () => {
+    const once = withFiltersBesideSources(defaultLayout);
+    expect(withFiltersBesideSources(once)).toBe(once);
   });
 });

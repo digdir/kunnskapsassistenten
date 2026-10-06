@@ -566,3 +566,14 @@
 .own-documents__error {
   color: var(--ds-color-danger-text-default);
 }
+
+/*
+ * The year field behind the `year-ranges` flag (#115) has no list until
+ * something is typed: its one option is the period the text makes.
+ * Designsystemet hides the empty option while the input is empty and opens
+ * the list on a click all the same, so an empty white box hung under the
+ * field (measured in Chromium). It is not drawn until there is text.
+ */
+.year-range-field:has(input:placeholder-shown) u-datalist {
+  display: none;
+}

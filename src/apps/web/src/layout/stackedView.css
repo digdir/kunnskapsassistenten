@@ -1,0 +1,8 @@
+/*
+ * The views of a stacked slot, one under the other (`SlotState.stacked`).
+ * The space between two is the space between a panel's own blocks, so the
+ * second view reads as a part of the same panel and not as a new one.
+ */
+.stacked-view + .stacked-view {
+  margin-block-start: var(--ds-size-12);
+}

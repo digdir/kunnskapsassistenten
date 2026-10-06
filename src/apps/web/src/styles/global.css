@@ -508,6 +508,82 @@ body {
   padding-inline: var(--ka-rail-padding-inline);
 }
 
+/* ── The bar, below 774 with `mobile-top-row` ──────────────────────────── */
+
+/*
+ * With the flag `mobile-top-row` on and the window below `compactMaxViewport`,
+ * the rails leave the row as well (digdir/kunnskapsassistenten#120). The shell
+ * turns into two rows: a bar holding the two toggle buttons, and under it the
+ * answer column in the whole width. The drawers open from the bar exactly as
+ * they opened from the rails. At 393 the rails took 134 px and left the answer
+ * column 259.
+ *
+ * Grid placement rather than moving elements in React. The landmarks keep
+ * their place in the DOM, so a view keeps its state when the window crosses
+ * the line, as it does at 1139.
+ *
+ * That also keeps the tab order: the navigation button, the answer, then the
+ * sources button, which is drawn at the end of the bar. On purpose. The
+ * sources belong to the answer and come after it in the reading order, which
+ * is where the rail had them too, and a reader who has just read an answer
+ * reaches «Vis kilder» next.
+ */
+.shell[data-compact] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+/*
+ * The bar's ground, across the whole first row. A pseudo element and not a
+ * wrapper, because a wrapper around the two buttons would take them out of
+ * their landmarks, and each button belongs to the panel it opens.
+ *
+ * The rail's surface and its line against the answer column, turned on its
+ * side: `--ka-panel-border` is the line the rails already drew.
+ */
+.shell[data-compact]::before {
+  content: '';
+  grid-row: 1;
+  grid-column: 1 / -1;
+  background: var(--ds-color-neutral-surface-default);
+  border-block-end: var(--ka-panel-border);
+}
+
+.shell[data-compact] > .primary-sidebar {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.shell[data-compact] > .secondary-sidebar {
+  grid-row: 1;
+  grid-column: 3;
+}
+
+.shell[data-compact] > .main {
+  grid-row: 2;
+  grid-column: 1 / -1;
+}
+
+/*
+ * A rail is a column: a surface, a line along the answer and 32 px above the
+ * button. In the bar it is the button alone, and the bar draws the surface
+ * and the line. 8 px above and below is `--ds-size-2`, the gap
+ * Designsystemet puts between a button and its neighbour, so the bar is the
+ * 42 px button and 16 px of air: 58 px, with the line inside it (measured at
+ * 320, 375 and 393).
+ */
+.shell[data-compact] > :is(.primary-sidebar, .secondary-sidebar) > .panel {
+  padding-block: var(--ds-size-2);
+  background: none;
+  border-inline: 0;
+}
+
+/* The buttons stand on the same edges as the text under them. */
+.shell[data-compact] > :is(.primary-sidebar, .secondary-sidebar) > .panel .sidebar-header {
+  padding-inline: var(--ka-main-padding-inline);
+}
+
 /* ── Drawers, below 1139 ───────────────────────────────────────────────── */
 
 /*

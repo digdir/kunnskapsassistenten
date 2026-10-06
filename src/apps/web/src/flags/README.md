@@ -17,9 +17,12 @@ sletter dem (`beforeLogout` i `src/api/session.ts`).
 
 ## Flaggene
 
-| Id               | Hva                                                         | Issue                                                                                        |
-| ---------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `mobile-top-row` | Panelene som en rad øverst på telefon, i stedet for skinner | [digdir/kunnskapsassistenten#120](https://github.com/digdir/kunnskapsassistenten/issues/120) |
+| Id                     | Hva                                                                                  | Issue                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `mobile-top-row`       | Panelene som en rad øverst på telefon, i stedet for skinner                          | [digdir/kunnskapsassistenten#120](https://github.com/digdir/kunnskapsassistenten/issues/120) |
+| `year-ranges`          | Årsfeltet tar perioder, som 2021 eller 2023–2028, og år på rad står som én merkelapp | [digdir/kunnskapsassistenten#115](https://github.com/digdir/kunnskapsassistenten/issues/115) |
+| `compact-filter-chips` | Én merkelapp når alle eller mange verdier i et felt er valgt                         | [digdir/kunnskapsassistenten#116](https://github.com/digdir/kunnskapsassistenten/issues/116) |
+| `filters-right-panel`  | Filtreringen over kildene i høyre panel, navigasjonspanelet med bare trådene         | [digdir/kunnskapsassistenten#84](https://github.com/digdir/kunnskapsassistenten/issues/84)   |
 
 ## Legge til og ta bort
 
