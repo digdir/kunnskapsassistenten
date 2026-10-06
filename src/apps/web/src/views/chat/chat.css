@@ -997,6 +997,81 @@
 }
 
 /*
+ * The agent choice: the name as text beside the send button, no frame and no
+ * fill (Lars, 06.10). The margin puts it next to the send button and away
+ * from the paperclip in a row that is `space-between`. A long name, such as
+ * «digdir/altinn-docs-tuned», ends in an ellipsis rather than pushing the
+ * send button off a phone; the whole name is in the list.
+ */
+.ka-agent-picker__trigger {
+  /*
+   * Tighter than a button with a fill: with no frame, the padding is only
+   * room to press, and on a phone the row has 206 px for three controls. At
+   * the full padding the name was «ag…» at 390.
+   */
+  --dsc-button-padding: var(--ds-size-1) var(--ds-size-2);
+  --dsc-button-gap: var(--ds-size-1);
+
+  margin-inline-start: auto;
+  /* Designsystemet's button neither shrinks nor goes under 48 px. */
+  flex-shrink: 1;
+  min-inline-size: 0;
+  font-weight: var(--ds-font-weight-regular);
+}
+
+/*
+ * The paperclip keeps its size beside the agent's name. The rule further down
+ * lets it shrink, for the sentence it carries where uploading is not there;
+ * the icon on its own went down to 9 px on a phone (measured at 390) while
+ * the name kept all of its width.
+ */
+.ka-composer__attach[data-icon] {
+  flex-shrink: 0;
+}
+
+.ka-agent-picker__current {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * The list. As wide as a line of description wants, and never wider than the
+ * window less its margins, so it stays on a phone.
+ */
+.ka-agent-picker {
+  inline-size: 24rem;
+  max-inline-size: calc(100vw - 2 * var(--ds-size-4));
+}
+
+/* Name over description, at the start, and the check at the end. */
+.ka-agent-picker__option {
+  justify-content: space-between;
+  inline-size: 100%;
+  text-align: start;
+}
+
+.ka-agent-picker__text {
+  display: grid;
+  gap: var(--ds-size-1);
+}
+
+.ka-agent-picker__name {
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.ka-agent-picker__description {
+  color: var(--ds-color-text-subtle);
+  font-size: var(--ds-body-xs-font-size);
+  font-weight: var(--ds-font-weight-regular);
+}
+
+.ka-agent-picker__check {
+  flex-shrink: 0;
+}
+
+/*
  * Round, the way Simen drew it (issue 79). `--ds-border-radius-full` and not
  * a radius of our own, so the stop button — which is wide, because it carries
  * the word «Avbryt» — becomes a pill rather than a circle with the text

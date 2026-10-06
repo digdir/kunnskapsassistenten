@@ -26,6 +26,8 @@ import { useComposerShortcut } from './useComposerShortcut';
 import { useFollowAnswer } from './useFollowAnswer';
 import { useAttachments } from './useAttachments';
 import { useChat } from './useChat';
+import { useAgents } from './useAgents';
+import { AgentPicker } from './AgentPicker';
 import { ThreadLoading } from './ThreadLoading';
 import { Welcome } from './Welcome';
 import { SettingsDialog } from './SettingsDialog';
@@ -98,6 +100,9 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
    */
   const { active: corpusKey } = useCorpus();
 
+  // Which agent the question goes to, chosen in the compose field.
+  const agentChoice = useAgents(chatClient);
+
   const {
     messages,
     status,
@@ -109,7 +114,7 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
     send,
     cancel,
     retry,
-  } = useChat(chatClient, thread?.messages ?? [], selection, corpusKey);
+  } = useChat(chatClient, thread?.messages ?? [], selection, corpusKey, agentChoice.model);
 
   // What the alert says, per case. Undefined while the turn is fine, which is
   // what keeps the region mounted and empty.
@@ -654,6 +659,13 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
               }}
             />
           ) : null
+        }
+        agentPicker={
+          <AgentPicker
+            agents={agentChoice.agents}
+            current={agentChoice.current}
+            onChoose={agentChoice.choose}
+          />
         }
         attachments={attachments}
         fieldRef={fieldRef}

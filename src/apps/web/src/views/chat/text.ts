@@ -241,3 +241,14 @@ export const NO_HITS_WHOLE_CORPUS = [
 
 /** What the polite live region says when the search came back empty. */
 export const NO_HITS_ANNOUNCEMENT = 'Fant ingen utdrag om dette i dokumentene.';
+
+/**
+ * The agent choice in the compose field. The prefix is in the button's name
+ * and not on it: the agent's name is enough to see, and «agent-rag» on its own
+ * says nothing to a screen reader about what the button changes.
+ */
+export const AGENT_PREFIX = 'Agent: ';
+/** On the button when the BFF has not said which agent is its default. */
+export const AGENT_DEFAULT_LABEL = 'Standard';
+/** Over the list of agents. */
+export const AGENT_HEADING = 'Velg agent';

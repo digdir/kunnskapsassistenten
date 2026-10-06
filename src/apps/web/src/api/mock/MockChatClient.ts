@@ -1,5 +1,6 @@
 import {
   emptyFilterSelection,
+  type AgentList,
   type ChatErrorCode,
   type FilterFacet,
   type FilterSelection,
@@ -343,6 +344,39 @@ function nextMessageId(): string {
   answerCounter += 1;
   return `msg-${Date.now()}-${answerCounter}`;
 }
+
+/**
+ * Three of the agents the BFF lists, with the names and descriptions it gives
+ * them (`api/bff/fixtures/models.json`, recorded 06.10), so the choice in the
+ * compose field can be seen and tested without one.
+ *
+ * The answer is the same whichever is chosen. The mock has one way of
+ * answering, and `model` arrives with the question and is not acted on.
+ */
+export const MOCK_AGENTS: AgentList = {
+  agents: [
+    {
+      id: 'builtin/agent-rag-agent',
+      label: 'agent-rag',
+      description: 'General-purpose agentic retrieval assistant.',
+      model: 'builtin.agent-rag-agent__agent-rag-graph-bundled',
+    },
+    {
+      id: 'builtin/research-assistant-agent',
+      label: 'research-assistant',
+      description:
+        'Breadth-first retrieval with a synthesis-heavy answer, for questions that want a survey of the sources rather than a single fact.',
+      model: 'builtin.research-assistant-agent__agent-rag-graph-faithful',
+    },
+    {
+      id: 'builtin/fact-checker-agent',
+      label: 'fact-checker',
+      description: 'Verification-focused agent for checking claims against evidence.',
+      model: 'builtin.fact-checker-agent__fact-checker',
+    },
+  ],
+  defaultId: 'builtin/agent-rag-agent',
+};
 
 /**
  * A backend that is not there. Streams the NKOM answer token by token with
@@ -805,5 +839,10 @@ export class MockChatClient implements ChatClient {
     // Counted from the corpus that is selected, so switching changes what the
     // filter panel offers. Half of what makes a switch visible at all.
     return facetsFor(selection ?? emptyFilterSelection, corpusDocumentsFor(activeCorpusKey()));
+  }
+
+  async listAgents(signal?: AbortSignal): Promise<AgentList> {
+    await wait(this.#delays.requestMs, signal);
+    return MOCK_AGENTS;
   }
 }

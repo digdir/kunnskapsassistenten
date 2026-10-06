@@ -68,6 +68,11 @@ type ComposerProps = {
   onFollowUp: (question: string) => void;
   /** The files this question is being written with. */
   attachments: AttachmentsState;
+  /**
+   * The agent choice, beside the send button. Absent where there is nothing
+   * to choose. See AgentPicker.
+   */
+  agentPicker?: ReactNode;
 };
 
 /**
@@ -122,6 +127,7 @@ export function Composer({
   showFollowUps,
   onFollowUp,
   attachments,
+  agentPicker,
 }: ComposerProps) {
   const busy = status === 'pending' || status === 'streaming';
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -388,6 +394,13 @@ export function Composer({
               <span className="ka-composer__attach-text">{ATTACH_UNAVAILABLE_LABEL}</span>
             ) : null}
           </Button>
+
+          {/*
+            The agent, next to the send button and away from the paperclip,
+            as claude.ai puts its model. Pushed there by its own margin
+            (chat.css), so the row needs no wrapper.
+          */}
+          {agentPicker}
 
           {busy ? (
             <Button

@@ -1,3 +1,4 @@
+import { forgetAgentChoice } from './agentChoice';
 import { forgetAllAnswers } from './live/sourceStore';
 import { kaEnv } from './runtimeConfig';
 
@@ -57,11 +58,13 @@ export async function fetchSession(signal?: AbortSignal): Promise<Session | unde
  *
  * A draft kept from an expired session goes too: it was written by the
  * reader who is signing out, and the next one to sign in in this tab is not
- * necessarily them.
+ * necessarily them. So does the agent they chose (`ka.agent.v1`), which is
+ * kept per browser for the same reason the answers are.
  */
 export function beforeLogout(): void {
   forgetAllAnswers();
   forgetDraft();
+  forgetAgentChoice();
 }
 
 /**

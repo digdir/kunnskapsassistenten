@@ -1,5 +1,7 @@
 import { filterDimensions } from '../../model';
 import type {
+  Agent,
+  AgentList,
   ChatError,
   Excerpt,
   FilterSelection,
@@ -14,6 +16,7 @@ import type { DatasetFilterFields } from '../filterFields';
 import { messagesFromApi, threadFromConversation } from '../live/conversations';
 import { relevanceFromRank, toCitations } from '../live/mcp';
 import type {
+  BffAgentOption,
   BffConversationDetail,
   BffConversationSummary,
   BffFacet,
@@ -149,6 +152,41 @@ export function threadDetailFromBff(
               : message,
           ),
   };
+}
+
+/**
+ * The agents from `GET /api/models`, each with the mode it marks as its
+ * default, and the default agent from `GET /api/me`.
+ *
+ * The modes are not offered. They are the same work split into steps
+ * differently, for the backend's evaluation of which way is better
+ * (`iteration_faithful.clj` in headless-rag), and not something a reader
+ * chooses between. An agent with no mode has nothing to send, and is left out.
+ *
+ * `defaultTool` is the tool the BFF answers with when no `model` is sent. The
+ * agent that has it among its modes is the default; with none that does, the
+ * BFF has not said, and `defaultId` stays undefined.
+ */
+export function agentsFromBff(
+  options: BffAgentOption[] | undefined,
+  defaultTool?: string,
+): AgentList {
+  const agents: Agent[] = [];
+  let defaultId: string | undefined;
+  for (const option of options ?? []) {
+    const mode = option.modes.find((candidate) => candidate.isDefault) ?? option.modes[0];
+    if (!mode) continue;
+    agents.push({
+      id: option.id,
+      label: option.label,
+      ...(option.description ? { description: option.description } : {}),
+      model: mode.id,
+    });
+    if (defaultTool && option.modes.some((candidate) => candidate.id === defaultTool)) {
+      defaultId = option.id;
+    }
+  }
+  return defaultId ? { agents, defaultId } : { agents };
 }
 
 /** The same sentences the live client shows for the same steps. */

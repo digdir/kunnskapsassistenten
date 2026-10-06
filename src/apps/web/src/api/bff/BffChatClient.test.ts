@@ -8,6 +8,7 @@ import capabilities from './fixtures/capabilities.json';
 import conversation from './fixtures/conversation.json';
 import conversations from './fixtures/conversations.json';
 import facets from './fixtures/facets.json';
+import models from './fixtures/models.json';
 import askTooManyValues from './fixtures/ask-too-many-values.json';
 import capabilitiesD16 from './fixtures/capabilities-d16.json';
 import facetsD16 from './fixtures/facets-d16.json';
@@ -824,5 +825,45 @@ describe('createChatClient', () => {
     vi.stubEnv('VITE_API_MODE', 'bff');
     const { createChatClient } = await import('../index');
     expect(createChatClient()).toBeInstanceOf(BffChatClient);
+  });
+});
+
+describe('BffChatClient og agentene', () => {
+  it('henter agentene fra /api/models og standarden fra /api/me', async () => {
+    fakeBff({
+      'GET /api/models': () => json(models),
+      'GET /api/me': () => json({ tool: 'builtin.agent-rag-agent__agent-rag-graph-bundled' }),
+    });
+
+    const { agents, defaultId } = await client().listAgents();
+
+    expect(agents).toHaveLength(8);
+    expect(defaultId).toBe('builtin/agent-rag-agent');
+  });
+
+  it('har lista uten standard når /api/me feiler, og ingenting når /api/models gjør det', async () => {
+    fakeBff({ 'GET /api/models': () => json(models), 'GET /api/me': () => json({}, 500) });
+    const withoutDefault = await client().listAgents();
+    expect(withoutDefault.agents).toHaveLength(8);
+    expect(withoutDefault.defaultId).toBeUndefined();
+
+    fakeBff({ 'GET /api/models': () => json({ models: [] }) });
+    expect(await client().listAgents()).toEqual({ agents: [] });
+  });
+
+  it('sender valgt agent som model i spørsmålet, og ingen model uten valg', async () => {
+    const fetchMock = fakeBff();
+
+    await drain(
+      client().ask({
+        query: 'Hva er måloppnåelse?',
+        model: 'builtin.fact-checker-agent__fact-checker',
+      }),
+    );
+    await drain(client().ask({ query: 'Og i 2024?' }));
+
+    const [chosen, plain] = askBodies(fetchMock);
+    expect(chosen?.model).toBe('builtin.fact-checker-agent__fact-checker');
+    expect(plain).not.toHaveProperty('model');
   });
 });

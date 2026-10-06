@@ -1,4 +1,11 @@
-import type { FilterFacet, FilterSelection, StreamEvent, Thread, ThreadDetail } from '../model';
+import type {
+  AgentList,
+  FilterFacet,
+  FilterSelection,
+  StreamEvent,
+  Thread,
+  ThreadDetail,
+} from '../model';
 
 /**
  * How much of a thread the caller vouches for when it opens one.
@@ -29,6 +36,12 @@ export interface AskParams {
    * it; see src/api/live/LiveUploadClient.ts.
    */
   attachments?: string[];
+  /**
+   * The agent to ask: `Agent.model` from `listAgents`. Omitted, the backend
+   * answers with its own default, which is also what a reader who has not
+   * chosen gets.
+   */
+  model?: string;
   /** Cancels the answer (answer 34). */
   signal?: AbortSignal;
 }
@@ -106,4 +119,14 @@ export interface ChatClient {
    * `FacetValue.count` and API-bestilling A2.
    */
   listFacets(signal?: AbortSignal, selection?: FilterSelection): Promise<FilterFacet[]>;
+  /**
+   * The agents a question can be put to, for the choice in the compose field.
+   *
+   * Optional, and absent or empty means there is nothing to choose and the
+   * choice is not shown. The BFF has a list (`GET /api/models`), and the mock
+   * a small one for demo and tests. The live client has none: the backend's
+   * `/v1/models` is outside the `/api/` its proxy forwards, and its tool name
+   * is fixed.
+   */
+  listAgents?(signal?: AbortSignal): Promise<AgentList>;
 }

@@ -163,6 +163,8 @@ export function useChat(
   initialMessages: Message[] = [],
   filters: FilterSelection = emptyFilterSelection,
   corpusKey?: string,
+  /** The agent to ask (`AgentChoice.model`). Undefined asks the default. */
+  model?: string,
 ): UseChat {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
 
@@ -454,6 +456,9 @@ export function useChat(
           // Separate from `filters`, which narrows the corpus and follows the
           // reader between questions.
           ...(attachments?.length ? { attachments } : {}),
+          // Read when the question is sent: a choice made while an answer is
+          // on its way is for the next question, not this one.
+          ...(model ? { model } : {}),
           signal: controller.signal,
         })) {
           switch (event.type) {
@@ -594,7 +599,7 @@ export function useChat(
         if (abortRef.current === controller) abortRef.current = null;
       }
     },
-    [client, filters, patchAnswer, settleAnswer],
+    [client, filters, model, patchAnswer, settleAnswer],
   );
 
   const send = useCallback(

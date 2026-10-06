@@ -7,6 +7,7 @@
  * A1 is source attribution, A2 facet counts, A3 upload. See
  * design/skal-dette-implementeres.md.
  */
+export type { Agent, AgentList } from './agent';
 export type { Citation } from './citation';
 export type { FacetValue, FilterDimension, FilterFacet, FilterSelection } from './filter';
 export { emptyFilterSelection, filterDimensions, isEmptySelection } from './filter';

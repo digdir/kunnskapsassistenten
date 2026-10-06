@@ -16,6 +16,8 @@ import {
   type StreamEvent,
   type ThreadDetail,
 } from '../../model';
+import { MOCK_AGENTS } from '../../api/mock/MockChatClient';
+import { AGENT_STORAGE_KEY } from '../../api/agentChoice';
 import { ATTACH_LABEL } from './attachmentText';
 import { ChatView } from './ChatView';
 import {
@@ -1259,5 +1261,115 @@ describe('ChatView', () => {
     // nothing would be worse than no link.
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.getByTitle('Kilden kom ikke fram')).toBeTruthy();
+  });
+});
+
+/** A client with the mock's three agents, writing down every question it is asked. */
+function clientWithAgents(): { client: ChatClient; asked: AskParams[] } {
+  const asked: AskParams[] = [];
+  const base = clientYielding(answer);
+  return {
+    asked,
+    client: {
+      ...base,
+      ask(params) {
+        asked.push(params);
+        return base.ask(params);
+      },
+      listAgents: async () => MOCK_AGENTS,
+    },
+  };
+}
+
+const agentButton = () => screen.getByRole('button', { name: /^Agent: / });
+
+describe('ChatView og valget av agent', () => {
+  it('viser standarden fra klienten, og sender ingen model uten valg', async () => {
+    window.localStorage.removeItem(AGENT_STORAGE_KEY);
+    const { client, asked } = clientWithAgents();
+    render(
+      <Shell>
+        <ChatView client={client} />
+      </Shell>,
+    );
+
+    await waitFor(() => expect(agentButton().textContent).toContain('agent-rag'));
+    ask('Hva er måloppnåelse?');
+
+    await waitFor(() => expect(asked).toHaveLength(1));
+    expect(asked[0]).not.toHaveProperty('model');
+  });
+
+  it('sender valgt agent med spørsmålet, og husker den til neste gang', async () => {
+    window.localStorage.removeItem(AGENT_STORAGE_KEY);
+    const { client, asked } = clientWithAgents();
+    const { unmount } = render(
+      <Shell>
+        <ChatView client={client} />
+      </Shell>,
+    );
+
+    await waitFor(() => expect(agentButton().textContent).toContain('agent-rag'));
+    fireEvent.click(agentButton());
+    fireEvent.click(screen.getByRole('button', { name: /^fact-checker/, hidden: true }));
+    ask('Stemmer det at Nkom nådde målene?');
+
+    await waitFor(() => expect(asked).toHaveLength(1));
+    expect(asked[0]?.model).toBe('builtin.fact-checker-agent__fact-checker');
+    expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBe('builtin/fact-checker-agent');
+
+    unmount();
+    render(
+      <Shell>
+        <ChatView client={clientWithAgents().client} />
+      </Shell>,
+    );
+    await waitFor(() => expect(agentButton().textContent).toContain('fact-checker'));
+    window.localStorage.removeItem(AGENT_STORAGE_KEY);
+  });
+
+  it('glemmer valget når leseren går tilbake til standarden, så BFF-en bestemmer igjen', async () => {
+    window.localStorage.setItem(AGENT_STORAGE_KEY, 'builtin/fact-checker-agent');
+    const { client, asked } = clientWithAgents();
+    render(
+      <Shell>
+        <ChatView client={client} />
+      </Shell>,
+    );
+
+    await waitFor(() => expect(agentButton().textContent).toContain('fact-checker'));
+    fireEvent.click(agentButton());
+    fireEvent.click(screen.getByRole('button', { name: /^agent-rag/, hidden: true }));
+    ask('Hva er måloppnåelse?');
+
+    await waitFor(() => expect(asked).toHaveLength(1));
+    expect(asked[0]).not.toHaveProperty('model');
+    expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+  });
+
+  it('bruker standarden når den valgte agenten ikke finnes lenger', async () => {
+    window.localStorage.setItem(AGENT_STORAGE_KEY, 'builtin/borte-agent');
+    const { client, asked } = clientWithAgents();
+    render(
+      <Shell>
+        <ChatView client={client} />
+      </Shell>,
+    );
+
+    await waitFor(() => expect(agentButton().textContent).toContain('agent-rag'));
+    ask('Hva er måloppnåelse?');
+
+    await waitFor(() => expect(asked).toHaveLength(1));
+    expect(asked[0]).not.toHaveProperty('model');
+    window.localStorage.removeItem(AGENT_STORAGE_KEY);
+  });
+
+  it('viser ikke valget når klienten ikke har noen liste', () => {
+    render(
+      <Shell>
+        <ChatView client={clientYielding(answer)} />
+      </Shell>,
+    );
+    expect(screen.queryByRole('button', { name: /^Agent: / })).toBeNull();
   });
 });
