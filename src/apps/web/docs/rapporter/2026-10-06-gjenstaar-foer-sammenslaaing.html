@@ -247,9 +247,47 @@
         color: var(--none);
         background: var(--none-bg);
       }
+      .options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+        gap: 16px;
+        align-items: start;
+      }
+      .option {
+        margin: 0;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        display: grid;
+      }
+      .option > a {
+        display: block;
+      }
+      .option > a:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: -3px;
+      }
+      .option img {
+        display: block;
+        inline-size: 100%;
+        block-size: auto;
+        max-width: 100%;
+        border-block-end: 1px solid var(--line);
+      }
+      .option figcaption {
+        padding: 12px 14px;
+        display: grid;
+        gap: 6px;
+        font-size: 0.88rem;
+      }
+      .option figcaption .note {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
       .sides {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
         gap: 16px;
         align-items: start;
       }
@@ -329,7 +367,7 @@
   <body>
     <main class="page">
       <header>
-        <div class="eyebrow">Rapport · 6. oktober 2026, oppdatert kl. 13:48</div>
+        <div class="eyebrow">Rapport · 6. oktober 2026, oppdatert kl. 19:05</div>
         <h1>Det som gjenstår før klienten erstatter src/apps/web</h1>
         <p class="lede">
           Hva klienten og BFF-en i
@@ -339,11 +377,11 @@
         </p>
         <div class="facts">
           <span>Eksisterende: <code>main</code> 8639267 (25.09)</span>
-          <span>Vår: <code>main</code> 6ce60a1</span>
+          <span>Vår: <code>main</code> bf23152</span>
           <span
             >Sammenslåingen:
             <a href="https://github.com/digdir/kunnskapsassistenten/pull/129">utkast-PR #129</a>
-            (9172aeb)</span
+            (29f6c8d)</span
           >
           <span>Lest i koden. Det som er målt, står med dato.</span>
         </div>
@@ -354,50 +392,56 @@
           <h2>Kort fortalt</h2>
           <ul>
             <li>
+              <strong>Venter på ditt valg:</strong> hvordan et svar uten kilder skal se ut (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
+                >#257</a
+              >). Se de <a href="#valg-advarsel">tre valgene med skjermbilder</a> under.
+            </li>
+            <li>
               <strong>Gjort i dag:</strong> testene på at svarteksten ikke kan kjøre skript (<a
                 href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/254"
                 >#254</a
               >,
               <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/258"
                 >#258</a
-              >), kontrakttypene i klienten er like pakken (<a
+              >), kontrakttypene (<a
                 href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/255"
                 >#255</a
-              >), utkastet tas vare på når økta går ut (<a
+              >), utkastet når økta går ut (<a
                 href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/259"
                 >#259</a
               >), en <code>javascript:</code>-lenke blir tekst (<a
                 href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/256"
                 >#256</a
-              >), og et ukjent filterfelt gir en egen feilmelding (<a
+              >), egen feilmelding for et ukjent filterfelt (<a
                 href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/260"
                 >#260</a
-              >). Alt er ute i testmiljøet.
+              >), knappene i navigasjonspanelet (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/262"
+                >#262</a
+              >), og Node 24 og TypeScript 6 over hele linja (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/263"
+                >#263</a
+              >
+              her, og i #129). Alt er ute i testmiljøet.
             </li>
             <li>
-              <strong>Klar, men venter på en avgjørelse:</strong> advarselen når svaret mangler
-              kilder (<a
-                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
-                >#257</a
-              >). Svarkortet blir 92 px høyere på 1440 og 284 px høyere på en telefon (390), og
-              høyden på telefon skal vurderes først.
+              <strong>Gjort i #129 i kveld:</strong> ADR-ene på engelsk i
+              <code>src/decisions</code> som 0004–0008, og én kom-i-gang for prosjektet etter
+              sammenslåingen i <code>src/README.md</code> (7). Feilen i BFF-en er rettet (se
+              <a href="#funnet">Funnet underveis</a>). CI er grønn.
+            </li>
+            <li>
+              <strong>Under arbeid:</strong> valg av agent i skrivefeltet, som modellvalget i
+              claude.ai (1).
             </li>
             <li>
               <strong>Flyttet til etter sammenslåingen:</strong> lenken til tilbakemelding under
               hvert svar. Den skal tenkes nytt, fordi den gir mye støy under hvert svar.
             </li>
             <li>
-              <strong>Venter på en avgjørelse:</strong> hvor agentvalget skal stå (1), versjonen av
-              Node og TypeScript (6), og én kom-i-gang og én serie med arkitekturvalg (7).
-            </li>
-            <li>
-              <strong>Funnet underveis:</strong> en feil i BFF-en som gir et svar feil kilder etter
-              ny innlasting. Se «Funnet underveis» under.
-            </li>
-            <li>
               <strong>Allerede løst i #129:</strong> stegene mens svaret lages, at bildet bygges mot
-              BFF-en, CI for klienten, og fem endringer i BFF-en, som svarteksten og kildene per
-              bit.
+              BFF-en, CI for klienten, og endringene i BFF-en, som svarteksten og kildene per bit.
             </li>
           </ul>
         </div>
@@ -448,8 +492,11 @@
                 <td>Mangler. Ingen kall til <code>/api/models</code>.</td>
                 <td class="size">M</td>
                 <td>
-                  <span class="pill todo">Avgjørelse</span
-                  ><span class="note">Hvor valget skal stå, for eksempel i innstillingene.</span>
+                  <span class="pill partly">Under arbeid</span
+                  ><span class="note"
+                    >Som modellvalget i claude.ai: tekst uten ramme og bakgrunn, som åpner en meny
+                    med navn og beskrivelse.</span
+                  >
                 </td>
               </tr>
               <tr>
@@ -492,7 +539,9 @@
                 <td class="size">L</td>
                 <td>
                   <span class="pill partly">Klar</span
-                  ><span class="note">Venter på en avgjørelse om høyden på telefon.</span>
+                  ><span class="note"
+                    >Venter på ditt valg. Se <a href="#valg-advarsel">de tre valgene</a>.</span
+                  >
                 </td>
               </tr>
               <tr>
@@ -554,8 +603,14 @@
                 </td>
                 <td class="size">M</td>
                 <td>
-                  <span class="pill todo">Avgjørelse</span
-                  ><span class="note">TypeScript 5 i rota, 6 i klienten.</span>
+                  <span class="pill ok">Gjort</span
+                  ><span class="note"
+                    >Node 24.21 og TypeScript 6 i #129, og <code>engines</code>
+                    <code>&gt;=24</code> her (<a
+                      href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/263"
+                      >#263</a
+                    >). CI er grønn i begge.</span
+                  >
                 </td>
               </tr>
               <tr>
@@ -570,7 +625,14 @@
                 </td>
                 <td><code>docs/arkitektur/0001–0005</code> på norsk, og egne kom-i-gang-sider.</td>
                 <td class="size">L</td>
-                <td><span class="pill todo">Avgjørelse</span></td>
+                <td>
+                  <span class="pill ok">Gjort</span
+                  ><span class="note"
+                    >I #129: ADR-ene på engelsk i <code>src/decisions</code> som 0004–0008, og
+                    «Komme i gang» i <code>src/README.md</code> skrevet om for prosjektet etter
+                    sammenslåingen. Oppskriften er kjørt trinn for trinn i en fersk klone.</span
+                  >
+                </td>
               </tr>
             </tbody>
           </table>
@@ -590,8 +652,9 @@
               <strong>Feil kilder etter ny innlasting bak BFF-en.</strong> I
               <code>sourceStore.ts</code> hopper <code>remember</code> over et tomt sett med kilder.
               Har det siste svaret ingen kilder, får det kildene til svaret før etter ny innlasting.
-              Målt lokalt mot BFF-en i #129, og koden er den samme på <code>main</code> 8639267. Det
-              må rettes i BFF-en.
+              Målt lokalt mot BFF-en i #129, og koden er den samme på <code>main</code> 8639267.
+              Rettet i #129: et tomt sett kilder lagres nå, og en tur som feiler, rører ikke kildene
+              til svaret før.
             </li>
             <li>
               <strong>Et ukjent filterfelt</strong> ga «svarte med feil (400)». Nå får leseren en
@@ -602,6 +665,91 @@
             </li>
           </ul>
         </div>
+      </section>
+
+      <section id="valg-advarsel">
+        <div class="section-head">
+          <h2>Svar uten kilder: tre valg</h2>
+          <p>
+            Når agenten svarer uten å finne noe i dokumentene, sier i dag bare kildepanelet det
+            («Ingen kilder til dette svaret»), og noen ganger agenten selv i teksten. Den
+            eksisterende klienten viser en advarsel over svaret mens det kommer. Bildene er det
+            samme svaret i mock, med det nye panelhodet. Trykk på et bilde for full størrelse.
+          </p>
+        </div>
+        <div class="options">
+          <figure class="option">
+            <a href="bilder/2026-10-06-no-sources-option-a-1440.png"
+              ><img
+                src="bilder/2026-10-06-no-sources-option-a-1440.png"
+                alt="Valg a på 1440: en gul boks med advarselen står over overskriften i svarkortet."
+                loading="lazy"
+            /></a>
+            <figcaption>
+              <strong>(a) Gul boks, som i 257</strong>
+              <span class="note"
+                >Svarkortet blir 92 px høyere på 1440 og 284 px høyere på en telefon (<a
+                  href="bilder/2026-10-06-no-sources-option-a-390.png"
+                  >bilde på 390</a
+                >).</span
+              >
+              <span
+                >«Svaret har ingen kilder fra dokumentgrunnlaget. Kontroller det mot
+                originaldokumentene før du bruker det.» Tydeligst, men det tar mest plass, og på en
+                telefon en tredjedel av skjermen.</span
+              >
+            </figcaption>
+          </figure>
+          <figure class="option">
+            <a href="bilder/2026-10-06-no-sources-option-b-1440.png"
+              ><img
+                src="bilder/2026-10-06-no-sources-option-b-1440.png"
+                alt="Valg b på 1440: én linje grå tekst står over overskriften i svarkortet."
+                loading="lazy"
+            /></a>
+            <figcaption>
+              <strong>(b) Én stille linje</strong>
+              <span class="note"
+                >Svarkortet blir 24 px høyere på 1440 og 120 px høyere på en telefon (<a
+                  href="bilder/2026-10-06-no-sources-option-b-390.png"
+                  >bilde på 390</a
+                >).</span
+              >
+              <span
+                >«Svaret har ingen kilder. Kontroller det mot originaldokumentene før du bruker
+                det.» i dempet tekst øverst i kortet, uten ramme eller bakgrunn. Det sies, men det
+                tar lite plass. Kontrasten er regnet fra fargene i temaet til minst 5,40:1 i lyst og
+                5,72:1 i mørkt, men ikke målt i nettleseren.</span
+              >
+            </figcaption>
+          </figure>
+          <figure class="option">
+            <a href="bilder/2026-10-06-no-sources-option-c-1440.png"
+              ><img
+                src="bilder/2026-10-06-no-sources-option-c-1440.png"
+                alt="Valg c på 1440: svarkortet begynner med overskriften, uten noe over."
+                loading="lazy"
+            /></a>
+            <figcaption>
+              <strong>(c) Ingenting, som i dag</strong>
+              <span class="note"
+                >Svarkortet er som i dag (<a href="bilder/2026-10-06-no-sources-option-c-390.png"
+                  >bilde på 390</a
+                >).</span
+              >
+              <span
+                >Bare kildepanelet sier det. Ingen støy, men et svar uten kilder ser ut som et svar
+                med kilder i selve svaret.</span
+              >
+            </figcaption>
+          </figure>
+        </div>
+        <p class="lede" style="font-size: 0.95rem">
+          <strong>Anbefaling: (b).</strong> Leseren får vite det der svaret står, uten at det tar
+          plassen fra svaret. Si a, b eller c, så blir
+          <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257">#257</a>
+          gjort ferdig etter det.
+        </p>
       </section>
 
       <section id="side-om-side">
@@ -1018,7 +1166,7 @@
       <footer>
         <span
           >Laget 6. oktober 2026 fra koden på <code>main</code> 8639267 i
-          digdir/kunnskapsassistenten, <code>main</code> 6ce60a1 her, og utkast-PR #129 (9172aeb).
+          digdir/kunnskapsassistenten, <code>main</code> bf23152 her, og utkast-PR #129 (29f6c8d).
           «Målt» betyr kjørt mot en lokal backend eller testmiljøet. Alt annet er lest i
           koden.</span
         >

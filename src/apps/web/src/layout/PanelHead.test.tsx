@@ -227,25 +227,51 @@ describe('under brytepunktet, der panelet er en skuff', () => {
 
 describe('sammenleggingsknappen på panelraden', () => {
   /*
-   * Ikonknapp med navnet i `aria-label`, i alle tilstander.
+   * «Skjul» on screen before the icon while the panel is open, and the button
+   * at the end of the row (Lars 06.10). The name is still the whole string in
+   * `aria-label`, and it starts with the word that is drawn, so what a
+   * sighted reader sees is what a voice user says (WCAG 2.5.3).
    *
-   * Den tegnet ordene ved siden av ikonet mens panelet var åpent, på det
-   * argumentet at en etikett på skjermen slår en bak en hover. Det holdt så
-   * lenge raden hadde én kontroll. Med tre ble «Skjul tråder og filter»
-   * (209 px) pluss «Tråder» (123) pluss breddeknappene (88) til 420 px i et
-   * panel på 400, og det som falt av enden var breddeknappene — en kontroll
-   * pekeren ikke lenger nådde. Målt av KA CC på #119.
-   *
-   * Etter: 42 + 123 + 88 = 253 i en rad på 399. Målt her uten layout, så
-   * tallene står i kommentaren; det testen måler er navnet og at teksten er
-   * borte.
+   * The whole name was drawn once and came off on #119: «Skjul tråder og
+   * filter» (209 px) beside «Tråder» (123) and the width buttons (88) did not
+   * fit in 400. Measured at 1440 on 06.10, the one word gives a button 95 px
+   * wide ending at 379 in a row that ends at 399, with nothing overflowing.
+   * Measured without layout here, so the numbers stay in the comment; what
+   * the test measures is the name, the word and the order.
    */
-  it('har navnet sitt selv om ordene ikke står på skjermen', () => {
+  it('viser «Skjul» når panelet er åpent, og navnet begynner med ordet', () => {
     const restore = openShell();
     try {
       const toggle = railToggle();
 
       expect(toggle.getAttribute('aria-label')).toBe('Skjul tråder og filter');
+      expect(toggle.textContent).toBe('Skjul');
+      expect(toggle.getAttribute('aria-label')?.startsWith(toggle.textContent ?? '-')).toBe(true);
+    } finally {
+      restore();
+    }
+  });
+
+  it('står sist på raden, etter det viewet har satt der', () => {
+    // DOM order and not only CSS, so the Tab order is the order on screen.
+    const restore = openShell();
+    try {
+      const toggle = railToggle();
+      const header = toggle.closest('.sidebar-header')!;
+
+      expect(header.lastElementChild).toBe(toggle);
+      expect(header.firstElementChild).toBe(slot());
+    } finally {
+      restore();
+    }
+  });
+
+  it('er bare ikonet på railen, med hele navnet', () => {
+    const restore = openShell();
+    try {
+      act(() => railToggle().click());
+      const toggle = screen.getByRole('button', { name: 'Vis tråder og filter' });
+
       expect(toggle.textContent).toBe('');
     } finally {
       restore();

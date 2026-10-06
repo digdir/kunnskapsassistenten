@@ -587,15 +587,24 @@ function Sidebar({
   const railed = state.collapsed || drawer;
 
   /*
-   * Collapsed, the slot is a rail barely wider than this button, so the label
-   * cannot be drawn beside the icon and becomes the accessible name instead.
-   * Open, the panel has room and the words are better on screen than hidden
-   * behind a hover.
+   * «Skjul» on screen before the icon, in the navigation panel while it is
+   * open, and the button at the end of the row (Lars 06.10).
    *
-   * The name is the same string either way, which is the point: a screen
-   * reader user hears «Vis tråder og filter» in both states, and only the
-   * sighted presentation changes.
+   * The word and not the whole name. «Skjul tråder og filter» is 209 px, and
+   * beside «Tråder» it pushed the row past the panel (KA CC on #119). The word
+   * is how the name starts, so what a sighted reader sees is what a voice
+   * user says (WCAG 2.5.3), and a screen reader user hears the same name as
+   * before, drawn or not.
+   *
+   * Not on a rail, which is one button wide. Not in the sources panel either:
+   * its button already stood at the edge towards the answer column, which is
+   * where this one moves to, so the two heads mirror each other and differ
+   * only by the word.
    */
+  const showsWord = slot === 'primary-sidebar' && !railed;
+  /** The button stands at the panel's edge towards the answer column. */
+  const toggleLast = slot === 'primary-sidebar';
+
   /*
    * The foot of the navigation panel: the pages about Kunnskapsassistenten
    * and the app's own settings (Simens issue 85). What is in it is
@@ -700,34 +709,75 @@ function Sidebar({
       data-color="neutral"
       data-size="sm"
       /*
-        An icon button with its name in `aria-label`, in every state.
+        The name is in `aria-label`, in every state, and the tooltip says the
+        same string on hover and on focus. What is drawn is the icon, and in
+        the open navigation panel also «Skjul» (see `showsWord`).
 
-        It used to draw the words beside the icon while the panel was open, on
-        the argument that a label on screen beats one behind a hover. That was
-        right while the row held one control. It stopped being right when the
-        row had to hold three: «Skjul tråder og filter» (209 px) beside
-        «Tråder» (123) and the two width buttons (88) is 420 px in a 400 px
-        panel, and what fell off the end was the width buttons — a control the
-        pointer could no longer reach at all. Measured by KA CC on #119.
-
-        Nothing is lost for a screen reader: the name is the same string it
-        always was, and `aria-label` is what carries it. What a sighted reader
-        loses is the word on screen; what they get back is two controls that
-        are on screen at all. The tooltip says the same string on hover and on
-        focus.
-
-        Both sidebars and not only the one that overflowed: it is the same
-        row, and a panel head that read differently in the two would be two
-        designs for one thing.
+        The whole name was drawn beside the icon once, and came off on #119:
+        «Skjul tråder og filter» (209 px) beside «Tråder» (123) and the two
+        width buttons (88) is 420 px in a 400 px panel, and what fell off the
+        end was the width buttons — a control the pointer could no longer reach
+        at all. Measured by KA CC. The width buttons have since gone (#202),
+        and the one word fits.
       */
-      icon
+      icon={!showsWord}
+      className={showsWord ? 'sidebar-hide' : undefined}
       aria-label={toggleLabel}
       aria-expanded={!state.collapsed}
       aria-controls={contentId}
       onClick={() => toggleCollapsed(slot)}
     >
+      {showsWord ? 'Skjul' : null}
       <Icon aria-hidden />
     </Button>
+  );
+
+  /*
+   * One tooltip for the rail and the open panel, with the string the
+   * button's `aria-label` has. @digdir/designsystemet-web writes
+   * `data-tooltip` into `aria-label` on an element with no text of its
+   * own, so the two have to agree — and they do, both `toggleLabel`.
+   *
+   * On an element WITH text, which «Skjul» makes this one, it would instead
+   * remove `aria-label` and write the tooltip as `aria-description`, and a
+   * screen reader would hear «Skjul» and then the whole string again. It
+   * only writes when the tooltip differs from the `aria-label` already
+   * there (`tooltip.js`), so the agreement is what keeps the name. Measured
+   * 06.10 at 1440: `aria-label` stays, no `aria-description`.
+   *
+   * One element, not one per state, so the button is the same element
+   * to React when the panel collapses under the user's focus.
+   *
+   * Placement, measured 2026-09-28 at 1440 and 1920: there is no room
+   * above the button in an open panel, so `top` flips below it, over
+   * whatever the view starts with. In the sources panel that was the
+   * label «Søk i kildene». Further along the row there is nothing, and
+   * a box placed there covers nothing. The navigation panel's button
+   * ends its row: before it is «Tråder», below it «Filtrering», and
+   * after it the separator and the answer column. It keeps `top`.
+   *
+   * The sources rail puts it before the button, towards the answer
+   * column, and not on top. The box is placed once, when it appears,
+   * and then stays put: measured 30.09, it did not follow the button
+   * when the panel opened, not even after a resize event. Opening the
+   * panel from the keyboard changes the text under a box that is still
+   * showing, from «Vis kilder» to the longer «Skjul kilder», and a box
+   * placed on top of a rail at the window's edge grew from its start
+   * edge out past the end of the window: 1190–1289 at 1280 × 720, and
+   * the page scrolled 9 px sideways until the focus moved (KA CC on
+   * #224). Placed before the button, it ends where the button starts,
+   * and the 14 px it grows stay inside the window: 1139–1238 at 1280,
+   * with no sideways scroll at 1280, 1440 or 1512. The navigation rail
+   * keeps `top`: its box starts at the window's own start edge and
+   * grows away from it.
+   */
+  const toggleWithTooltip = (
+    <Tooltip
+      content={toggleLabel}
+      placement={slot === 'secondary-sidebar' ? (railed ? 'left' : 'right') : 'top'}
+    >
+      {toggleButton}
+    </Tooltip>
   );
 
   return (
@@ -804,45 +854,7 @@ function Sidebar({
       */}
       <div className="panel">
         <div className="sidebar-header">
-          {/*
-            One tooltip for the rail and the open panel, with the string the
-            button's `aria-label` has. @digdir/designsystemet-web writes
-            `data-tooltip` into `aria-label` on an element with no text of its
-            own, so the two have to agree — and they do, both `toggleLabel`.
-
-            One element, not one per state, so the button is the same element
-            to React when the panel collapses under the user's focus.
-
-            Placement, measured 2026-09-28 at 1440 and 1920: there is no room
-            above the button in an open panel, so `top` flips below it, over
-            whatever the view starts with. In the sources panel that was the
-            label «Søk i kildene». Further along the row there is nothing, and
-            a box placed there covers nothing. The navigation panel has no free
-            side: below is «Filtrering», further along the row is «Tråder»,
-            and before the button is the edge of the window. It keeps `top`
-            until its row has room.
-
-            The sources rail puts it before the button, towards the answer
-            column, and not on top. The box is placed once, when it appears,
-            and then stays put: measured 30.09, it did not follow the button
-            when the panel opened, not even after a resize event. Opening the
-            panel from the keyboard changes the text under a box that is still
-            showing, from «Vis kilder» to the longer «Skjul kilder», and a box
-            placed on top of a rail at the window's edge grew from its start
-            edge out past the end of the window: 1190–1289 at 1280 × 720, and
-            the page scrolled 9 px sideways until the focus moved (KA CC on
-            #224). Placed before the button, it ends where the button starts,
-            and the 14 px it grows stay inside the window: 1139–1238 at 1280,
-            with no sideways scroll at 1280, 1440 or 1512. The navigation rail
-            keeps `top`: its box starts at the window's own start edge and
-            grows away from it.
-          */}
-          <Tooltip
-            content={toggleLabel}
-            placement={slot === 'secondary-sidebar' ? (railed ? 'left' : 'right') : 'top'}
-          >
-            {toggleButton}
-          </Tooltip>
+          {toggleLast ? null : toggleWithTooltip}
           {/*
             What the view wants on the panel's own row, beside the collapse
             button. Empty until a view fills it, and an empty slot draws
@@ -855,6 +867,12 @@ function Sidebar({
             time, which is why one ref serves both. See panelHeadContext.ts.
           */}
           {railed ? null : <div className="panel-head-slot" ref={panelHeadRef} />}
+          {/*
+            Three places and not a reordered pair, so each child keeps its
+            position for the slot's whole life and the button stays the same
+            element when the panel collapses under the user's focus.
+          */}
+          {toggleLast ? toggleWithTooltip : null}
         </div>
 
         {drawer ? null : panelContent}

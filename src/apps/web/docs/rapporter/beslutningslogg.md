@@ -5,6 +5,21 @@ føres, står i [README](README.md). PR-numrene uten repo foran er i dette repoe
 
 ## 2026-10-06
 
+- **Node 24 og TypeScript 6 over hele linja**, både her (`engines` `>=24`,
+  [#263](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/263)) og i [digdir#129](https://github.com/digdir/kunnskapsassistenten/pull/129) (`mise.toml`, Dockerfile, CI og rota). Målt uten
+  feil, og ingen kode måtte endres.
+- **Valg av agent står i skrivefeltet**, som modellvalget i claude.ai: tekst uten
+  ramme og bakgrunn, som åpner en meny med navn og beskrivelse (punkt 1 i
+  [rapporten](2026-10-06-gjenstaar-foer-sammenslaaing.html#gjenstaar)).
+- **I navigasjonspanelet står «← Tråder» til venstre og «Skjul» til høyre**, og
+  foten er like høy som innholdet ([#262](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/262)).
+- **ADR-ene er oversatt til engelsk** og ligger i `src/decisions` i
+  [digdir#129](https://github.com/digdir/kunnskapsassistenten/pull/129) som
+  0004–0008, etter de som var der fra før. Der står også én kom-i-gang for
+  prosjektet etter sammenslåingen, i `src/README.md` (punkt 7 i
+  [rapporten](2026-10-06-gjenstaar-foer-sammenslaaing.html#gjenstaar)).
+- **En feil i BFF-en er rettet i [digdir#129](https://github.com/digdir/kunnskapsassistenten/pull/129):** et svar uten kilder fikk kildene til
+  svaret før etter ny innlasting, fordi et tomt sett kilder ikke ble lagret.
 - **Lenken til tilbakemelding under hvert svar tas etter sammenslåingen** og
   skal tenkes nytt, fordi den gir mye støy under hvert svar (punkt 2 i
   [rapporten](2026-10-06-gjenstaar-foer-sammenslaaing.html#gjenstaar)).

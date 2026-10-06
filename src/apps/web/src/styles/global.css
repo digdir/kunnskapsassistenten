@@ -322,8 +322,10 @@ body {
  *
  * `margin-inline-end: auto` rather than a wrapper around the collapse button:
  * the row is `space-between`, and three items would put this one in the
- * middle. The auto margin takes the free space after it instead, so the
- * collapse button and this sit together at the start of the row.
+ * middle. The auto margin takes the free space after it instead. In the
+ * sources panel the collapse button comes first, so the two sit together at
+ * the start of the row; in the navigation panel this comes first, and the
+ * margin is what puts «Skjul» at the end.
  *
  * Empty draws nothing at all, so a panel no view has filled is the row it was
  * before this existed — including the `space-between` with two items. `:empty`
@@ -335,6 +337,16 @@ body {
   gap: var(--ds-size-2);
   align-items: center;
   margin-inline-end: auto;
+}
+
+/*
+ * «Skjul» in the open navigation panel ends the row, at the edge towards the
+ * answer column, also when the view puts nothing before it: the thread list
+ * does not, and a lone item in a `space-between` row sits at the start.
+ * Only on the open panel, so the rail's own padding still centres its button.
+ */
+.sidebar-hide {
+  margin-inline-start: auto;
 }
 
 /*
@@ -620,38 +632,14 @@ body {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  /*
-   * The links sit right under the line, the colour scheme at the bottom, and
-   * the height below decides how far apart they end up. `space-between` and
-   * not a fixed gap, so the air lands between the two groups rather than
-   * under the last one.
-   */
-  justify-content: space-between;
   gap: var(--ds-size-4);
   inline-size: 100%;
   /*
-   * About 240 px tall on a desktop (Simens issue 85b), and less when the
-   * window is short.
-   *
-   * The foot is taken off the thread list, which is the region that scrolls:
-   * KA CC measured 240 px here as about 180 px off the scroll area at
-   * 1440 × 900, and a window 720 tall has less to give. So the desktop value
-   * is the CEILING, not the height — `dvh` in the middle term hands the
-   * height back as the window gets shorter, and the floor is what the links
-   * and the toggle actually need to stand in.
-   *
-   * 27dvh reaches the ceiling at about 890 px of window height, which is the
-   * shortest of the two desktop sizes we measure, and gives 194 px at 720 and
-   * 228 px at 844. The floor is `--ds-size-30` (120 px), a hair over the
-   * content's own height, so nothing is ever cut off.
-   *
-   * Tokens rather than the px in the issue, as the brief asks;
-   * `--ds-size-30` is the tallest step in the scale, so the ceiling is two of
-   * them.
+   * As tall as the links and the colour scheme, and no taller (Lars 06.10).
+   * Every pixel here is taken off the thread list above, which is the region
+   * that scrolls.
    */
-  /* stylelint-disable-next-line plugin/browser-compat -- `dvh` is baseline
-     since 2022; the rule's data is behind. Same disable as in chat.css. */
-  min-block-size: clamp(var(--ds-size-30), 27dvh, calc(var(--ds-size-30) * 2));
+  block-size: fit-content;
   padding-inline: var(--ka-sidebar-padding-inline);
   padding-block-start: var(--ds-size-4);
   border-block-start: var(--ka-panel-border);
@@ -662,14 +650,8 @@ body {
  * below it, so the panel is one column with nothing fixed. Off by default;
  * the hidden settings menu turns it on, see src/layout/footerMode.ts.
  *
- * Three things the pinned foot needs and this one does not:
- *
- *   - the minimum height, which existed to hold the pinned foot against the
- *     bottom of the panel. Inside the scroller it would be dead air between
- *     the last thread and the links;
- *   - `space-between`, which spread the links and the colour scheme across
- *     that height. Here they sit together at the end of the list;
- *   - the panel's inline padding, which the scrolling region already keeps.
+ * The panel's inline padding is the one thing the pinned foot needs and this
+ * one does not: the scrolling region already keeps it.
  *
  * The line over it stays. It is what separates the app's own settings from
  * the list, whether or not the foot moves with it.
@@ -681,8 +663,6 @@ body {
  * a third would be 80 px of air under three links.
  */
 .sidebar-content > .sidebar-footer {
-  justify-content: start;
-  min-block-size: 0;
   padding-inline: 0;
   margin-block-start: var(--ds-size-6);
 }

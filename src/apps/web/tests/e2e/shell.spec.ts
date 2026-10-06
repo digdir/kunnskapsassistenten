@@ -325,11 +325,13 @@ test.describe('skallet', () => {
     await expect(page.getByRole('link', { name: 'Gå til forsiden' })).toBeVisible();
 
     // Ingen hopp-lenke til et felt som ikke er der, og steg to i
-    // tabbrekkefølgen er en knapp som gjør noe.
+    // tabbrekkefølgen er en knapp som gjør noe. Hodet i navigasjonspanelet
+    // har «Tråder» først og skjul-knappen sist, også i DOM-en (#262).
     await expect(page.getByRole('link', { name: /^Hopp til skrivefeltet/ })).toHaveCount(0);
     const steps = await walkWithTab(page);
     expect(steps[0]?.name).toBe('Hopp til hovedinnhold');
-    expect(steps[1]?.name).toBe('Skjul tråder og filter');
+    expect(steps[1]?.name).toBe('Tråder');
+    expect(steps[2]?.name).toBe('Skjul tråder og filter');
     expectEveryStepReachable(steps, 'en tråd som ikke finnes');
 
     await expectNoAxeViolations(page, 'ukjent tråd');
@@ -412,8 +414,9 @@ test.describe('skallet', () => {
       /*
        * Vent på den andre hopp-lenka før vandringen. Den tegnes bare når det
        * finnes et skrivefelt å hoppe til, så en vandring som starter før
-       * skrivefeltet er der finner «Skjul tråder og filter» som steg 2 og blir
-       * rød på rekkefølgen — målt i full suite 15.09, grønn alene rett etterpå.
+       * skrivefeltet er der finner den første knappen i navigasjonspanelet som
+       * steg 2 og blir rød på rekkefølgen — målt i full suite 15.09, grønn alene
+       * rett etterpå.
        * Fjerde tilfelle av samme race i denne fila og i chat.spec.ts.
        */
       await expect(page.getByRole('link', { name: /^Hopp til skrivefeltet/ })).toBeAttached();
@@ -424,8 +427,9 @@ test.describe('skallet', () => {
       expectEveryStepReachable(steps, 'skallet');
 
       // Reading order: the skip links come first, then the slots in the order
-      // the shell renders them, so the first stop after them is the primary
-      // sidebar's own button.
+      // the shell renders them, so the first stops after them are the primary
+      // sidebar's head: «Tråder», then the button that hides the panel, which
+      // ends the row on screen and in the DOM (#262).
       //
       // «Hopp til skrivefeltet» sits second on purpose. The compose field is at
       // the bottom of the answer and was tab stop 22 — for the thing a reader
@@ -438,7 +442,8 @@ test.describe('skallet', () => {
       // lenketeksten fordi hintet ved feltet er på vei ut (H3 i
       // design/hoydebudsjett-forslag-2026-09-21.md).
       expect(steps[1]?.name).toBe('Hopp til skrivefeltet (Ctrl + /)');
-      expect(steps[2]?.name).toBe('Skjul tråder og filter');
+      expect(steps[2]?.name).toBe('Tråder');
+      expect(steps[3]?.name).toBe('Skjul tråder og filter');
     },
   );
 
