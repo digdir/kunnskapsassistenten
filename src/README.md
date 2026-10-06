@@ -180,36 +180,47 @@ docker stop ka
 
 ## Kommandoer
 
-|                     |                                    |
-| ------------------- | ---------------------------------- |
-| `npm run dev`       | begge appene, med watch            |
-| `npm run doctor`    | sjekk forbindelsen til backenden   |
-| `npm run build`     | produksjonsbygg av SPA-en          |
-| `npm test`          | server (node:test) og web (vitest) |
-| `npm run typecheck` | alle tre prosjektene               |
-| `npm run format`    | prettier                           |
+|                                         |                                                                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                           | BFF-en og klienten, med watch. Klienten går i mock uten `VITE_API_MODE=bff`, se [Komme i gang](#komme-i-gang) |
+| `npm run dev:web`                       | bare klienten, i mock                                                                                         |
+| `npm run doctor`                        | sjekk forbindelsen til backenden                                                                              |
+| `npm run build`                         | produksjonsbygg av klienten                                                                                   |
+| `npm test`                              | server (node:test) og web (vitest)                                                                            |
+| `npm run typecheck`                     | alle tre prosjektene                                                                                          |
+| `npm run format`                        | prettier, skriver                                                                                             |
+| `npm run format:check`                  | prettier, sjekker bare                                                                                        |
+| `npm run lint --workspace apps/web`     | oxlint og stylelint i klienten                                                                                |
+| `npm run test:e2e --workspace apps/web` | Playwright mot klienten i mock                                                                                |
 
 ## Status
 
-Den portede brukeropplevelsen virker ende til ende mot Kudos-korpuset: tråder,
-strømmede svar med statusetiketter, og kilder med utdrag.
+Klienten virker ende til ende mot Kudos-korpuset gjennom BFF-en: tråder,
+strømmede svar med agentens steg, og kilder med utdrag når Typesense er satt
+opp.
 
 Den samme builden kjører mot begge versjoner av backenden. Se [Hva backenden
 støtter](#hva-backenden-støtter).
 
-|                                                         |                                                                                                                         |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Samtale over `/api/mcp`, SSE-strømming, statusetiketter | ferdig                                                                                                                  |
-| Trådliste: søk, endre navn, slett                       | ferdig                                                                                                                  |
-| Flere turer i samme tråd, startskjerm                   | ferdig                                                                                                                  |
-| Kildepanel: snarveier, kort, utdrag, husket per tråd    | ferdig                                                                                                                  |
-| Kopier svar og lenke, tilbakemeldingslenke, nøkkelord   | ferdig                                                                                                                  |
-| Innlogging                                              | ferdig. Engangskode i drift, Entra ID venter på samtykke. Av lokalt. Se [Innlogging](#innlogging)                       |
-| Utrulling til Azure Container Apps                      | utrullet og i bruk. Se [`deploy/`](deploy/README.md)                                                                    |
-| Filterpanel: fasetter, chips med antall, låst per tråd  | vises alltid. Deaktivert med forklaring når backenden ikke tar imot filtre, og slår seg på av seg selv når den gjør det |
-| Genererte trådtitler                                    | faller tilbake på spørsmålet til backenden lager en                                                                     |
-| `Vis andres tråder`                                     | deaktivert, API-et kan ikke liste tråder du ikke eier                                                                   |
-| Mapper                                                  | droppet. Backenden har tagger, ikke mapper                                                                              |
+|                                                                   |                                                                                                                         |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Samtale gjennom BFF-en: strømmet svar og agentens steg            | ferdig. To visningsnivåer, Standard og Detaljert. Etter ny innlasting er stegene borte, for BFF-en tar ikke vare på dem |
+| Trådliste: søk, endre navn, slett                                 | ferdig. Gruppert etter tid, spør før sletting, og tar endringen tilbake når BFF-en sier nei                             |
+| Flere turer i samme tråd, startskjerm med forslag                 | ferdig                                                                                                                  |
+| Adresser                                                          | `/threads/<id>` åpner tråden. Infosider, 404-side og egen sidetittel per rute                                           |
+| Kilder: klikkbare `[n]`, utdrag per svar, «Kilder brukt i svaret» | ferdig, med søk i svaret og i kildene. Etter ny innlasting har bare siste svar kilder, fra BFF-ens minne                |
+| Kopier svaret og lenken til tråden, nøkkelord fra søket           | ferdig                                                                                                                  |
+| Lenke til tilbakemelding                                          | ikke med                                                                                                                |
+| Valg av agent og modus                                            | ikke med. BFF-en har `/api/models`                                                                                      |
+| Innlogging                                                        | i BFF-en, Entra ID, av lokalt. Se [Innlogging](#innlogging). Ved 401 tar klienten vare på utkastet før innloggingen     |
+| Navn og «Logg ut»                                                 | fra `/api/me`. «Logg ut» tømmer også det klienten husker om svarene i nettleseren                                       |
+| Bildet                                                            | BFF-en med klienten bygget i bff-modus, fra samme origin. Se [`deploy/`](deploy/README.md)                              |
+| Filterpanel: fasetter med antall, låst per tråd                   | ferdig, med beskjed når filteret er låst. Felt og korpusnavn fra BFF-en                                                 |
+| Filtre når backenden ikke tar imot dem                            | panelet sier «Filtrering er ikke tilgjengelig ennå»                                                                     |
+| Genererte trådtitler                                              | faller tilbake på spørsmålet til backenden lager en                                                                     |
+| Mapper                                                            | droppet. Backenden har tagger, ikke mapper                                                                              |
+| Uten backend                                                      | mock med et utdrag av Kudos, til utvikling, demo og e2e                                                                 |
+| Oppsett                                                           | paneler som endrer bredde, skuffer på smal skjerm, og lys og mørk modus                                                 |
 
 ## Hva backenden støtter
 
