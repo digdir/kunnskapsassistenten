@@ -1,5 +1,5 @@
 import { Button, Card, Paragraph, Skeleton, Spinner } from '@digdir/designsystemet-react';
-import { ArrowsCirclepathIcon } from '@navikt/aksel-icons';
+import { ArrowsCirclepathIcon, InformationSquareIcon } from '@navikt/aksel-icons';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Markdown } from '../../components';
 import { ViewHead } from '../../layout/ViewHead';
@@ -12,11 +12,13 @@ import { RetrievalPanel } from './RetrievalPanel';
 import { SourcesSummary } from './SourcesSummary';
 import { ThinkingPanel } from './ThinkingPanel';
 import { useDisplayLevel } from './displayLevel';
+import { lacksSources } from './noSources';
 import {
   ABORTED_BEFORE_ANSWER,
   ABORTED_NOTE,
   CLOSING_QUESTION,
   FAILED_NOTE,
+  NO_SOURCES_WARNING,
   REGENERATE,
 } from './text';
 import { ANSWER_MARK_CLASS, useAnswerHits } from './useAnswerHits';
@@ -297,6 +299,27 @@ export function AnswerMessage({
         <Card className="ka-answer-card" data-color="neutral">
           <Card.Block>
             {empty && streaming ? <AnswerSkeleton /> : null}
+
+            {/*
+              One quiet line over the answer, with an info icon before it, as
+              Aksel's InlineMessage with status info (chosen 06.10): no frame
+              and no fill. Over and not under, so it is read before the text
+              it is about.
+
+              Not a Designsystemet component, because it has none for this.
+              `Alert` is the box that was chosen against, and `ValidationMessage`,
+              which looks like this, is feedback on a form field and ties
+              itself to one (`data-field="validation"`). The icon is
+              decoration and the sentence says it all. No role: it arrives
+              with the finished answer, and the live region says it then
+              («Svaret er ferdig.» and this sentence, useChat).
+            */}
+            {lacksSources(message) ? (
+              <Paragraph className="ka-no-sources-note" data-size="sm">
+                <InformationSquareIcon aria-hidden className="ka-no-sources-note__icon" />
+                {NO_SOURCES_WARNING}
+              </Paragraph>
+            ) : null}
 
             {/* The ref is what the search counts marks inside, so it wraps the
                 answer and nothing else: the closing question and the action

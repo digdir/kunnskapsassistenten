@@ -76,17 +76,33 @@ const NOT_STORED: SourcesEmptyState = {
 };
 
 /**
+ * An answer read back from a store that keeps no sources per answer, with no
+ * markers in it. Not the sentence above: there is nothing on screen that
+ * «viser til utdrag», and nothing here knows whether the answer had sources.
+ * The BFF is such a store; see `Message.sourcesNotStored`.
+ */
+const NOT_KEPT: SourcesEmptyState = {
+  title: NOT_STORED.title,
+  description:
+    'Kildene blir ikke lagret sammen med samtalen. Still spørsmålet på nytt for å se hvilke dokumenter svaret bygger på.',
+};
+
+/**
  * @param citationCount how many `[n]` the answer carries, when that is known.
  *   A finished answer that cited something and has no excerpts lost them; one
  *   that cited nothing never had any. Undefined keeps the older wording, so
  *   nothing changes until the chat view starts counting.
+ * @param sourcesNotStored the store kept no sources for this answer, so none
+ *   is not known to mean none.
  */
 export function emptyStateFor(
   status: Exclude<MessageStatus, 'streaming'>,
   citationCount?: number,
+  sourcesNotStored?: boolean,
 ): SourcesEmptyState {
   if (status === 'complete' && citationCount !== undefined && citationCount > 0) {
     return NOT_STORED;
   }
+  if (status === 'complete' && sourcesNotStored) return NOT_KEPT;
   return BY_STATUS[status];
 }

@@ -178,7 +178,10 @@ function panelContentFor(
   if (active === undefined) return { kind: 'empty', state: noAnswerYet(activeCorpusName) };
   if (active.status === 'streaming') return { kind: 'loading' };
   if (active.documents.length === 0) {
-    return { kind: 'empty', state: emptyStateFor(active.status, active.citationCount) };
+    return {
+      kind: 'empty',
+      state: emptyStateFor(active.status, active.citationCount, active.sourcesNotStored),
+    };
   }
   return { kind: 'sources' };
 }

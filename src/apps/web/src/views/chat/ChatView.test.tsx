@@ -1188,6 +1188,43 @@ describe('ChatView', () => {
     });
   });
 
+  it('lar kildepanelet vite at kildene ikke ble lagret', async () => {
+    // A thread read back through the BFF, which keeps no sources per message.
+    const reported: AnswerSources[] = [];
+    const restored: ThreadDetail = {
+      ...threadWith('Hva er Norge kjent for?'),
+      messages: [
+        {
+          id: 'u8',
+          role: 'user',
+          content: 'Hva er Norge kjent for?',
+          createdAt: '2026-10-06T09:00:00Z',
+          citations: [],
+          status: 'complete',
+        },
+        {
+          id: 'a8',
+          role: 'assistant',
+          content: 'Kysten, oljen og vannkraften.',
+          createdAt: '2026-10-06T09:00:01Z',
+          citations: [],
+          citationCount: 0,
+          sourcesNotStored: true,
+          status: 'complete',
+        },
+      ],
+    };
+
+    render(
+      <Shell onAnswerSources={(answer) => reported.push(answer)}>
+        <ChatView client={clientYielding([])} thread={restored} />
+      </Shell>,
+    );
+
+    await waitFor(() => expect(reported.length).toBeGreaterThan(0));
+    expect(reported.at(-1)).toMatchObject({ messageId: 'a8', sourcesNotStored: true });
+  });
+
   it('reports once per real change, not once per token', async () => {
     const reported: AnswerSources[] = [];
     const manyTokens: StreamEvent[] = [

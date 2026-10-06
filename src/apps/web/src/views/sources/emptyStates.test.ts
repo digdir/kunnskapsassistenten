@@ -34,6 +34,16 @@ describe('emptyStateFor', () => {
     expect(emptyStateFor('complete', 0).title).toBe('Ingen kilder til dette svaret');
   });
 
+  it('sier at kildene ikke er lagret når lagringen ikke tok vare på dem, også uten markører', () => {
+    const notKept = emptyStateFor('complete', 0, true);
+    expect(notKept.title).toBe('Kildene er ikke lagret for denne samtalen');
+    // No markers on screen, so it does not say the answer points to excerpts.
+    expect(notKept.description).not.toContain('viser til');
+    expect(emptyStateFor('complete', undefined, true)).toEqual(notKept);
+    // With markers, the sentence that explains them still wins.
+    expect(emptyStateFor('complete', 3, true).description).toContain('viser til utdrag');
+  });
+
   it('sier det samme som før når ingen har talt siteringene', () => {
     // Chatviewet sender ikke tallet ennå. Til det gjør det, skal ordene være
     // uendret — et hull i det som er kjent er ikke et funn om svaret.

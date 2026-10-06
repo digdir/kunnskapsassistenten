@@ -373,6 +373,9 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
          * resolves its markers as they arrive and leaves this undefined.
          */
         ...(message.citationCount === undefined ? {} : { citationCount: message.citationCount }),
+        // Read back from a store that kept no sources for it: the panel says
+        // they were not stored rather than that there were none.
+        ...(message.sourcesNotStored ? { sourcesNotStored: true } : {}),
         /*
          * Which corpus answered. The panel names the corpus the ANSWER came
          * from and not the one the chooser stands on: open a Kudos thread

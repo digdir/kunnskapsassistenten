@@ -143,14 +143,16 @@ export function threadDetailFromBff(
     ...thread,
     // As in live: the last turn is the best «last activity» there is.
     updatedAt: turns.at(-1)?.createdAt ?? thread.updatedAt,
-    messages:
-      documents.length === 0 || last === -1
-        ? turns
-        : turns.map((message, index) =>
-            index === last
-              ? { ...message, sources: documents, citations: toCitations(documents) }
-              : message,
-          ),
+    messages: turns.map((message, index) => {
+      if (message.role !== 'assistant' || message.status === 'error') return message;
+      if (index === last && documents.length > 0) {
+        return { ...message, sources: documents, citations: toCitations(documents) };
+      }
+      // Every other answer comes back without sources whether it had them or
+      // not, and so does the last one after a restart. Not «none», but «not
+      // stored»: see `Message.sourcesNotStored`.
+      return { ...message, sourcesNotStored: true };
+    }),
   };
 }
 

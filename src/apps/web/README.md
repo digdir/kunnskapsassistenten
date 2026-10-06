@@ -1,6 +1,6 @@
 # Kunnskapsassistenten, frontend
 
-> Kopiert fra [larsekhansen/kunnskapsassistenten-frontend](https://github.com/larsekhansen/kunnskapsassistenten-frontend) på `2f43c5c` 6. oktober 2026, uten historikken. Historikken står der.
+> Kopiert fra [larsekhansen/kunnskapsassistenten-frontend](https://github.com/larsekhansen/kunnskapsassistenten-frontend) på `0eaa9ca` 6. oktober 2026, uten historikken. Historikken står der.
 
 [![CI](https://github.com/larsekhansen/kunnskapsassistenten-frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/larsekhansen/kunnskapsassistenten-frontend/actions/workflows/ci.yml)
 

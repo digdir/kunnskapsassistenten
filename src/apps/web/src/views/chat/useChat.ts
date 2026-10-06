@@ -14,6 +14,7 @@ import {
   NO_HITS_ANNOUNCEMENT,
   NO_HITS_FILTERED,
   NO_HITS_WHOLE_CORPUS,
+  NO_SOURCES_WARNING,
 } from './text';
 
 /**
@@ -443,6 +444,18 @@ export function useChat(
        */
       let thinkingStartedAt: number | undefined;
 
+      /*
+       * How many documents the answer came with, for what the live region
+       * says when it is done. An answer with none gets a warning in its card
+       * (AnswerMessage), and a reader who hears the answer is done and
+       * nothing else would not know the warning is there.
+       */
+      let sourceCount = 0;
+      const doneAnnouncement = () =>
+        content.trim() !== '' && sourceCount === 0
+          ? `Svaret er ferdig. ${NO_SOURCES_WARNING}`
+          : 'Svaret er ferdig.';
+
       try {
         for await (const event of client.ask({
           query: question,
@@ -498,6 +511,7 @@ export function useChat(
               break;
 
             case 'sources':
+              sourceCount = event.documents.length;
               patchAnswer(answerId, (message) => ({
                 ...message,
                 sources: event.documents,
@@ -513,7 +527,7 @@ export function useChat(
               const clarifying = event.outcome === 'needs-clarification';
               settleAnswer(answerId, clarifying ? 'needs-clarification' : 'complete', event);
               if (isCurrentTurn()) {
-                setAnnouncement(clarifying ? CLARIFICATION_ANNOUNCEMENT : 'Svaret er ferdig.');
+                setAnnouncement(clarifying ? CLARIFICATION_ANNOUNCEMENT : doneAnnouncement());
                 setStatus('idle');
               }
               return;
@@ -575,7 +589,7 @@ export function useChat(
         // more, so the answer is as finished as it is going to get.
         settleAnswer(answerId, 'complete');
         if (isCurrentTurn()) {
-          setAnnouncement('Svaret er ferdig.');
+          setAnnouncement(doneAnnouncement());
           setStatus('idle');
         }
       } catch {

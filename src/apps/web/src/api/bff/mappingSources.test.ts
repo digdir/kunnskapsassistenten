@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { BffSource } from './contract';
-import { BffTurnState, sourceDocumentsFrom } from './mapping';
+import type { BffMessage, BffSource } from './contract';
+import { BffTurnState, sourceDocumentsFrom, threadDetailFromBff } from './mapping';
 
 /**
  * The BFF sends one source per chunk and the answer's `[n]` counts chunks, so
@@ -64,5 +64,74 @@ describe('sourceDocumentsFrom', () => {
     const sources = out.find((event) => event.type === 'sources');
     expect(sources?.retrieval.hitCount).toBe(2);
     expect(sources?.retrieval.documentCount).toBe(1);
+  });
+});
+
+/**
+ * What the BFF does not keep is not known, and an answer read back without
+ * sources is not an answer without sources.
+ *
+ * The BFF passes each message on as text alone, without the chunks the
+ * backend stores, and keeps one set of sources per conversation in memory:
+ * the last answer's (on its `main`, the last set that was not empty), gone
+ * after a restart. Measured 06.10
+ * against the BFF on :8791, three questions and a reload: the second answer
+ * had sources and no `[n]`, came back with none, and was told it had none.
+ */
+describe('threadDetailFromBff: sources the BFF did not keep', () => {
+  const messages: BffMessage[] = [
+    { id: 'm1', role: 'user', text: 'Første', created: 1 },
+    { id: 'm2', role: 'assistant', text: 'Et svar uten markører.', created: 2 },
+    { id: 'm3', role: 'user', text: 'Andre', created: 3 },
+    { id: 'm4', role: 'assistant', text: 'Det siste svaret [1].', created: 4 },
+  ];
+  const kept = [
+    { docNum: '1', title: 'Tildelingsbrev', url: '', marker: 1, chunkId: 'a', excerpt: 'x' },
+  ];
+
+  it('marks an earlier answer as not stored, markers or not', () => {
+    const thread = threadDetailFromBff({
+      conversation: { id: 'c1', topic: 'Første', created: 1 },
+      messages,
+      sources: kept,
+    });
+
+    expect(thread.messages[1]).toMatchObject({ sourcesNotStored: true });
+    expect(thread.messages[1]?.sources).toBeUndefined();
+  });
+
+  it('leaves the last answer alone when the BFF still has its sources', () => {
+    const thread = threadDetailFromBff({
+      conversation: { id: 'c1', topic: 'Første', created: 1 },
+      messages,
+      sources: kept,
+    });
+
+    expect(thread.messages[3]?.sources).toHaveLength(1);
+    expect(thread.messages[3]?.sourcesNotStored).toBeUndefined();
+  });
+
+  it('marks the last answer too when the BFF has nothing, which is also what a restart looks like', () => {
+    const thread = threadDetailFromBff({
+      conversation: { id: 'c1', topic: 'Første', created: 1 },
+      messages,
+      sources: [],
+    });
+
+    expect(thread.messages.filter((message) => message.sourcesNotStored)).toHaveLength(2);
+    expect(thread.messages[0]?.sourcesNotStored).toBeUndefined();
+  });
+
+  it('does not mark a failed turn, which had no answer for sources to belong to', () => {
+    const thread = threadDetailFromBff({
+      conversation: { id: 'c1', topic: 'Første', created: 1 },
+      messages: [
+        { id: 'm1', role: 'user', text: 'Første', created: 1 },
+        { id: 'm2', role: 'assistant', text: 'LLM request failed at iteration 1', created: 2 },
+      ],
+    });
+
+    expect(thread.messages[1]?.status).toBe('error');
+    expect(thread.messages[1]?.sourcesNotStored).toBeUndefined();
   });
 });

@@ -146,6 +146,11 @@ export type AnswerSources = {
    */
   citationCount?: number;
   /**
+   * The store did not keep this answer's sources, markers or not. Same field
+   * and the same reason as `Message.sourcesNotStored`.
+   */
+  sourcesNotStored?: boolean;
+  /**
    * Which corpus this answer was retrieved from. Same field and the same
    * reason as `Message.corpusKey`: the panel and the disclaimer name the
    * corpus the ANSWER came from, not the one the chooser stands on now.

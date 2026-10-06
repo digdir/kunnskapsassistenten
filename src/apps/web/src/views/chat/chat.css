@@ -199,6 +199,40 @@
 }
 
 /*
+ * The line over an answer with no sources: an info icon and the sentence, in
+ * the muted text colour, with no frame and no fill. The icon in the theme's
+ * info colour, as Aksel's InlineMessage draws status info.
+ *
+ * «originaldokumentene» is wider than the text column on a phone, so a word
+ * that cannot fit breaks at a Norwegian hyphenation point where the browser
+ * has one, as the document titles under the answer do.
+ */
+.ka-no-sources-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-size-2);
+  color: var(--ds-color-text-subtle);
+  overflow-wrap: break-word;
+  /* stylelint-disable-next-line plugin/browser-compat -- uprefikset
+     `hyphens` kom i Safari 17; 16 har den bare som `-webkit-hyphens`. Der
+     deles ordet av `overflow-wrap` over i stedet, uten bindestrek. */
+  hyphens: auto;
+}
+
+/*
+ * As tall as one line of the text, so the icon stands beside the first line
+ * and not between two when the sentence wraps.
+ */
+.ka-no-sources-note__icon {
+  flex-shrink: 0;
+  inline-size: 1.25em;
+  /* One line of `Paragraph data-size="sm"`. `1lh` says it shorter, but
+     Safari 16 does not have it. */
+  block-size: calc(1em * var(--ds-body-sm-line-height));
+  color: var(--ds-color-info-text-subtle);
+}
+
+/*
  * The «Trenger avklaring» row above the agent's question.
  *
  * A paragraph rather than a bare Tag, so the mark sits on its own line with

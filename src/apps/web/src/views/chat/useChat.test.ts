@@ -292,7 +292,7 @@ describe('useChat', () => {
 
     await waitFor(() => expect(result.current.status).toBe('idle'));
     expect(assistantMessages(result.current.messages)[0]?.status).toBe('complete');
-    expect(result.current.announcement).toBe('Svaret er ferdig.');
+    expect(result.current.announcement).toMatch(/^Svaret er ferdig\./);
   });
 
   it('says it is searching once, however many steps arrive', async () => {

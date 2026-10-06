@@ -252,3 +252,15 @@ export const AGENT_PREFIX = 'Agent: ';
 export const AGENT_DEFAULT_LABEL = 'Standard';
 /** Over the list of agents. */
 export const AGENT_HEADING = 'Velg agent';
+
+/**
+ * Over a finished answer with no sources behind it. Without it, an answer
+ * with no sources looks exactly like one with them, and only the sources
+ * panel says otherwise.
+ *
+ * Shorter than the client in digdir/kunnskapsassistenten, which says «ingen
+ * kilder fra dokumentgrunnlaget»: one short, quiet line, as chosen on 06.10,
+ * with the same advice.
+ */
+export const NO_SOURCES_WARNING =
+  'Svaret har ingen kilder. Kontroller det mot originaldokumentene før du bruker det.';
