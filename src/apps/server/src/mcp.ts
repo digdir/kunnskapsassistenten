@@ -188,13 +188,21 @@ function documentUrl(chunk: ResultChunk): string {
 /**
  * The retrieved chunks as sources, one per chunk and in retrieval order.
  *
- * The index IS the marker: `[N]` in the answer is the agent's 1-based index
- * into this same list, so nothing here may reorder it, group it or drop an
- * entry. An earlier version grouped by document and numbered the documents,
- * which silently shifted every marker as soon as one document gave two
- * chunks. Dropping a chunk without a `doc_num` would shift them the same way,
- * so such a chunk keeps its place with an empty `docNum` and the client names
- * it by its marker.
+ * The marker is the position in this list. That assumes `[N]` in the answer
+ * is the N-th chunk of the result, and it does not always hold: synthesis
+ * numbers its own context and compacts what it cited to 1..k
+ * (skills/builtin/synthesis.clj, `renumber-citations`), so an answer that
+ * cited its context 2 and 5 says [1] and [2]. Nothing in the result says
+ * which chunk an `[N]` is. A test in mcp.test.ts pins the assumption until
+ * headless-rag sends that (digdir/digdir-headless-rag#36), and the mapping
+ * then goes by `chunk_id`.
+ *
+ * Until then, nothing here may reorder the list, group it or drop an entry,
+ * or the assumption fails also where it holds. An earlier version grouped by
+ * document and numbered the documents, which shifted every marker as soon as
+ * one document gave two chunks. A chunk without a `doc_num` keeps its place
+ * with an empty `docNum` for the same reason, and the client names it by its
+ * marker.
  */
 export async function toSources(
   chunks: ResultChunk[] | undefined,
