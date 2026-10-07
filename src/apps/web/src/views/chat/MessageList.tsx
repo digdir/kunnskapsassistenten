@@ -5,6 +5,7 @@ import { AnswerMessage } from './AnswerMessage';
 import { attachmentsOnMessage } from './attachmentText';
 import { Clarification } from './Clarification';
 import { ThinkingPanel } from './ThinkingPanel';
+import { thinkingWithoutAnswer } from './thinkingWithoutAnswer';
 
 type MessageListProps = {
   messages: Message[];
@@ -146,13 +147,17 @@ export function MessageList({
         // before it asked back, and how long it spent is the same fact here
         // as over an answer (the conductor, 2026-09-15).
         if (message.status === 'needs-clarification') {
+          const clarificationSteps = thinkingWithoutAnswer(message.thinkingSteps, message.content);
           return (
             <li className="ka-message ka-message--assistant" key={message.id}>
               <span className="ds-sr-only">Kunnskapsassistenten spurte:</span>
-              {message.thinkingSteps?.length ? (
+              {/* Less the step that is the question back over again; see
+                  `thinkingWithoutAnswer`. The agent can write it as its own
+                  reasoning just as it can write an answer there. */}
+              {clarificationSteps?.length ? (
                 <ThinkingPanel
                   status="done"
-                  steps={message.thinkingSteps}
+                  steps={clarificationSteps}
                   thoughtMs={message.thoughtMs}
                 />
               ) : null}

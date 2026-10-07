@@ -138,6 +138,36 @@ export function targetFor(apiBase: string, requestUrl: string): URL | undefined 
 }
 
 /**
+ * The calls the client makes, by method and path, and nothing else.
+ *
+ * Everything else under `/api/` is the backend's own API (tools, skills, the
+ * config tree), and this server's key would go with it. The client makes four
+ * calls: the MCP endpoint, and the conversation store's list, create and read
+ * (src/api/live/LiveChatClient.ts). `/api/facets` and `/api/excerpts` are
+ * answered by this server itself (app.ts) and never get here.
+ *
+ * Matched on the decoded path, so an escaped `/` in an id counts as a `/`:
+ * the backend may decode it before it routes. Run after `targetFor`, which
+ * has already refused the paths whose meaning depends on decoding.
+ */
+const CLIENT_CALLS: readonly { method: string; path: RegExp }[] = [
+  { method: 'POST', path: /^\/api\/mcp$/ },
+  { method: 'GET', path: /^\/api\/conversations$/ },
+  { method: 'POST', path: /^\/api\/conversations$/ },
+  { method: 'GET', path: /^\/api\/conversations\/[^/]+$/ },
+];
+
+export function isClientCall(method: string | undefined, requestUrl: string): boolean {
+  let path: string;
+  try {
+    path = decodeURIComponent(new URL(requestUrl, 'http://localhost').pathname);
+  } catch {
+    return false;
+  }
+  return CLIENT_CALLS.some((call) => call.method === method && call.path.test(path));
+}
+
+/**
  * The whole request body, up to a limit.
  *
  * Buffered because it is small — a question is a few hundred bytes of JSON —
@@ -218,11 +248,11 @@ export async function proxy(
   }
 
   const target = targetFor(config.apiBase, request.url ?? '');
-  if (target === undefined) {
+  if (target === undefined || !isClientCall(request.method, request.url ?? '')) {
     /*
-      Outside `/api/`, so it is not this server's to forward. 404 and not 403:
-      there is nothing here, and saying «forbidden» would confirm that
-      something is there to be forbidden.
+      Outside `/api/`, or not a call the client makes, so it is not this
+      server's to forward. 404 and not 403: there is nothing here, and saying
+      «forbidden» would confirm that something is there to be forbidden.
     */
     response.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
     response.end(JSON.stringify({ error: 'Ukjent endepunkt.' }));

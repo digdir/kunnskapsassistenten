@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { act } from 'react';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';
+import { findThread } from './api/mock/fixtures';
 import { App } from './App';
 import { COMPOSER_ID } from './layout/ids';
 
@@ -319,5 +320,19 @@ describe('hopp-lenkene', () => {
 
     expect(await screen.findByRole('link', { name: /^Hopp til skrivefeltet/ })).toBeDefined();
     expect(document.getElementById(COMPOSER_ID)).not.toBeNull();
+  });
+});
+
+describe('en lenke fra den forrige klienten', () => {
+  /*
+   * The previous client shares a thread as `/chat/:id` («Kopier lenke»), and
+   * its id is the same conversation id as `/threads/:id` here.
+   */
+  it('åpner tråden under /threads/', async () => {
+    const thread = findThread('nkom-maaloppnaaelse')!;
+    openAt('/chat/nkom-maaloppnaaelse');
+
+    expect(await screen.findByRole('heading', { level: 2, name: thread.title })).toBeDefined();
+    expect(screen.queryByRole('heading', { name: 'Siden finnes ikke' })).toBeNull();
   });
 });

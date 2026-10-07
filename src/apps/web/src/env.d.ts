@@ -3,7 +3,7 @@
  * names reach the bundle, which is the point: no secret belongs here.
  */
 interface ImportMetaEnv {
-  /** `mock` (default), `live` or `bff`. See src/api/index.ts. */
+  /** `mock`, `live` or `bff`, read when the app is built. See src/api/apiMode.ts. */
   readonly VITE_API_MODE?: 'mock' | 'live' | 'bff';
   /**
    * Which corpus live mode asks. Both or neither — the backend only honours

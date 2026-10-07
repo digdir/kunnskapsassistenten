@@ -6,13 +6,16 @@ API-nøkkelen og innloggingen, og identiteten kommer fra økta. Klienten sender
 spørsmålet, samtale-id-en og filteret, ikke tenant, datasett eller
 `X-User-Id`. Bakgrunnen står i `src/decisions/0005-client-behind-the-bff.md`.
 
-| BFF-en                         | i klienten                                                                      |
-| ------------------------------ | ------------------------------------------------------------------------------- |
-| `POST /api/ask`                | `ask`, og samtale-id-en som svar på `createThread`                              |
-| `GET /api/conversations[/:id]` | `listThreads`, `getThread`, med trådens filter i dimensjoner                    |
-| `GET /api/facets`              | `listFacets`, og feltnavnene per dimensjon                                      |
-| `GET /api/capabilities`        | filtrene slås av når `filters` er `false`, og korpusnavnet kommer fra `dataset` |
-| 401 på et kall                 | til `/auth/login`, og tilbake til siden                                         |
+Klienten spør BFF-en under `/api/v2` (`src/api/bff/api.ts`). `/api` har
+formatet den forrige klienten leser, og BFF-en svarer på begge.
+
+| BFF-en                            | i klienten                                                                      |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| `POST /api/v2/ask`                | `ask`, og samtale-id-en som svar på `createThread`                              |
+| `GET /api/v2/conversations[/:id]` | `listThreads`, `getThread`, med trådens filter i dimensjoner                    |
+| `GET /api/v2/facets`              | `listFacets`, og feltnavnene per dimensjon                                      |
+| `GET /api/v2/capabilities`        | filtrene slås av når `filters` er `false`, og korpusnavnet kommer fra `dataset` |
+| 401 på et kall                    | til `/auth/login`, og tilbake til siden                                         |
 
 BFF-en svarer fra ett datasett, satt i dens egen `.env`
 (`DIGDIR_DATASET_CONFIG_KEY`). Feltene og korpusnavnet setter den med

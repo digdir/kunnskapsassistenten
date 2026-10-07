@@ -67,7 +67,7 @@ export TYPESENSE_URL TYPESENSE_API_KEY KA_FACET_COLLECTIONS KA_CHUNK_COLLECTIONS
 ```sh
 read -rs KEY
 npm ci
-npm run build
+VITE_API_MODE=live npm run build
 PORT=8799 KA_MODE=live \
   DIGDIR_API_BASE=http://localhost:8080 \
   DIGDIR_API_KEY="$KEY" \

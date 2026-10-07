@@ -341,3 +341,67 @@ describe('Markdown runs nothing from the answer text', () => {
     expect(executable(container)).toEqual([]);
   });
 });
+
+/**
+ * An address in an answer is as untrusted as the document the model read it
+ * in, and the browser follows some of them without being asked.
+ *
+ * Found in the review of #129 (F4): `![x](/auth/logout)` becomes
+ * `<img src="/auth/logout">`, and the browser sends the session cookie with
+ * the GET as soon as the answer renders. The session is gone, the answer is
+ * stored, and reopening the thread does it again. One document in the corpus
+ * is enough to write it.
+ *
+ * So no image is fetched at all, and a link is drawn only for an address
+ * that leads out of the app — another origin over `http(s)`, or `mailto:`.
+ * Both rules are about where the address points, not about what it says,
+ * which is why `javascript:` is tested a second time further down: that
+ * layer is react-markdown's and this one is ours.
+ */
+describe('Markdown follows no address back into the app', () => {
+  it('draws an image as its alt text, and fetches nothing', () => {
+    const { container } = render(<Markdown>{'![Logg ut](/auth/logout)'}</Markdown>);
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.textContent).toBe('Logg ut');
+  });
+
+  it('draws nothing at all for an image with no alt text', () => {
+    const { container } = render(<Markdown>{'![](/auth/logout)'}</Markdown>);
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.textContent).toBe('');
+  });
+
+  it.each([
+    ['a path of its own', '[logg ut](/auth/logout)'],
+    ['the whole address', `[logg ut](${window.location.origin}/auth/logout)`],
+    ['a query of its own', '[logg ut](/auth/logout?next=/)'],
+  ])('keeps the text but draws no link when it points at this app (%s)', (_, answer) => {
+    const { container } = render(<Markdown>{answer}</Markdown>);
+
+    expect(container.querySelector('a')).toBeNull();
+    expect(container.textContent).toBe('logg ut');
+  });
+
+  it('draws a link out of the app, in the same tab, without the referrer', () => {
+    render(<Markdown>{'[årsrapporten](https://kudos.dfo.no/documents/1)'}</Markdown>);
+
+    const link = screen.getByRole('link', { name: 'årsrapporten' });
+    expect(link.getAttribute('href')).toBe('https://kudos.dfo.no/documents/1');
+    // The same tab, so no `target`: see the note on `a` in Markdown.tsx.
+    expect(link.getAttribute('target')).toBeNull();
+    // The address of the thread is nobody else's business.
+    expect(link.getAttribute('rel')).toBe('noreferrer');
+  });
+
+  it('keeps a mailto address, which reaches no endpoint', () => {
+    // The info pages are drawn by this component too, and the one for help
+    // carries the contact address. It hands an address to a mail program and
+    // acts on nothing.
+    render(<Markdown>{'[Skriv til oss](mailto:kontakt@example.no)'}</Markdown>);
+
+    const link = screen.getByRole('link', { name: 'Skriv til oss' });
+    expect(link.getAttribute('href')).toBe('mailto:kontakt@example.no');
+  });
+});

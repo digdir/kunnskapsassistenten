@@ -9,7 +9,7 @@ import { FilterContext } from '../../layout/filterContext';
 import { MainScrollContext } from '../../layout/scrollContext';
 import { ThreadContext } from '../../layout/threadContext';
 import { emptyFilterSelection, threadFromQuestion } from '../../model';
-import { ATTACH_UNAVAILABLE_LABEL, uploadErrorText } from './attachmentText';
+import { uploadErrorText } from './attachmentText';
 import { ChatView } from './ChatView';
 
 /**
@@ -20,8 +20,18 @@ import { ChatView } from './ChatView';
  * `FiltersView.corpus.test.tsx`.
  *
  * `unavailable` er kjent før noen velger en fil — klienten vet at det ikke
- * finnes noe endepunkt (API-bestilling A3) — så feltet kan si det ærlig i
- * stedet for å ta imot en fil og avvise den et øyeblikk senere.
+ * finnes noe endepunkt (API-bestilling A3). Bak BFF-en er det tilstanden som
+ * gjelder, for den har ingen rute for opplasting, og da tegnes binderset
+ * ikke i det hele tatt (anmeldelsen av #129).
+ *
+ * Det var en annen avgjørelse før: binderset sto med «Snart kan du laste opp
+ * dokumenter her» på seg, fordi en kontroll som er på vei er verdt å vite om
+ * (issue 79). Den er snudd. Et løfte som har stått i produksjon siden
+ * september er ikke lenger en nyhet, og plassen det tar i den klebrige
+ * bunnen er plass leseren kunne lest svaret i.
+ *
+ * Å slippe en fil på feltet er fortsatt ærlig avvist: det er det ene stedet
+ * en leser kan prøve uten at noe inviterte til det.
  */
 const upload = vi.hoisted(() => ({ calls: 0 }));
 
@@ -69,56 +79,42 @@ function Shell({ children }: { children: ReactNode }) {
 }
 
 describe('vedlegg der tjenesten ikke har opplasting', () => {
-  it('sier hvorfor på knappen, før noen velger en fil', () => {
-    /*
-     * Grunnen står i navnet, ikke bak et klikk: en kontroll som tar imot en
-     * fil og deretter sier at den ikke kan, har fått leseren til å gjøre
-     * arbeid for ingenting (KA CC på #125). `aria-disabled` og ikke
-     * `disabled`, så kontrollen er fortsatt nåbar og kan si det den sier.
-     *
-     * Setningen står nå PÅ knappen, slik issue 79 tegner den, og ikke
-     * i et `aria-label`. Da er navnet det samme som teksten på skjermen, som
-     * er det WCAG 2.5.3 ber om av en kontroll noen kan si høyt.
-     */
+  it('tegner ingen binders, og ingen filvelger', () => {
+    const { container } = render(
+      <Shell>
+        <ChatView client={idleClient} />
+      </Shell>,
+    );
+
+    expect(container.querySelector('.ka-composer__attach')).toBeNull();
+    expect(container.querySelector('input[type="file"]')).toBeNull();
+    expect(screen.queryByRole('button', { name: /vedlegg|last opp|binders/iu })).toBeNull();
+  });
+
+  it('lar resten av raden stå', () => {
     render(
       <Shell>
         <ChatView client={idleClient} />
       </Shell>,
     );
 
-    const paperclip = screen.getByRole('button', { name: ATTACH_UNAVAILABLE_LABEL });
-    expect(paperclip.getAttribute('aria-disabled')).toBe('true');
-    expect(paperclip.getAttribute('aria-label')).toBeNull();
-    expect(paperclip.textContent).toBe(ATTACH_UNAVAILABLE_LABEL);
+    expect(screen.getByRole('textbox', { name: 'Spørsmål til Kunnskapsassistenten' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Send/u })).toBeTruthy();
   });
 
-  it('holder setningen i en egen span, så en smal kolonne kan ta den av skjermen', () => {
-    /*
-     * Setningen er 334 px bred og brøt over tre–fire linjer på telefon, altså
-     * 83 px av den klebrige bunnen på de skjermene som har minst av den (KA CC
-     * på #195). Under 480 px boks tar CSS-en den av skjermen — og da må den
-     * ligge i noe som kan skjules, mens navnet på knappen blir stående.
-     */
-    render(
-      <Shell>
-        <ChatView client={idleClient} />
-      </Shell>,
-    );
-
-    const paperclip = screen.getByRole('button', { name: ATTACH_UNAVAILABLE_LABEL });
-    const text = paperclip.querySelector('.ka-composer__attach-text');
-    expect(text?.textContent).toBe(ATTACH_UNAVAILABLE_LABEL);
-  });
-
-  it('åpner ingen filvelger, og lager ingen chip', () => {
+  it('avviser en fil som slippes på feltet, og lager ingen chip', () => {
     upload.calls = 0;
-    render(
+    const { container } = render(
       <Shell>
         <ChatView client={idleClient} />
       </Shell>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: ATTACH_UNAVAILABLE_LABEL }));
+    const frame = container.querySelector('.ka-composer')!;
+    const file = new File(['innhold'], 'rapport.pdf', { type: 'application/pdf' });
+    fireEvent.drop(frame, {
+      dataTransfer: { files: [file], types: ['Files'] },
+    });
 
     expect(screen.getByText(uploadErrorText('unavailable'))).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Fjern vedlegget/u })).toBeNull();

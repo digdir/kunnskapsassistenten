@@ -330,6 +330,37 @@ describe('lenkene i en lagret tråd', () => {
   });
 });
 
+describe('lenkemalen som ikke er http(s)', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  /*
+   * Adressen i en lagret tråd bygges av vår egen mal, ikke av backenden, så
+   * sjekken her vokter en feilkonfigurasjon og ikke en utrygg kilde. Den står
+   * likevel: malen leses av miljøet, og den ene regelen for hva som kan bli
+   * en `href`, gjelder uansett hvor adressen ble til (anmeldelsen av #129).
+   */
+  it('gir ingen lenke når malen ikke er en http(s)-adresse', () => {
+    vi.stubEnv('VITE_KA_DOCUMENT_URLS', 'kudos-pilot=javascript:alert({doc_num})');
+    const [, answer] = messagesFromApi(
+      [
+        { id: 'm1', role: 'user', text: 'Hva rapporterer Nkom?' },
+        {
+          id: 'm2',
+          role: 'assistant',
+          text: 'Svar [1].',
+          chunks: [{ chunkId: 'c1', docNum: 7, docTitle: 'Årsrapport', contentMarkdown: 'Utdrag' }],
+        },
+      ],
+      'kudos-pilot',
+    );
+
+    expect(answer?.sources?.[0]?.url).toBeUndefined();
+    expect(answer?.sources?.[0]?.excerpts[0]?.kudosUrl).toBeUndefined();
+    // Kilden står: den ble hentet, og utdraget er lest tilbake.
+    expect(answer?.sources?.[0]?.excerpts[0]?.text).toBe('Utdrag');
+  });
+});
+
 describe('threadDetailFrom', () => {
   it('lar siste tur si når tråden sist var i bruk', () => {
     // Bedre enn `created` når det finnes en tur. Lista kan ikke gjøre dette:

@@ -120,13 +120,37 @@ export function facetOption(page: Page, dimension: string, value: string): Locat
     .first();
 }
 
+/** A pattern for exactly this text, nothing before or after. */
+function exactly(text: string): RegExp {
+  return new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}$`, 'u');
+}
+
 /**
- * Picks one value in a facet field, the way a reader does.
+ * Picks one value in a facet field, the way a reader does. A reader has two
+ * ways, and so has this.
  *
- * Typing and then ArrowDown, not clicking the option: the list filters
- * asynchronously, and ArrowDown on a list that has not caught up lands on
- * whatever option is still first. Waiting for the option to be visible is
- * what makes the keypress land on the right one.
+ * The default types and then presses ArrowDown and Enter, not a click on the
+ * option: the list filters asynchronously, and ArrowDown on a list that has
+ * not caught up lands on whatever option is still first. Waiting for the
+ * option to be visible is what makes the keypress land on the right one.
+ *
+ * `{ via: 'enter' }` types the whole name and presses Enter, with no arrow.
+ * u-combobox then chooses the first option whose label is the text, so
+ * `value` must be the whole name and not the start of it. On main 6a18017
+ * that first option was «Ingen treff», which ds-suggestion labels with the
+ * text and gives no value: Enter drew a chip with no text, and «1 av N
+ * valgt». No test pressed Enter alone, and this helper did not see it.
+ *
+ * Either way it waits for the chip with the value's name in THIS field.
+ * «1 av N valgt» on the page said too little: the chip with no value gave it
+ * too, and a pick in a second field found the first field's line.
+ *
+ * The field's own line then says either «N av M valgt» or, when the value
+ * is all the field has, «Alle N valgt, altså ingen avgrensning» (D16). A
+ * pick in one field narrows the others once their counts come back, which
+ * the panel does not mark as busy: Virksomheter «Nasjonal
+ * kommunikasjonsmyndighet» leaves Dokumenttyper only «Årsrapport (1)». In CI
+ * on 4a39193 the second pick came after that, locally before.
  *
  * It lived in `primary-sidebar.spec.ts` until three specs needed it.
  */
@@ -134,14 +158,20 @@ export async function chooseFacetValue(
   page: Page,
   dimension: string,
   value: string,
+  { via = 'arrow' }: { via?: 'arrow' | 'enter' } = {},
 ): Promise<void> {
-  const field = facetField(page, dimension);
-  await field.click();
+  const input = facetField(page, dimension);
+  await input.click();
   await page.keyboard.type(value);
   await expect(facetOption(page, dimension, value)).toBeVisible();
-  await page.keyboard.press('ArrowDown');
+  if (via === 'arrow') await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  await expect(page.getByText(/^1 av \d+ valgt$/).first()).toBeVisible();
+
+  const field = input.locator('xpath=ancestor::ds-field');
+  await expect(field.locator('ds-suggestion > data', { hasText: exactly(value) })).toHaveCount(1);
+  await expect(
+    field.getByText(/^(?:\d+ av \d+ valgt|Alle \d+ valgt, altså ingen avgrensning)$/u),
+  ).toBeVisible();
 
   /*
    * Close the list before handing the page back.

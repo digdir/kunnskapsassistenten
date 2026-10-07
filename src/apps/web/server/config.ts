@@ -18,7 +18,10 @@ import { excerptConfigFrom, type ExcerptConfig } from './excerpts.ts';
 import { facetConfigFrom, type FacetConfig } from './facets.ts';
 import { userIdSourceFrom, type UserIdSource } from './identity.ts';
 
-/** Which backend the client talks to: fixtures, or the real thing. */
+/**
+ * Whether this server forwards the client's calls to the backend. The
+ * client's own mode is built into it (src/api/apiMode.ts) and is not this.
+ */
 export type KaMode = 'mock' | 'live';
 
 /**
@@ -27,11 +30,11 @@ export type KaMode = 'mock' | 'live';
  * `VITE_`-prefixed because they are the same variables `vite build` bakes in
  * during development — one vocabulary, whether the value arrives at build
  * time or from a container's environment. None of them is a credential:
- * dataset keys and a mode are names, and the client cannot do anything with
- * them the server has not already allowed.
+ * dataset keys are names, and the client cannot do anything with them the
+ * server has not already allowed. The mode is not here: the client takes it
+ * from its build alone (src/api/apiMode.ts).
  */
 export type ClientConfig = {
-  VITE_API_MODE?: KaMode;
   VITE_KA_TENANT?: string;
   VITE_KA_DATASET_CONFIG_KEY?: string;
   VITE_KA_DATASETS?: string;
@@ -107,7 +110,6 @@ export function readConfig(
     // (`MAX_UPLOAD_BYTES`). The margin is the multipart wrapper around one.
     maxBodyBytes: 25 * 1024 * 1024,
     clientConfig: {
-      VITE_API_MODE: mode,
       VITE_KA_TENANT: value(env.VITE_KA_TENANT),
       VITE_KA_DATASET_CONFIG_KEY: value(env.VITE_KA_DATASET_CONFIG_KEY),
       VITE_KA_DATASETS: value(env.VITE_KA_DATASETS),

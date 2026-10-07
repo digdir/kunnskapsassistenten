@@ -176,7 +176,7 @@ export function ThreadLink({ thread, current, corpusLabel }: ThreadLinkProps) {
           ref={rowRef}
           aria-current={current ? 'page' : undefined}
           aria-labelledby={titleId}
-          to={`/threads/${thread.id}`}
+          to={`/threads/${encodeURIComponent(thread.id)}`}
           onPointerEnter={show}
           onPointerLeave={leave}
           onFocus={show}

@@ -13,6 +13,9 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+# The client's backend is built into it (src/api/apiMode.ts). The test
+# environment's server forwards to the backend, so the client is live.
+ARG VITE_API_MODE=live
 RUN npm run build
 
 # Kjøretid uten devDependencies, og faktisk uten node_modules i det hele tatt:

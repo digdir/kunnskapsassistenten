@@ -90,7 +90,8 @@ function raw(
       );
     });
     call.on('error', fail);
-    call.end('{}');
+    // A body only where a browser sends one.
+    call.end(method === 'GET' || method === 'DELETE' ? undefined : '{}');
   });
 }
 
@@ -135,13 +136,15 @@ describe('/config.js', () => {
   it('skriver bare de variablene som er satt, og aldri nøkkelen', async () => {
     await start({
       apiKey: 'rag_hemmelig_verdi',
-      clientConfig: { VITE_API_MODE: 'live', VITE_KA_TENANT: 'demo' },
+      mode: 'live',
+      clientConfig: { VITE_KA_TENANT: 'demo' },
     });
 
     const body = await (await fetch(`${base}/config.js`)).text();
 
-    expect(body).toContain('"VITE_API_MODE":"live"');
     expect(body).toContain('"VITE_KA_TENANT":"demo"');
+    // The client's mode is its build's (src/api/apiMode.ts), not this server's.
+    expect(body).not.toContain('VITE_API_MODE');
     expect(body).not.toContain('VITE_KA_DATASETS');
     expect(body).not.toContain('rag_hemmelig_verdi');
   });
@@ -302,20 +305,46 @@ describe('proxy mot backend', () => {
     const apiBase = await startBackend();
     await start({ mode: 'live', apiBase });
 
-    for (const path of [
-      '/api/mcp',
-      '/api/conversations?page_size=100',
-      '/api/conversations/5G7i1YoIdX432vrCDLrwk',
-      '/api/conversations/f47ac10b-58cc-4372-a567-0e02b2c3d479',
-      '/api/conversations/rapport.2025',
-      '/api/conversations/',
-      '/api/',
-    ]) {
+    for (const [method, path] of [
+      ['POST', '/api/mcp'],
+      ['GET', '/api/conversations?page_size=100'],
+      ['POST', '/api/conversations'],
+      ['GET', '/api/conversations/5G7i1YoIdX432vrCDLrwk'],
+      ['GET', '/api/conversations/f47ac10b-58cc-4372-a567-0e02b2c3d479'],
+      ['GET', '/api/conversations/rapport.2025'],
+    ] as const) {
       seen = undefined;
-      const response = await raw(portOf(base), path);
+      const response = await raw(portOf(base), path, method);
 
       expect({ path, status: response.status }).toEqual({ path, status: 200 });
       expect({ path, sett: lastSeen()?.url }).toEqual({ path, sett: path });
+    }
+  });
+
+  it('sender bare kallene klienten gjør videre', async () => {
+    /*
+     * Everything else under /api/ is the backend's own API, and the key this
+     * server holds would go with it: tools, skills and the config tree.
+     */
+    const apiBase = await startBackend();
+    await start({ mode: 'live', apiBase, apiKey: 'rag_hemmelig_verdi' });
+
+    for (const [method, path] of [
+      ['POST', '/api/tools/call/retrieve'],
+      ['POST', '/api/skills/x/execute'],
+      ['GET', '/api/config/default/nodes'],
+      ['GET', '/api/mcp'],
+      ['PUT', '/api/conversations/5G7i1YoIdX432vrCDLrwk'],
+      ['DELETE', '/api/conversations/5G7i1YoIdX432vrCDLrwk'],
+      ['GET', '/api/conversations/5G7i1YoIdX432vrCDLrwk/messages'],
+      ['GET', '/api/conversations/a%2Fmessages'],
+      ['GET', '/api/'],
+    ] as const) {
+      seen = undefined;
+      const response = await raw(portOf(base), path, method);
+
+      expect({ method, path, status: response.status }).toEqual({ method, path, status: 404 });
+      expect({ method, path, sett: lastSeen() }).toEqual({ method, path, sett: undefined });
     }
   });
 

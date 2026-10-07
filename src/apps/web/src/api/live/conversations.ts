@@ -11,6 +11,7 @@ import {
 } from '../../model';
 import { corpusKeyFromTags } from '../corpus';
 import { documentUrl } from '../documentUrls';
+import { publicUrl } from '../publicUrl';
 
 /**
  * The conversation store behind `/api/conversations`.
@@ -164,7 +165,15 @@ export function sourcesFromChunks(
 
   chunks.forEach((chunk, index) => {
     const documentId = String(chunk.docNum ?? chunk.chunkId ?? `doc-${index}`);
-    const url = documentUrl(corpusKey, chunk.docNum);
+    /*
+     * Through `publicUrl` for the same reason as in `mcp.ts`: one rule for
+     * what may become an `href`, wherever the address was built. Here it is
+     * the second lock and not the first — a stored chunk carries no address
+     * of its own, and `documentUrls.ts` already drops a template that is not
+     * `http(s)` with `{doc_num}` in it. It stays so that loosening that one
+     * cannot quietly reach the panel.
+     */
+    const url = publicUrl(documentUrl(corpusKey, chunk.docNum));
     const excerpt = {
       id: chunk.chunkId ?? `${documentId}-${index}`,
       text: chunk.contentMarkdown ?? '',

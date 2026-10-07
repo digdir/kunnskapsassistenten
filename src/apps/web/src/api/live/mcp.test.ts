@@ -166,6 +166,38 @@ describe('toSourceDocuments', () => {
     expect(document.excerpts[0].kudosUrl).toBe('https://kudos.dfo.no/documents/372017');
   });
 
+  /*
+   * Adressen på en bit kommer fra backenden, som leser den av et dokument i
+   * korpuset. Den brukes som `href` i kildepanelet, så den sjekkes her på
+   * samme måte som i bff-klienten (anmeldelsen av #129). Testmiljøet kjører
+   * live, så dette er ikke en modus uten lesere.
+   */
+  it.each([
+    ['javascript:', 'javascript:alert(1)'],
+    ['data:', 'data:text/html,<script>alert(1)</script>'],
+    ['en sti inn i appen', '/auth/logout'],
+    ['noe som ikke er en adresse', 'ikke en adresse'],
+  ])('slipper ikke en url som ikke er http(s) gjennom (%s)', (_, url) => {
+    const [document] = toSourceDocuments([{ chunk_id: 'c1', doc_num: '1', title: 'Rapport', url }]);
+
+    expect(document.url).toBeUndefined();
+    expect(document.excerpts[0].kudosUrl).toBeUndefined();
+    // Biten er fortsatt en kilde: den ble hentet, og svaret kan sitere den.
+    expect(document.title).toBe('Rapport');
+  });
+
+  it('faller ikke tilbake på malen når bitens url er avvist', () => {
+    // Uten dette ville en avvist adresse gitt dokumentet malens lenke i
+    // stedet, og det ville sett ut som om backenden hadde sendt den.
+    vi.stubEnv('VITE_KA_DOCUMENT_URLS', 'kudos-full=https://kudos.dfo.no/documents/{doc_num}');
+    const [document] = toSourceDocuments(
+      [{ chunk_id: 'c1', doc_num: '1', url: 'javascript:alert(1)' }],
+      'kudos-full',
+    );
+
+    expect(document.url).toBeUndefined();
+  });
+
   it('lar en url på biten vinne over malen', () => {
     vi.stubEnv('VITE_KA_DOCUMENT_URLS', 'kudos-full=https://kudos.dfo.no/documents/{doc_num}');
     const [document] = toSourceDocuments(

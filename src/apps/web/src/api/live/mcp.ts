@@ -11,6 +11,7 @@ import type {
 } from '../../model';
 import { documentUrl } from '../documentUrls';
 import type { DatasetFilterFields } from '../filterFields';
+import { publicUrl } from '../publicUrl';
 
 /**
  * The MCP wire format, translated into our own events.
@@ -286,10 +287,18 @@ export function toSourceDocuments(chunks: McpChunk[], dataset?: string): SourceD
 
   chunks.forEach((chunk, index) => {
     const documentId = chunk.doc_num ?? chunk.chunk_id ?? `doc-${index}`;
-    // The chunk's own address when it has one, and otherwise the corpus's
-    // template with the document's number: Kudos chunks carry `doc_num` and
-    // no `url` (issue 92). See documentUrls.ts.
-    const url = chunk.url ?? documentUrl(dataset, chunk.doc_num);
+    /*
+     * The chunk's own address when it has one, and otherwise the corpus's
+     * template with the document's number: Kudos chunks carry `doc_num` and
+     * no `url` (issue 92). See documentUrls.ts.
+     *
+     * Both are read through `publicUrl`, because this one becomes an `href`
+     * in the sources panel and `chunk.url` is whatever the backend read off a
+     * document in the corpus (the review of #129). A rejected `chunk.url`
+     * does NOT fall back to the template: the backend said where the document
+     * is, and inventing another address would show one it never sent.
+     */
+    const url = chunk.url ? publicUrl(chunk.url) : publicUrl(documentUrl(dataset, chunk.doc_num));
     const excerpt: Excerpt = {
       id: chunk.chunk_id ?? `${documentId}-${index}`,
       // backend: mangler, se API-bestilling A1 — structuredContent.chunks

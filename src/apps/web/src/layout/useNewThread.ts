@@ -84,9 +84,10 @@ export function takeComposerFocusRequest(): boolean {
 }
 
 /**
- * How many times «Ny tråd» has been clicked in this page load.
+ * How many times «Ny tråd» has been clicked in this page load, or the open
+ * thread deleted.
  *
- * The chat slot keys `/` on this number, so a click gives a new conversation
+ * The chat slot keys `/` on this number, so those give a new conversation
  * and nothing else does. It used to key on `location.key`, which is a fair
  * reading of «a navigation to `/` is a new front page» — but it counts
  * navigations nobody asked a new conversation of. Closing the settings menu
@@ -104,7 +105,14 @@ export function takeComposerFocusRequest(): boolean {
 let newThreads = 0;
 const listeners = new Set<() => void>();
 
-function askedForNewThread(): void {
+/**
+ * A new conversation in the chat slot, and nothing else of «Ny tråd».
+ *
+ * For deleting the thread on screen (ThreadsView.tsx). A thread started on
+ * `/` has its address from `history.replaceState`, so the router still says
+ * `/` and navigating there changes nothing: the key has to move by this.
+ */
+export function askedForNewThread(): void {
   newThreads += 1;
   for (const listener of [...listeners]) listener();
 }

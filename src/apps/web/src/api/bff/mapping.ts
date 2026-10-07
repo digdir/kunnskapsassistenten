@@ -15,6 +15,7 @@ import { errorFromBackend, errorFromStatus } from '../backendErrors';
 import type { DatasetFilterFields } from '../filterFields';
 import { messagesFromApi, threadFromConversation } from '../live/conversations';
 import { relevanceFromRank, toCitations } from '../live/mcp';
+import { publicUrl } from '../publicUrl';
 import type {
   BffAgentOption,
   BffConversationDetail,
@@ -79,7 +80,7 @@ export function sourceDocumentsFrom(sources: BffSource[] | undefined): SourceDoc
 
   list.forEach((source, index) => {
     const id = source.docNum || source.chunkId || `doc-${source.marker}`;
-    const url = source.url || undefined;
+    const url = publicUrl(source.url);
     const excerpt: Excerpt = {
       id: source.chunkId ?? `${id}-${source.marker}`,
       text: source.excerpt ?? '',

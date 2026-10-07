@@ -7,9 +7,9 @@ import { proxy } from './proxy.ts';
 import { serveStatic } from './static.ts';
 
 /**
- * Everything under this goes to the backend, and nothing else does — except
- * `/api/facets` and `/api/excerpts`, which this server answers itself
- * (facets.ts, excerpts.ts).
+ * The client's calls under this go to the backend, and nothing else does
+ * (proxy.ts, `CLIENT_CALLS`). `/api/facets` and `/api/excerpts` this server
+ * answers itself (facets.ts, excerpts.ts).
  */
 const API_PREFIX = '/api/';
 

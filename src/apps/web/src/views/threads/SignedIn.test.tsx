@@ -31,6 +31,31 @@ describe('SignedIn', () => {
     expect(localStorage.getItem('ka.sources.v1')).toBeNull();
   });
 
+  /*
+   * The filter and the corpus the reader chose are kept per browser too, and
+   * on a shared machine the next one to sign in started with them: the
+   * filter went with their first question. The layout is how the page sits,
+   * not what anyone asked, and stays.
+   */
+  it('empties the filter and the corpus the reader chose, and leaves the layout', () => {
+    localStorage.setItem(
+      'ka.filter.v1',
+      '{"documentType":["Årsrapport"],"organisation":[],"year":[]}',
+    );
+    localStorage.setItem('ka.corpus.v1', 'kudos-full');
+    localStorage.setItem('ka.layout.v1', '{"collapsed":{},"widths":{}}');
+    render(<SignedIn session={{ name: 'Kari Nordmann', logoutUrl: '/auth/logout' }} />);
+    const stay = (event: Event) => event.preventDefault();
+    document.addEventListener('click', stay);
+
+    fireEvent.click(screen.getByRole('link', { name: 'Logg ut' }));
+
+    document.removeEventListener('click', stay);
+    expect(localStorage.getItem('ka.filter.v1')).toBeNull();
+    expect(localStorage.getItem('ka.corpus.v1')).toBeNull();
+    expect(localStorage.getItem('ka.layout.v1')).not.toBeNull();
+  });
+
   it('empties it too on a middle click, which opens the link in a new tab', () => {
     localStorage.setItem('ka.sources.v1', '{"threads":{}}');
     render(<SignedIn session={{ name: 'Kari Nordmann', logoutUrl: '/auth/logout' }} />);
@@ -76,7 +101,7 @@ describe('fetchSession', () => {
       email: 'kari@digdir.no',
       logoutUrl: '/auth/logout',
     });
-    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/me');
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/v2/me');
   });
 
   it('falls back to the address when the sign-in gave no name', async () => {

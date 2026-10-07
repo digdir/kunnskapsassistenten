@@ -3,6 +3,7 @@ import { MemoryRouter, useLocation } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import type { ThreadActions } from '../../api/threadActions';
 import { OpenThreadContext } from '../../layout/openThreadContext';
+import { newThreadCount } from '../../layout/useNewThread';
 import type { Thread } from '../../model';
 import { ThreadsView } from './ThreadsView';
 
@@ -43,9 +44,18 @@ function Where() {
   return <p data-testid="where">{useLocation().pathname}</p>;
 }
 
-function renderView(actions: ThreadActions | null, openThreadId?: string) {
+/**
+ * `at` is the router's address, which is the thread's own unless the thread
+ * was started on `/`: its address is then written with `history.replaceState`,
+ * which the router never sees.
+ */
+function renderView(
+  actions: ThreadActions | null,
+  openThreadId?: string,
+  at = openThreadId ? `/threads/${openThreadId}` : '/',
+) {
   return render(
-    <MemoryRouter initialEntries={[openThreadId ? `/threads/${openThreadId}` : '/']}>
+    <MemoryRouter initialEntries={[at]}>
       <OpenThreadContext value={{ openThreadId, setOpenThreadId: () => {} }}>
         <ThreadsView
           siblingViews={['threads']}
@@ -254,6 +264,27 @@ describe('deleting a thread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Slett tråden' }));
 
     expect(screen.getByTestId('where').textContent).toBe('/');
+  });
+
+  /*
+   * The router still says `/` for a thread started there, so navigating to
+   * `/` changes nothing. The chat slot keys `/` on the «Ny tråd» count, and
+   * without it the deleted conversation stayed on screen and the next
+   * question went to it, which the BFF answered with a 404.
+   *
+   * The count and nothing else of «Ny tråd»: focus stays on the next row,
+   * where the reader is clearing out threads.
+   */
+  it('gives a new conversation when the one deleted was started on the front page', () => {
+    renderView(actionsThat('succeed'), 'a', '/');
+    const before = newThreadCount();
+
+    choose('Måloppnåelse i Nkom', 'Slett');
+    fireEvent.click(screen.getByRole('button', { name: 'Slett tråden' }));
+
+    expect(newThreadCount()).toBe(before + 1);
+    expect(screen.getByTestId('where').textContent).toBe('/');
+    expect(document.activeElement).toBe(menu('Årsrapport for Digdir'));
   });
 
   it('stays on the thread on screen when another one is deleted', () => {

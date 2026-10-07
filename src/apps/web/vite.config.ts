@@ -128,6 +128,22 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    build: {
+      rolldownOptions: {
+        treeshake: {
+          /*
+           * The mock and the live client may be left out of a build that does
+           * not use them (src/api/index.ts, `createChatClient`). Their modules
+           * run code at the top that the bundler counts as side effects, so
+           * without this it kept them, mock corpus and all, even with nothing
+           * using them. A build that uses them keeps them whole, side effects
+           * included.
+           */
+          moduleSideEffects: (id: string) =>
+            !id.includes('/src/api/mock/') && !id.endsWith('/src/api/live/LiveChatClient.ts'),
+        },
+      },
+    },
     test: {
       /*
        * Klienten og serveren i samme kjøring, men ikke i samme miljø.

@@ -50,6 +50,41 @@ describe('sourceDocumentsFrom', () => {
     expect(document?.excerpts[0]?.textUnavailable).toBeUndefined();
   });
 
+  /*
+   * The address of a source comes from the backend, which reads it off a
+   * document in the corpus, so it is not this app's own address. It is used
+   * as an `href` in the sources panel.
+   *
+   * The BFF checks the scheme today and the client did not, which left the
+   * check in one place and the rendering in another (the review of #129).
+   * Here is the second one: only `http(s)` reaches the model, so neither the
+   * document link nor the excerpt link can be anything else.
+   */
+  it.each([
+    ['javascript:', 'javascript:alert(1)'],
+    ['data:', 'data:text/html,<script>alert(1)</script>'],
+    ['a path into this app', '/auth/logout'],
+    ['nonsense', 'ikke en adresse'],
+  ])('drops an address that is not http(s) (%s)', (_, url) => {
+    const [document] = sourceDocumentsFrom([source({ marker: 1, chunkId: 'a', url })]);
+
+    expect(document?.url).toBeUndefined();
+    expect(document?.excerpts[0]?.kudosUrl).toBeUndefined();
+    // The source itself is still there: it was retrieved, the answer may
+    // cite it, and the panel says in words that it has no public link.
+    expect(document?.title).toBe('Tildelingsbrev');
+  });
+
+  it.each([
+    ['https', 'https://kudos.example/documents/1'],
+    ['http', 'http://kudos.example/documents/1'],
+  ])('keeps an %s address', (_, url) => {
+    const [document] = sourceDocumentsFrom([source({ marker: 1, chunkId: 'a', url })]);
+
+    expect(document?.url).toBe(url);
+    expect(document?.excerpts[0]?.kudosUrl).toBe(url);
+  });
+
   it('counts hits by chunk and documents by document', () => {
     const state = new BffTurnState();
     state.read({ type: 'delta', text: 'Svar [1][2].' });

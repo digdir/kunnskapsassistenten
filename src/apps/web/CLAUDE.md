@@ -11,7 +11,7 @@ kommandoer under gjelder fra mappa denne fila ligger i.
 | ----------------------- | ---------------------------------------------------------------------------- |
 | `npm ci`                | Avhengighetene, akkurat som i `package-lock.json`.                           |
 | `npm run dev`           | Utviklingsserver på http://localhost:5173, i mock.                           |
-| `npm run build`         | `tsc -b` og produksjonsbygg til `dist/`.                                     |
+| `npm run build`         | `tsc -b` og produksjonsbygg til `dist/`, for BFF-en uten `VITE_API_MODE`.    |
 | `npm run lint`          | oxlint med `jsx-a11y`, og stylelint på CSS-en. Den verste exit-koden vinner. |
 | `npm run format:check`  | Prettier. `npm run format` skriver.                                          |
 | `npm test`              | vitest, klient og server.                                                    |

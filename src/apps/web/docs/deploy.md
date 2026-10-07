@@ -11,9 +11,10 @@ under [Første gang](#første-gang) gjør et menneske med rettigheter i Azure;
 etter det ruller hver merge til `main` ut av seg selv. Bakgrunn og
 avgjørelser: `design/plan-testmiljo-2026-09-22.md`.
 
-Miljøet kjører **mock** som standard: svarene kommer fra fixturene i
-`src/api/mock/`, ingen nøkkel er satt, og ingenting bak adressen kan
-misbrukes. Se [Bytte mellom mock og live](#bytte-mellom-mock-og-live).
+Klienten i bildet er bygget for **live** (`VITE_API_MODE=live` i `Dockerfile`).
+Hvilken backend klienten bruker, avgjøres når bildet bygges. `KA_MODE` avgjør
+bare om serveren sender kallene videre. Se
+[Bytte mellom mock og live](#bytte-mellom-mock-og-live).
 
 ## Hva som finnes
 
@@ -26,8 +27,10 @@ misbrukes. Se [Bytte mellom mock og live](#bytte-mellom-mock-og-live).
 | `.github/workflows/deploy.yml` | Bygger, pusher og ruller ut ved hver push til `main`.                              |
 | `.github/workflows/ci.yml`     | Bygger og starter bildet på hver PR, uten å pushe.                                 |
 
-Serveren gjør fire ting: proxyer `/api/*` til backenden med `X-API-Key` påsatt
-(bare i live; i mock svarer `/api/*` 404),
+Serveren gjør fire ting: proxyer klientens kall under `/api/` til backenden med
+`X-API-Key` påsatt (bare i live; i mock svarer `/api/*` 404). Det er
+`POST /api/mcp`, `GET` og `POST /api/conversations` og
+`GET /api/conversations/:id`. Alt annet under `/api/` svarer 404. Den
 serverer `dist/` med SPA-fallback, svarer på `/healthz`, og skriver
 `/config.js` med de variablene klienten skal lese. Bak innloggingen setter den
 også `X-User-Id` fra plattformen; se [Innlogging](#innlogging).
@@ -667,7 +670,9 @@ til `containerapp`-utvidelsen; det er ikke kjørt. Så:
 az containerapp auth update --subscription "$SUB" -n $APP -g $RG --enabled false
 ```
 
-Da er adressen åpen, i mock.
+Da er adressen åpen, og serveren sender ingenting til backenden. Klienten i
+bildet er bygget for live, så spørsmål får en feil til et bilde bygget for mock
+er rullet ut (se [Bytte mellom mock og live](#bytte-mellom-mock-og-live)).
 
 ## Rulle tilbake
 
@@ -714,7 +719,7 @@ Ett bilde, og modusen og korpuset er miljøvariabler.
 | Variabel                     | Hva                                                                                       | Standard                |
 | ---------------------------- | ----------------------------------------------------------------------------------------- | ----------------------- |
 | `PORT`                       | Porten serveren lytter på.                                                                | `8787`                  |
-| `KA_MODE`                    | `mock` eller `live`. Alt annet enn `live` er mock.                                        | `mock`                  |
+| `KA_MODE`                    | `mock` eller `live`: om serveren sender kall videre. Alt annet enn `live` er mock.        | `mock`                  |
 | `DIGDIR_API_BASE`            | Backenden `/api/*` går til.                                                               | `http://localhost:8080` |
 | `DIGDIR_API_KEY`             | Nøkkelen. Container Apps-secret, aldri i repoet.                                          | tom                     |
 | `KA_USER_ID_FROM`            | `browser` eller `platform`, se [Innlogging](#innlogging). Annet stopper serveren.         | `browser`               |
@@ -813,6 +818,12 @@ adresselista i [Live for én person](#live-for-én-person)). I live setter
 serveren nøkkelen på hvert kall, for hvem som helst som kommer til adressen.
 I mock sender serveren ingenting til backenden, heller ikke med nøkkelen satt.
 
+Modusen har to deler. `KA_MODE` er serverens, og byttes med en ny revisjon som
+under. Klientens modus er bygget inn i bildet (`src/api/apiMode.ts`), og
+`/config.js` kan ikke endre den. Bildet fra `Deploy` er bygget for live. Et
+miljø der klienten svarer fra mocken, trenger et bilde bygget med
+`docker build --build-arg VITE_API_MODE=mock` i tillegg til `KA_MODE=mock`.
+
 Nøkkelen legges inn som secret. Første gang lager dette
 secreten. `read -rs` leser den uten å vise den og uten å legge den i
 historikken. Deretter settes modus og nøkkel inn i en ny revisjon:
@@ -837,8 +848,8 @@ Nøkkelen tas bort også, selv om serveren ikke bruker den i mock: en variabel
 som står, blir med til neste gang noen setter modusen til live.
 
 `secret set` alene endrer ingenting som kjører: verdien plukkes opp av en ny
-revisjon, som `update` tvinger fram. Et modusbytte trenger ingen ny bygging —
-`/config.js` skrives ved hver forespørsel og lagres aldri.
+revisjon, som `update` tvinger fram. `KA_MODE` trenger ingen ny bygging, men
+klientens modus gjør det (se over).
 
 **Kjør ikke malen på nytt med en gammel `imageTag` for å bytte modus.** Den
 setter bildet til den taggen, og da ruller du tilbake til den versjonen. Må den
@@ -880,23 +891,24 @@ Nøkkelen leses med `read -rs`, som over:
 
 ```sh
 read -rs KEY
-npm run build
+VITE_API_MODE=live npm run build
 KA_MODE=live DIGDIR_API_BASE=http://localhost:8080 DIGDIR_API_KEY="$KEY" npm start
 ```
 
-Eller i container. I mock, som testmiljøet:
+Eller i container. I mock, med klienten bygget for mock:
 
 ```sh
-docker build -t ka-frontend-test:local .
-docker run --rm -p 8787:8787 -e KA_MODE=mock ka-frontend-test:local
+docker build --build-arg VITE_API_MODE=mock -t ka-frontend-test:mock .
+docker run --rm -p 8787:8787 -e KA_MODE=mock ka-frontend-test:mock
 curl -fsS localhost:8787/healthz
 ```
 
 Den siste linja skal svare `{"ok":true,"mode":"mock"}`.
 
-Mot stacken på maskinen:
+Mot stacken på maskinen, med bildet bygget for live som i testmiljøet:
 
 ```sh
+docker build -t ka-frontend-test:local .
 docker run --rm -p 8787:8787 \
   -e KA_MODE=live \
   -e DIGDIR_API_BASE=http://host.docker.internal:8080 \
@@ -916,7 +928,7 @@ selv og treffer ingenting.
 `test.rag.digdir.cloud` avviser `agent-rag-graph-bundled` med
 `mode_not_allowed`, og det er agenten klienten spør. Målt med to
 nøkler, så det er backendens oppsett og ikke et nøkkelomfang. Til backenden
-åpner den, er `KA_MODE=mock` det som gir et miljø der noen kan se produktet;
+åpner den, er et bilde bygget for mock det som gir et miljø der noen kan se produktet;
 alt annet enn selve svaret virker også i live: tråder, filter, korpusvelger og
 opplasting i ærlig utilgjengelig-tilstand.
 

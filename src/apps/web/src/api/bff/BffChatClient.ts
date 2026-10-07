@@ -13,7 +13,7 @@ import type { DatasetFilterFields } from '../filterFields';
 import { FILTER_REFUSED_MESSAGES, errorFromBackend, errorFromStatus } from '../backendErrors';
 import { adoptServerCorpus } from '../corpus';
 import { createSseDecoder } from '../live/sse';
-import { keepDraft, noteQuestionInFlight } from '../session';
+import { keepDraft, noteQuestionInFlight, noteSignedIn } from '../session';
 import type {
   BffAskRequest,
   BffCapabilities,
@@ -35,6 +35,8 @@ import {
   threadDetailFromBff,
   threadFromSummary,
 } from './mapping';
+import { BFF_API } from './api';
+import { resetSignIn, toLogin } from './signIn';
 
 export type BffChatClientOptions = {
   /** Where the BFF's API is. Relative: the BFF serves this client itself. */
@@ -63,22 +65,6 @@ export type BffChatClientOptions = {
    */
   settleDelaysMs?: number[];
 };
-
-let redirecting = false;
-
-/**
- * To the BFF's sign-in, and back to `returnTo`: where the reader was, or where
- * the draft kept for them belongs (session.ts, `keepDraft`).
- *
- * Once per page: several calls fail with 401 at once when a session runs
- * out, and one navigation is enough. Not from `/auth/` itself, which would
- * loop.
- */
-function toLogin(returnTo: string): void {
-  if (redirecting || window.location.pathname.startsWith('/auth/')) return;
-  redirecting = true;
-  window.location.assign(`/auth/login?next=${encodeURIComponent(returnTo)}`);
-}
 
 /**
  * The conversation the questions that follow belong to. Module state for the
@@ -130,7 +116,7 @@ export function resetBffClient(): void {
   settledCapabilities = undefined;
   knownFacets = undefined;
   primed = false;
-  redirecting = false;
+  resetSignIn();
 }
 
 /**
@@ -183,7 +169,7 @@ export class BffChatClient implements ChatClient {
   readonly #settleDelaysMs: number[];
 
   constructor(options: BffChatClientOptions = {}) {
-    this.#basePath = options.basePath ?? '/api';
+    this.#basePath = options.basePath ?? BFF_API;
     this.#corpusKey = options.datasetConfigKey ?? (() => undefined);
     this.#filterFields = options.filterFields ?? filterFieldsFor;
     this.#onUnauthorized = options.onUnauthorized ?? toLogin;
@@ -317,7 +303,8 @@ export class BffChatClient implements ChatClient {
 
   /**
    * The thread as the BFF names it, once the question that makes it has been
-   * asked. See `creation`.
+   * asked. See `creation`. When that question fails before the BFF names a
+   * conversation, this waits for the next question in the thread.
    */
   async createThread(thread: Thread): Promise<Thread | undefined> {
     openConversation = undefined;
@@ -354,12 +341,12 @@ export class BffChatClient implements ChatClient {
       yield* this.#stream(params, conversationId, corpusKey, askedOf, made);
     } finally {
       arrived();
-      if (creating) {
-        // Nothing was made if the BFF never said so. Settling twice is a
-        // no-op, so this only matters for a question that failed first.
-        creating.settle(undefined);
-        if (creation === creating) creation = undefined;
-      }
+      // A question that failed or was stopped before the BFF named a
+      // conversation leaves the thread waiting: it is still a stand-in, and
+      // the next question asked in it, «Prøv igjen» or a new one, is the one
+      // that makes it. Settling here would leave the address on the stand-in
+      // for good.
+      if (named && creation === creating) creation = undefined;
     }
   }
 
@@ -458,36 +445,37 @@ export class BffChatClient implements ChatClient {
     };
   }
 
-  /** The reader's conversations, newest first. Empty on failure, as in live. */
+  /**
+   * The reader's conversations, newest first.
+   *
+   * Throws when they cannot be read. An empty list is an answer — «Start din
+   * første tråd» — and a failure read as one replaced a good list after a
+   * 502, where `useThreadList` keeps the last one and says so.
+   */
   async listThreads(signal?: AbortSignal): Promise<Thread[]> {
-    try {
-      const { conversations } = await this.#json<{ conversations?: BffConversationSummary[] }>(
-        '/conversations',
-        signal,
-      );
-      const corpusKey = this.#corpusKey();
-      return (conversations ?? []).map((summary) => threadFromSummary(summary, corpusKey));
-    } catch {
-      return [];
-    }
+    const { conversations } = await this.#json<{ conversations?: BffConversationSummary[] }>(
+      '/conversations',
+      signal,
+    );
+    const corpusKey = this.#corpusKey();
+    return (conversations ?? []).map((summary) => threadFromSummary(summary, corpusKey));
   }
 
   /**
-   * Null for «not there» and «could not ask», as in live.
+   * Null when the BFF says the conversation is not there (404), which the
+   * main column draws as «Fant ikke tråden». Throws when it could not be read
+   * at all: the thread may well exist, and the reader can try again.
    *
    * With the filter the BFF has locked the thread to, by dimension, so the
    * panel and «Avgrenset til» can say what the answers were asked with.
    */
   async getThread(threadId: string, signal?: AbortSignal): Promise<ThreadDetail | null> {
-    let detail: BffConversationDetail;
-    try {
-      detail = await this.#json<BffConversationDetail>(
-        `/conversations/${encodeURIComponent(threadId)}`,
-        signal,
-      );
-    } catch {
-      return null;
-    }
+    const response = await this.#fetch(`/conversations/${encodeURIComponent(threadId)}`, {
+      signal,
+    });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`/conversations ${response.status}`);
+    const detail = (await response.json()) as BffConversationDetail;
     if (!detail.conversation) return null;
 
     const corpusKey = this.#corpusKey();
@@ -527,6 +515,9 @@ export class BffChatClient implements ChatClient {
       this.#json<BffModels>('/models', signal).catch((): BffModels => ({})),
       this.#json<BffMe>('/me', signal).catch((): BffMe => ({})),
     ]);
+    // The same answer says who is signed in, which a draft kept at a 401 is
+    // tied to (session.ts).
+    noteSignedIn(me.userId);
     return agentsFromBff(models.agents, me.tool);
   }
 }

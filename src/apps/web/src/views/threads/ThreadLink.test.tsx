@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Route, Routes, useParams } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Thread } from '../../model';
 import { ThreadLink } from './ThreadLink';
@@ -207,6 +207,30 @@ describe('ThreadLink', () => {
     fireEvent.pointerEnter(link());
 
     expect(overlay()).toBeNull();
+  });
+
+  /*
+   * The id is the backend's, and nothing here decides what it may hold. A
+   * `?`, `#` or `/` in it went into the path as it stood and opened another
+   * address than the thread's.
+   */
+  it('åpner tråden når id-en har tegn som betyr noe i en adresse', () => {
+    const odd: Thread = { ...thread, id: 'a/b?c#d e' };
+    function Opened() {
+      return <p data-testid="opened">{useParams().threadId}</p>;
+    }
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<ThreadLink thread={odd} current={false} />} />
+          <Route path="/threads/:threadId" element={<Opened />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(link());
+
+    expect(screen.getByTestId('opened').textContent).toBe('a/b?c#d e');
   });
 
   it('merker den åpne tråden, og bare den', () => {

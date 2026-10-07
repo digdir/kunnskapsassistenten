@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Thread } from '../model';
+import { BffChatClient, resetBffClient } from './bff/BffChatClient';
 import { mockThreadDetail, mockThreadList, resetMockThreads } from './mock/sessionThreads';
-import { provideDraft, resetDraftSources } from './session';
+import { noteSignedIn, provideDraft, resetDraftSources } from './session';
 import {
   bffThreadActions,
   createThreadActions,
@@ -38,7 +39,7 @@ describe('the BFF’s rename and delete', () => {
     await bffThreadActions().rename(thread, 'Nkom 2024');
 
     const [path, init] = fetchMock.mock.calls[0] ?? [];
-    expect(path).toBe('/api/conversations/conv-1');
+    expect(path).toBe('/api/v2/conversations/conv-1');
     expect(init?.method).toBe('PUT');
     expect(JSON.parse(String(init?.body))).toEqual({ title: 'Nkom 2024' });
   });
@@ -47,14 +48,14 @@ describe('the BFF’s rename and delete', () => {
     await bffThreadActions().remove(thread);
 
     const [path, init] = fetchMock.mock.calls[0] ?? [];
-    expect(path).toBe('/api/conversations/conv-1');
+    expect(path).toBe('/api/v2/conversations/conv-1');
     expect(init?.method).toBe('DELETE');
   });
 
   it('names the conversation safely in the path', async () => {
     await bffThreadActions().remove({ ...thread, conversationId: 'a/b?c' });
 
-    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/conversations/a%2Fb%3Fc');
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/v2/conversations/a%2Fb%3Fc');
   });
 
   it('fails when the BFF says no, so the list can take the change back', async () => {
@@ -79,9 +80,29 @@ describe('the BFF’s rename and delete', () => {
     expect(assign).toHaveBeenCalledWith('/auth/login?next=%2Fthreads%2Fconv-1');
   });
 
+  it('goes to the sign-in once when the chat client gets a 401 at the same time', async () => {
+    resetBffClient();
+    const assign = vi.fn();
+    vi.stubGlobal('location', {
+      ...window.location,
+      pathname: '/threads/conv-1',
+      search: '',
+      assign,
+    });
+    fetchMock.mockImplementation(async () => new Response('{}', { status: 401 }));
+
+    await Promise.all([
+      expect(new BffChatClient().listThreads()).rejects.toThrow('401'),
+      expect(bffThreadActions().rename(thread, 'Nkom 2024')).rejects.toThrow('401'),
+    ]);
+
+    expect(assign).toHaveBeenCalledOnce();
+  });
+
   it('keeps what is in the compose field before it goes to the sign-in', async () => {
     sessionStorage.clear();
     resetDraftSources();
+    noteSignedIn('user-a');
     let atRedirect: string | null = null;
     vi.stubGlobal('location', {
       ...window.location,
@@ -100,6 +121,7 @@ describe('the BFF’s rename and delete', () => {
     expect(JSON.parse(atRedirect ?? 'null')).toEqual({
       text: 'Et spørsmål under arbeid',
       path: '/threads/conv-1',
+      user: 'user-a',
     });
   });
 });

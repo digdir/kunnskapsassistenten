@@ -120,6 +120,8 @@ export interface BffModels {
 /** The part of `GET /api/me` read for the agents: the tool it answers with by default. */
 export interface BffMe {
   tool?: string;
+  /** Who is signed in, as the BFF names them to the backend. */
+  userId?: string;
 }
 
 export interface BffConversationSummary {

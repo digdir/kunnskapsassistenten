@@ -30,8 +30,8 @@ export {
 } from './corpus';
 
 /**
- * Which backend the app talks to. One switch, `VITE_API_MODE`, default
- * `mock`. The live client arrives with the Vite proxy that holds the API key;
+ * Which backend the app talks to. One switch, `VITE_API_MODE`, read when the
+ * app is built (apiMode.ts). The live client arrives with the Vite proxy that holds the API key;
  * the key never reaches the bundle, because the backend sends no CORS headers
  * and a browser could not call it directly anyway.
  * See design/eksisterende/api-for-frontend.md.
@@ -43,7 +43,17 @@ export {
  */
 export function createChatClient(): ChatClient {
   const env = kaEnv();
-  const mode = env.VITE_API_MODE ?? 'mock';
+  /*
+   * The rule in apiMode.ts, written out here so the build can fold it. Vite
+   * puts the build's values in place of `import.meta.env`, the minifier
+   * removes the branches the build does not take, and with them the only use
+   * of the mock and the live client. vite.config.ts lets the bundler drop
+   * their modules then, so a bff build carries neither: not the mock's corpus
+   * and summaries, and not the live client, which calls the backend's own
+   * API. Through `apiMode()` nothing was folded, and the bff bundle stayed
+   * 1 727 kB.
+   */
+  const mode = import.meta.env.VITE_API_MODE ?? (import.meta.env.PROD ? 'bff' : 'mock');
   if (mode === 'bff') {
     const bff = new BffChatClient({ datasetConfigKey: activeCorpusKey });
     // The corpus's name comes from the BFF (src/decisions/0006); ask for it

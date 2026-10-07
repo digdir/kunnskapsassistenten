@@ -4,6 +4,7 @@ import { Shell } from './layout/Shell';
 import { infoPageElement, infoPages } from './routes/info/infoPages';
 import { NewConversation } from './routes/NewConversation';
 import { NotFound } from './routes/NotFound';
+import { PreviousClientThread } from './routes/PreviousClientThread';
 import { Thread } from './routes/Thread';
 
 /**
@@ -12,6 +13,7 @@ import { Thread } from './routes/Thread';
  *
  *   /                   new conversation, empty state
  *   /threads/:threadId  one conversation
+ *   /chat/:threadId     the same, as the previous client links to it
  *   /onboarding         ┐
  *   /endringslogg       ├ a page about Kunnskapsassistenten itself
  *   /om-prosjektet      ┘
@@ -35,6 +37,7 @@ export function App() {
   return (
     <LayoutProvider>
       <Routes>
+        <Route path="chat/:threadId" element={<PreviousClientThread />} />
         <Route element={<Shell />}>
           <Route index element={<NewConversation />} />
           <Route path="threads/:threadId" element={<Thread />} />

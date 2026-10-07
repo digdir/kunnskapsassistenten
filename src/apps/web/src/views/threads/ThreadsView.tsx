@@ -6,7 +6,7 @@ import { createThreadActions, type ThreadActions } from '../../api/threadActions
 import { FilterIcon, NewThreadIcon } from '../../components/icons';
 import { EmptyState, ErrorState } from '../../components';
 import { useCorpus } from '../../layout/useCorpus';
-import { useNewThread } from '../../layout/useNewThread';
+import { askedForNewThread, useNewThread } from '../../layout/useNewThread';
 import { useOpenThread } from '../../layout/useOpenThread';
 import type { SlotViewProps } from '../../layout/viewModel';
 import type { Thread } from '../../model';
@@ -226,7 +226,11 @@ export function ThreadsView({
    *
    * The thread on screen is left for a new one, since there is nothing to
    * show for it any more. If the delete then fails, the row is back in the
-   * list and one click away.
+   * list and one click away. By the «Ny tråd» count as well as the address:
+   * a thread started on `/` is still `/` to the router, so the navigation
+   * alone left the deleted conversation on screen, and the next question
+   * went to it. Only the count, not the rest of «Ny tråd»: focus stays in
+   * the list and the filter as it is.
    */
   function remove(thread: Thread) {
     if (!actions) return;
@@ -240,7 +244,10 @@ export function ThreadsView({
 
     change((list) => list.filter((row) => row.id !== thread.id));
     setAnnouncement(`«${thread.title}» er slettet.`);
-    if (thread.id === openThreadId) void navigate('/');
+    if (thread.id === openThreadId) {
+      askedForNewThread();
+      void navigate('/');
+    }
 
     actions.remove(thread).catch(() => {
       change((list) => (list.some((row) => row.id === thread.id) ? list : [...list, thread]));

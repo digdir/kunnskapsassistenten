@@ -1,6 +1,6 @@
 # Kunnskapsassistenten, frontend
 
-> Kopiert fra [larsekhansen/kunnskapsassistenten-frontend](https://github.com/larsekhansen/kunnskapsassistenten-frontend) på `cd1a22a` 7. oktober 2026, uten historikken. Historikken står der.
+> Kopiert fra [larsekhansen/kunnskapsassistenten-frontend](https://github.com/larsekhansen/kunnskapsassistenten-frontend) på `53bf2c8` 7. oktober 2026, uten historikken. Historikken står der.
 
 [![CI](https://github.com/larsekhansen/kunnskapsassistenten-frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/larsekhansen/kunnskapsassistenten-frontend/actions/workflows/ci.yml)
 
@@ -25,7 +25,7 @@ kjøres fra `src/` med `--workspace apps/web`.
 | Skript                  | Gjør                                                                                             |
 | ----------------------- | ------------------------------------------------------------------------------------------------ |
 | `npm run dev`           | Utviklingsserver                                                                                 |
-| `npm run build`         | `tsc -b` og produksjonsbygg til `dist/`                                                          |
+| `npm run build`         | `tsc -b` og produksjonsbygg til `dist/`, for BFF-en uten `VITE_API_MODE` (`src/api/apiMode.ts`)  |
 | `npm run preview`       | Server produksjonsbygget lokalt                                                                  |
 | `npm run lint`          | oxlint, inkludert `jsx-a11y`-reglene                                                             |
 | `npm run test`          | vitest én gang. `npm run test:watch` for løpende kjøring                                         |

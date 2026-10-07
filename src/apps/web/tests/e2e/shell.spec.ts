@@ -351,8 +351,10 @@ test.describe('skallet', () => {
     covers(testInfo, 'husket tilstand over reload');
     await page.goto(ROUTES.newConversation.path);
 
-    // Filteret først, mens panelet ennå er åpent.
-    await chooseFacetValue(page, 'Dokumenttyper', 'Årsrapport');
+    // Filteret først, mens panelet ennå er åpent. Med hele navnet og Enter,
+    // uten pil: den andre måten en leser velger på, som resten av e2e ikke
+    // går gjennom (se chooseFacetValue).
+    await chooseFacetValue(page, 'Dokumenttyper', 'Årsrapport', { via: 'enter' });
     await page.getByRole('button', { name: 'Skjul tråder og filter' }).click();
     await expect(page.getByRole('button', { name: 'Vis tråder og filter' })).toBeVisible();
 

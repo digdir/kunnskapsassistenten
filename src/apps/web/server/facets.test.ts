@@ -394,13 +394,14 @@ describe('/api/facets', () => {
     expect(forwarded).toEqual([]);
   });
 
-  it('sender alt annet under /api/ til backend som før, også stier under /api/facets/', async () => {
+  it('svarer bare på /api/facets selv, og sender klientens kall til backend', async () => {
     await start();
 
-    await fetch(`${base}/api/facets/noe`);
+    // Under /api/facets/ is neither this server's nor a call the client makes.
+    expect((await fetch(`${base}/api/facets/noe`)).status).toBe(404);
     await fetch(`${base}/api/conversations`);
 
-    expect(forwarded).toEqual(['/api/facets/noe', '/api/conversations']);
+    expect(forwarded).toEqual(['/api/conversations']);
     expect(asked).toEqual([]);
   });
 

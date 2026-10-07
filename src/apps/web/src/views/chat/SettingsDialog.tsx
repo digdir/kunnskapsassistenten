@@ -1,5 +1,6 @@
-import { Dialog, Fieldset, Heading, Paragraph, Radio } from '@digdir/designsystemet-react';
+import { Dialog, Fieldset, Heading, Link, Paragraph, Radio } from '@digdir/designsystemet-react';
 import { useId } from 'react';
+import { kaEnv } from '../../api/runtimeConfig';
 import { setFooterMode, type FooterMode } from '../../layout/footerMode';
 import { setDisplayLevel, type DisplayLevel } from './displayLevel';
 
@@ -127,6 +128,16 @@ export function SettingsDialog({ level, footerMode, onClose }: SettingsDialogPro
         <Paragraph className="ka-settings__note" data-size="sm" variant="long">
           Valgene huskes i denne nettleseren.
         </Paragraph>
+        {/*
+          The BFF serves the previous client too, and switches by a cookie that
+          `?klient=gammel` sets. A full navigation, so the BFF sees it, and only
+          behind the BFF, which is the one that can answer it.
+        */}
+        {kaEnv().VITE_API_MODE === 'bff' && (
+          <Paragraph data-size="sm">
+            <Link href="/?klient=gammel">Bytt til forrige klient</Link>
+          </Paragraph>
+        )}
       </Dialog.Block>
     </Dialog>
   );

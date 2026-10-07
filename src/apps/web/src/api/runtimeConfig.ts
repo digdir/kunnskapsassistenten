@@ -1,13 +1,17 @@
+import { apiMode } from './apiMode';
+
 /**
  * The environment, whether it was baked in at build time or handed over at
  * runtime.
  *
  * `import.meta.env` is Vite's, and Vite substitutes it during `vite build` —
- * so a built bundle has its mode and its corpus frozen into it. That is right
- * for a developer running `npm run dev` and wrong for a container: one image
- * has to be able to run as the mock demo and against the real backend, and
- * the dataset it asks has to be a deployment's decision rather than a
- * rebuild.
+ * so a built bundle has its corpus frozen into it. That is right for a
+ * developer running `npm run dev` and wrong for a container: the dataset it
+ * asks has to be a deployment's decision rather than a rebuild.
+ *
+ * The mode is the exception, and it is the build's alone (apiMode.ts): it
+ * decides which clients are in the bundle, so a value set at runtime could
+ * only name one that is not there.
  *
  * So the server writes `window.__KA_CONFIG__` into a small script the page
  * loads before the bundle (see server/config.ts), and this is the one place
@@ -40,5 +44,5 @@ declare global {
 export function kaEnv(): Partial<ImportMetaEnv> {
   const built: Partial<ImportMetaEnv> = import.meta.env ?? {};
   const runtime = typeof window === 'undefined' ? undefined : window.__KA_CONFIG__;
-  return runtime ? { ...built, ...runtime } : built;
+  return { ...built, ...runtime, VITE_API_MODE: apiMode() };
 }

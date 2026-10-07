@@ -11,7 +11,7 @@ import {
   type RefObject,
 } from 'react';
 import { UPLOAD_ACCEPT } from '../../model';
-import { provideDraft, takeDraft } from '../../api/session';
+import { provideDraft, restoreDraft } from '../../api/session';
 import { COMPOSER_ID } from '../../layout/ids';
 import { PaperclipIcon, PaperplaneIcon, StopIcon } from '@navikt/aksel-icons';
 import {
@@ -22,13 +22,7 @@ import {
   shortcutHint,
 } from './text';
 import { Attachments } from './Attachments';
-import {
-  ATTACH_LABEL,
-  ATTACH_UNAVAILABLE_LABEL,
-  DROP_HINT,
-  WAIT_FOR_UPLOADS,
-  uploadErrorText,
-} from './attachmentText';
+import { ATTACH_LABEL, DROP_HINT, WAIT_FOR_UPLOADS, uploadErrorText } from './attachmentText';
 import type { Attachments as AttachmentsState } from './useAttachments';
 import type { ChatStatus } from './useChat';
 
@@ -139,23 +133,25 @@ export function Composer({
    * browser leaves for sign-in. The latest value is in a ref because the 401
    * reads it outside any render.
    *
-   * When the field arrives, a draft kept for this page is put back, once:
-   * `takeDraft` removes it as it reads it. Only into an empty field, and it
-   * is not sent: the reader came back to sign in, not to ask, and decides
-   * that themselves.
+   * When the field arrives, a draft kept for this page is put back, once,
+   * when the BFF has said that the one signed in is the one who wrote it
+   * (`restoreDraft`). Only into an empty field, and it is not sent: the
+   * reader came back to sign in, not to ask, and decides that themselves.
    */
   const latestValue = useRef(value);
   useEffect(() => {
     latestValue.current = value;
   }, [value]);
   useEffect(() => provideDraft(() => latestValue.current), []);
-  useEffect(() => {
-    if (latestValue.current.trim() !== '') return;
-    const kept = takeDraft();
-    if (kept !== undefined) onChange(kept);
+  useEffect(
+    () =>
+      restoreDraft((kept) => {
+        if (latestValue.current.trim() === '') onChange(kept);
+      }),
     // `onChange` is the chat view's state setter and does not change. Were
     // it to, running again would find the draft already taken.
-  }, [onChange]);
+    [onChange],
+  );
   // Nesting counter, not a boolean: dragging over a child fires `dragleave`
   // on the parent, so a boolean flickers the hint off every time the pointer
   // crosses the field or a chip.
@@ -314,85 +310,69 @@ export function Composer({
         */}
         <div className="ka-composer__controls">
           {/*
-            The picker, hidden but real: a styled `<label>` around a file input
-            is the other way to do this, and it loses the button semantics the
-            row needs — this control shares a row with the send button and has
-            to behave like the other one, not like a label.
+            Nothing to upload to, nothing to upload with. The BFF has no route
+            for it, so the paperclip is left out rather than drawn switched
+            off (the review of #129).
 
-            `multiple`, because a reader with three documents on the same
-            question should not have to pick them one at a time.
+            It stood there until now, with «Snart kan du laste opp dokumenter
+            her» written on it, because a control that is coming is worth
+            knowing about (issue 79). That argument has run out: the promise
+            has been in production since September, and the sentence takes
+            room in the sticky bottom that the answer could have had. A
+            reader who drops a file on the field is still told honestly why
+            it did not attach — that is the one way left to try, and nothing
+            invites it.
           */}
-          <input
-            accept={UPLOAD_ACCEPT}
-            /*
-             * `display: none` and not `ds-sr-only`: the input is the mechanism,
-             * the button is the control. Screen-reader-only keeps it in the
-             * accessibility tree, where it is a second, nameless file control
-             * beside the named one — axe called it, and it was right.
-             * A hidden input still opens the picker when clicked.
-             */
-            className="ka-composer__file-input"
-            multiple
-            onChange={(event) => {
-              const picked = event.currentTarget.files;
-              if (picked?.length) {
-                setRefusal('');
-                attachments.add(picked);
-              }
-              // Cleared so picking the SAME file again fires `change` at all.
-              event.currentTarget.value = '';
-            }}
-            ref={fileInputRef}
-            tabIndex={-1}
-            type="file"
-          />
+          {unavailable ? null : (
+            <>
+              {/*
+                The picker, hidden but real: a styled `<label>` around a file
+                input is the other way to do this, and it loses the button
+                semantics the row needs — this control shares a row with the
+                send button and has to behave like the other one, not like a
+                label.
 
-          {/*
-            Where there is nothing to upload to, the reason is in the button's
-            own name — known before a file is picked rather than after one is
-            refused. `aria-disabled` and not `disabled`, so the control stays
-            reachable and can still say what it says; a control that is coming
-            is worth knowing about.
+                `multiple`, because a reader with three documents on the same
+                question should not have to pick them one at a time.
+              */}
+              <input
+                accept={UPLOAD_ACCEPT}
+                /*
+                 * `display: none` and not `ds-sr-only`: the input is the
+                 * mechanism, the button is the control. Screen-reader-only
+                 * keeps it in the accessibility tree, where it is a second,
+                 * nameless file control beside the named one — axe called it,
+                 * and it was right. A hidden input still opens the picker when
+                 * clicked.
+                 */
+                className="ka-composer__file-input"
+                multiple
+                onChange={(event) => {
+                  const picked = event.currentTarget.files;
+                  if (picked?.length) {
+                    setRefusal('');
+                    attachments.add(picked);
+                  }
+                  // Cleared so picking the SAME file again fires `change` at all.
+                  event.currentTarget.value = '';
+                }}
+                ref={fileInputRef}
+                tabIndex={-1}
+                type="file"
+              />
 
-            And it says it out loud there: the sentence is ON the button, the
-            way the design draws it, so the row reads «paperclip, coming soon» at a
-            glance instead of hiding that behind a hover. No `aria-label` in
-            that state, so the accessible name is the sentence on screen
-            (WCAG 2.5.3). Where uploading does work, the paperclip is a
-            paperclip again and the name is the label.
-
-            The sentence is in a span of its own so a narrow column can take
-            it off the screen without taking it out of the name — it is 37
-            characters and wraps onto four lines on a phone, which is 83 px of
-            the sticky bottom to say something once (KA CC on #195). Hidden
-            that way it is still the button's accessible name, and WCAG 2.5.3
-            asks nothing of a control with no visible label.
-
-            In the accent colour while it is coming, the way issue 79 draws it: pale blue, like the send button beside it before there
-            is anything to send. That is Designsystemet's own disabled
-            tertiary button, lightened less than it lightens it — see
-            chat.css for why. A working paperclip stays neutral.
-          */}
-          <Button
-            aria-disabled={unavailable ? 'true' : undefined}
-            aria-label={unavailable ? undefined : ATTACH_LABEL}
-            className="ka-composer__attach"
-            data-color={unavailable ? 'accent' : 'neutral'}
-            icon={!unavailable}
-            onClick={() => {
-              if (unavailable) {
-                setRefusal(uploadErrorText(unavailable));
-                return;
-              }
-              fileInputRef.current?.click();
-            }}
-            variant="tertiary"
-          >
-            <PaperclipIcon aria-hidden />
-            {unavailable ? (
-              <span className="ka-composer__attach-text">{ATTACH_UNAVAILABLE_LABEL}</span>
-            ) : null}
-          </Button>
+              <Button
+                aria-label={ATTACH_LABEL}
+                className="ka-composer__attach"
+                data-color="neutral"
+                icon
+                onClick={() => fileInputRef.current?.click()}
+                variant="tertiary"
+              >
+                <PaperclipIcon aria-hidden />
+              </Button>
+            </>
+          )}
 
           {/*
             The agent, next to the send button and away from the paperclip,

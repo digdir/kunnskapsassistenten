@@ -13,6 +13,7 @@ import { SourcesSummary } from './SourcesSummary';
 import { ThinkingPanel } from './ThinkingPanel';
 import { useDisplayLevel } from './displayLevel';
 import { lacksSources } from './noSources';
+import { thinkingWithoutAnswer } from './thinkingWithoutAnswer';
 import {
   ABORTED_BEFORE_ANSWER,
   ABORTED_NOTE,
@@ -145,6 +146,12 @@ export function AnswerMessage({
   const aborted = message.status === 'aborted';
   const complete = message.status === 'complete';
   const empty = message.content.length === 0;
+  /*
+    The agent's own words about what it is doing, less the step that is the
+    answer over again — which happens on an iteration with no tool call. See
+    `thinkingWithoutAnswer`.
+  */
+  const steps = thinkingWithoutAnswer(message.thinkingSteps, message.content);
   // Failed, and the alert is no longer speaking for it.
   const failedQuietly = message.status === 'error' && message.id !== liveErrorId;
   // A failed turn with nothing in it gets no card: an empty bordered box
@@ -263,11 +270,11 @@ export function AnswerMessage({
         before it in the tab order. It is the same turn, so it is not a message
         of its own; it is the header of this one.
       */}
-      {message.thinkingSteps?.length ? (
+      {steps?.length ? (
         detailed ? (
           <ThinkingPanel
             status={streaming && empty ? 'thinking' : 'done'}
-            steps={message.thinkingSteps}
+            steps={steps}
             // The measured wait, and not the sum of what the steps reported.
             // The stream writes it down while it happens (`useChat`), and it
             // has to be handed over or the panel falls back to the sum — which
@@ -281,7 +288,7 @@ export function AnswerMessage({
             question={question}
             retrieval={message.retrieval}
             status={streaming && empty ? 'thinking' : 'done'}
-            steps={message.thinkingSteps}
+            steps={steps}
           />
         )
       ) : null}

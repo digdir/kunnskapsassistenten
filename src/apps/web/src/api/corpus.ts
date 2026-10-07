@@ -333,6 +333,19 @@ export function setActiveCorpusKey(key: string): void {
   for (const listener of [...listeners]) listener();
 }
 
+/**
+ * For «Logg ut» (`beforeLogout` in session.ts): the choice is kept per
+ * browser and not per user, so the next reader in this browser starts on the
+ * default corpus.
+ */
+export function forgetCorpusChoice(): void {
+  try {
+    localStorage.removeItem(CORPUS_STORAGE_KEY);
+  } catch {
+    // Not writable. The page is about to leave anyway.
+  }
+}
+
 export function subscribeToCorpus(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);

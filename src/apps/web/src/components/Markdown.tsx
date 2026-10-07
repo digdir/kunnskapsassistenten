@@ -74,6 +74,52 @@ export type MarkdownProps = {
   markClassName?: string;
 };
 
+/**
+ * The address a link in an answer is allowed to carry, or nothing.
+ *
+ * An answer is written by a model that has read the corpus, so an address in
+ * it is exactly as trustworthy as the documents are — which is to say, not at
+ * all. Three forms are let through:
+ *
+ * - `http` and `https` to another origin. That is what a citation is: a
+ *   document that lives somewhere else.
+ * - `mailto:`, which the info pages use for the contact address. It reaches
+ *   no endpoint and acts on nothing; it hands an address to the reader's mail
+ *   program, which then waits for them.
+ *
+ * Everything else keeps its text and loses its link. The one that matters is
+ * an address pointing back into this app: `[logg ut](/auth/logout)` is a GET
+ * that ends the session, and one document in the corpus is enough to write it
+ * (the review of #129). Naming `/auth/` alone would be out of date the next
+ * time a route is added, so the rule is about the origin and not about a
+ * path. Nothing in the app has ever had a reason to be linked to from an
+ * answer.
+ *
+ * The scheme list is written as what IS allowed rather than as what is not,
+ * so a scheme nobody thought of is refused rather than let through.
+ * react-markdown empties `javascript:` and its relatives before this runs;
+ * this is the second layer, and it is ours.
+ *
+ * Relative addresses resolve against the page, the way the browser would, so
+ * `/auth/logout` and the whole address for it are one case.
+ *
+ * The address is handed back as it was written rather than as the parser
+ * normalises it: the browser resolves it the same way either way, and a link
+ * whose address differs from the one in the answer is harder to check.
+ */
+function linkableHref(href: string): string | undefined {
+  let url: URL;
+  try {
+    url = new URL(href, window.location.href);
+  } catch {
+    return undefined;
+  }
+  if (url.protocol === 'mailto:') return href;
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return undefined;
+  if (url.origin === window.location.origin) return undefined;
+  return href;
+}
+
 const CITATION_MARKER = /\[(\d+)\]/g;
 
 /**
@@ -346,11 +392,52 @@ export function Markdown({
       ul: ({ children: content }) => <List.Unordered>{content}</List.Unordered>,
       ol: ({ children: content }) => <List.Ordered>{content}</List.Ordered>,
       li: ({ children: content }) => <List.Item>{decorate(content)}</List.Item>,
-      // An empty `href` is an address react-markdown refused, such as
-      // `javascript:`, or none at all. Drawn as a link it would point at the
-      // page the reader is on, so only its text stays.
-      a: ({ children: content, href }) =>
-        href ? <Link href={href}>{content}</Link> : <>{content}</>,
+      /*
+        Only an address that leads out of the app becomes a link; see
+        `linkableHref`. Everything else keeps its text and loses the link,
+        which is what an empty `href` already did — react-markdown empties an
+        address it refused, and drawn as a link that one points at the page
+        the reader is already on.
+
+        The same tab, which is what it has always been. Every link in this app
+        that leaves it opens a tab of its own and says so — the sources panel,
+        the documents list, the menu for flags — but each of those is a
+        control we wrote the words for, and the warning is part of the words.
+        This one sits inside a sentence somebody else wrote, where a warning
+        can only be bolted onto the end of it and is read out as part of it.
+        WCAG asks for no change of context that was not requested (3.2.5), and
+        G200 says to open a new window only where there is a reason; reading
+        on in a document is not one. The thread is on the server behind the
+        BFF, so Back brings it back.
+
+        `noreferrer` because the address of the thread is nobody else's
+        business: without it the browser hands `/threads/<id>` to whatever
+        host the model pointed at.
+      */
+      a: ({ children: content, href }) => {
+        const address = href ? linkableHref(href) : undefined;
+        if (!address) return <>{content}</>;
+        return (
+          <Link href={address} rel="noreferrer">
+            {content}
+          </Link>
+        );
+      },
+      /*
+        An image is never fetched from an answer, and its alt text is drawn as
+        prose instead.
+
+        The browser GETs an `src` as soon as the answer renders, with the
+        session cookie, before anyone has decided to follow anything — so
+        `![x](/auth/logout)` in a corpus document signs the reader out, and
+        again every time the stored answer is reopened (the review of #129,
+        F4). `linkableHref` cannot help here: no click is involved, and an
+        image on another host is a request the reader never asked for either.
+
+        The alt text stays because it is the answer's own words about what it
+        meant to show. Nothing in the corpus produces images today.
+      */
+      img: ({ alt }) => <>{alt ?? ''}</>,
       // A wide table gets its own scroll box, and a scrollable box must be
       // reachable by keyboard and carry a name. Pattern from
       // design/designsystemet/behov-til-komponent.md, question 14. A group

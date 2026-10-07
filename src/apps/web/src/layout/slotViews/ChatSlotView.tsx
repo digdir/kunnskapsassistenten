@@ -11,7 +11,7 @@ import { useParams } from 'react-router';
 import { activeCorpusKey, createChatClient, subscribeToCorpus } from '../../api';
 // Rett fra modulen og ikke via src/api/index.ts, som er #5 sin barrel.
 import { renamedThreads, subscribeToThreadRenames } from '../../api/threadActions';
-import { NotFoundState, PageTitle } from '../../components';
+import { ErrorState, NotFoundState, PageTitle } from '../../components';
 import { threadFromQuestion, type Thread, type ThreadDetail } from '../../model';
 import { ChatView } from '../../views/chat';
 import { FilterContext } from '../filterContext';
@@ -140,10 +140,22 @@ function ChatSlot({ threadId }: { threadId?: string }) {
    *
    * Separate from `thread === null`, which is also what «not read yet» looks
    * like. Only the client saying no counts, and only saying no in so many
-   * words: a read that THREW says nothing about whether the thread exists, so
-   * it is left alone below and the conversation carries on.
+   * words: a read that THREW says nothing about whether the thread exists.
    */
   const [missing, setMissing] = useState(false);
+  /**
+   * The read threw: a 502, a network that is down. The thread may well be
+   * there, so this is not `missing`, and the reader is offered the read
+   * again. Without it the main column showed «Henter samtalen» until the
+   * reader asked something.
+   */
+  const [unreadable, setUnreadable] = useState(false);
+  const [readAttempt, setReadAttempt] = useState(0);
+  /**
+   * A question was asked before the read came back (see `startThread`). Its
+   * turn is on screen, and a read that fails then must not take it away.
+   */
+  const askedWhileReading = useRef(false);
   const { setDocuments } = useAnswerSources();
 
   /**
@@ -224,13 +236,32 @@ function ChatSlot({ threadId }: { threadId?: string }) {
         if (found) client.openThread?.(found);
       })
       .catch(() => {
-        // A thread that cannot be READ is a new conversation, not an error
-        // page: the compose field still works and the user can ask again.
-        // «Does not exist» is the other answer and is handled above.
+        if (abort.signal.aborted || askedWhileReading.current) return;
+        setUnreadable(true);
       });
 
     return () => abort.abort();
-  }, [client, threadId]);
+  }, [client, threadId, readAttempt]);
+
+  function readAgain() {
+    setUnreadable(false);
+    setReadAttempt((attempt) => attempt + 1);
+  }
+
+  /**
+   * Where «Prøv igjen» leaves focus when it took the button with it: the
+   * compose field, which is back with the conversation as the read starts
+   * again, and where the chat view's own «Prøv igjen» sends it. Looked up
+   * when it is needed, since the field is the chat view's.
+   */
+  const composerField = useMemo(
+    () => ({
+      get current() {
+        return document.getElementById(COMPOSER_ID);
+      },
+    }),
+    [],
+  );
 
   /*
    * A new name given in the thread list, on this copy of the thread too.
@@ -321,20 +352,20 @@ function ChatSlot({ threadId }: { threadId?: string }) {
    * in the document (KA CC, 2026-09-15).
    *
    * `!missing` and not «the view is mounted»: the chat view always brings a
-   * composer when it draws a conversation, and this is the one branch where
-   * it draws something else. While the client is still answering, `missing`
-   * is false and a composer really is on screen — the welcome screen is drawn
-   * until the answer comes — so the link is right at every moment, not only
-   * at the end.
+   * composer when it draws a conversation, and «not there» and «could not be
+   * read» are the two branches where it is not drawn. While the client is
+   * still answering, both are false and a composer really is on screen — the
+   * welcome screen is drawn until the answer comes — so the link is right at
+   * every moment, not only at the end.
    */
-  useComposerPresence(!missing);
+  useComposerPresence(!missing && !unreadable);
 
-  // A thread that is not there has no answers either, and the panel has to
-  // say so rather than draw skeletons. It happens to be right without this
+  // A thread that is not there, or could not be read, has no answers either,
+  // and the panel has to say so rather than draw skeletons. It happens to be right without this
   // today — the chat view mounts for a moment before the client answers, and
   // reports an empty list on its way past — but that is a race in another
   // view, not a decision this page has made. See useNoAnswers.ts.
-  useNoAnswers(missing);
+  useNoAnswers(missing || unreadable);
 
   /**
    * Give the conversation an address, once.
@@ -395,7 +426,11 @@ function ChatSlot({ threadId }: { threadId?: string }) {
       startedRef.current = real;
       setStarted(real);
       addressesWrittenHere.add(real.id);
-      window.history.replaceState(window.history.state, '', `/threads/${real.id}`);
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `/threads/${encodeURIComponent(real.id)}`,
+      );
       lockNewThread(real.id, () => startedRef.current?.id === real.id);
     },
     [client, lockNewThread],
@@ -443,6 +478,7 @@ function ChatSlot({ threadId }: { threadId?: string }) {
        * (KA CC on #153). See `ChatClient.openThread`.
        */
       if (threadId) {
+        askedWhileReading.current = true;
         const asked: Thread = { ...threadFromQuestion(question), id: threadId };
         client.openThread?.(asked, 'id-only');
         return asked;
@@ -464,7 +500,11 @@ function ChatSlot({ threadId }: { threadId?: string }) {
       startedRef.current = created;
       setStarted(created);
       addressesWrittenHere.add(created.id);
-      window.history.replaceState(window.history.state, '', `/threads/${created.id}`);
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `/threads/${encodeURIComponent(created.id)}`,
+      );
 
       /*
        * The id above is a stand-in, and the address it just wrote is a
@@ -516,6 +556,20 @@ function ChatSlot({ threadId }: { threadId?: string }) {
 
   return (
     <ThreadContext value={value}>
+      {/*
+        Mounted while the address names a thread and none is on screen, so
+        it is in the page before the read can fail: an alert region only
+        announces what appears inside a region already there. See
+        src/components/ErrorState.tsx. Not beside a conversation, which has
+        an alert region of its own in the chat view.
+      */}
+      {threadId !== undefined && thread === null && !missing && (
+        <ErrorState
+          message={unreadable ? 'Klarte ikke å hente tråden.' : undefined}
+          onRetry={unreadable ? readAgain : undefined}
+          focusAfterRetry={composerField}
+        />
+      )}
       {missing ? (
         /*
           The page title here and not in the chat view, which is not drawn:
@@ -525,9 +579,11 @@ function ChatSlot({ threadId }: { threadId?: string }) {
           <PageTitle name="Fant ikke tråden" />
           <NotFoundState
             title="Fant ikke tråden"
-            description="Lenken peker på en samtale som ikke finnes her. Tråder lagres ikke på tvers av nettlesere, så en delt lenke fører ikke fram ennå."
+            description="Lenken peker på en tråd som ikke finnes. Den kan være slettet, eller høre til en annen bruker."
           />
         </>
+      ) : unreadable ? (
+        <PageTitle name="Klarte ikke å hente tråden" />
       ) : (
         /*
           `loading` is the one thing about the address the view cannot see.

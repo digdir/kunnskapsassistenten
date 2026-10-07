@@ -219,3 +219,16 @@ export function readStoredFilter(): FilterSelection | undefined {
 export function writeStoredFilter(selection: FilterSelection): void {
   writeJson(FILTER_STORAGE_KEY, selection);
 }
+
+/**
+ * For «Logg ut» (`beforeLogout` in session.ts): the filter is kept per
+ * browser and not per user, so the next reader in this browser would ask
+ * their first question with it.
+ */
+export function forgetStoredFilter(): void {
+  try {
+    localStorage.removeItem(FILTER_STORAGE_KEY);
+  } catch {
+    // Not writable. The page is about to leave anyway.
+  }
+}
