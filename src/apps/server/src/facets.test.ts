@@ -375,18 +375,23 @@ describe('facets, against a Typesense shaped like Kudos', () => {
     assert.equal(!answer.ok && answer.body.code, 'filter-too-many-values');
   });
 
-  test('waits on Typesense only when the answer depends on what «all» is', async () => {
-    const realFetch = globalThis.fetch;
-    globalThis.fetch = (() => new Promise(() => {})) as typeof fetch;
-    try {
+  test(
+    'waits on Typesense only when the answer depends on what «all» is',
+    { timeout: 1000 },
+    async (t) => {
+      // Put back in `after`, not in `finally`: a test stopped by its timeout
+      // never reaches `finally`, and every test after it would get this fetch.
+      const realFetch = globalThis.fetch;
+      t.after(() => {
+        globalThis.fetch = realFetch;
+      });
+      globalThis.fetch = (() => new Promise(() => {})) as typeof fetch;
       assert.deepEqual(await facets.resolveAskFilter({ type: ['type1'] }, FIELDS), {
         ok: true,
         filter: { type: ['type1'] },
       });
-    } finally {
-      globalThis.fetch = realFetch;
-    }
-  });
+    },
+  );
 
   test('askFilter answers at once, without waiting on Typesense', () => {
     const answer = facets.askFilter({ type: ['type1'] }, FIELDS);
