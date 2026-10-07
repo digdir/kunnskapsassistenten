@@ -312,11 +312,13 @@ export async function* ask(
   let streamedAnyText = false;
   let iteration = 0;
   let maxIterations = 10;
-  // A `response/chunk` is not known to be answer text when it arrives. Against
-  // this agent every run of them is its plan, repeated by the `agent/thinking`
-  // that follows, and the answer comes whole in the final frame. So deltas are
-  // held: `agent/thinking` drops them, `agent/finalized` and the result release
-  // them. An agent that streams its answer still streams it.
+  // A `response/chunk` is not known to be answer text when it arrives, so
+  // deltas are held: `agent/thinking` drops them, `agent/finalized` and the
+  // result release them. headless-rag sends an `agent/thinking` with the same
+  // text after every model response that is not blank, the last one too
+  // (agent/iteration_bundled.clj, agent/loop.clj). Against it nothing streams:
+  // the plan is dropped, and so is a direct answer, which then comes whole in
+  // the final frame like every other answer.
   let pending: string[] = [];
   function* release(): Generator<DeltaEvent> {
     for (const text of pending) {
