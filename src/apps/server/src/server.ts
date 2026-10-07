@@ -195,7 +195,6 @@ app.post('/api/ask', async (c) => {
       const conv = await convos.create(userId, convos.topicFrom(query));
       conversationId = conv.id;
       created = { id: conv.id, topic: conv.topic };
-      threadFilters.remember(conv.id, requested);
     } catch {
       return c.json({ error: 'Kunne ikke opprette samtale.' }, 502);
     }
@@ -214,6 +213,9 @@ app.post('/api/ask', async (c) => {
       const noteSources = conversationId
         ? sourceStore.answerSources(conversationId)
         : undefined;
+      const noteFilter = created
+        ? threadFilters.rememberWhenAnswered(created.id, requested)
+        : undefined;
       try {
         if (created) send({ type: 'conversation', ...created });
         for await (const event of ask(
@@ -225,6 +227,7 @@ app.post('/api/ask', async (c) => {
           filterBy,
         )) {
           noteSources?.(event);
+          noteFilter?.(event);
           send(event);
         }
       } catch (err) {
