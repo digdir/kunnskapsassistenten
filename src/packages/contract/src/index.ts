@@ -135,9 +135,10 @@ export type TurnEvent =
   | ErrorEvent;
 
 /**
- * The events the client in `apps/web-preact` handles: the six main sent at
- * `8639267`. Its `switch` has no `default`, so any other type empties the
- * turn, and every event after it is lost.
+ * What `/api/ask` sends, for the client in `apps/web-preact`: the six event
+ * types main sent at `8639267`, which are all it handles. Its `switch` has no
+ * `default`, so any other type empties the turn, and every event after it is
+ * lost. `/api/v2/ask` sends `TurnEvent` (decisions/0009).
  */
 export type TurnEventV1 =
   ConversationEvent | StageEvent | DeltaEvent | SourcesEvent | DoneEvent | ErrorEvent;
