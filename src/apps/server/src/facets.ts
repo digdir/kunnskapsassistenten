@@ -46,6 +46,9 @@ export const MAX_SELECTED_VALUES = 100;
 const MAX_VALUE_LENGTH = 256;
 const FORBIDDEN = /[`\\\u0000-\u001f\u007f]/;
 
+/** What the backend parses as an integer (`rag/filters.cljc`). Anything else it refuses. */
+const INTEGER = /^-?\d+$/;
+
 /** The fetch in flight, so a burst of questions after expiry makes one call, not ten. */
 let inflight: { key: string; promise: Promise<FacetField[]> } | null = null;
 
@@ -287,6 +290,9 @@ export function cleanFilter(
     ];
     if (!kept.length) continue;
     if (kept.some((v) => v.length > MAX_VALUE_LENGTH || FORBIDDEN.test(v))) {
+      throw new FilterInvalidValue(spec.field, spec.label);
+    }
+    if (spec.valueType === 'integer' && !kept.every((v) => INTEGER.test(v))) {
       throw new FilterInvalidValue(spec.field, spec.label);
     }
 

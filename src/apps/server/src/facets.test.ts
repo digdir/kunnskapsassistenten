@@ -225,6 +225,24 @@ describe('cleanFilter', () => {
     });
   });
 
+  test('a value in an integer field that is not a whole number is a 400, not sent on', () => {
+    // The backend refuses it (`invalid_overrides`), but only after the thread
+    // has been created with the filter.
+    for (const bad of ['abc', '2024a', '20.24', '1e3', ' 2024', '-', '+2024']) {
+      assert.throws(
+        () => facets.cleanFilter({ concerned_years: ['2024', bad] }, [], FIELDS),
+        (err: unknown) =>
+          err instanceof facets.FilterInvalidValue && err.field === 'concerned_years',
+        JSON.stringify(bad),
+      );
+    }
+    assert.deepEqual(facets.cleanFilter({ concerned_years: ['2024', '-1'] }, [], FIELDS), {
+      concerned_years: ['2024', '-1'],
+    });
+    // Only the integer field: a text field takes letters.
+    assert.deepEqual(facets.cleanFilter({ type: ['abc'] }, [], FIELDS), { type: ['abc'] });
+  });
+
   test('anything that is not an object is no filter', () => {
     assert.deepEqual(facets.cleanFilter(null, [], FIELDS), {});
     assert.deepEqual(facets.cleanFilter(['type'], [], FIELDS), {});
