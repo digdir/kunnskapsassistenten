@@ -1,13 +1,15 @@
-# Node 24 runs the server's TypeScript directly, so only the SPA is built.
+# Node 24 runs the server's TypeScript directly, so only the two clients are built.
 FROM node:24.21.0-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/contract/package.json packages/contract/
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
+COPY apps/web-preact/package.json apps/web-preact/
 RUN npm ci
 COPY . .
-# The client reads VITE_API_MODE when it is built, and defaults to its mock.
+# apps/web reads VITE_API_MODE when it is built, and defaults to its mock.
+# apps/web-preact has no modes.
 RUN VITE_API_MODE=bff npm run build
 
 FROM node:24.21.0-alpine AS runtime
@@ -17,11 +19,13 @@ COPY package.json package-lock.json ./
 COPY packages/contract/package.json packages/contract/
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
+COPY apps/web-preact/package.json apps/web-preact/
 RUN npm ci --omit=dev --workspace apps/server --include-workspace-root \
  && npm cache clean --force
 COPY packages/contract/src packages/contract/src
 COPY apps/server/src apps/server/src
 COPY --from=build /app/apps/web/dist apps/web/dist
+COPY --from=build /app/apps/web-preact/dist apps/web-preact/dist
 
 ENV WEB_ROOT=./apps/web/dist
 ENV PORT=8787
