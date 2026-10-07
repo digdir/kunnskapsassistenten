@@ -386,8 +386,13 @@ export async function* ask(
       // connection broke.
       if (msg.error) {
         const e = msg.error as { message?: string; code?: number; data?: { code?: unknown } };
-        const backendCode = typeof e.data?.code === 'string' ? e.data.code : undefined;
-        yield backendError(backendCode, e.message ?? `JSON-RPC ${e.code ?? ''}`.trim());
+        // The backend's code when it sent one. An exception has none: it is
+        // -32603 with the exception's message (mcp/transport.clj).
+        const code =
+          typeof e.data?.code === 'string'
+            ? e.data.code
+            : `backend_jsonrpc${typeof e.code === 'number' ? `_${e.code}` : ''}`;
+        yield backendError(code, e.message ?? `JSON-RPC ${e.code ?? ''}`.trim());
         return;
       }
 

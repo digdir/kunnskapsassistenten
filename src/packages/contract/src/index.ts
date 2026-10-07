@@ -117,8 +117,8 @@ export interface ErrorEvent {
    *
    * Either the backend's own code, passed through untouched, or one of the
    * names this server uses for what it knows by itself:
-   * `backend_unreachable`, `backend_http_<status>`, `stream_broken`,
-   * `request_aborted`.
+   * `backend_unreachable`, `backend_http_<status>`, `stream_broken`, and
+   * `backend_jsonrpc_<code>` for a JSON-RPC error without a code of its own.
    */
   code?: string;
   conversationId?: string;

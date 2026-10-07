@@ -374,27 +374,33 @@ describe('ask: plan and answer', () => {
     assert.ok(!line.includes('\n'), 'one line in the log, whatever the text holds');
   });
 
-  test('a JSON-RPC error frame is an error with its code, and its text only the log', async (t) => {
-    // `internal-error request-id (.getMessage e)` for any exception
+  test('an exception in headless-rag gets a code of ours, and its text only the log', async (t) => {
+    // `internal-error` with the exception's own message, and `data` that is
+    // `{:tool …}` in tools/call or left out, never `data.code`
     // (mcp/transport.clj).
-    const text = 'Internal error req-1: java.net.UnknownHostException: llm.internal';
+    const text = 'java.net.UnknownHostException: llm.internal';
+    for (const data of [{ tool: 'builtin.agent-rag-agent' }, undefined]) {
+      const frame = { jsonrpc: '2.0', id: 1, error: { code: -32603, message: text, data } };
+      const lines = logged(t);
+      const events_ = await events(async () => sse(`data: ${JSON.stringify(frame)}\n\n`));
+      assert.equal(events_.length, 1, 'an error, not a stream that ran out');
+      assert.equal(events_[0]?.code, 'backend_jsonrpc_-32603');
+      assert.equal(events_[0]?.message, 'Backend svarte med en feil.');
+      assert.ok(lines().at(-1)?.includes(JSON.stringify(text)), lines().at(-1));
+      t.mock.restoreAll();
+    }
+  });
+
+  test("a JSON-RPC error with the backend's own code keeps it", async (t) => {
+    logged(t);
     const frame = {
       jsonrpc: '2.0',
       id: 1,
-      error: {
-        code: -32603,
-        message: text,
-        data: { code: 'internal_error' },
-      },
+      error: { code: -32602, message: 'Unknown tool', data: { code: 'invalid_tool_name' } },
     };
-    const lines = logged(t);
-    const events_ = await events(async () => sse(`data: ${JSON.stringify(frame)}\n\n`));
-    assert.equal(events_.length, 1, 'an error, not a stream that ran out');
-    assert.equal(events_[0]?.code, 'internal_error');
-    assert.equal(events_[0]?.message, 'Backend svarte med en feil.');
-    const [line = '', ...more] = lines();
-    assert.equal(more.length, 0);
-    assert.ok(line.includes(JSON.stringify(text)), line);
+    const [event] = await events(async () => sse(`data: ${JSON.stringify(frame)}\n\n`));
+    assert.equal(event?.code, 'invalid_tool_name');
+    assert.equal(event?.message, 'Backend svarte med en feil.');
   });
 
   test('a stream that ends without a result is a broken stream, with a code', async () => {
