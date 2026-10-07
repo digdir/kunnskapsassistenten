@@ -42,13 +42,14 @@ interface ToolCall {
 const strings = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
 
+/** As the backend sends it: the text fields are read with a type check. */
 interface ProgressMeta {
   event?: string;
-  delta?: string;
+  delta?: unknown;
   iteration?: number | string;
   'max-iterations'?: number | string;
   'tool-calls'?: unknown;
-  reasoning?: string;
+  reasoning?: unknown;
 }
 
 /**
@@ -416,7 +417,7 @@ export async function* ask(
           lastStage = 'writing';
           yield { type: 'stage', stage: 'writing', iteration, maxIterations };
         }
-        if (meta.delta) pending.push(meta.delta);
+        if (typeof meta.delta === 'string' && meta.delta) pending.push(meta.delta);
         continue;
       }
 
@@ -431,7 +432,7 @@ export async function* ask(
        * draws the reader's sentences from them, the way the live path already
        * does from the same frames.
        */
-      if (event === 'agent/thinking' && meta.reasoning) {
+      if (event === 'agent/thinking' && typeof meta.reasoning === 'string' && meta.reasoning) {
         yield { type: 'thinking', reasoning: meta.reasoning };
       }
       if (event === 'agent/turn-completed') {

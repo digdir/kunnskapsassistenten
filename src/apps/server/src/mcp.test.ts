@@ -563,6 +563,29 @@ describe('ask: plan and answer', () => {
     );
   });
 
+  test('a delta or a reasoning that is not a string costs nothing, and the answer comes', async () => {
+    const frame = (msg: object) => `data: ${JSON.stringify({ jsonrpc: '2.0', ...msg })}\n\n`;
+    const progress = (meta: object) =>
+      frame({ method: 'notifications/progress', params: { _meta: meta } });
+    const body =
+      progress({ event: 'agent/thinking', reasoning: { text: 'nei' } }) +
+      progress({ event: 'response/chunk', delta: 5 }) +
+      progress({ event: 'agent/finalized' }) +
+      frame({ id: 1, result: { content: [{ type: 'text', text: 'Svaret.' }] } });
+    const sent = await eventsFrom(body);
+    assert.deepEqual(
+      sent.filter((e) => e.type === 'thinking' || e.type === 'error'),
+      [],
+    );
+    assert.equal(
+      sent
+        .filter((e) => e.type === 'delta')
+        .map((e) => e.text)
+        .join(''),
+      'Svaret.',
+    );
+  });
+
   test('a blank chunk is not an answer, and does not hide the one in the result', async () => {
     // headless-rag sends no agent/thinking for blank content
     // (agent/iteration_bundled.clj), so nothing drops a chunk of "\n\n".
