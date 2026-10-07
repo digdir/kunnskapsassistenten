@@ -44,54 +44,87 @@ const STREAM =
     },
   });
 
+/** Two values in each field, so one of them chosen is a filter and not «all». */
 const FACETS = {
   facet_counts: [
-    { field_name: 'type', counts: [{ value: 'Årsrapport', count: 3 }] },
-    { field_name: 'orgs_long', counts: [{ value: 'Digitaliseringsdirektoratet', count: 2 }] },
-    { field_name: 'concerned_years', counts: [{ value: '2024', count: 5 }] },
+    {
+      field_name: 'type',
+      counts: [
+        { value: 'Årsrapport', count: 3 },
+        { value: 'Tildelingsbrev', count: 1 },
+      ],
+    },
+    {
+      field_name: 'orgs_long',
+      counts: [
+        { value: 'Digitaliseringsdirektoratet', count: 2 },
+        { value: 'Statens vegvesen', count: 1 },
+      ],
+    },
+    {
+      field_name: 'concerned_years',
+      counts: [
+        { value: '2024', count: 5 },
+        { value: '2023', count: 2 },
+      ],
+    },
   ],
 };
 
 export interface Backend {
   /** The body of every `tools/call` sent to `/api/mcp`. */
   mcp: Array<Record<string, any>>;
+  /** Every facet fetch from Typesense. */
+  facetFetches: number;
+  /** When true, the next turns end in a JSON-RPC error, as for an exception. */
+  failing: boolean;
   restore(): void;
 }
 
+const FAILURE = frame({ id: 1, error: { code: -32603, message: 'Internal error' } });
+
 export function fakeBackend(): Backend {
   const original = globalThis.fetch;
-  const mcp: Array<Record<string, any>> = [];
+  let created = 0;
+  const backend: Backend = {
+    mcp: [],
+    facetFetches: 0,
+    failing: false,
+    restore: () => {
+      globalThis.fetch = original;
+    },
+  };
   globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.hostname === 'typesense.test') {
-      if (url.searchParams.has('facet_by')) return Response.json(FACETS);
+      if (url.searchParams.has('facet_by')) {
+        backend.facetFetches += 1;
+        return Response.json(FACETS);
+      }
       return Response.json({
         hits: CHUNKS.map((c) => ({
           document: { chunk_id: c.chunk_id, content_markdown: PASSAGES[c.chunk_id] },
         })),
       });
     }
-    const conversation = { id: 'c1', topic: 'Hva sier årsrapportene?', created: 1 };
+    const conversation = (id: string) => ({ id, topic: 'Hva sier årsrapportene?', created: 1 });
     if (url.pathname === '/api/conversations') {
+      // c1, c2, …: a new thread for every question that has none.
       return init?.method === 'POST'
-        ? Response.json({ conversation })
-        : Response.json({ conversations: [conversation] });
+        ? Response.json({ conversation: conversation(`c${++created}`) })
+        : Response.json({ conversations: [conversation('c1')] });
     }
-    if (url.pathname === '/api/conversations/c1') {
-      return Response.json({ conversation, messages: [] });
-    }
+    const thread = /^\/api\/conversations\/([^/]+)$/.exec(url.pathname);
+    if (thread) return Response.json({ conversation: conversation(thread[1]!), messages: [] });
     if (url.pathname === '/api/mcp') {
-      mcp.push(JSON.parse(String(init?.body)));
-      return new Response(STREAM, { headers: { 'Content-Type': 'text/event-stream' } });
+      backend.mcp.push(JSON.parse(String(init?.body)));
+      return new Response(backend.failing ? FAILURE : STREAM, {
+        headers: { 'Content-Type': 'text/event-stream' },
+      });
     }
     return new Response('not found', { status: 404 });
   }) as typeof fetch;
-  return {
-    mcp,
-    restore: () => {
-      globalThis.fetch = original;
-    },
-  };
+  return backend;
 }
 
 /** The `data:` events of an SSE body, parsed. */

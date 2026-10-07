@@ -7,8 +7,10 @@ import type { Env } from './apiShared.ts';
 import { v1 } from './apiV1.ts';
 import { v2 } from './apiV2.ts';
 import { mountAuth, readUser, requireAuth } from './auth.ts';
+import { probe } from './capabilities.ts';
 import { clientOf, switchByQuery, type Client } from './clientSwitch.ts';
 import { config } from './config.ts';
+import { facets } from './facets.ts';
 import { sessionMiddleware } from './session.ts';
 
 /** The BFF: sign-in, the two API versions and the client. server.ts serves it. */
@@ -111,5 +113,20 @@ if (roots.length) {
   app.get('*', cacheFor('no-cache'), varyOnCookie, (c, next) => {
     const root = builds[clientOf(c, config.defaultClient)] ?? roots[0]!;
     return indexOf.get(root)!(c, next);
+  });
+}
+
+/**
+ * What the server does once it listens: the facets fetched, so the first
+ * question after a restart is answered from the cache, and the capability
+ * probe started.
+ */
+export function startUp(): void {
+  void facets().catch(() => {});
+  void probe().then((caps) => {
+    const on = Object.entries(caps)
+      .map(([k, v]) => `${v ? '+' : '-'}${k}`)
+      .join(' ');
+    console.log(`backend kan: ${on}`);
   });
 }

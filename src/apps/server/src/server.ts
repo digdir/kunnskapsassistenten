@@ -1,8 +1,6 @@
 import { serve } from '@hono/node-server';
-import { app } from './app.ts';
-import { probe } from './capabilities.ts';
+import { app, startUp } from './app.ts';
 import { config, typesenseConfigured } from './config.ts';
-import { facets } from './facets.ts';
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`BFF på http://localhost:${info.port}  →  ${config.apiBase}`);
@@ -16,12 +14,5 @@ serve({ fetch: app.fetch, port: config.port }, (info) => {
   if (!typesenseConfigured) {
     console.log('Typesense er ikke satt opp: ingen filtre og ingen utdrag i kildepanelet.');
   }
-  // Warm, so the first question after a restart is answered from the cache.
-  void facets().catch(() => {});
-  void probe().then((caps) => {
-    const on = Object.entries(caps)
-      .map(([k, v]) => `${v ? '+' : '-'}${k}`)
-      .join(' ');
-    console.log(`backend kan: ${on}`);
-  });
+  startUp();
 });
