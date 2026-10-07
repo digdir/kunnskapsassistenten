@@ -71,8 +71,9 @@ mise install
 node --version
 ```
 
-Den siste skal skrive `v24.21.0`. Har du Node 24 fra før, holder det:
-`engines` krever `>=24`, og `.npmrc` har `engine-strict`.
+Den siste skal skrive `v24.21.0`. Har du Node 24.15 eller nyere fra før,
+holder det: `engines` krever `>=24.15`, som jsdom i `apps/web-preact` gjør, og
+`.npmrc` har `engine-strict`.
 
 ### 2. Avhengighetene
 
