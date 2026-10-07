@@ -526,8 +526,8 @@ describe('ask: plan and answer', () => {
    * lists the chunks in workspace order (mcp/tools.clj, `->structured-content`).
    * An answer that cited its context 2 and 5 says [1] and [2], and the reader
    * is shown chunks 1 and 2. Nothing in the result says which chunk an `[n]`
-   * is. When headless-rag sends that, the mapping goes by `chunk_id`, and this
-   * test is the one to change.
+   * is. When headless-rag sends that (digdir/digdir-headless-rag#36), the
+   * mapping goes by `chunk_id`, and this test is the one to change.
    */
   test('[n] is the n-th chunk in the result, even when the answer cited others', async () => {
     const chunks = ['c1', 'c2', 'c3', 'c4', 'c5'].map((id) => ({
