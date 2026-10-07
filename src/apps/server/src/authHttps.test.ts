@@ -40,6 +40,14 @@ describe('auth routes on https, where cookies carry the __Host- prefix', () => {
     assert.equal(res.headers.get('set-cookie'), null);
   });
 
+  test('nothing but a page load logs out: not a fetch, a frame or a script', async () => {
+    for (const dest of ['empty', 'iframe', 'script', 'style']) {
+      const res = await app.request('/auth/logout', { headers: { 'Sec-Fetch-Dest': dest } });
+      assert.equal(res.status, 403, dest);
+      assert.equal(res.headers.get('set-cookie'), null, dest);
+    }
+  });
+
   test('a page that goes to logout still logs out', async () => {
     // «Logg ut» in both clients is a link, so the browser says document.
     const res = await app.request('/auth/logout', {
