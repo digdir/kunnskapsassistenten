@@ -226,27 +226,74 @@ function expectFits(fit: Fit, where: string): void {
 }
 
 /**
+ * Up to this long, a finite animation is run to its end at once.
+ * Designsystemet's finite ones are 0.15–0.4 s. Its 0.8–6 s ones are the
+ * skeleton and the spinner, which are endless and left out anyway.
+ */
+const FINISH_AT_ONCE_MS = 2_000;
+
+/**
  * Until no finite animation is running, so a measurement never catches a
  * panel halfway open. Endless ones, such as a spinner, are left out: they
  * would never end.
+ *
+ * A short one, up to `FINISH_AT_ONCE_MS`, is run to its end at once with
+ * `finish()` rather than waited for. What is measured is the layout it ends
+ * in, and a machine under load can take seconds to play one that lasts
+ * 300 ms: one run on a busy machine failed here with «animasjonene ble ikke
+ * ferdige» after a drawer opened, and the next run passed 26 of 26.
+ * Throttling the CPU 20 times did not bring it back, since the compositor
+ * plays CSS animations by the clock.
+ *
+ * A longer one is waited for, not finished. A transition that got a far too
+ * long duration by mistake is something the reader sees, and finishing it
+ * would hide that. If it has not ended in time, the message names it with its
+ * length. The poll goes on while anything new starts, so one that starts over
+ * and over is named too. With the short ones finished at once, load no longer
+ * decides how long this takes, and five seconds is Playwright's own default
+ * for an expect: three calls in one test fit in its 30 s.
+ *
+ * Not `reducedMotion: 'reduce'`: Designsystemet turns `.ds-dialog[open]` off
+ * then, but the drawers' own `[data-placement]` animation outranks that rule
+ * and plays anyway (measured 07.10 at 393).
  */
 async function settled(page: Page): Promise<void> {
   await expect
     .poll(
       () =>
         page.evaluate(
-          () =>
+          (finishAtOnce) =>
             document
               .getAnimations()
               .filter(
                 (animation) =>
                   animation.playState === 'running' &&
                   animation.effect?.getComputedTiming().endTime !== Infinity,
-              ).length,
+              )
+              .map((animation) => {
+                const name =
+                  animation instanceof CSSAnimation
+                    ? animation.animationName
+                    : animation instanceof CSSTransition
+                      ? animation.transitionProperty
+                      : 'animasjon';
+                const target =
+                  animation.effect instanceof KeyframeEffect ? animation.effect.target : null;
+                const where = `${name} på ${target?.tagName.toLowerCase() ?? 'ukjent'}`;
+                const length = Number(animation.effect?.getComputedTiming().endTime ?? 0);
+                if (length > finishAtOnce) return `${where} varer ${Math.round(length)} ms`;
+                try {
+                  animation.finish();
+                } catch {
+                  // An animation that cannot be finished is reported as still running.
+                }
+                return where;
+              }),
+          FINISH_AT_ONCE_MS,
         ),
-      { message: 'animasjonene ble ikke ferdige' },
+      { message: 'animasjonene ble ikke ferdige', timeout: 5_000 },
     )
-    .toBe(0);
+    .toEqual([]);
 }
 
 /**
@@ -256,7 +303,13 @@ async function settled(page: Page): Promise<void> {
  */
 async function openSidebar(page: Page, name: string): Promise<void> {
   const show = page.getByRole('button', { name, exact: true });
-  if (!(await show.count())) return;
+  if (!(await show.count())) {
+    // Open already. A name that is neither here nor open is a wrong name.
+    await expect(
+      page.getByRole('button', { name: name.replace(/^Vis /, 'Skjul '), exact: true }),
+    ).toBeAttached();
+    return;
+  }
   const controls = await show.getAttribute('aria-controls');
   await show.click();
   if (controls) {
@@ -274,17 +327,51 @@ async function closeOverlay(page: Page, overlay: Locator): Promise<void> {
   await settled(page);
 }
 
-/**
- * The flag states every breakpoint and every resize runs under. A flag that
- * changes the layout adds a line here, and the whole file runs with it on.
- */
-const FLAG_STATES: { name: string; on: readonly string[] }[] = [
-  { name: 'uten flagg', on: [] },
-  { name: 'mobile-top-row', on: ['mobile-top-row'] },
-];
-
 /** Below this, `mobile-top-row` puts the two buttons in a bar (`compactMaxViewport`). */
 const TOP_ROW_BELOW = 774;
+
+/** The narrowest size from `width` up: where a flag that stops at `width` is seen to stop. */
+function narrowestFrom(width: number): number {
+  return Math.min(...SIZES.map((size) => size.width).filter((each) => each >= width));
+}
+
+type FlagState = {
+  name: string;
+  on: readonly string[];
+  /**
+   * The sizes where the flag changes the page. Elsewhere it is the page «uten
+   * flagg» measures, and running it again costs a test each and finds nothing.
+   * Left out, every size. The resize runs under every state, since it crosses
+   * the limits.
+   */
+  sizes?: (size: Size) => boolean;
+};
+
+/**
+ * The flag states the breakpoints and the resize run under. A flag that
+ * changes the layout adds a line here, with `sizes` when it only acts at some.
+ */
+const FLAG_STATES: FlagState[] = [
+  { name: 'uten flagg', on: [] },
+  {
+    name: 'mobile-top-row',
+    on: ['mobile-top-row'],
+    sizes: (size) => size.width <= narrowestFrom(TOP_ROW_BELOW),
+  },
+  // Every size: the filters move to the sources' side in the drawer too.
+  { name: 'filters-right-panel', on: ['filters-right-panel'] },
+];
+
+/**
+ * What the buttons that open the two panels are called with these flags on.
+ * With `filters-right-panel` the filters move to the sources' side, and the
+ * names follow the views (`slotLabel`).
+ */
+function panelButtons(on: readonly string[]): { primary: string; secondary: string } {
+  return on.includes('filters-right-panel')
+    ? { primary: 'Vis tråder', secondary: 'Vis filter og kilder' }
+    : { primary: 'Vis tråder og filter', secondary: 'Vis kilder' };
+}
 
 /** Turns the flags on before the app reads storage, on every load. */
 async function withFlags(page: Page, on: readonly string[]): Promise<void> {
@@ -330,7 +417,7 @@ async function expectTopRow(page: Page, on: readonly string[], where: string): P
 }
 
 for (const flags of FLAG_STATES) {
-  for (const size of SIZES) {
+  for (const size of SIZES.filter(flags.sizes ?? (() => true))) {
     test.describe(size.name, () => {
       test.use({
         viewport: { width: size.width, height: size.height },
@@ -368,13 +455,13 @@ for (const flags of FLAG_STATES) {
 
         await expectTopRow(page, flags.on, 'tråd med svar og kilder');
 
-        await openSidebar(page, 'Vis tråder og filter');
+        await openSidebar(page, panelButtons(flags.on).primary);
         expectFits(await measure(page), 'navigasjonspanelet åpent');
         if (await page.locator('dialog[open]').count()) {
           await closeOverlay(page, page.locator('dialog[open]'));
         }
 
-        await openSidebar(page, 'Vis kilder');
+        await openSidebar(page, panelButtons(flags.on).secondary);
         expectFits(await measure(page), 'kildepanelet åpent');
         if (await page.locator('dialog[open]').count()) {
           await closeOverlay(page, page.locator('dialog[open]'));

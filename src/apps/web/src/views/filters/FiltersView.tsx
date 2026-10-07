@@ -7,7 +7,6 @@ import {
   Link,
   Paragraph,
   Select,
-  Skeleton,
 } from '@digdir/designsystemet-react';
 import {
   useCallback,
@@ -43,6 +42,7 @@ import { KudosDocuments } from './DocumentsList';
 import { OwnDocuments } from './OwnDocuments';
 import { CorpusLine } from './CorpusLine';
 import { FacetField, type FacetFieldHandle } from './FacetField';
+import { FieldPlaceholder } from './FieldPlaceholder';
 import { YearRangeField } from './YearRangeField';
 import { useFlag } from '../../flags';
 import { LockedFilter } from './LockedFilter';
@@ -566,13 +566,12 @@ export function FiltersView({
         </Alert>
       )}
 
-      {loading && !locked && (
-        <div className="filters-view__loading">
-          {['a', 'b', 'c'].map((key) => (
-            <Skeleton key={key} height="var(--ds-size-14)" />
-          ))}
-        </div>
-      )}
+      {/*
+        One placeholder per field the facets usually bring, each as tall as
+        the field, so nothing under them moves when they come. See
+        FieldPlaceholder.tsx.
+      */}
+      {loading && !locked && ['a', 'b', 'c'].map((key) => <FieldPlaceholder key={key} />)}
 
       {/*
         The panel without facets: the key is missing and the server answers

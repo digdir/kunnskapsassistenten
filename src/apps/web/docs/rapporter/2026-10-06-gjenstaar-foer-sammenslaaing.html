@@ -367,7 +367,7 @@
   <body>
     <main class="page">
       <header>
-        <div class="eyebrow">Rapport · 6. oktober 2026, oppdatert kl. 19:05</div>
+        <div class="eyebrow">Rapport · 6. oktober 2026, oppdatert 7. oktober kl. 00:53</div>
         <h1>Det som gjenstår før klienten erstatter src/apps/web</h1>
         <p class="lede">
           Hva klienten og BFF-en i
@@ -377,11 +377,11 @@
         </p>
         <div class="facts">
           <span>Eksisterende: <code>main</code> 8639267 (25.09)</span>
-          <span>Vår: <code>main</code> bf23152</span>
+          <span>Vår: <code>main</code> 652cc8c</span>
           <span
             >Sammenslåingen:
             <a href="https://github.com/digdir/kunnskapsassistenten/pull/129">utkast-PR #129</a>
-            (29f6c8d)</span
+            (3234dc3)</span
           >
           <span>Lest i koden. Det som er målt, står med dato.</span>
         </div>
@@ -392,10 +392,11 @@
           <h2>Kort fortalt</h2>
           <ul>
             <li>
-              <strong>Venter på ditt valg:</strong> hvordan et svar uten kilder skal se ut (<a
+              <strong>Valgt:</strong> et svar uten kilder får én kort linje med et info-ikon over
+              svaret (<a
                 href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
                 >#257</a
-              >). Se de <a href="#valg-advarsel">tre valgene med skjermbilder</a> under.
+              >). Se <a href="#valg-advarsel">valgene med skjermbilder</a> under.
             </li>
             <li>
               <strong>Gjort i dag:</strong> testene på at svarteksten ikke kan kjøre skript (<a
@@ -432,8 +433,13 @@
               <a href="#funnet">Funnet underveis</a>). CI er grønn.
             </li>
             <li>
-              <strong>Under arbeid:</strong> valg av agent i skrivefeltet, som modellvalget i
-              claude.ai (1).
+              <strong>Gjort etter rapporten:</strong> valg av agent i skrivefeltet (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/265"
+                >#265</a
+              >) og linja for svar uten kilder (<a
+                href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
+                >#257</a
+              >). Begge er med i #129.
             </li>
             <li>
               <strong>Flyttet til etter sammenslåingen:</strong> lenken til tilbakemelding under
@@ -489,13 +495,21 @@
                   <code>POST /api/ask</code> (<code>App.tsx</code>). BFF-en godtar
                   <code>model</code> når <code>/api/models</code> er kalt i samme prosess.
                 </td>
-                <td>Mangler. Ingen kall til <code>/api/models</code>.</td>
+                <td>
+                  Agenten velges i skrivefeltet, med lista fra <code>/api/models</code> (<a
+                    href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/265"
+                    >#265</a
+                  >). Modusene er ikke med.
+                </td>
                 <td class="size">M</td>
                 <td>
-                  <span class="pill partly">Under arbeid</span
+                  <span class="pill ok">Gjort</span
                   ><span class="note"
-                    >Som modellvalget i claude.ai: tekst uten ramme og bakgrunn, som åpner en meny
-                    med navn og beskrivelse.</span
+                    >Agenten, som modellvalget i claude.ai, med lista fra
+                    <code>/api/models</code> bak BFF-en (<a
+                      href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/265"
+                      >#265</a
+                    >).</span
                   >
                 </td>
               </tr>
@@ -533,14 +547,18 @@
                   Advarselen er laget (<a
                     href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
                     >#257</a
-                  >): over svaret, med samme tekst som den eksisterende. Bak BFF-en står den bare
-                  mens samtalen pågår, fordi kildene ikke lagres per svar.
+                  >): én kort linje med et info-ikon over svaret, «Svaret har ingen kilder.
+                  Kontroller det mot originaldokumentene før du bruker det.» Bak BFF-en står den
+                  bare mens samtalen pågår, fordi kildene ikke lagres per svar.
                 </td>
                 <td class="size">L</td>
                 <td>
-                  <span class="pill partly">Klar</span
+                  <span class="pill ok">Gjort</span
                   ><span class="note"
-                    >Venter på ditt valg. Se <a href="#valg-advarsel">de tre valgene</a>.</span
+                    >Én kort linje med et info-ikon over svaret (<a
+                      href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
+                      >#257</a
+                    >). Se <a href="#valg-advarsel">valgene</a>.</span
                   >
                 </td>
               </tr>
@@ -671,6 +689,13 @@
         <div class="section-head">
           <h2>Svar uten kilder: tre valg</h2>
           <p>
+            <strong>Valgt 6. oktober:</strong> (b), med et info-ikon foran teksten (<a
+              href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
+              >#257</a
+            >). Designsystemet har ingen egen komponent for en kort statusmelding, så linja er tekst
+            med ikonet <code>InformationSquare</code>.
+          </p>
+          <p>
             Når agenten svarer uten å finne noe i dokumentene, sier i dag bare kildepanelet det
             («Ingen kilder til dette svaret»), og noen ganger agenten selv i teksten. Den
             eksisterende klienten viser en advarsel over svaret mens det kommer. Bildene er det
@@ -686,7 +711,7 @@
                 loading="lazy"
             /></a>
             <figcaption>
-              <strong>(a) Gul boks, som i 257</strong>
+              <strong>(a) Gul boks, slik #257 var først</strong>
               <span class="note"
                 >Svarkortet blir 92 px høyere på 1440 og 284 px høyere på en telefon (<a
                   href="bilder/2026-10-06-no-sources-option-a-390.png"
@@ -718,8 +743,7 @@
               <span
                 >«Svaret har ingen kilder. Kontroller det mot originaldokumentene før du bruker
                 det.» i dempet tekst øverst i kortet, uten ramme eller bakgrunn. Det sies, men det
-                tar lite plass. Kontrasten er regnet fra fargene i temaet til minst 5,40:1 i lyst og
-                5,72:1 i mørkt, men ikke målt i nettleseren.</span
+                tar lite plass. axe gir 0 i lyst og mørkt på 1440 og 390 (#257).</span
               >
             </figcaption>
           </figure>
@@ -745,10 +769,9 @@
           </figure>
         </div>
         <p class="lede" style="font-size: 0.95rem">
-          <strong>Anbefaling: (b).</strong> Leseren får vite det der svaret står, uten at det tar
-          plassen fra svaret. Si a, b eller c, så blir
-          <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257">#257</a>
-          gjort ferdig etter det.
+          <strong>Anbefalingen var (b).</strong> Leseren får vite det der svaret står, uten at det
+          tar plassen fra svaret. Valgt ble (b) med et info-ikon foran teksten, i
+          <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257">#257</a>.
         </p>
       </section>
 
@@ -766,9 +789,15 @@
             <ul>
               <li>
                 <div class="row">
-                  <strong>Valg av agent og modus</strong><span class="pill todo">Før</span>
+                  <strong>Valg av agent og modus</strong><span class="pill ok">Gjort</span>
                 </div>
-                <p>Fra <code>/api/models</code>, under «Avansert».</p>
+                <p>
+                  Agenten velges i skrivefeltet (<a
+                    href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/265"
+                    >#265</a
+                  >). Modusene under «Avansert» er ikke med, med vilje: de er samme arbeid delt opp
+                  ulikt, for backendens evaluering.
+                </p>
               </li>
               <li>
                 <div class="row">
@@ -779,13 +808,13 @@
               <li>
                 <div class="row">
                   <strong>Advarsel i svaret når kildene mangler</strong
-                  ><span class="pill partly">Klar</span>
+                  ><span class="pill ok">Gjort</span>
                 </div>
                 <p>
                   Laget i
                   <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
                     >#257</a
-                  >, og venter på en avgjørelse om høyden på telefon.
+                  >, som én kort linje med et info-ikon.
                 </p>
               </li>
               <li>
@@ -1166,7 +1195,7 @@
       <footer>
         <span
           >Laget 6. oktober 2026 fra koden på <code>main</code> 8639267 i
-          digdir/kunnskapsassistenten, <code>main</code> bf23152 her, og utkast-PR #129 (29f6c8d).
+          digdir/kunnskapsassistenten, <code>main</code> 652cc8c her, og utkast-PR #129 (3234dc3).
           «Målt» betyr kjørt mot en lokal backend eller testmiljøet. Alt annet er lest i
           koden.</span
         >

@@ -128,7 +128,7 @@ describe('MockChatClient.ask', () => {
     expect(text).toBe(mockAnswerMarkdown);
   });
 
-  it('ends the answer with a long link without spaces when asked to', async () => {
+  it('answers with one short sentence and a long link without spaces when asked to', async () => {
     const events = await collect(client.ask({ query: 'Simuler lang lenke' }));
     const text = events
       .filter((event) => event.type === 'token')
@@ -137,8 +137,7 @@ describe('MockChatClient.ask', () => {
 
     expect(MOCK_LONG_LINK).not.toMatch(/\s/u);
     expect(MOCK_LONG_LINK.length).toBeGreaterThan(160);
-    expect(text.startsWith(mockAnswerMarkdown)).toBe(true);
-    expect(text.endsWith(MOCK_LONG_LINK)).toBe(true);
+    expect(text).toBe(`Hele kapitlet ligger her: ${MOCK_LONG_LINK}`);
     expect(events.at(-1)?.type).toBe('done');
     expect(MOCK_LONG_LINK_QUERY).toBe('simuler lang lenke');
   });

@@ -1,6 +1,7 @@
 # Everything CONTRIBUTING asks for before a push, run again where nobody can
-# forget it. The five local checks in the order they are listed there, then the
-# end-to-end suite against the built app.
+# forget it. The local checks in the order they are listed there, then the
+# end-to-end suite against the built app. The unit tests run in a job of their
+# own beside it, so neither waits for the other.
 #
 # No secrets. The suite runs in mock mode (VITE_API_MODE is set by
 # playwright.config.ts), so CI never talks to the KA backend and never needs a
@@ -26,6 +27,8 @@ permissions:
   contents: read
 
 jobs:
+  # Keeps its name, so the earlier runs and reviews still match, although the
+  # unit tests have moved to the job below.
   check:
     name: Lint, tests and e2e
     runs-on: ubuntu-latest
@@ -59,9 +62,6 @@ jobs:
       - name: Verify the theme is the one checked in
         run: npm run tokens:verify
 
-      - name: Unit tests
-        run: npm test
-
       - name: Build
         run: npm run build
 
@@ -92,6 +92,31 @@ jobs:
           path: ci-artifacts
           if-no-files-found: ignore
           retention-days: 7
+
+  # The unit tests, client and server, beside the end-to-end suite rather than
+  # in front of it. In the job above they took 129 s before the suite could
+  # start (measured 07.10 on 047377a), and installing the dependencies again
+  # here costs less than that.
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
 
   # The image the Deploy workflow builds on main, built here first so a broken
   # Dockerfile stops at the pull request and not after the merge. Nothing is

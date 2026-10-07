@@ -187,18 +187,23 @@ export const defaultMockDelays: MockDelays = mockSpeeds[defaultMockSpeed];
 export const MOCK_FAILURE_QUERY = 'simuler feil';
 
 /**
- * Ask this and the answer ends with a link that has no space in it, longer
- * than a phone is wide.
+ * Ask this and the answer is one sentence with a link that has no space in
+ * it, longer than a phone is wide.
  *
  * A web address is the one thing in an answer that cannot wrap at a space,
  * and the answers from the backend carry them. Without one in the mock, the
  * end-to-end check that nothing scrolls sideways (tests/e2e/viewport-fit.spec.ts)
  * could only ever measure prose. Exact match, like `MOCK_FAILURE_QUERY`, and
  * not a thread: the thread list stays the eleven it is.
+ *
+ * Short, and not the full answer with the link at the end: what that check
+ * measures is the link, and the full answer is measured on its own in the
+ * thread. Streaming the full one was most of the time the check took — 13 of
+ * its tests went from 120 to 60 s.
  */
 export const MOCK_LONG_LINK_QUERY = 'simuler lang lenke';
 
-/** The paragraph `MOCK_LONG_LINK_QUERY` adds: one link, 175 characters, no space. */
+/** The link in the answer to `MOCK_LONG_LINK_QUERY`: 175 characters, no space. */
 export const MOCK_LONG_LINK =
   'https://kudos.dfo.no/dokument/987461a2-6260-4deb-ab9b-296056dac256?utdrag=arsrapport-2024-kapittel-3-maloppnaelse-og-resultater-for-kommunikasjonsmyndigheten&visning=fulltekst';
 
@@ -677,7 +682,7 @@ export class MockChatClient implements ChatClient {
       const baseAnswer = wikipedia
         ? WIKIPEDIA_MOCK_ANSWER
         : longLink
-          ? `${mockAnswerMarkdown}\n\nHele kapitlet ligger her: ${MOCK_LONG_LINK}`
+          ? `Hele kapitlet ligger her: ${MOCK_LONG_LINK}`
           : (scripted?.answer ?? mockAnswerMarkdown);
       const answer = withOnlyCitations(
         attachmentSentence(attached) + shiftCitations(baseAnswer, attachedExcerpts),

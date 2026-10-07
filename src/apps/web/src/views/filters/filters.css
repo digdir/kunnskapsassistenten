@@ -196,13 +196,6 @@
   flex-basis: 100%;
 }
 
-.filters-view__loading {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ds-size-4);
-  inline-size: 100%;
-}
-
 /*
  * The panel without facets: «Filtrering er ikke tilgjengelig ennå» and the
  * filter still in force, in one region that focus can land on.
@@ -576,4 +569,19 @@
  */
 .year-range-field:has(input:placeholder-shown) u-datalist {
   display: none;
+}
+
+/*
+ * A field while the facets load (FieldPlaceholder.tsx). It claims the width
+ * a field does, and the input's bar spans it, as the input does; the other
+ * parts take the size of what they wrap.
+ */
+.field-placeholder {
+  inline-size: 100%;
+}
+
+.field-placeholder__input,
+.field-placeholder__input .ds-input {
+  display: block;
+  inline-size: 100%;
 }

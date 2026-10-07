@@ -103,6 +103,46 @@ describe('flagget filters-right-panel i layouten', () => {
     expect(read('secondary-open')).toBe('false');
   });
 
+  describe('når leseren har lukket høyre panel selv', () => {
+    // What the browser keeps after the reader shut the sources panel.
+    function rememberShut() {
+      window.localStorage.setItem(
+        LAYOUT_STORAGE_KEY,
+        JSON.stringify({
+          collapsed: { 'primary-sidebar': false, 'secondary-sidebar': true },
+          widths: {},
+          sourcesDismissed: true,
+        }),
+      );
+    }
+
+    it('åpner det ikke ved innlasting med flagget på', () => {
+      rememberShut();
+      setFlag('filters-right-panel', true);
+      render(
+        <LayoutProvider>
+          <Probe />
+        </LayoutProvider>,
+      );
+
+      expect(read('secondary')).toBe('filters,sources');
+      expect(read('secondary-open')).toBe('false');
+    });
+
+    it('åpner det likevel når leseren slår på flagget mens siden er oppe', () => {
+      rememberShut();
+      render(
+        <LayoutProvider>
+          <Probe />
+        </LayoutProvider>,
+      );
+
+      act(() => setFlag('filters-right-panel', true));
+
+      expect(read('secondary-open')).toBe('true');
+    });
+  });
+
   it('flytter tilbake når flagget slås av, og lagrer det samme som uten flagget', () => {
     setFlag('filters-right-panel', true);
     render(

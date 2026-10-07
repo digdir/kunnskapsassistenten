@@ -3,8 +3,38 @@
 Beslutninger og milepæler for klienten, med den nyeste øverst. Hvordan loggen
 føres, står i [README](README.md). PR-numrene uten repo foran er i dette repoet.
 
+## 2026-10-07
+
+- **Mobil med knappene for panelene i en rad øverst**, i stedet for skinnene på
+  sidene, bak flagget `mobile-top-row` ([#276](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/276),
+  [digdir#120](https://github.com/digdir/kunnskapsassistenten/issues/120)).
+- **Feltet sier «Alle valgt» når hver verdi i lista er krysset av**, slik
+  spørsmålet regner, og «Velg alle» legger til uten å ta bort
+  ([#275](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/275)). Før kunne feltet si «259 av 136 valgt».
+
 ## 2026-10-06
 
+- **Et svar uten kilder får én kort linje med et info-ikon** over svaret
+  ([#257](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257), punkt 3 i [rapporten](2026-10-06-gjenstaar-foer-sammenslaaing.html#valg-advarsel)).
+  Designsystemet har ingen egen komponent for en kort statusmelding.
+- **Valg av agent i skrivefeltet er laget** ([#265](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/265)). Bak BFF-en kommer
+  lista fra `/api/models`. I live vises ikke valget.
+- **Foten i navigasjonspanelet ruller med innholdet som standard**
+  ([#267](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/267), [digdir#123](https://github.com/digdir/kunnskapsassistenten/issues/123)). Den festede foten kan fortsatt velges i
+  innstillingene.
+- **Samtalen følger med ned bare når leseren er nederst eller nesten nederst**,
+  også når leseren selv sender ([#271](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/271), [digdir#126](https://github.com/digdir/kunnskapsassistenten/issues/126)). Grensen
+  er 80 px.
+- **Ingenting ruller sidelengs på telefon**, og UI-tester på tolv bruddpunkter
+  passer på det ([#270](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/270)).
+- **Funksjonsflagg i en skjult meny, `#feature-flags`** ([#269](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/269)), for
+  forsøk som skal prøves side om side før de velges. Det første flagget var
+  `mobile-top-row`, som ikke gjorde noe før #276. De første som virket, var
+  årsfilter med perioder og samlede merkelapper ([#272](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/272),
+  [digdir#115](https://github.com/digdir/kunnskapsassistenten/issues/115) og [digdir#116](https://github.com/digdir/kunnskapsassistenten/issues/116)), og filtrene over kildene i
+  høyre panel ([#274](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/274), [digdir#84](https://github.com/digdir/kunnskapsassistenten/issues/84)).
+- **Ingen personnavn i det som deles** ([#268](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/268)). Valg skrives med dato
+  og grunn.
 - **Node 24 og TypeScript 6 over hele linja**, både her (`engines` `>=24`,
   [#263](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/263)) og i [digdir#129](https://github.com/digdir/kunnskapsassistenten/pull/129) (`mise.toml`, Dockerfile, CI og rota). Målt uten
   feil, og ingen kode måtte endres.
