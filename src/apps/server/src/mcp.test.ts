@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { before, describe, test } from 'node:test';
+import { before, describe, test, type TestContext } from 'node:test';
+import { format } from 'node:util';
 
 // config.ts exits on a missing key at import time, hence the dynamic import.
 process.env.DIGDIR_API_KEY ??= 'test-key';
@@ -343,36 +344,57 @@ describe('ask: plan and answer', () => {
     assert.equal(event?.message, 'Backend svarte 503.');
   });
 
-  test("the backend's own code in _meta reaches the client", async () => {
+  /** What has been written to console.error since, one line per call. */
+  function logged(t: TestContext): () => string[] {
+    const error = t.mock.method(console, 'error', () => {});
+    return () => error.mock.calls.map((call) => format(...call.arguments));
+  }
+
+  test("the backend's own code in _meta reaches the client, and its text only the log", async (t) => {
+    // headless-rag's text for a failed tool call is its own `:message`, which
+    // can be an exception's, with host names in it (mcp/tools.clj).
+    const text = 'Connection refused: typesense.internal:8108\n[ka] alt i orden';
     const frame = {
       jsonrpc: '2.0',
       id: 1,
       result: {
         isError: true,
-        content: [{ type: 'text', text: 'Dataset not authorized for this key' }],
+        content: [{ type: 'text', text }],
         _meta: { code: 'dataset_not_authorized' },
       },
     };
+    const lines = logged(t);
     const [event] = await events(async () => sse(`data: ${JSON.stringify(frame)}\n\n`));
     assert.equal(event?.type, 'error');
     assert.equal(event?.code, 'dataset_not_authorized');
-    assert.equal(event?.message, 'Dataset not authorized for this key');
+    assert.equal(event?.message, 'Backend svarte med en feil.');
+    const [line = '', ...more] = lines();
+    assert.equal(more.length, 0);
+    assert.ok(line.includes(JSON.stringify(text)), line);
+    assert.ok(!line.includes('\n'), 'one line in the log, whatever the text holds');
   });
 
-  test('a JSON-RPC error frame is an error, not a stream that ran out', async () => {
+  test('a JSON-RPC error frame is an error with its code, and its text only the log', async (t) => {
+    // `internal-error request-id (.getMessage e)` for any exception
+    // (mcp/transport.clj).
+    const text = 'Internal error req-1: java.net.UnknownHostException: llm.internal';
     const frame = {
       jsonrpc: '2.0',
       id: 1,
       error: {
-        code: -32602,
-        message: 'Unknown tool',
-        data: { code: 'invalid_tool_name' },
+        code: -32603,
+        message: text,
+        data: { code: 'internal_error' },
       },
     };
+    const lines = logged(t);
     const events_ = await events(async () => sse(`data: ${JSON.stringify(frame)}\n\n`));
-    assert.equal(events_.length, 1);
-    assert.equal(events_[0]?.code, 'invalid_tool_name');
-    assert.equal(events_[0]?.message, 'Unknown tool');
+    assert.equal(events_.length, 1, 'an error, not a stream that ran out');
+    assert.equal(events_[0]?.code, 'internal_error');
+    assert.equal(events_[0]?.message, 'Backend svarte med en feil.');
+    const [line = '', ...more] = lines();
+    assert.equal(more.length, 0);
+    assert.ok(line.includes(JSON.stringify(text)), line);
   });
 
   test('a stream that ends without a result is a broken stream, with a code', async () => {

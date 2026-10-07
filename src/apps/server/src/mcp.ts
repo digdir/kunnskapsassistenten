@@ -1,4 +1,11 @@
-import type { DeltaEvent, Source, Stage, ToolCallEvent, TurnEvent } from '@ka/contract';
+import type {
+  DeltaEvent,
+  ErrorEvent,
+  Source,
+  Stage,
+  ToolCallEvent,
+  TurnEvent,
+} from '@ka/contract';
 import { config } from './config.ts';
 import { excerpts } from './excerpts.ts';
 
@@ -207,6 +214,33 @@ export async function toSources(
   });
 }
 
+/**
+ * An error the backend reported, as the browser gets it: a fixed sentence and
+ * the backend's code. The backend's own text goes to the log and no further.
+ * It is whatever the failure said — for an exception, its message, with host
+ * names and replies from Typesense or the model in it (mcp/transport.clj).
+ *
+ * `JSON.stringify` keeps the text on one line, so it cannot start a log line
+ * of its own.
+ */
+function backendError(
+  code: string | undefined,
+  text: string | undefined,
+  conversationId?: string,
+): ErrorEvent {
+  console.error(
+    'backend error %s: %s',
+    JSON.stringify(code ?? null),
+    JSON.stringify(text ?? null),
+  );
+  return {
+    type: 'error',
+    message: 'Backend svarte med en feil.',
+    ...(code ? { code } : {}),
+    ...(conversationId ? { conversationId } : {}),
+  };
+}
+
 /** Never accumulates the upstream body: that would stall the stream. */
 export async function* ask(
   query: string,
@@ -312,18 +346,10 @@ export async function* ask(
 
         if (r.isError) {
           // The backend names the condition in `_meta.code`
-          // (digdir/mcp/tools.clj, `error->tool-result`). It was dropped here,
-          // so every one of them — an unauthorized dataset, a mode that does
-          // not exist, a model that did not answer — reached the client as
-          // English prose to guess at.
-          const text = r.content?.[0]?.text ?? 'Ukjent feil fra backend.';
+          // (digdir/mcp/tools.clj, `error->tool-result`), and that is what the
+          // client acts on. The text is its `:message`.
           const code = typeof meta.code === 'string' ? meta.code : undefined;
-          yield {
-            type: 'error',
-            message: text,
-            ...(code ? { code } : {}),
-            conversationId: convo,
-          };
+          yield backendError(code, r.content?.[0]?.text, convo);
           return;
         }
 
@@ -351,11 +377,7 @@ export async function* ask(
       if (msg.error) {
         const e = msg.error as { message?: string; code?: number; data?: { code?: unknown } };
         const backendCode = typeof e.data?.code === 'string' ? e.data.code : undefined;
-        yield {
-          type: 'error',
-          message: e.message ?? `Backend svarte JSON-RPC-feil ${e.code ?? ''}`.trim(),
-          ...(backendCode ? { code: backendCode } : {}),
-        };
+        yield backendError(backendCode, e.message ?? `JSON-RPC ${e.code ?? ''}`.trim());
         return;
       }
 

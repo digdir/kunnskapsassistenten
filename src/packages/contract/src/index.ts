@@ -101,9 +101,9 @@ export interface DoneEvent {
 export interface ErrorEvent {
   type: 'error';
   /**
-   * What went wrong, in the words of whoever caught it. English, technical,
-   * and written for whoever runs the service — the client never puts it on
-   * screen as it stands.
+   * What went wrong, in this server's own words. An error the backend
+   * reported is a fixed sentence, and the backend's text goes to this
+   * server's log, never to the browser.
    */
   message: string;
   /**
