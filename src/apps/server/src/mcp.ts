@@ -320,7 +320,9 @@ export async function* ask(
   let pending: string[] = [];
   function* release(): Generator<DeltaEvent> {
     for (const text of pending) {
-      streamedAnyText = true;
+      // Blank text has not told the reader anything, so the answer in the
+      // result is still to come.
+      if (text.trim()) streamedAnyText = true;
       yield { type: 'delta', text };
     }
     pending = [];

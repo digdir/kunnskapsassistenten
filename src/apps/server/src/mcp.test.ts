@@ -489,6 +489,19 @@ describe('ask: plan and answer', () => {
     assert.equal(events.filter((e) => e.type === 'tool-call').length, 0);
   });
 
+  test('a blank chunk is not an answer, and does not hide the one in the result', async () => {
+    // headless-rag sends no agent/thinking for blank content
+    // (agent/iteration_bundled.clj), so nothing drops a chunk of "\n\n".
+    const frame = (msg: object) => `data: ${JSON.stringify({ jsonrpc: '2.0', ...msg })}\n\n`;
+    const progress = (meta: object) =>
+      frame({ method: 'notifications/progress', params: { _meta: meta } });
+    const body =
+      progress({ event: 'response/chunk', delta: '\n\n' }) +
+      progress({ event: 'agent/finalized' }) +
+      frame({ id: 1, result: { content: [{ type: 'text', text: 'Svaret [1].' }] } });
+    assert.equal((await deltas(body)).trim(), 'Svaret [1].');
+  });
+
   test('deltas no agent/thinking claims are answer text, and are not doubled', async () => {
     const streamed = recorded
       .split('\n\n')
