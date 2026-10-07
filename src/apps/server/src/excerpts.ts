@@ -2,7 +2,18 @@ import { config } from './config.ts';
 
 const chunksCollection = () => config.docsCollection.replace('_documents_', '_chunks_');
 
-export async function excerpts(chunkIds: string[]): Promise<Map<string, string>> {
+/**
+ * As long as the facets wait (facets.ts). The lookup sits between an answer
+ * and its `sources` and `done` events, and a Typesense that accepts and never
+ * answers must not hold them up. `toSources` gives the sources without their
+ * passages when it fails.
+ */
+export const TIMEOUT_MS = 5000;
+
+export async function excerpts(
+  chunkIds: string[],
+  timeoutMs = TIMEOUT_MS,
+): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   const ids = [...new Set(chunkIds.filter((id) => /^[A-Za-z0-9._:-]+$/.test(id)))];
   if (!ids.length || !config.typesenseHost || !config.typesenseKey || !config.docsCollection) {
@@ -17,7 +28,10 @@ export async function excerpts(chunkIds: string[]): Promise<Map<string, string>>
   url.searchParams.set('include_fields', 'chunk_id,content_markdown');
   url.searchParams.set('per_page', String(Math.min(ids.length, 250)));
 
-  const res = await fetch(url, { headers: { 'X-TYPESENSE-API-KEY': config.typesenseKey } });
+  const res = await fetch(url, {
+    headers: { 'X-TYPESENSE-API-KEY': config.typesenseKey },
+    signal: AbortSignal.timeout(timeoutMs),
+  });
   if (!res.ok) return out;
 
   const body = (await res.json()) as {
