@@ -87,6 +87,12 @@ Parameters the template needs are declared with `@description` in
 `kudos` on the hosted backend and `default` locally, and `publicHost` is the
 custom domain, which decides `APP_ORIGIN` and the Entra callback.
 
+`kaFilterFields` and `kaDataset` are the dataset's filter fields and its name,
+passed as `KA_FILTER_FIELDS` and `KA_DATASETS` under `digdirDatasetConfigKey`.
+They default to Kudos: `documentType:type|organisation:orgs_long|year:concerned_years:integer`
+and `Kudos`. The year needs `integer`, or it finds nothing. Another dataset
+needs its own fields, and an empty `kaFilterFields` means no filter panel.
+
 ## Known limits
 
 **Questions do not answer on the deployed instance.**
