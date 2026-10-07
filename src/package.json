@@ -14,7 +14,7 @@
     "build": "npm run build --workspace apps/web",
     "start": "npm run start --workspace apps/server",
     "test": "npm run test --workspace apps/server && npm run test --workspace apps/web",
-    "typecheck": "tsc -p packages/contract && tsc -p apps/server && npm run typecheck --workspace apps/web",
+    "typecheck": "tsc -p packages/contract && tsc -p apps/server && tsc -p apps/web-preact && npm run typecheck --workspace apps/web",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

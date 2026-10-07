@@ -134,6 +134,14 @@ export type TurnEvent =
   | DoneEvent
   | ErrorEvent;
 
+/**
+ * The events the client in `apps/web-preact` handles: the six main sent at
+ * `8639267`. Its `switch` has no `default`, so any other type empties the
+ * turn, and every event after it is lost.
+ */
+export type TurnEventV1 =
+  ConversationEvent | StageEvent | DeltaEvent | SourcesEvent | DoneEvent | ErrorEvent;
+
 export interface AskRequest {
   query: string;
   model?: string;
