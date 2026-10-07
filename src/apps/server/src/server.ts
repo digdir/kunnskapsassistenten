@@ -12,7 +12,7 @@ import { capabilitiesResponse } from './datasetConfig.ts';
 import { ask, setAllowedTools } from './mcp.ts';
 import { toAgents } from './models.ts';
 import * as convos from './conversations.ts';
-import { askFilter, facets, toFilterBy } from './facets.ts';
+import { facets, resolveAskFilter, toFilterBy } from './facets.ts';
 import { sessionMiddleware, type SessionVars } from './session.ts';
 import * as sourceStore from './sourceStore.ts';
 import * as threadFilters from './threadFilters.ts';
@@ -167,9 +167,9 @@ app.post('/api/ask', async (c) => {
     );
   }
 
-  // Only what is cached: a question must not wait on Typesense to learn what
-  // «all» is (`askFilter`).
-  const asked = askFilter((body as { filter?: unknown }).filter);
+  // From the cache, unless the cache is cold and only the facets can tell
+  // «all» from too many (`resolveAskFilter`).
+  const asked = await resolveAskFilter((body as { filter?: unknown }).filter);
   if (!asked.ok) return c.json(asked.body, 400);
   const requested = asked.filter;
   const model =
@@ -296,6 +296,8 @@ serve({ fetch: app.fetch, port: config.port }, (info) => {
   if (!typesenseConfigured) {
     console.log('Typesense er ikke satt opp: ingen filtre og ingen utdrag i kildepanelet.');
   }
+  // Warm, so the first question after a restart is answered from the cache.
+  void facets().catch(() => {});
   void probe().then((caps) => {
     const on = Object.entries(caps)
       .map(([k, v]) => `${v ? '+' : '-'}${k}`)

@@ -358,6 +358,36 @@ describe('facets, against a Typesense shaped like Kudos', () => {
     assert.deepEqual(facets.askFilter({ orgs_long: all }, FIELDS), { ok: true, filter: {} });
   });
 
+  test('«all» of 457 before the first fetch is no filter, not a 400', async () => {
+    // A page left open across a restart, or a restored filter, asks before
+    // this BFF has fetched the facets once.
+    const all = orgs.map((o) => o.value);
+    assert.deepEqual(await facets.resolveAskFilter({ orgs_long: all }, FIELDS), {
+      ok: true,
+      filter: {},
+    });
+    assert.equal(asked.length, 1);
+  });
+
+  test('150 of 457 before the first fetch is still too many', async () => {
+    const some = orgs.slice(0, 150).map((o) => o.value);
+    const answer = await facets.resolveAskFilter({ orgs_long: some }, FIELDS);
+    assert.equal(!answer.ok && answer.body.code, 'filter-too-many-values');
+  });
+
+  test('waits on Typesense only when the answer depends on what «all» is', async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (() => new Promise(() => {})) as typeof fetch;
+    try {
+      assert.deepEqual(await facets.resolveAskFilter({ type: ['type1'] }, FIELDS), {
+        ok: true,
+        filter: { type: ['type1'] },
+      });
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+
   test('askFilter answers at once, without waiting on Typesense', () => {
     const answer = facets.askFilter({ type: ['type1'] }, FIELDS);
     assert.equal(typeof (answer as { then?: unknown }).then, 'undefined');

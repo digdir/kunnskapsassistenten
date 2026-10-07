@@ -179,6 +179,34 @@ export function askFilter(
   }
 }
 
+/**
+ * `askFilter`, after the facets have been fetched once if the answer depends
+ * on them.
+ *
+ * It does when the cache is cold and a field has more values than the backend
+ * takes: that is either «all», which is no filter, or too many, which is a
+ * 400, and only the facets can tell. A page left open across a restart, or a
+ * restored filter, asks before this BFF has fetched them. Then, and only then,
+ * the question waits for the fetch, which gives up after `TIMEOUT_MS`. Every
+ * other question is answered from the cache at once.
+ */
+export async function resolveAskFilter(
+  raw: unknown,
+  fields: FilterFieldSpec[] = config.filterFields,
+): Promise<AskFilter> {
+  const cold = !cache || cache.key !== cacheKey(fields);
+  if (cold && hasMoreThanTheBackendTakes(raw, fields)) await facets(fields).catch(() => {});
+  return askFilter(raw, fields);
+}
+
+function hasMoreThanTheBackendTakes(raw: unknown, fields: FilterFieldSpec[]): boolean {
+  if (!raw || typeof raw !== 'object') return false;
+  return fields.some((spec) => {
+    const values = (raw as Record<string, unknown>)[spec.field];
+    return Array.isArray(values) && new Set(values).size > MAX_SELECTED_VALUES;
+  });
+}
+
 /** For tests: forget the cache. */
 export function resetFacetCache(): void {
   cache = null;
