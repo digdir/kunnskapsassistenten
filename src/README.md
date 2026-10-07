@@ -211,7 +211,7 @@ støtter](#hva-backenden-støtter).
 | Kilder: klikkbare `[n]`, utdrag per svar, «Kilder brukt i svaret» | ferdig, med søk i svaret og i kildene. Etter ny innlasting har bare siste svar kilder, fra BFF-ens minne                |
 | Kopier svaret og lenken til tråden, nøkkelord fra søket           | ferdig                                                                                                                  |
 | Lenke til tilbakemelding                                          | ikke med                                                                                                                |
-| Valg av agent og modus                                            | ikke med. BFF-en har `/api/models`                                                                                      |
+| Valg av agent                                                     | ferdig, fra `/api/models`. Agentens modus kan ikke velges                                                               |
 | Innlogging                                                        | i BFF-en, Entra ID, av lokalt. Se [Innlogging](#innlogging). Ved 401 tar klienten vare på utkastet før innloggingen     |
 | Navn og «Logg ut»                                                 | fra `/api/me`. «Logg ut» tømmer også det klienten husker om svarene i nettleseren                                       |
 | Bildet                                                            | BFF-en med klienten bygget i bff-modus, fra samme origin. Se [`deploy/`](deploy/README.md)                              |

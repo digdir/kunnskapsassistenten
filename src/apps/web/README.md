@@ -7,9 +7,10 @@
 Ny frontend for Kunnskapsassistenten (KA) i Digdir. Vite, React, TypeScript,
 React Router i klientmodus, og Designsystemet 1.21.0.
 
-Dette er **Trinn 1**: skallet, temaet og rutene. Det er ingen chat, ingen
-kilder og ingen filtrering ennå — bare de tre plassene med riktige landemerker,
-temaet på plass og to ruter som virker.
+Klienten har samtalen, trådlista, kildene med utdrag og filtreringen.
+`VITE_API_MODE` velger backend: `bff` (BFF-en i `src/apps/server`), `live`
+(rett mot headless-rag) eller `mock` (fixturene i `src/api/mock/`, standard).
+Hva som er ferdig, står under «Status» i [`src/README.md`](../../README.md#status).
 
 Navnereglene står under [Naming](#naming), og kortversjonen av arbeidsreglene i
 [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -38,14 +39,15 @@ det informasjonen du vil ha: les diffen før du sjekker inn.
 
 ## CI
 
-`.github/workflows/ci.yml` kjører de samme fem sjekkene pluss e2e-suiten på
-hver pull request og hver push til `main`. Den trenger ingen hemmeligheter:
-suiten kjører i mock-modus, så CI snakker aldri med KA-backenden. Feiler
-e2e-steget, lastes Playwright-rapporten opp som artefakt på kjøringen.
+I monorepoet kjører klientens sjekker i `.github/workflows/ci.yml` i rota, på
+hver pull request og hver push til `main`. Jobben `check` kjører format,
+typesjekk, `npm test` og bygget for hele arbeidsområdet. Jobben `web` kjører
+lint, `tokens:verify` og e2e-suiten i mock-modus, så CI snakker aldri med
+backenden. Feiler e2e, lastes Playwright-rapporten opp som artefakt. På pull
+requests bygger og starter jobben `image` bildet, uten å pushe det.
 
-På pull requests bygger og starter CI også Docker-bildet, uten å pushe det.
-Hver push til `main` rulles ut til testmiljøet av
-`.github/workflows/deploy.yml`; se [docs/deploy.md](docs/deploy.md).
+Arbeidsflytene i `.github/workflows/` her er fra frontend-repoet. GitHub
+kjører dem ikke herfra.
 
 ## Mappestruktur
 
