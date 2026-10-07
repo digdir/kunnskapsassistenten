@@ -516,6 +516,47 @@ describe('ask: plan and answer', () => {
     assert.equal(events.filter((e) => e.type === 'tool-call').length, 0);
   });
 
+  /*
+   * Pins an assumption that is known to fail, so it is changed on purpose.
+   *
+   * The BFF gives `[n]` the n-th chunk in `structuredContent.chunks`. That is
+   * right only when the answer numbers the chunks in that order. Synthesis
+   * numbers its own context and then compacts what it cited to 1..k
+   * (skills/builtin/synthesis.clj, `renumber-citations`), while the result
+   * lists the chunks in workspace order (mcp/tools.clj, `->structured-content`).
+   * An answer that cited its context 2 and 5 says [1] and [2], and the reader
+   * is shown chunks 1 and 2. Nothing in the result says which chunk an `[n]`
+   * is. When headless-rag sends that, the mapping goes by `chunk_id`, and this
+   * test is the one to change.
+   */
+  test('[n] is the n-th chunk in the result, even when the answer cited others', async () => {
+    const chunks = ['c1', 'c2', 'c3', 'c4', 'c5'].map((id) => ({
+      chunk_id: id,
+      doc_num: '1',
+      title: 'Rapport',
+    }));
+    const body = `data: ${JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      result: {
+        content: [{ type: 'text', text: 'Det første [1]. Det andre [2].' }],
+        structuredContent: { chunks },
+      },
+    })}\n\n`;
+    const sources = (await eventsFrom(body)).find((e) => e.type === 'sources')?.sources as
+      Array<{ marker: number; chunkId?: string }> | undefined;
+    assert.deepEqual(
+      sources?.map((s) => [s.marker, s.chunkId]),
+      [
+        [1, 'c1'],
+        [2, 'c2'],
+        [3, 'c3'],
+        [4, 'c4'],
+        [5, 'c5'],
+      ],
+    );
+  });
+
   test('a blank chunk is not an answer, and does not hide the one in the result', async () => {
     // headless-rag sends no agent/thinking for blank content
     // (agent/iteration_bundled.clj), so nothing drops a chunk of "\n\n".
