@@ -93,6 +93,11 @@ They default to Kudos: `documentType:type|organisation:orgs_long|year:concerned_
 and `Kudos`. The year needs `integer`, or it finds nothing. Another dataset
 needs its own fields, and an empty `kaFilterFields` means no filter panel.
 
+`kaDefaultClient` is the client a browser without the `ka_klient` cookie gets:
+`gammel`, the current client in `apps/web-preact`, unless it is set to `ny`,
+the client in `apps/web`. The image has both. `?klient=ny` and `?klient=gammel`
+switch one browser.
+
 ## Known limits
 
 **Questions do not answer on the deployed instance.**

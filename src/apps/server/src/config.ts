@@ -1,3 +1,4 @@
+import { defaultClientFrom, type Client } from './clientSwitch.ts';
 import { parseDataset, parseFilterFields } from './datasetConfig.ts';
 
 function required(name: string): string {
@@ -69,6 +70,15 @@ function authConfig() {
 
 const datasetConfigKey = process.env.DIGDIR_DATASET_CONFIG_KEY ?? 'default';
 
+function defaultClient(): Client {
+  try {
+    return defaultClientFrom(process.env.KA_DEFAULT_CLIENT);
+  } catch (err) {
+    console.error((err as Error).message);
+    process.exit(1);
+  }
+}
+
 export const config = {
   port: Number(process.env.PORT ?? 8787),
   apiBase: (process.env.DIGDIR_API_BASE ?? 'http://localhost:8099').replace(/\/$/, ''),
@@ -91,7 +101,12 @@ export const config = {
 
   maxQueryLength: 4000,
 
+  /** The build of apps/web, the client `ny`. */
   webRoot: process.env.WEB_ROOT ?? '',
+  /** The build of apps/web-preact, the client `gammel`. */
+  webRootPreact: process.env.WEB_ROOT_PREACT ?? '',
+  /** The client a browser without the `ka_klient` cookie gets. */
+  defaultClient: defaultClient(),
 
   auth: authConfig(),
 } as const;

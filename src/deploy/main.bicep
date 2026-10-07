@@ -40,6 +40,10 @@ param kudosDocsCollection string = ''
 @description('What the capability probe would find, forced: `filters` or `no-filters`. Empty lets the probe decide.')
 param kaCapabilities string = ''
 
+@description('The client a browser without the `ka_klient` cookie gets: `ny` (apps/web) or `gammel` (apps/web-preact). Empty: `gammel`.')
+@allowed(['', 'ny', 'gammel'])
+param kaDefaultClient string = ''
+
 var appHost = empty(publicHost) ? '${name}.${containerEnv.properties.defaultDomain}' : publicHost
 
 resource logs 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -131,6 +135,9 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             ],
             empty(kaDataset) ? [] : [
               { name: 'KA_DATASETS', value: '${digdirDatasetConfigKey}=${kaDataset}' }
+            ],
+            empty(kaDefaultClient) ? [] : [
+              { name: 'KA_DEFAULT_CLIENT', value: kaDefaultClient }
             ]
           )
           probes: [

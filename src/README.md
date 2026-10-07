@@ -178,6 +178,12 @@ docker stop ka
 
 `curl` skal skrive `{"ok":true}`.
 
+Bildet har begge klientene. En nettleser uten cookien `ka_klient` får den
+nåværende i `apps/web-preact`, eller den `KA_DEFAULT_CLIENT` sier (`ny` eller
+`gammel`). `?klient=ny` og `?klient=gammel` bytter for én nettleser. Hver
+klient spør sin egen versjon av API-et: `apps/web-preact` `/api/*` og
+`apps/web` `/api/v2/*` (`decisions/0009`).
+
 ## Kommandoer
 
 |                                         |                                                                                                               |

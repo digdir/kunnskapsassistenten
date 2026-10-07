@@ -7,6 +7,7 @@ import type { Env } from './apiShared.ts';
 import { v1 } from './apiV1.ts';
 import { v2 } from './apiV2.ts';
 import { mountAuth, readUser, requireAuth } from './auth.ts';
+import { clientOf, switchByQuery, type Client } from './clientSwitch.ts';
 import { config } from './config.ts';
 import { sessionMiddleware } from './session.ts';
 
@@ -72,19 +73,43 @@ const cacheFor =
     if (c.res.ok) c.res.headers.set('Cache-Control', value);
   };
 
-if (config.webRoot) {
-  // Vite puts a content hash in every name under /assets/.
+/** So a cache keeps the two clients' pages apart. */
+const varyOnCookie: MiddlewareHandler = async (c, next) => {
+  await next();
+  if (c.res.ok) c.res.headers.append('Vary', 'Cookie');
+};
+
+/** The two builds, by client. Either can be left out, and then the other is served. */
+const builds: Partial<Record<Client, string>> = {
+  ...(config.webRoot ? { ny: config.webRoot } : {}),
+  ...(config.webRootPreact ? { gammel: config.webRootPreact } : {}),
+};
+const roots = Object.values(builds);
+const indexOf = new Map(
+  roots.map((root) => [root, serveStatic({ root, path: 'index.html' })] as const),
+);
+
+if (roots.length) {
+  // Vite puts a content hash in every name under /assets/, so the two builds'
+  // files cannot collide, and both are served whichever client is chosen.
   app.use('/assets/*', cacheFor('public, max-age=31536000, immutable'));
-  app.use('/assets/*', serveStatic({ root: config.webRoot }));
+  for (const root of roots) app.use('/assets/*', serveStatic({ root }));
   // A name from an older build is gone, and must not become index.html cached for a year.
   app.all('/assets/*', (c) => c.text('Fant ikke fila.', 404));
-  app.get('/favicon.ico', serveStatic({ root: config.webRoot, path: 'favicon.ico' }));
+  for (const root of roots) {
+    app.get('/favicon.ico', serveStatic({ root, path: 'favicon.ico' }));
+  }
+  app.get('*', switchByQuery(config.auth.origin.startsWith('https://')));
   app.get('*', async (c, next) => {
     if (config.auth.enabled && !(await readUser(c))) {
       return c.redirect(`/auth/login?next=${encodeURIComponent(c.req.path)}`);
     }
     return next();
   });
-  // index.html names the hashed files, so it is asked for again on every load.
-  app.get('*', cacheFor('no-cache'), serveStatic({ root: config.webRoot, path: 'index.html' }));
+  // index.html names the hashed files, so it is asked for again on every load,
+  // and which one it is depends on the cookie.
+  app.get('*', cacheFor('no-cache'), varyOnCookie, (c, next) => {
+    const root = builds[clientOf(c, config.defaultClient)] ?? roots[0]!;
+    return indexOf.get(root)!(c, next);
+  });
 }

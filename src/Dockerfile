@@ -28,6 +28,7 @@ COPY --from=build /app/apps/web/dist apps/web/dist
 COPY --from=build /app/apps/web-preact/dist apps/web-preact/dist
 
 ENV WEB_ROOT=./apps/web/dist
+ENV WEB_ROOT_PREACT=./apps/web-preact/dist
 ENV PORT=8787
 EXPOSE 8787
 
