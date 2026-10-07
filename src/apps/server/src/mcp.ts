@@ -31,12 +31,16 @@ function headers(method: string, userId: string, toolName?: string): Record<stri
   return h;
 }
 
+/** As the backend sends it, unchecked: every field is read with a type check. */
 interface ToolCall {
-  tool?: string;
-  'duration-ms'?: number;
-  'result-summary'?: string;
-  args?: { queries?: string[]; query?: string; chunk_ids?: string[] };
+  tool?: unknown;
+  'duration-ms'?: unknown;
+  'result-summary'?: unknown;
+  args?: { queries?: unknown; query?: unknown; chunk_ids?: unknown };
 }
+
+const strings = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
 
 interface ProgressMeta {
   event?: string;
@@ -62,14 +66,16 @@ function toolCallEvents(raw: unknown): ToolCallEvent[] {
   return raw.flatMap((value): ToolCallEvent[] => {
     const call = value as ToolCall;
     if (!call || typeof call.tool !== 'string') return [];
-    const queries = call.args?.queries ?? (call.args?.query ? [call.args.query] : undefined);
-    const chunkCount = call.args?.chunk_ids?.length;
+    const { queries: many, query: one, chunk_ids: chunkIds } = call.args ?? {};
+    const queries = Array.isArray(many) ? strings(many) : typeof one === 'string' ? [one] : [];
+    const chunkCount = Array.isArray(chunkIds) ? chunkIds.length : 0;
+    const detail = call['result-summary'];
     return [
       {
         type: 'tool-call',
         tool: call.tool,
-        ...(call['result-summary'] ? { detail: call['result-summary'] } : {}),
-        ...(queries?.length ? { queries } : {}),
+        ...(typeof detail === 'string' && detail ? { detail } : {}),
+        ...(queries.length ? { queries } : {}),
         ...(typeof call['duration-ms'] === 'number' ? { durationMs: call['duration-ms'] } : {}),
         ...(chunkCount ? { chunkCount } : {}),
       },

@@ -479,6 +479,33 @@ describe('ask: plan and answer', () => {
     });
   });
 
+  test('only strings are passed on from a call, whatever shape the backend sends', async () => {
+    const frame = {
+      jsonrpc: '2.0',
+      method: 'notifications/progress',
+      params: {
+        _meta: {
+          event: 'agent/turn-completed',
+          'tool-calls': [
+            { tool: 'search', args: { queries: ['ett', 3, { q: 'to' }, null] } },
+            { tool: 'search', args: { queries: 'ikke en liste' } },
+            { tool: 'plan_queries', args: { query: { text: 'nei' } } },
+            { tool: 'read_chunks', args: { chunk_ids: 'abc' }, 'result-summary': { n: 1 } },
+          ],
+        },
+      },
+    };
+    const calls = (await eventsFrom(`data: ${JSON.stringify(frame)}\n\n`)).filter(
+      (e) => e.type === 'tool-call',
+    );
+    assert.deepEqual(calls, [
+      { type: 'tool-call', tool: 'search', queries: ['ett'] },
+      { type: 'tool-call', tool: 'search' },
+      { type: 'tool-call', tool: 'plan_queries' },
+      { type: 'tool-call', tool: 'read_chunks' },
+    ]);
+  });
+
   test('a tool-calls payload that is not a list costs nothing', async () => {
     const frame = {
       jsonrpc: '2.0',
