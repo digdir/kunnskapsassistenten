@@ -32,6 +32,23 @@ describe('auth routes on https, where cookies carry the __Host- prefix', () => {
     assert.match(res.headers.get('set-cookie') ?? '', /__Host-ka_session=;.*Secure/);
   });
 
+  test('an image that points at logout leaves the session alone', async () => {
+    // `![x](/auth/logout)` in an answer becomes an <img> in apps/web-preact,
+    // and the browser fetches it with the cookie as soon as the answer is drawn.
+    const res = await app.request('/auth/logout', { headers: { 'Sec-Fetch-Dest': 'image' } });
+    assert.equal(res.status, 403);
+    assert.equal(res.headers.get('set-cookie'), null);
+  });
+
+  test('a page that goes to logout still logs out', async () => {
+    // «Logg ut» in both clients is a link, so the browser says document.
+    const res = await app.request('/auth/logout', {
+      headers: { 'Sec-Fetch-Dest': 'document' },
+    });
+    assert.equal(res.status, 302);
+    assert.match(res.headers.get('set-cookie') ?? '', /__Host-ka_session=;.*Secure/);
+  });
+
   test('starting sign-in sets a __Host- state cookie', async () => {
     const res = await app.request('/auth/start?next=%2F');
     assert.equal(res.status, 302);
