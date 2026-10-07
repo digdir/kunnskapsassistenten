@@ -156,6 +156,12 @@ Only read:
 - Sources are stored once, one per chunk, and `/api/*` groups them when it
   sends them or reads a thread back. A thread asked in one client and read in
   the other gets the sources in the reader's format.
+- In the current client, `[n]` in the answer and the numbers in the sources
+  panel count different things, as on main. `[n]` is the place of a chunk in
+  the result, and the panel numbers documents. An answer that cites `[1]`,
+  `[2]` and `[3]` from two documents has sources 1 and 2, and `[3]` has no
+  source 3 (measured 2026-10-07). It is main's format, not a fault in the
+  client, and it should not be counted against it when the two are compared.
 - The capability probe, the facet cache and the stores are shared. Both
   clients see the same capabilities.
 
