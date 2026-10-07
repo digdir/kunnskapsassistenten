@@ -14,9 +14,10 @@ Loggen peker dit i stedet for å gjenta dem.
 
 ## Rapportene
 
-| dato       | rapport                                                                             |
-| ---------- | ----------------------------------------------------------------------------------- |
-| 2026-10-06 | [Det som gjenstår før sammenslåingen](2026-10-06-gjenstaar-foer-sammenslaaing.html) |
+| dato       | rapport                                                                                               |
+| ---------- | ----------------------------------------------------------------------------------------------------- |
+| 2026-10-06 | [Det som gjenstår før sammenslåingen](2026-10-06-gjenstaar-foer-sammenslaaing.html)                   |
+| 2026-10-07 | [Avgjørelser og det som gjenstår før sammenslåingen](2026-10-07-avgjoerelser-foer-sammenslaaing.html) |
 
 ## Slik føres loggen
 

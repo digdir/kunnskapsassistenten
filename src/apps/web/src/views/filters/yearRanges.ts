@@ -44,8 +44,8 @@ function endAfter(start: number, digits: string): number {
 }
 
 /**
- * What a reader typed, as a period. Undefined for anything else, which the
- * field answers with a hint rather than a guess.
+ * What a reader typed, as a period. Undefined for anything else; while the
+ * text is on its way to one, `suggestPeriods` offers what it may become.
  *
  * Understood: «2021», «2023-2028», «2023–2028», «2023 til 2028», «23-28»,
  * «92-00» and «2023–28». A range of full years written backwards is turned
@@ -66,6 +66,82 @@ export function parseYearInput(text: string, thisYear = currentYear()): YearRang
   const from = fullYear(first, thisYear);
   const to = second.length === 2 ? endAfter(from, second) : fullYear(second, thisYear);
   return from <= to ? { from, to } : { from: to, to: from };
+}
+
+/*
+ * A start the reader has written in full, then the beginning of a period's
+ * end: «2019-», «2019-2», «2019 til 20», or «2019 t» on the way to «til».
+ */
+const OPEN_RANGE = /^(\d{2}|\d{4})\s*(?:(?:-|–|—|til)\s*(\d{0,4})|ti?)$/u;
+const DIGITS = /^\d{1,4}$/u;
+
+/** «23» for 2023 and «05» for 2005, as a period's end may be written. */
+function lastTwoDigits(year: number): string {
+  return String(year % 100).padStart(2, '0');
+}
+
+/**
+ * The years the facets hold documents for, in order. A year listed with no
+ * count holds some as far as anyone knows: in bff and live the counts are
+ * left out once another field is ticked (`facetsFrom`).
+ */
+function yearsWithDocuments(values: readonly { value: string; count?: number }[]): number[] {
+  const years = values
+    .filter((value) => value.count === undefined || value.count > 0)
+    .map((value) => asYear(value.value))
+    .filter((year) => Number.isInteger(year));
+  return [...new Set(years)].sort((a, b) => a - b);
+}
+
+/**
+ * What the list offers while the reader is still writing.
+ *
+ *   - The text read as a period by `parseYearInput`, when it is one, with or
+ *     without documents, as before.
+ *   - Digits that begin a year: the years with documents that begin with
+ *     them. «2» is every year from 2000 on, «202» the 2020s.
+ *   - A start and the beginning of an end: the periods from that start to a
+ *     later year with documents whose end begins so, written in full or with
+ *     two digits. «2019-2» and «2019-20» are 2019–2020, 2019–2021 and on.
+ *
+ * Years newest first, as the year field without the flag lists them (the
+ * facets come so from the mock and the server). Periods from one start
+ * shortest first, the order their ends are typed in.
+ *
+ * Empty when nothing fits, which is when the field shows its hint.
+ */
+export function suggestPeriods(
+  text: string,
+  values: readonly { value: string; count?: number }[],
+  thisYear = currentYear(),
+): YearRange[] {
+  const input = text.trim().toLocaleLowerCase('nb-NO');
+  const found = new Map<string, YearRange>();
+  const add = (range: YearRange) => found.set(rangeKey(range), range);
+
+  const whole = parseYearInput(input, thisYear);
+  if (whole) add(whole);
+
+  const years = yearsWithDocuments(values);
+
+  if (DIGITS.test(input)) {
+    for (const year of years) if (String(year).startsWith(input)) add({ from: year, to: year });
+  }
+
+  const open = OPEN_RANGE.exec(input);
+  if (open) {
+    const from = fullYear(open[1], thisYear);
+    const end = open[2] ?? '';
+    for (const year of years) {
+      if (year <= from) continue;
+      const inFull = String(year).startsWith(end);
+      // Two digits end a period within a hundred years of its start (endAfter).
+      const short = end.length <= 2 && year - from < 100 && lastTwoDigits(year).startsWith(end);
+      if (inFull || short) add({ from, to: year });
+    }
+  }
+
+  return [...found.values()].sort((a, b) => b.from - a.from || a.to - b.to);
 }
 
 /** Every year in a period, in order. */

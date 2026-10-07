@@ -14,6 +14,7 @@ import {
   parseYearInput,
   rangeFromKey,
   rangeKey,
+  suggestPeriods,
   toRanges,
   yearsIn,
 } from './yearRanges';
@@ -28,11 +29,13 @@ const HINT = 'Skriv et år eller en periode, som 2021 eller 2023–2028';
  * `multiple`, the same label row, «Velg alle», «Tøm» and the limit — with two
  * differences:
  *
- *   1. The list is not the years. It is what the reader typed, read as a
- *      period by `parseYearInput`: «2021», «2023-2028», «2023 til 2028»,
- *      «23-28». So `filter={false}`, and the one option is built from the
- *      text, with the number of documents the facets count in it. A period
- *      with no documents still shows, with 0, and can be chosen.
+ *   1. The list is not the years. It is what the text so far can become,
+ *      from `suggestPeriods`: the period the text is when it is one («2021»,
+ *      «2023-2028», «23-28»), the years with documents that begin with the
+ *      digits typed («2», «202»), and the periods whose end is being typed
+ *      («2019-20»). So `filter={false}`, and each option has the number of
+ *      documents the facets count in it. A whole period with no documents
+ *      still shows, with 0, and can be chosen.
  *   2. The chips are periods. The selection is still a list of years — that
  *      is what the backend takes — and the chips are that list drawn by
  *      `toRanges`: years in a row are one chip, a gap starts the next. A chip
@@ -56,7 +59,7 @@ export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldPro
   }));
 
   const typed = parseYearInput(query);
-  const count = typed ? documentsIn(typed, facet.values) : undefined;
+  const suggestions = suggestPeriods(query, facet.values);
 
   const screenReaderTexts = {
     ...SCREEN_READER_TEXTS,
@@ -83,8 +86,12 @@ export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldPro
   /*
    * The periods back into years. An option that overlaps a chip, or sits
    * next to it, simply joins it the next time the chips are drawn.
+   *
+   * A value of '' is the hint, chosen by Enter when nothing fits: it is not
+   * a choice, and the text stays to be finished, as in FacetField.
    */
   function change(items: { value: string }[]) {
+    if (items.some((item) => item.value === '')) return;
     const years = new Set<number>();
     for (const item of items) {
       const range = rangeFromKey(item.value);
@@ -157,21 +164,39 @@ export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldPro
         <Suggestion.Clear />
         <Suggestion.List data-overscroll="contain" data-autoplacement="false">
           {/*
-            One or the other, never both. u-datalist decides whether the empty
-            option shows when the input event arrives, before React has drawn
-            the period, so with both in the list the hint stood over the
-            option it was wrong about (measured in Chromium).
+            The options or the hint, never both. u-datalist decides whether the
+            empty option shows when the input event arrives, before React has
+            drawn the options, so with both in the list the hint stood over
+            the options it was wrong about (measured in Chromium).
 
-            The option's `label` is the text as typed. Enter in the field
-            chooses the option whose label is what the field holds, as it does
-            in the other fields when a value's name is typed in full — so
-            «23-28» and Enter is 2023–2028. What the reader sees and hears is
-            the children: the period written out, and its documents.
+            The hint is an option too, with an empty value: a click on it
+            empties the field. While a year was half typed («2», «202») it was
+            all the list held, and a click there took the text away instead
+            of choosing anything (measured on main 879f0de). So it is only
+            there when nothing fits.
+
+            The `label` of the period the text reads as is the text as typed.
+            Enter in the field chooses the option whose label is what the
+            field holds, as it does in the other fields when a value's name
+            is typed in full — so «23-28» and Enter is 2023–2028. The others
+            are labelled as they read. What the reader sees and hears is the
+            children: the period written out, and its documents.
           */}
-          {typed ? (
-            <Suggestion.Option value={rangeKey(typed)} label={query.trim()}>
-              {count === undefined ? formatRange(typed) : `${formatRange(typed)} (${count})`}
-            </Suggestion.Option>
+          {suggestions.length > 0 ? (
+            suggestions.map((range) => {
+              const key = rangeKey(range);
+              const count = documentsIn(range, facet.values);
+              const asTyped = typed !== undefined && rangeKey(typed) === key;
+              return (
+                <Suggestion.Option
+                  key={key}
+                  value={key}
+                  label={asTyped ? query.trim() : formatRange(range)}
+                >
+                  {count === undefined ? formatRange(range) : `${formatRange(range)} (${count})`}
+                </Suggestion.Option>
+              );
+            })
           ) : (
             <Suggestion.Empty>
               {query.trim() === '' ? HINT : `Ikke et år eller en periode. ${HINT}.`}

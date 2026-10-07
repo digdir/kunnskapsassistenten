@@ -1,0 +1,1217 @@
+<!doctype html>
+<html lang="nb">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Avgjørelser før sammenslåingen</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f8fb;
+        --surface: #ffffff;
+        --surface-2: #eef2f7;
+        --text: #1a2230;
+        --text-2: #4a5568;
+        --muted: #5f6a7a;
+        --line: #d9e0ea;
+        --line-strong: #b8c3d3;
+        --accent: #0062ba;
+        --ok: #0b6b3a;
+        --ok-bg: #e2f4ea;
+        --partly: #8a5300;
+        --partly-bg: #fdf0d8;
+        --todo: #8c1d18;
+        --todo-bg: #fbe4e2;
+        --none: #4a5568;
+        --none-bg: #eceff4;
+        --code-bg: #eef2f7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --bg: #0f141b;
+          --surface: #161d27;
+          --surface-2: #1c2531;
+          --text: #e6ebf2;
+          --text-2: #b7c1cf;
+          --muted: #8d99a9;
+          --line: #2a3442;
+          --line-strong: #3a4657;
+          --accent: #7fb6f2;
+          --ok: #7ad3a1;
+          --ok-bg: #143223;
+          --partly: #f0c372;
+          --partly-bg: #3a2b12;
+          --todo: #f2a29c;
+          --todo-bg: #3b1a18;
+          --none: #b7c1cf;
+          --none-bg: #232c38;
+          --code-bg: #1f2833;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          'Helvetica Neue',
+          Arial,
+          sans-serif;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding-inline: 20px;
+        padding-block: 40px 64px;
+        display: grid;
+        gap: 40px;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 2px;
+      }
+      code,
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.88em;
+      }
+      code {
+        background: var(--code-bg);
+        border-radius: 4px;
+        padding: 0.05em 0.35em;
+        overflow-wrap: anywhere;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        text-wrap: balance;
+        letter-spacing: -0.01em;
+      }
+      h1 {
+        font-size: clamp(1.6rem, 1.2rem + 1.8vw, 2.3rem);
+        line-height: 1.15;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      h3 {
+        font-size: 1rem;
+      }
+      p {
+        margin: 0;
+        max-width: 72ch;
+      }
+      header {
+        display: grid;
+        gap: 14px;
+      }
+      .eyebrow {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .lede {
+        font-size: 1.05rem;
+        color: var(--text-2);
+      }
+      .facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 24px;
+        font-size: 0.86rem;
+        color: var(--muted);
+      }
+      section {
+        display: grid;
+        gap: 14px;
+      }
+      .section-head {
+        display: grid;
+        gap: 6px;
+      }
+      .section-head p {
+        color: var(--text-2);
+      }
+      .summary {
+        display: grid;
+        gap: 10px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--accent);
+        border-radius: 8px;
+        padding: 18px 20px;
+      }
+      .summary ul {
+        margin: 0;
+        padding-left: 1.1em;
+        display: grid;
+        gap: 8px;
+        max-width: 82ch;
+      }
+      .table-wrap {
+        overflow-x: auto;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .table-wrap:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+      table.wide {
+        min-width: 1040px;
+      }
+      table.mid {
+        min-width: 820px;
+      }
+      thead th {
+        background: var(--surface-2);
+        color: var(--text-2);
+        font-weight: 600;
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line-strong);
+        white-space: nowrap;
+      }
+      tbody td {
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+      td.num {
+        font-variant-numeric: tabular-nums;
+        color: var(--muted);
+        font-weight: 600;
+        width: 2.5em;
+      }
+      td.feature strong {
+        display: block;
+      }
+      td.feature .why,
+      td .note {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      td.size {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        white-space: nowrap;
+        text-align: center;
+      }
+      .pill {
+        display: inline-block;
+        font-size: 0.74rem;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 2px 9px;
+        white-space: nowrap;
+      }
+      .pill.ok {
+        color: var(--ok);
+        background: var(--ok-bg);
+      }
+      .pill.partly {
+        color: var(--partly);
+        background: var(--partly-bg);
+      }
+      .pill.todo {
+        color: var(--todo);
+        background: var(--todo-bg);
+      }
+      .pill.none {
+        color: var(--none);
+        background: var(--none-bg);
+      }
+      .options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+        gap: 16px;
+        align-items: start;
+      }
+      .option {
+        margin: 0;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        display: grid;
+      }
+      .option > a {
+        display: block;
+      }
+      .option > a:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: -3px;
+      }
+      .option img {
+        display: block;
+        inline-size: 100%;
+        block-size: auto;
+        max-width: 100%;
+        border-block-end: 1px solid var(--line);
+      }
+      .option figcaption {
+        padding: 12px 14px;
+        display: grid;
+        gap: 6px;
+        font-size: 0.88rem;
+      }
+      .option figcaption .note {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      .sides {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+        gap: 16px;
+        align-items: start;
+      }
+      .side {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px 18px;
+        display: grid;
+        gap: 10px;
+      }
+      .side ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+      .side li {
+        display: grid;
+        gap: 3px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      .side li:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+      }
+      .side li .row {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .side li .row strong {
+        font-weight: 600;
+      }
+      .side li p {
+        color: var(--text-2);
+        font-size: 0.86rem;
+      }
+      details {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      details > summary {
+        cursor: pointer;
+        padding: 14px 16px;
+        font-weight: 600;
+      }
+      details > .inner {
+        padding: 0 16px 16px;
+        display: grid;
+        gap: 10px;
+      }
+      details .table-wrap {
+        border-radius: 6px;
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        display: grid;
+        gap: 4px;
+      }
+      @media (max-width: 640px) {
+        .page {
+          padding-inline: 16px;
+          padding-block: 28px 48px;
+          gap: 32px;
+        }
+      }
+      .decision {
+        display: grid;
+        gap: 14px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px 20px;
+      }
+      .decision-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 6px 12px;
+      }
+      .decision-num {
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .rec {
+        background: var(--surface-2);
+        border-radius: 6px;
+        padding: 12px 14px;
+        display: grid;
+        gap: 4px;
+        max-width: 80ch;
+      }
+      .pair {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+        gap: 14px;
+        align-items: start;
+      }
+      .shot {
+        margin: 0;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        display: grid;
+        gap: 8px;
+        justify-items: center;
+      }
+      .shot img {
+        display: block;
+        inline-size: auto;
+        max-inline-size: 100%;
+        block-size: auto;
+        border-radius: 4px;
+        background: #fff;
+      }
+      .shot a:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .shot figcaption {
+        font-size: 0.84rem;
+        color: var(--text-2);
+        text-align: center;
+        max-width: 40ch;
+      }
+      .shot figcaption strong {
+        display: block;
+        color: var(--text);
+      }
+      ol.steps {
+        margin: 0;
+        padding-left: 1.3em;
+        display: grid;
+        gap: 6px;
+        max-width: 80ch;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header>
+        <div class="eyebrow">Rapport · 7. oktober 2026, kl. 09:20</div>
+        <h1>Avgjørelser og det som gjenstår før sammenslåingen</h1>
+        <p class="lede">
+          Oppfølging av
+          <a href="2026-10-06-gjenstaar-foer-sammenslaaing.html">rapporten fra 6. oktober</a>. Først
+          avgjørelsene som trengs, med skjermbilder. Så det som må gjøres i
+          <a href="https://github.com/digdir/kunnskapsassistenten/pull/129">utkast-PR #129</a> før
+          den åpnes for gjennomgang, og hvordan. Til slutt det som er gjort siden sist.
+        </p>
+        <div class="facts">
+          <span>Vår <code>main</code> 879f0de</span>
+          <span>Testmiljøet 879f0de</span>
+          <span
+            ><a href="https://github.com/digdir/kunnskapsassistenten/pull/129">#129</a> 0e28261,
+            alle sju sjekkene grønne</span
+          >
+          <span>digdir/kunnskapsassistenten <code>main</code> 8639267</span>
+        </div>
+      </header>
+
+      <section>
+        <div class="summary">
+          <h2>Kort fortalt</h2>
+          <ul>
+            <li>
+              <strong>Av de sju punktene fra 6. oktober</strong> er 1, 3, 4, 6 og 7 gjort, 5 er
+              delvis gjort, og 2 er flyttet til etter sammenslåingen.
+            </li>
+            <li>
+              <strong>Sju avgjørelser trengs.</strong> Den viktigste er om raden øverst skal være
+              standard på telefon. Den løser flere av de andre problemene på smale skjermer på én
+              gang.
+            </li>
+            <li>
+              <strong>Før #129 åpnes:</strong> klienten bruker kontrakten fra pakken, det som bare
+              hører til det frittstående repoet tas ut av kopien, PR-beskrivelsen skrives om, og
+              git-krokene avklares med de som eier monorepoet.
+            </li>
+            <li>
+              <strong>Siden kvelden 6. oktober:</strong> 18 PR-er er merget, og fire forsøk ligger
+              bak flagg som er av som standard. Alt er ute i testmiljøet og med i #129.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="avgjoerelser">
+        <div class="section-head">
+          <h2>Avgjørelser som trengs</h2>
+          <p>
+            Hver avgjørelse har det som er målt, valgene og en anbefaling. Trykk på et bilde for
+            full størrelse. Bildene er tatt i mock, i lyst tema.
+          </p>
+        </div>
+
+        <div class="decision" id="mobil-rad">
+          <div class="decision-head">
+            <span class="decision-num">1</span>
+            <h3>Raden øverst som standard på telefon?</h3>
+            <span class="pill partly">Flagg: mobile-top-row</span>
+          </div>
+          <p>
+            Uten flagget står knappene for panelene som skinner på hver side, og hovedkolonnen får
+            186 px på 320 og 259 px på 393. Med flagget (<a
+              href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/276"
+              >#276</a
+            >, <a href="https://github.com/digdir/kunnskapsassistenten/issues/120">digdir#120</a>)
+            står knappene i en rad på 58 px øverst, og hovedkolonnen får hele bredden: 320 og 393
+            px.
+          </p>
+          <div class="pair">
+            <figure class="shot">
+              <a href="bilder/2026-10-07-mobile-top-row-off-393.png"
+                ><img
+                  src="bilder/2026-10-07-mobile-top-row-off-393.png"
+                  alt="Uten flagget på 393: overskriften brytes som «måloppnåels» og «e», og agentvalget viser «agent…»."
+                  width="393"
+                  height="852"
+                  loading="lazy"
+              /></a>
+              <figcaption>
+                <strong>Uten flagg, 393 px</strong>Overskriften brytes midt i ordet, og agentvalget
+                viser bare «agent…».
+              </figcaption>
+            </figure>
+            <figure class="shot">
+              <a href="bilder/2026-10-07-mobile-top-row-on-393.png"
+                ><img
+                  src="bilder/2026-10-07-mobile-top-row-on-393.png"
+                  alt="Med flagget på 393: knappene står i en rad øverst, overskriften står på én linje, og agentvalget viser hele navnet."
+                  width="393"
+                  height="852"
+                  loading="lazy"
+              /></a>
+              <figcaption>
+                <strong>Med flagg, 393 px</strong>Overskriften står på én linje, og hele agentnavnet
+                vises.
+              </figcaption>
+            </figure>
+          </div>
+          <div class="rec">
+            <strong>Anbefaling: gjør raden til standard under 774 px.</strong>
+            <span
+              >Det fjerner de fleste ordene som brytes midt i (avgjørelse 4), «agent…» i
+              skrivefeltet, og det meste av høyden avgjørelse 3 koster på telefon. Med flagget går
+              Tab fra knappen øverst til venstre gjennom hele svaret før den når knappen øverst til
+              høyre. #276 valgte det med vilje, fordi kildene kommer etter svaret i lesefølgen, og
+              det bryter ikke WCAG 2.4.3. Valget står mellom den rekkefølgen og at begge knappene
+              kommer først.</span
+            >
+          </div>
+        </div>
+
+        <div class="decision" id="innstillinger">
+          <div class="decision-head">
+            <span class="decision-num">2</span>
+            <h3>Innstillingene synlige for alle?</h3>
+            <span class="pill partly">PR #273, godkjent i gjennomgangen</span>
+          </div>
+          <p>
+            I
+            <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/273"
+              >#273</a
+            >
+            flyttes velgeren for lys, mørk og auto fra foten i navigasjonspanelet inn i
+            innstillingene, og foten får lenken «Innstillinger» der velgeren sto. Foten blir 18 px
+            lavere (163 til 145 px på 1440 og 390). Menyen monteres i skallet, så den virker på alle
+            sider. Det gjør også visningsnivået og valget for foten synlige for alle. ADR 0004 sa at
+            menyen skulle være skjult.
+          </p>
+          <div class="pair">
+            <figure class="shot">
+              <a href="bilder/2026-10-07-footer-before-1440.png"
+                ><img
+                  src="bilder/2026-10-07-footer-before-1440.png"
+                  alt="Foten før: tre lenker og velgeren for lys, mørk og auto."
+                  width="359"
+                  height="164"
+                  loading="lazy"
+              /></a>
+              <figcaption><strong>Foten i dag</strong>Velgeren tar 42 px.</figcaption>
+            </figure>
+            <figure class="shot">
+              <a href="bilder/2026-10-07-footer-after-1440.png"
+                ><img
+                  src="bilder/2026-10-07-footer-after-1440.png"
+                  alt="Foten etter: tre lenker og lenken «Innstillinger»."
+                  width="359"
+                  height="146"
+                  loading="lazy"
+              /></a>
+              <figcaption><strong>Foten med #273</strong>Lenken tar 24 px.</figcaption>
+            </figure>
+            <figure class="shot">
+              <a href="bilder/2026-10-07-settings-after-1440.png"
+                ><img
+                  src="bilder/2026-10-07-settings-after-1440.png"
+                  alt="Innstillingene med fargevalget som egen gruppe."
+                  width="640"
+                  height="634"
+                  loading="lazy"
+              /></a>
+              <figcaption>
+                <strong>Innstillingene med #273</strong>Fargevalget er en egen gruppe.
+              </figcaption>
+            </figure>
+          </div>
+          <div class="rec">
+            <strong>Anbefaling: ja.</strong>
+            <span
+              >Valgene er ufarlige for en leser, og fargevalget trenger en synlig vei inn uansett.
+              ADR 0004 er allerede oppdatert i PR-en.</span
+            >
+          </div>
+        </div>
+
+        <div class="decision" id="delt-lenke">
+          <div class="decision-head">
+            <span class="decision-num">3</span>
+            <h3>Hvor skal det stå at en delt lenke bare virker for deg?</h3>
+            <span class="pill partly">PR #277 eller #278</span>
+          </div>
+          <p>
+            <a href="https://github.com/digdir/kunnskapsassistenten/issues/119">digdir#119</a>: til
+            innloggingen finnes, virker en lenke til en tråd bare i nettleseren den ble laget i. Det
+            skal sies tydelig. To varianter er laget:
+          </p>
+          <ul>
+            <li>
+              <strong
+                ><a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/277"
+                  >#277</a
+                >, navnet:</strong
+              >
+              knappen heter «Kopier lenke til tråden (virker bare for deg)».
+            </li>
+            <li>
+              <strong
+                ><a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/278"
+                  >#278</a
+                >, beskrivelsen:</strong
+              >
+              knappen heter som før. «Virker bare for deg, i denne nettleseren» står som hjelpetekst
+              på knappen og i kvitteringen etter kopieringen.
+            </li>
+          </ul>
+          <div class="table-wrap" tabindex="0" role="group" aria-label="Tabell: høyden på knappen">
+            <table>
+              <thead>
+                <tr>
+                  <th>Bredde</th>
+                  <th>I dag</th>
+                  <th>#277</th>
+                  <th>#278</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="num">320</td>
+                  <td>141 px</td>
+                  <td>224 px</td>
+                  <td>141 px</td>
+                </tr>
+                <tr>
+                  <td class="num">360</td>
+                  <td>78 px</td>
+                  <td>141 px</td>
+                  <td>78 px</td>
+                </tr>
+                <tr>
+                  <td class="num">390</td>
+                  <td>58 px</td>
+                  <td>78 px</td>
+                  <td>58 px</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pair">
+            <figure class="shot">
+              <a href="bilder/2026-10-07-shared-link-label-390.png"
+                ><img
+                  src="bilder/2026-10-07-shared-link-label-390.png"
+                  alt="#277 på 390: «Kopier lenke til tråden (virker bare for deg)» går over tre linjer."
+                  width="174"
+                  height="219"
+                  loading="lazy"
+              /></a>
+              <figcaption><strong>#277, 390 px</strong>Tre linjer.</figcaption>
+            </figure>
+            <figure class="shot">
+              <a href="bilder/2026-10-07-shared-link-description-390.png"
+                ><img
+                  src="bilder/2026-10-07-shared-link-description-390.png"
+                  alt="#278 på 390: «Kopier lenke til tråden» går over to linjer."
+                  width="174"
+                  height="199"
+                  loading="lazy"
+              /></a>
+              <figcaption><strong>#278, 390 px</strong>Som i dag.</figcaption>
+            </figure>
+            <figure class="shot">
+              <a href="bilder/2026-10-07-shared-link-label-320.png"
+                ><img
+                  src="bilder/2026-10-07-shared-link-label-320.png"
+                  alt="#277 på 320: teksten brytes midt i flere ord og blir 224 px høy."
+                  width="104"
+                  height="458"
+                  loading="lazy"
+              /></a>
+              <figcaption>
+                <strong>#277, 320 px uten raden øverst</strong>Ordene brytes midt i.
+              </figcaption>
+            </figure>
+            <figure class="shot">
+              <a href="bilder/2026-10-07-shared-link-description-320.png"
+                ><img
+                  src="bilder/2026-10-07-shared-link-description-320.png"
+                  alt="#278 på 320: teksten brytes også her midt i ordene, men knappen er like høy som i dag."
+                  width="104"
+                  height="375"
+                  loading="lazy"
+              /></a>
+              <figcaption>
+                <strong>#278, 320 px uten raden øverst</strong>Også her brytes ordene, men knappen
+                er like høy som i dag.
+              </figcaption>
+            </figure>
+          </div>
+          <div class="rec">
+            <strong>Anbefaling: #278.</strong>
+            <span
+              >Det leseren trenger å vite, står i kvitteringen i det lenken kopieres, og knappen
+              blir ikke høyere. Ulempen er at en telefon ikke har hover, så der ser leseren
+              setningen først etter klikket. Velges #277, bør raden øverst (avgjørelse 1) være
+              standard først, så knappen ikke blir 224 px høy.</span
+            >
+          </div>
+        </div>
+
+        <div class="decision" id="orddeling">
+          <div class="decision-head">
+            <span class="decision-num">4</span>
+            <h3>Orddeling i overskrifter på smale skjermer?</h3>
+          </div>
+          <p>
+            For at ingenting skal rulle sidelengs (<a
+              href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/270"
+              >#270</a
+            >), brytes et ord som ikke får plass, midt i og uten bindestrek. Bildet uten raden
+            øverst i avgjørelse 1 viser det: «måloppnåels» og «e». Med automatisk orddeling (<code
+              >hyphens: auto</code
+            >) deler nettleseren ordet med bindestrek der den har ordlister for norsk. Målt i WebKit
+            (Safari) blir tittelen «NKOM mål-» og «oppnåelse» på 393, to linjer i stedet for tre.
+            Chromium uten ordlister deler ikke norsk, så e2e-testene (Chromium) kan ikke se om
+            orddelingen virker.
+          </p>
+          <div class="rec">
+            <strong
+              >Anbefaling: orddeling bare på smale skjermer, og først etter avgjørelse 1.</strong
+            >
+            <span
+              >Med raden øverst får hovedkolonnen hele bredden, og de fleste bruddene forsvinner.
+              Orddeling for alle overskrifter endrer også desktop, og det er ikke ønsket.</span
+            >
+          </div>
+        </div>
+
+        <div class="decision" id="entra">
+          <div class="decision-head">
+            <span class="decision-num">5</span>
+            <h3>Innlogging med Entra ID foran testmiljøet</h3>
+          </div>
+          <p>
+            <a href="https://github.com/digdir/kunnskapsassistenten/issues/118">digdir#118</a>. I
+            dag er testmiljøet beskyttet av en hemmelighet i lenken. Malen for testmiljøet og
+            serveren har innlogging med Microsoft fra før (innebygd innlogging i Container Apps),
+            men den har aldri vært slått på, fordi det mangler en appregistrering.
+          </p>
+          <ul>
+            <li>
+              <strong>(a) Registreringen qa bruker.</strong> Eieren av registreringen, eller en
+              administrator, gjør tre endringer: legger til adressen testmiljøet sendes tilbake til,
+              slår på ID-tokens (Microsoft krever det for innloggingen i Container Apps), og lager
+              en egen hemmelighet til testmiljøet. Etterpå kjøres malen én gang. Det er raskest.
+            </li>
+            <li>
+              <strong>(b) En egen registrering.</strong> Riktigere etter boka, men den trenger
+              samtykke fra en administrator i tenanten.
+            </li>
+            <li>
+              <strong>(c) Vent til sammenslåingen.</strong> BFF-en i monorepoet logger inn med Entra
+              selv. Når testmiljøet kjører den sammenslåtte appen, er saken løst uten noe som må
+              kastes.
+            </li>
+          </ul>
+          <p class="note">
+            Med (a) eller (b) kommer alle i tenanten inn, med mindre «Tilordning påkrevd» slås på.
+            Trådene følger da personen og ikke nettleseren, så gamle tråder vises ikke lenger i
+            lista (de finnes fortsatt i backenden).
+          </p>
+          <div class="rec">
+            <strong>Anbefaling: (c), hvis sammenslåingen er nær.</strong>
+            <span>Skal testmiljøet lukkes før det, er (a) raskest.</span>
+          </div>
+        </div>
+
+        <div class="decision" id="filtre-hoeyre">
+          <div class="decision-head">
+            <span class="decision-num">6</span>
+            <h3>Filtrene over kildene i høyre panel: verdt å gå videre med?</h3>
+            <span class="pill partly">Flagg: filters-right-panel</span>
+          </div>
+          <p>
+            Med flagget (<a
+              href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/274"
+              >#274</a
+            >, <a href="https://github.com/digdir/kunnskapsassistenten/issues/84">digdir#84</a>) har
+            navigasjonspanelet bare trådene, og høyre panel har filtrene over kildene. Uten et valgt
+            filter er filteret ikke låst etter svaret, så alle kontrollene står der, og kildene
+            havner under kanten på 1440. Med et valgt filter står det kort «Avgrenset til …», og
+            dokumentene står rett under. Utdragene står under kanten også da.
+          </p>
+          <div class="pair">
+            <figure class="shot">
+              <a href="bilder/2026-10-07-filters-right-panel-answer-1440.png"
+                ><img
+                  src="bilder/2026-10-07-filters-right-panel-answer-1440.png"
+                  alt="Med flagget på 1440 etter et svar uten valgt filter: filtreringen fyller høyre panel, og dokumentene står nederst."
+                  width="1440"
+                  height="900"
+                  loading="lazy"
+              /></a>
+              <figcaption>
+                <strong>Med flagg, 1440 px, uten valgt filter</strong>Kildene havner under
+                filtreringen.
+              </figcaption>
+            </figure>
+          </div>
+          <div class="rec">
+            <strong>Avgjøres når forsøket er prøvd.</strong>
+            <span
+              >Går forsøket videre, bør filtreringen foldes sammen etter svaret også når ingenting
+              er valgt.</span
+            >
+          </div>
+        </div>
+
+        <div class="decision" id="smaatt">
+          <div class="decision-head">
+            <span class="decision-num">7</span>
+            <h3>Små avklaringer</h3>
+          </div>
+          <ul>
+            <li>
+              <a href="https://github.com/digdir/kunnskapsassistenten/issues/121">digdir#121</a>
+              (skrivefeltet er høyere enn i skissen): et forsøk med knapperaden under, slik den står
+              i en annen chat-app. Skjermbildene det ble vist til, kom ikke med.
+            </li>
+            <li>
+              <a href="https://github.com/digdir/kunnskapsassistenten/issues/123">digdir#123</a>
+              (foten): løst i
+              <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/267"
+                >#267</a
+              >
+              og utkvittert. Kan lukkes.
+            </li>
+            <li>
+              Årsfilteret med perioder (flagg <code>year-ranges</code>): med bare ett siffer skrevet
+              («2») står bare feilteksten i lista, og et klikk på den tømmer feltet. «20», «2024» og
+              «2019-20» gir forslag som kan velges. Rettingen er under arbeid.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="gjenstaar">
+        <div class="section-head">
+          <h2>Gjenstår i #129 før PR-en åpnes</h2>
+          <p>
+            I denne rekkefølgen. Synken fra dette repoet stopper etter punkt 2, og etter det skjer
+            arbeidet i monorepoet.
+          </p>
+        </div>
+        <div
+          class="table-wrap"
+          tabindex="0"
+          role="group"
+          aria-label="Tabell: det som gjenstår i #129"
+        >
+          <table class="wide">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Hva</th>
+                <th>Hvorfor</th>
+                <th>Hvordan</th>
+                <th>Omfang</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="num">1</td>
+                <td class="feature"><strong>Kontrakten fra pakken</strong></td>
+                <td>
+                  Klienten har en kopi av typene i <code>packages/contract</code>. Klient og server
+                  skal sjekkes mot de samme typene (punkt 5 i rapporten fra 6. oktober).
+                </td>
+                <td>
+                  Legg <code>sources</code> til <code>ConversationDetail</code> i pakken, la
+                  klienten importere fra pakken, og slett kopien. De tre typene pakken ikke har
+                  (svaret fra <code>/api/models</code>, svaret fra <code>/api/me</code> og lista
+                  over tråder), legges til i pakken.
+                </td>
+                <td class="size">L</td>
+              </tr>
+              <tr>
+                <td class="num">2</td>
+                <td class="feature">
+                  <strong>Det som bare hører til det frittstående repoet, ut av kopien</strong>
+                </td>
+                <td>
+                  Kopien i <code>src/apps/web</code> har med seg tynnserveren
+                  (<code>server/</code>), live-modus (<code>src/api/live</code>),
+                  <code>deploy/</code>, <code>Dockerfile</code>, <code>.github/</code> og
+                  dokumentasjonen for testmiljøet. I monorepoet er BFF-en serveren, og bildet og CI
+                  ligger i rota.
+                </td>
+                <td>
+                  Fjern dem i én commit, med testene som hører til. Klienten har da to moduser: mock
+                  og bff. Dokumentasjonen for testmiljøet og for å kjøre live lokalt
+                  (<code>deploy.md</code>, <code>deploy-backend.md</code> og
+                  <code>kjoremiljo-og-korpus.md</code>) forsvinner også, og med den et filnavn med
+                  personnavn som står der i dag.
+                </td>
+                <td class="size">M</td>
+              </tr>
+              <tr>
+                <td class="num">3</td>
+                <td class="feature"><strong>PR-beskrivelsen</strong></td>
+                <td>
+                  Den beskriver kopien fra 5. oktober. Den som går gjennom PR-en, ser bare den.
+                </td>
+                <td>
+                  Skriv om til det grenen inneholder nå: klienten, endringene i BFF-en,
+                  arbeidsområdet, ADR-ene og det som er tatt ut, og hvordan alt er testet.
+                </td>
+                <td class="size">L</td>
+              </tr>
+              <tr>
+                <td class="num">4</td>
+                <td class="feature"><strong>Git-krokene og npm 11</strong></td>
+                <td>
+                  <code>prepare</code> i <code>src/apps/web</code> legger git-kroker for hele
+                  monorepoet ved <code>npm ci</code>. npm 11.19 i CI melder at installasjonsskriptet
+                  til simple-git-hooks ikke er dekket av <code>allowScripts</code>.
+                </td>
+                <td>
+                  Avklares med de som eier monorepoet: krokene i rota for hele repoet, eller ingen
+                  kroker, og formatering og lint i CI.
+                </td>
+                <td class="size">L</td>
+              </tr>
+              <tr>
+                <td class="num">5</td>
+                <td class="feature"><strong>Testmiljøet etter sammenslåingen</strong></td>
+                <td>
+                  Testmiljøet bygges i dag fra dette repoet, med tynnserveren. Etter punkt 2 kan det
+                  ikke bygges fra #129.
+                </td>
+                <td>
+                  Den sammenslåtte appen (BFF-en og klienten) rulles ut slik qa gjør, med innlogging
+                  i BFF-en. Da er avgjørelse 5 løst. Dette repoet får en peker til monorepoet og
+                  arkiveres, og
+                  <a href="https://github.com/digdir/kunnskapsassistenten/issues/124">digdir#124</a>
+                  lukkes.
+                </td>
+                <td class="size">M</td>
+              </tr>
+              <tr>
+                <td class="num">6</td>
+                <td class="feature"><strong>Et personnavn i ADR 0001 i monorepoet</strong></td>
+                <td>
+                  ADR-en er monorepoets egen og nevner en person ved navn som kilde til et sitat.
+                </td>
+                <td>Foreslå en nøytral formulering til de som eier den, eller la den stå.</td>
+                <td class="size">L</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="etterpaa">
+        <div class="section-head">
+          <h2>Etter sammenslåingen</h2>
+        </div>
+        <ul>
+          <li>
+            <strong>Lenken til tilbakemelding under svaret</strong> (punkt 2 fra 6. oktober) tenkes
+            nytt.
+          </li>
+          <li>
+            <strong>Mellom-bruddpunktet for kolonnene</strong> (nettbrett): vurder å droppe det. Det
+            er usikkert om kolonnene fungerer godt mellom telefon og desktop.
+          </li>
+          <li>
+            <strong>Forsøkene bak flagg</strong> avgjøres, og flaggene tas bort: raden øverst (<a
+              href="https://github.com/digdir/kunnskapsassistenten/issues/120"
+              >digdir#120</a
+            >), årsfilter med perioder og samlede merkelapper (<a
+              href="https://github.com/digdir/kunnskapsassistenten/issues/115"
+              >digdir#115</a
+            >
+            og <a href="https://github.com/digdir/kunnskapsassistenten/issues/116">#116</a>), og
+            filtrene i høyre panel (<a
+              href="https://github.com/digdir/kunnskapsassistenten/issues/84"
+              >digdir#84</a
+            >).
+          </li>
+          <li>
+            <strong>Kildene per svar etter ny innlasting</strong> venter på at backenden lagrer
+            bitene (<a href="https://github.com/digdir/digdir-headless-rag/issues/21"
+              >headless-rag #21</a
+            >).
+          </li>
+          <li>
+            <strong>Innstillingsdialogen</strong> flyttes fra mappa til chatvisningen til skallet,
+            der #273 monterer den.
+          </li>
+        </ul>
+      </section>
+
+      <section id="siden-sist">
+        <div class="section-head">
+          <h2>Siden kvelden 6. oktober</h2>
+          <p>Merget i dette repoet. Alt er ute i testmiljøet og med i #129.</p>
+        </div>
+        <div
+          class="table-wrap"
+          tabindex="0"
+          role="group"
+          aria-label="Tabell: PR-er merget siden 6. oktober"
+        >
+          <table>
+            <thead>
+              <tr>
+                <th>PR</th>
+                <th>Hva</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/257"
+                    >257</a
+                  >
+                </td>
+                <td>Et svar uten kilder får én kort linje med et info-ikon</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/265"
+                    >265</a
+                  >
+                </td>
+                <td>Valg av agent i skrivefeltet</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/267"
+                    >267</a
+                  >
+                </td>
+                <td>Foten i navigasjonspanelet ruller med som standard</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/268"
+                    >268</a
+                  >
+                </td>
+                <td>Ingen personnavn i kode, dokumentasjon og tester</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/269"
+                    >269</a
+                  >
+                </td>
+                <td>Funksjonsflagg i en skjult meny, <code>#feature-flags</code></td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/270"
+                    >270</a
+                  >
+                </td>
+                <td>Ingenting ruller sidelengs på telefon, med UI-tester på tolv bruddpunkter</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/271"
+                    >271</a
+                  >
+                </td>
+                <td>Samtalen følger med ned også fra nesten nederst, og når leseren sender</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/272"
+                    >272</a
+                  >
+                </td>
+                <td>Årsfilter med perioder og samlede merkelapper, bak flagg</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/274"
+                    >274</a
+                  >
+                </td>
+                <td>Filtrene over kildene i høyre panel, bak flagg</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/275"
+                    >275</a
+                  >
+                </td>
+                <td>«Velg alle» gjelder lista som vises, og legger til</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/276"
+                    >276</a
+                  >
+                </td>
+                <td>Raden øverst på telefon, bak flagg</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/279"
+                    >279</a
+                  >
+                </td>
+                <td>Rapporten og beslutningsloggen</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/280"
+                    >280</a
+                  >
+                </td>
+                <td>Testene for rulling dekker filtrene i høyre panel</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/281"
+                    >281</a
+                  >
+                </td>
+                <td>Testene for rulling kjører korte animasjoner ferdig og melder lange</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/282"
+                    >282</a
+                  >
+                </td>
+                <td>En ustabil test venter til filterpanelet er ferdig</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/283"
+                    >283</a
+                  >
+                </td>
+                <td>Kortere e2e: et kort mocksvar, og enhetstestene i en egen jobb</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/284"
+                    >284</a
+                  >
+                </td>
+                <td>Flaggene testes bare på bredder der de virker</td>
+              </tr>
+              <tr>
+                <td class="num">
+                  <a href="https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/285"
+                    >285</a
+                  >
+                </td>
+                <td>Filterpanelet hopper ikke lenger når feltene lastes</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">
+          Det som ble merget tidligere 6. oktober, står i rapporten fra den dagen og i
+          <a href="beslutningslogg.md">beslutningsloggen</a>.
+        </p>
+      </section>
+
+      <footer>
+        <span
+          >Laget 7. oktober 2026 fra koden på <code>main</code> 879f0de her, og utkast-PR #129
+          (0e28261). Høyder og bredder er målt i mock i Chromium, og orddelingen i WebKit. Alt annet
+          er lest i koden.</span
+        >
+        <span>Beslutningene bak står i <a href="beslutningslogg.md">beslutningsloggen</a>.</span>
+      </footer>
+    </main>
+  </body>
+</html>

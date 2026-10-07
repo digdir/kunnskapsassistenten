@@ -195,6 +195,12 @@ const dimensions = Object.keys(emptyFilterSelection) as FilterDimension[];
  * the corpus: the facets are loaded asynchronously by the filter view, they
  * differ between mock and live, and a selection the current corpus has no
  * documents for is a real, honest state — the counts say zero.
+ *
+ * Except the empty string, which no facet holds. Enter in a filter field
+ * with no arrow first chose «Ingen treff», whose value is '' (#288), and
+ * that was stored here. Read back, it went with every question until the
+ * field was changed, narrowed it to nothing — «Svaret har ingen kilder» —
+ * and the field said «1 av N valgt» over a chip with no text.
  */
 export function readStoredFilter(): FilterSelection | undefined {
   const value = readJson(FILTER_STORAGE_KEY);
@@ -204,7 +210,7 @@ export function readStoredFilter(): FilterSelection | undefined {
   for (const dimension of dimensions) {
     const values = value[dimension];
     if (Array.isArray(values) && values.every((entry) => typeof entry === 'string')) {
-      selection[dimension] = values;
+      selection[dimension] = values.filter((entry) => entry !== '');
     }
   }
   return selection;

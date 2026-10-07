@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { FilterFacet } from '../../model';
@@ -14,9 +14,50 @@ const facet: FilterFacet = {
 };
 
 /** The selection lives above the field, as it does in the view. */
-function Harness({ partial = false }: { partial?: boolean }) {
-  const [selected, setSelected] = useState<string[]>(partial ? ['arsrapport'] : []);
-  return <FacetField facet={facet} selected={selected} onChange={setSelected} />;
+function Harness({
+  partial = false,
+  initial = partial ? ['arsrapport'] : [],
+  seen,
+}: {
+  partial?: boolean;
+  initial?: string[];
+  seen?: string[][];
+}) {
+  const [selected, setSelected] = useState<string[]>(initial);
+  return (
+    <FacetField
+      facet={facet}
+      selected={selected}
+      onChange={(next) => {
+        seen?.push(next);
+        setSelected(next);
+      }}
+    />
+  );
+}
+
+/** The chips Suggestion draws: value and text. */
+function chips(container: HTMLElement): { value: string; text: string }[] {
+  return [...container.querySelectorAll('ds-suggestion > data')].map((chip) => ({
+    value: chip.getAttribute('value') ?? '',
+    text: chip.textContent ?? '',
+  }));
+}
+
+/*
+ * Typing as the browser tells u-combobox about it: an `InputEvent` with no
+ * `inputType` is taken for a click in the list (yearRangesAndCompactChips.test.tsx).
+ */
+function typeThenEnter(text: string) {
+  const input = screen.getByRole('combobox') as HTMLInputElement;
+  act(() => {
+    input.value = text;
+    input.dispatchEvent(
+      new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }),
+    );
+  });
+  fireEvent.keyDown(input, { key: 'Enter' });
+  return input;
 }
 
 describe('FacetField', () => {
@@ -114,6 +155,70 @@ describe('FacetField', () => {
       expect(seen.at(-1)).toHaveLength(137);
       expect(seen.at(-1)).toContain('Virksomhet 200');
       expect(seen.at(-1)).toContain('Virksomhet 136');
+    });
+  });
+
+  /*
+   * Enter straight after typing, with no arrow first. u-combobox chooses on
+   * Enter the first option whose label is the text, and ds-suggestion labels
+   * «Ingen treff» with the text and gives it the value ''. It stood first in
+   * the list, so Enter chose it even on «Årsrapport»: a chip with no value
+   * and «1 av 2 valgt» (review of #287). The e2e helper chooses with
+   * ArrowDown and Enter, and did not see it.
+   */
+  describe('Enter rett etter innskrivingen', () => {
+    it('velger verdien når teksten er navnet på den', () => {
+      const seen: string[][] = [];
+      const { container } = render(<Harness seen={seen} />);
+
+      const input = typeThenEnter('Årsrapport');
+
+      expect(seen.at(-1)).toEqual(['arsrapport']);
+      expect(chips(container)).toEqual([{ value: 'arsrapport', text: 'Årsrapport' }]);
+      expect(screen.getByText('1 av 2 valgt')).toBeTruthy();
+      expect(input.value).toBe('');
+    });
+
+    it('velger uansett store og små bokstaver, som lista filtrerer', () => {
+      const seen: string[][] = [];
+      render(<Harness seen={seen} />);
+
+      typeThenEnter('tildelingsbrev');
+
+      expect(seen.at(-1)).toEqual(['tildelingsbrev']);
+    });
+
+    it('velger ingenting når teksten ikke er navnet på en verdi, og teksten står', () => {
+      const seen: string[][] = [];
+      const { container } = render(<Harness seen={seen} />);
+
+      const input = typeThenEnter('Års');
+
+      expect(seen).toEqual([]);
+      expect(chips(container)).toEqual([]);
+      expect(screen.getByText('Ingen avgrensning')).toBeTruthy();
+      expect(input.value).toBe('Års');
+    });
+
+    it('legger til ved siden av det som er valgt, uten en tom verdi', () => {
+      const seen: string[][] = [];
+      render(<Harness partial seen={seen} />);
+
+      typeThenEnter('Tildelingsbrev');
+      typeThenEnter('Tildel');
+
+      expect(seen).toEqual([['arsrapport', 'tildelingsbrev']]);
+    });
+
+    it('tar bort en tom verdi som er lagret fra før, ved neste valg', () => {
+      // ka.filter.v1 keeps the filter between visits, so a chip with no value
+      // made before this was fixed can come back. It must not stop the field.
+      const seen: string[][] = [];
+      render(<Harness initial={['']} seen={seen} />);
+
+      typeThenEnter('Tildelingsbrev');
+
+      expect(seen.at(-1)).toEqual(['tildelingsbrev']);
     });
   });
 

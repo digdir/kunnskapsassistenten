@@ -107,6 +107,32 @@ test.describe('navigasjonspanelet', () => {
   );
 
   /*
+   * Enter straight after the text, with no arrow first. ds-suggestion labels
+   * «Ingen treff» with the text typed and gives it no value, and Enter
+   * chooses the first option whose label is the text. With «Ingen treff»
+   * first in the list that was it, even on «2024»: a chip with no value and
+   * no text, and «1 av N valgt» (review of #287). `chooseFacetValue` and the
+   * test above go through ArrowDown, so nothing here pressed Enter alone.
+   *
+   * `@mock` because the year has to be in the corpus.
+   */
+  test('Enter rett etter «2024» velger året, uten pil først', MOCK, async ({ page }, testInfo) => {
+    covers(testInfo, 'filtre kan velges og gir chips');
+
+    const input = facetField(page, 'År');
+    await input.click();
+    await page.keyboard.type('2024');
+    await page.keyboard.press('Enter');
+
+    const field = input.locator('xpath=ancestor::ds-field');
+    const chips = field.locator('ds-suggestion > data');
+    await expect(chips).toHaveText(['2024']);
+    await expect(chips).toHaveAttribute('value', '2024');
+    await expect(field.getByText(SELECTED_ONE)).toBeVisible();
+    await expect(input).toHaveValue('');
+  });
+
+  /*
    * The filters first, and the corpus's documents under the line (issue 76b,
    * round 2). This test used to hold the opposite: that the list
    * of documents from Kudos stood above the fold in a 900 px window

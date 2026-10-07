@@ -52,6 +52,13 @@ function Years({ initial = [] as string[], seen }: { initial?: string[]; seen?: 
   );
 }
 
+/** What the list offers, in order: the options, or the hint alone. */
+function offered(container: HTMLElement): string[] {
+  return [...container.querySelectorAll('u-datalist u-option')].map(
+    (option) => option.textContent ?? '',
+  );
+}
+
 /*
  * Typing and choosing, the way the browser tells u-combobox about them. An
  * `InputEvent` with no `inputType` is what it takes for a click in the list,
@@ -160,6 +167,77 @@ describe('årsfilteret med perioder (year-ranges)', () => {
 
     expect(seen.at(-1)).toEqual(['2019']);
     expect(chips(container)).toEqual(['2019']);
+  });
+
+  it('foreslår årene med dokumenter mens et år skrives, og et kan velges', () => {
+    const seen: string[][] = [];
+    const { container } = render(<Years seen={seen} />);
+
+    // Newest first, as the year field without the flag.
+    type('2');
+    expect(offered(container)).toEqual([
+      '2024 (6)',
+      '2023 (5)',
+      '2022 (4)',
+      '2021 (3)',
+      '2020 (2)',
+      '2019 (1)',
+    ]);
+
+    type('202');
+    expect(offered(container)).toEqual([
+      '2024 (6)',
+      '2023 (5)',
+      '2022 (4)',
+      '2021 (3)',
+      '2020 (2)',
+    ]);
+
+    choose('2021 (3)');
+    expect(seen.at(-1)).toEqual(['2021']);
+    expect(chips(container)).toEqual(['2021']);
+  });
+
+  it('foreslår periodene mens slutten skrives', () => {
+    const seen: string[][] = [];
+    const { container } = render(<Years seen={seen} />);
+
+    type('2020-2');
+    expect(offered(container)).toEqual([
+      '2020–2021 (5)',
+      '2020–2022 (9)',
+      '2020–2023 (14)',
+      '2020–2024 (20)',
+    ]);
+
+    choose('2020–2022 (9)');
+    expect(seen.at(-1)).toEqual(['2020', '2021', '2022']);
+  });
+
+  it('lar teksten stå når Enter trykkes og ingenting passer, som de andre feltene', () => {
+    // Enter chooses the option whose label is the text, and the hint carries
+    // the text as its label with the value ''. That emptied the field.
+    const seen: string[][] = [];
+    render(<Years initial={['2024']} seen={seen} />);
+
+    type('abc');
+    fireEvent.keyDown(input(), { key: 'Enter' });
+
+    expect(seen).toEqual([]);
+    expect(input().value).toBe('abc');
+  });
+
+  it('viser hintet bare når ingenting passer', () => {
+    const hint =
+      'Ikke et år eller en periode. Skriv et år eller en periode, som 2021 eller 2023–2028.';
+    const { container } = render(<Years />);
+
+    for (const text of ['abc', '3', '2019-1']) {
+      type(text);
+      expect(offered(container), text).toEqual([hint]);
+    }
+    type('2');
+    expect(screen.queryByText(hint)).toBeNull();
   });
 
   it('gir et hint i stedet for en gjetning når teksten ikke er en periode', () => {
