@@ -51,6 +51,11 @@ jobs:
       - run: npm ci
       - run: npm run lint --workspace apps/web
       - run: npm run tokens:verify --workspace apps/web
+      # What a reader downloads before the page starts, against the budget in
+      # the script (300 kB gzip), for the bff build the image serves. Mock or
+      # live back in the bundle, or a sixth more without a decision, is red.
+      - run: VITE_API_MODE=bff npm run build --workspace apps/web
+      - run: node apps/web/scripts/check-bundle-size.mjs apps/web/dist
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e --workspace apps/web
       # The suite writes its report to ~/.cache/ka-review/e2e, outside the
