@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import type { TurnEvent } from '@ka/contract';
+import type { ConversationDetail, TurnEvent } from '@ka/contract';
 import { askRoute } from './apiAsk.ts';
 import { rememberedThread, shared, type Env } from './apiShared.ts';
 import { capabilities, probeComplete } from './capabilities.ts';
@@ -35,7 +35,11 @@ v2.get('/capabilities', (c) =>
 
 v2.get('/conversations/:id', async (c) => {
   try {
-    return c.json(await rememberedThread(c.get('userId'), c.req.param('id')));
+    const thread: ConversationDetail = await rememberedThread(
+      c.get('userId'),
+      c.req.param('id'),
+    );
+    return c.json(thread);
   } catch {
     return c.json({ error: 'Fant ikke samtalen.' }, 404);
   }

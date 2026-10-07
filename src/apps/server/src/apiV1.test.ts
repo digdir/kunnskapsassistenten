@@ -135,6 +135,25 @@ describe('the rest of /api/*, in main’s shape', () => {
     assert.deepEqual(Object.keys(body).sort(), ['capabilities', 'settled']);
   });
 
+  test('/api/models gives an empty list of agents when the backend says no', async () => {
+    // App.tsx reads `b.agents[0]`: `{ models: [] }` set the agents to undefined
+    // and threw. The fake backend answers 404 on /v1/models.
+    assert.deepEqual(await (await app.request('/api/models')).json(), { agents: [] });
+  });
+
+  test('/api/me gives what the contract says, and the user as App.tsx reads it', async () => {
+    const me = (await (await app.request('/api/me')).json()) as Record<string, unknown>;
+    assert.deepEqual(Object.keys(me).sort(), [
+      'authEnabled',
+      'authenticated',
+      'backend',
+      'tool',
+      'user',
+      'userId',
+    ]);
+    assert.equal(me.user, null, 'no one is signed in with sign-in off');
+  });
+
   test('/api/health, /api/me and /api/conversations are here too', async () => {
     assert.equal((await app.request('/api/health')).status, 200);
     const me = (await (await app.request('/api/me')).json()) as { userId: string };

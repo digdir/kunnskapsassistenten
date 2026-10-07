@@ -1,4 +1,4 @@
-import type { FacetField, FacetOption } from '@ka/contract';
+import type { FacetField, FacetOption, FilterRefused } from '@ka/contract';
 import { config } from './config.ts';
 import type { FilterFieldSpec } from './datasetConfig.ts';
 
@@ -116,30 +116,7 @@ export function cachedFacets(fields: FilterFieldSpec[] = config.filterFields): F
 }
 
 export type AskFilter =
-  | { ok: true; filter: Record<string, string[]> }
-  | {
-      ok: false;
-      body: FilterTooManyValuesBody | FilterInvalidValueBody | FilterUnknownFieldBody;
-    };
-
-interface FilterTooManyValuesBody {
-  error: string;
-  code: 'filter-too-many-values';
-  field: string;
-  max: number;
-}
-
-interface FilterInvalidValueBody {
-  error: string;
-  code: 'filter-invalid-value';
-  field: string;
-}
-
-interface FilterUnknownFieldBody {
-  error: string;
-  code: 'filter-unknown-field';
-  field: string;
-}
+  { ok: true; filter: Record<string, string[]> } | { ok: false; body: FilterRefused };
 
 /**
  * The filter a question is asked with, or the 400 to answer instead.

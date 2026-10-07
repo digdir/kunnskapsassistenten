@@ -218,10 +218,19 @@ export interface FilterTooManyValues {
   max: number;
 }
 
+/** A filter `POST …/ask` refused, told apart by `code`. */
+export type FilterRefused = FilterInvalidValue | FilterUnknownField | FilterTooManyValues;
+
 export interface ConversationSummary {
   id: string;
   topic: string;
+  /** Epoch milliseconds. */
   created: number;
+}
+
+/** `GET …/conversations`: the user's threads, newest first. */
+export interface ConversationListResponse {
+  conversations: ConversationSummary[];
 }
 
 export interface Message {
@@ -231,9 +240,17 @@ export interface Message {
   created: number;
 }
 
+/** `GET …/conversations/:id`. */
 export interface ConversationDetail {
   conversation: ConversationSummary;
   messages: Message[];
+  /**
+   * The last answer's sources, from the BFF's memory: empty after a restart,
+   * and never there for the answers before it. One per document in `/api/*`
+   * and one per chunk in `/api/v2/*` (decisions/0009).
+   */
+  sources?: Source[];
+  /** The filter the thread was started with. The BFF holds it for the thread. */
   filter?: Record<string, string[]>;
 }
 
@@ -248,6 +265,41 @@ export interface AgentOption {
   label: string;
   description?: string;
   modes: AgentMode[];
+}
+
+/**
+ * `GET …/models`: the agents the backend lets this BFF use, each with its
+ * modes. Empty when the backend could not be asked or said no.
+ *
+ * Asking is also what makes the BFF accept a `model` in `POST …/ask`: it lets
+ * through only the tools the last answer listed.
+ */
+export interface ModelsResponse {
+  agents: AgentOption[];
+}
+
+/** The signed-in user, as Entra ID names them. */
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+/** `GET …/me`. */
+export interface MeResponse {
+  /**
+   * The id the BFF gives the backend as `X-User-Id`: the Entra account, or the
+   * session cookie's id with sign-in off. Empty when no one is signed in.
+   */
+  userId: string;
+  /** `null` with sign-in off, or before anyone has signed in. */
+  user: User | null;
+  authenticated: boolean;
+  authEnabled: boolean;
+  /** The backend this BFF asks. */
+  backend: string;
+  /** The tool the BFF asks with when `POST …/ask` names none it allows. */
+  tool: string;
 }
 
 export interface Capabilities {

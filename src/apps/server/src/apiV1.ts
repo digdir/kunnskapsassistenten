@@ -1,5 +1,11 @@
 import { Hono } from 'hono';
-import type { Source, TurnEvent, TurnEventV1 } from '@ka/contract';
+import type {
+  CapabilitiesResponse,
+  ConversationDetail,
+  Source,
+  TurnEvent,
+  TurnEventV1,
+} from '@ka/contract';
 import { askRoute } from './apiAsk.ts';
 import { rememberedThread, shared, type Env } from './apiShared.ts';
 import { capabilities, probeComplete } from './capabilities.ts';
@@ -29,13 +35,19 @@ v1.get('/facets', async (c) => {
 });
 
 v1.get('/capabilities', (c) =>
-  c.json({ capabilities: capabilities(), settled: probeComplete() }),
+  c.json({
+    capabilities: capabilities(),
+    settled: probeComplete(),
+  } satisfies CapabilitiesResponse),
 );
 
 v1.get('/conversations/:id', async (c) => {
   try {
     const thread = await rememberedThread(c.get('userId'), c.req.param('id'));
-    return c.json({ ...thread, sources: perDocument(thread.sources) });
+    return c.json({
+      ...thread,
+      sources: perDocument(thread.sources),
+    } satisfies ConversationDetail);
   } catch {
     return c.json({ error: 'Fant ikke samtalen.' }, 404);
   }

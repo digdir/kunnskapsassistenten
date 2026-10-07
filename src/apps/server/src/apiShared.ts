@@ -1,5 +1,11 @@
 import { Hono } from 'hono';
-import type { ConversationDetail, Source } from '@ka/contract';
+import type {
+  ConversationDetail,
+  ConversationListResponse,
+  MeResponse,
+  ModelsResponse,
+  Source,
+} from '@ka/contract';
 import { config } from './config.ts';
 import * as convos from './conversations.ts';
 import { setAllowedTools } from './mcp.ts';
@@ -26,15 +32,18 @@ shared.get('/me', (c) =>
     authEnabled: config.auth.enabled,
     backend: config.apiBase,
     tool: config.tool,
-  }),
+  } satisfies MeResponse),
 );
+
+/** Whatever the reason, none is the same empty list, which both clients read. */
+const noAgents: ModelsResponse = { agents: [] };
 
 shared.get('/models', async (c) => {
   try {
     const res = await fetch(`${config.apiBase}/v1/models`, {
       headers: { 'X-API-Key': config.apiKey },
     });
-    if (!res.ok) return c.json({ models: [] });
+    if (!res.ok) return c.json(noAgents);
     const body = (await res.json()) as {
       data?: Array<{
         id: string;
@@ -45,15 +54,17 @@ shared.get('/models', async (c) => {
       }>;
     };
     setAllowedTools((body.data ?? []).map((m) => m.id));
-    return c.json({ agents: toAgents(body.data ?? []) });
+    return c.json({ agents: toAgents(body.data ?? []) } satisfies ModelsResponse);
   } catch {
-    return c.json({ agents: [] });
+    return c.json(noAgents);
   }
 });
 
 shared.get('/conversations', async (c) => {
   try {
-    return c.json({ conversations: await convos.list(c.get('userId')) });
+    return c.json({
+      conversations: await convos.list(c.get('userId')),
+    } satisfies ConversationListResponse);
   } catch {
     return c.json({ error: 'Kunne ikke hente samtaler.' }, 502);
   }
