@@ -47,6 +47,30 @@ describe('the filter of a new thread', () => {
     }
   });
 
+  test('is there when the thread is read at the conversation event', async () => {
+    // The client reads the thread when `conversation` arrives, before the turn
+    // has an answer, and locks the filter from what it reads.
+    let release = () => {};
+    backend.held = new Promise((resolve) => (release = resolve));
+    try {
+      const res = await app.request('/api/v2/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: 'Hva sier årsrapportene?', filter }),
+      });
+      const reader = res.body!.getReader();
+      const first = new TextDecoder().decode((await reader.read()).value);
+      const created = JSON.parse(first.slice(first.indexOf('{'), first.indexOf('\n')))
+        .id as string;
+      assert.deepEqual(await filterOf(created), filter);
+      release();
+      while (!(await reader.read()).done);
+    } finally {
+      backend.held = null;
+      release();
+    }
+  });
+
   test('is kept once the first turn has its answer', async () => {
     const sent = await ask({ query: 'Hva sier årsrapportene?', filter });
     const created = sent.find((e) => e.type === 'conversation')?.id as string;

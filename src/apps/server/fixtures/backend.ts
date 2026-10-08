@@ -78,6 +78,8 @@ export interface Backend {
   facetFetches: number;
   /** When true, the next turns end in a JSON-RPC error, as for an exception. */
   failing: boolean;
+  /** While set, `/api/mcp` waits for it, so a test can act in the middle of a turn. */
+  held: Promise<void> | null;
   restore(): void;
 }
 
@@ -90,6 +92,7 @@ export function fakeBackend(): Backend {
     mcp: [],
     facetFetches: 0,
     failing: false,
+    held: null,
     restore: () => {
       globalThis.fetch = original;
     },
@@ -118,6 +121,7 @@ export function fakeBackend(): Backend {
     if (thread) return Response.json({ conversation: conversation(thread[1]!), messages: [] });
     if (url.pathname === '/api/mcp') {
       backend.mcp.push(JSON.parse(String(init?.body)));
+      if (backend.held) await backend.held;
       return new Response(backend.failing ? FAILURE : STREAM, {
         headers: { 'Content-Type': 'text/event-stream' },
       });
