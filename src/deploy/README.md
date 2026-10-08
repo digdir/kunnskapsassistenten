@@ -6,8 +6,10 @@ origin is not cosmetic, it is what keeps the session cookie first-party.
 
 **Deployed and in use:** `https://qa.kunnskap.digdir.cloud`
 Resource group `rg-ka-app`, Norway East, subscription `Altinn-AI-Assistant`,
-images in `altinnaicontainers`. The DNS records for the domain live with
-`digdir.cloud` at Porkbun; the certificate is managed by Container Apps.
+images in `altinnaicontainers`. Every `az` command below names the
+subscription, because the one a machine has as its default may be another. The
+DNS records for the domain live with `digdir.cloud` at Porkbun; the certificate
+is managed by Container Apps.
 
 ## What is already set up
 
@@ -34,9 +36,9 @@ Code change, about three minutes:
 git diff --quiet HEAD || { echo 'uncommitted changes'; exit 1; }
 SHA=$(git rev-parse --short HEAD)
 
-az acr build --registry altinnaicontainers --image ka-app:$SHA \
+az acr build --subscription Altinn-AI-Assistant --registry altinnaicontainers --image ka-app:$SHA \
   --file src/Dockerfile src
-az containerapp update -n ka-app -g rg-ka-app \
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app \
   --image altinnaicontainers.azurecr.io/ka-app:$SHA \
   --revision-suffix sha$SHA
 ```
@@ -44,8 +46,8 @@ az containerapp update -n ka-app -g rg-ka-app \
 Config or a secret, about 30 seconds and no rebuild:
 
 ```sh
-az containerapp secret set -n ka-app -g rg-ka-app --secrets digdir-api-key=<verdi>
-az containerapp update -n ka-app -g rg-ka-app --revision-suffix key$(date +%H%M%S)
+az containerapp secret set --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app --secrets digdir-api-key=<verdi>
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app --revision-suffix key$(date +%H%M%S)
 ```
 
 `secret set` alone changes nothing that is running: the value is only picked up
@@ -56,7 +58,7 @@ The old revision serves until the new one is healthy, so a bad image does not
 take the site down. Roll back by deploying an older tag:
 
 ```sh
-az containerapp update -n ka-app -g rg-ka-app \
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app \
   --image altinnaicontainers.azurecr.io/ka-app:<older-sha> \
   --revision-suffix rollback$(date +%H%M%S)
 ```
@@ -66,9 +68,9 @@ az containerapp update -n ka-app -g rg-ka-app \
 Only needed if the resource group is gone.
 
 ```sh
-az group create -n rg-ka-app -l norwayeast
-az acr build --registry altinnaicontainers --image ka-app:$(git rev-parse --short HEAD) --file src/Dockerfile src
-az deployment group create -g rg-ka-app --template-file src/deploy/main.bicep --parameters ...
+az group create --subscription Altinn-AI-Assistant -n rg-ka-app -l norwayeast
+az acr build --subscription Altinn-AI-Assistant --registry altinnaicontainers --image ka-app:$(git rev-parse --short HEAD) --file src/Dockerfile src
+az deployment group create --subscription Altinn-AI-Assistant -g rg-ka-app --template-file src/deploy/main.bicep --parameters ...
 ```
 
 The first `az deployment group create` **fails** on the image pull. That is
@@ -76,10 +78,10 @@ expected: the managed identity does not exist until the template creates it,
 and it has no rights to the registry until granted. Grant, then deploy again:
 
 ```sh
-az role assignment create --role AcrPull \
-  --assignee-object-id "$(az identity show -n ka-app-id -g rg-ka-app --query principalId -o tsv)" \
+az role assignment create --subscription Altinn-AI-Assistant --role AcrPull \
+  --assignee-object-id "$(az identity show --subscription Altinn-AI-Assistant -n ka-app-id -g rg-ka-app --query principalId -o tsv)" \
   --assignee-principal-type ServicePrincipal \
-  --scope "$(az acr show -n altinnaicontainers --query id -o tsv)"
+  --scope "$(az acr show --subscription Altinn-AI-Assistant -n altinnaicontainers --query id -o tsv)"
 ```
 
 Parameters the template needs are declared with `@description` in
