@@ -403,6 +403,28 @@ describe('ask: plan and answer', () => {
     assert.equal(event?.message, 'Backend svarte med en feil.');
   });
 
+  test('a stream that breaks while it is read is a broken stream too, with a code', async () => {
+    // A connection dropped mid-turn makes the read throw (undici: «terminated»),
+    // rather than end.
+    const frame = `data: ${JSON.stringify({
+      jsonrpc: '2.0',
+      method: 'notifications/progress',
+      params: { _meta: { event: 'agent/iteration-started', iteration: 1 } },
+    })}\n\n`;
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(frame));
+      },
+      pull(controller) {
+        controller.error(new TypeError('terminated'));
+      },
+    });
+    const sent = await events(async () => new Response(body));
+    assert.equal(sent.at(-1)?.type, 'error');
+    assert.equal(sent.at(-1)?.code, 'stream_broken');
+    assert.equal(sent.at(-1)?.message, 'Forbindelsen til backend ble brutt.');
+  });
+
   test('a stream that ends without a result is a broken stream, with a code', async () => {
     const [event] = await events(async () => sse(''));
     assert.equal(event?.type, 'error');
