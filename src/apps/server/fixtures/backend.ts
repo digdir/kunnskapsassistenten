@@ -82,6 +82,8 @@ export interface Backend {
   held: Promise<void> | null;
   /** When true, headless-rag cannot be reached; Typesense still answers. */
   down: boolean;
+  /** When set, headless-rag answers every call with this status. */
+  status: number | null;
   /** The messages a thread read back has, as headless-rag stores them. */
   messages: Array<{ id: string; role: string; text: string; created: number }>;
   restore(): void;
@@ -98,6 +100,7 @@ export function fakeBackend(): Backend {
     failing: false,
     held: null,
     down: false,
+    status: null,
     messages: [],
     restore: () => {
       globalThis.fetch = original;
@@ -117,6 +120,7 @@ export function fakeBackend(): Backend {
       });
     }
     if (backend.down) throw new TypeError('fetch failed');
+    if (backend.status) return new Response('nope', { status: backend.status });
     const conversation = (id: string) => ({ id, topic: 'Hva sier årsrapportene?', created: 1 });
     if (url.pathname === '/api/conversations') {
       // c1, c2, …: a new thread for every question that has none.

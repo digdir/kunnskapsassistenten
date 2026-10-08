@@ -133,6 +133,22 @@ describe('headless-rag down', () => {
   });
 });
 
+describe('headless-rag answering with an error', () => {
+  test('the 502 names the status it answered with', async () => {
+    backend.status = 503;
+    try {
+      const res = await app.request('/api/v2/conversations');
+      assert.equal(res.status, 502);
+      assert.deepEqual(await res.json(), {
+        error: 'Kunne ikke hente samtaler.',
+        code: 'backend_http_503',
+      });
+    } finally {
+      backend.status = null;
+    }
+  });
+});
+
 describe('start-up', () => {
   test('warms the facets, so the first question after it is answered from the cache', async () => {
     facets.resetFacetCache();
