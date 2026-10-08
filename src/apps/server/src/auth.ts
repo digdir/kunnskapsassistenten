@@ -2,17 +2,14 @@ import { randomUUID } from 'node:crypto';
 import { ConfidentialClientApplication } from '@azure/msal-node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie';
+import type { User } from '@ka/contract';
 import { config } from './config.ts';
 import { entraLoginPage } from './authPages.ts';
 
 const MAX_AGE = 60 * 60 * 8;
 const SCOPES = ['openid', 'profile', 'email'];
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+export type { User };
 
 const msal =
   config.auth.mode === 'entra'
@@ -156,6 +153,14 @@ export function mountAuth(app: {
   });
 
   app.get('/auth/logout', (c) => {
+    // Only a page load ends the session. An address in an answer can become
+    // an <img> (`![x](/auth/logout)`), and the browser fetches it with the
+    // cookie as soon as the answer is drawn. A browser that sends no
+    // Sec-Fetch-Dest is let through, as before.
+    const dest = c.req.header('Sec-Fetch-Dest');
+    if (dest && dest !== 'document') {
+      return c.text('Utlogging skjer bare når siden lastes.', 403);
+    }
     deleteCookie(c, SESSION, { path: '/', secure: secure() });
     const post = encodeURIComponent(new URL('/', config.auth.redirectUri).toString());
     return c.redirect(

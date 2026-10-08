@@ -1,0 +1,50 @@
+{
+  "facet_counts": [
+    {
+      "field_name": "type",
+      "counts": [
+        { "count": 1418, "highlighted": "Årsrapport", "value": "Årsrapport" },
+        { "count": 3378, "highlighted": "Tildelingsbrev", "value": "Tildelingsbrev" },
+        { "count": 12, "highlighted": "", "value": "" }
+      ],
+      "sampled": false,
+      "stats": { "total_values": 3 }
+    },
+    {
+      "field_name": "orgs_long",
+      "counts": [
+        { "count": 40, "highlighted": "Statens vegvesen", "value": "Statens vegvesen" },
+        {
+          "count": 920,
+          "highlighted": "Kunnskapsdepartementet",
+          "value": "Kunnskapsdepartementet"
+        },
+        { "count": 40, "highlighted": "Advokattilsynet", "value": "Advokattilsynet" }
+      ],
+      "sampled": false,
+      "stats": { "total_values": 3 }
+    },
+    {
+      "field_name": "concerned_years",
+      "counts": [
+        { "count": 1851, "highlighted": "2023", "value": "2023" },
+        { "count": 1883, "highlighted": "2024", "value": "2024" },
+        { "count": 3, "highlighted": "2436", "value": "2436" },
+        { "count": 2, "highlighted": "1989", "value": "1989" },
+        { "count": 5, "highlighted": "1990", "value": "1990" },
+        { "count": 7, "highlighted": "2035", "value": "2035" },
+        { "count": 1, "highlighted": "2036", "value": "2036" },
+        { "count": 1, "highlighted": "0", "value": "0" }
+      ],
+      "sampled": false,
+      "stats": { "avg": 2019.4, "max": 2436, "min": 0, "sum": 1, "total_values": 8 }
+    }
+  ],
+  "found": 10064,
+  "hits": [],
+  "out_of": 10064,
+  "page": 1,
+  "request_params": { "collection_name": "kudos_docs", "per_page": 0, "q": "*" },
+  "search_cutoff": false,
+  "search_time_ms": 4
+}

@@ -1,0 +1,20 @@
+# Nettleserne dette prosjektet mener det støtter. Lest av stylelint-regelen i
+# stylelint.config.mjs; Vite bygger etter sin egen `build.target` og rører
+# ikke denne.
+#
+# Her og ikke i package.json fordi package.json er JSON og ikke tåler en
+# begrunnelse, og en nettleserpolicy uten begrunnelse er en liste noen gjetter
+# på neste gang den skal endres.
+
+# Det vanlige gulvet: nettlesere folk faktisk bruker, og ingen som er lagt ned.
+defaults
+not dead
+
+# Og så gulvet som betyr noe for oss. En iPhone slutter å få oppdateringer før
+# den slutter å bli brukt: iOS 16 er fra 2022 og er siste versjon for iPhone 8
+# og X. «last 2 versions» ville sagt at de ikke finnes (KA CC på #159).
+#
+# Safari står ved siden av iOS av samme grunn — en Mac som har stoppet på en
+# eldre macOS har en Safari som har stoppet med den.
+Safari >= 16
+iOS >= 16

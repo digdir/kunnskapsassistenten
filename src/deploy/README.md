@@ -87,6 +87,17 @@ Parameters the template needs are declared with `@description` in
 `kudos` on the hosted backend and `default` locally, and `publicHost` is the
 custom domain, which decides `APP_ORIGIN` and the Entra callback.
 
+`kaFilterFields` and `kaDataset` are the dataset's filter fields and its name,
+passed as `KA_FILTER_FIELDS` and `KA_DATASETS` under `digdirDatasetConfigKey`.
+They default to Kudos: `documentType:type|organisation:orgs_long|year:concerned_years:integer`
+and `Kudos`. The year needs `integer`, or it finds nothing. Another dataset
+needs its own fields, and an empty `kaFilterFields` means no filter panel.
+
+`kaDefaultClient` is the client a browser without the `ka_klient` cookie gets:
+`gammel`, the current client in `apps/web-preact`, unless it is set to `ny`,
+the client in `apps/web`. The image has both. `?klient=ny` and `?klient=gammel`
+switch one browser.
+
 ## Known limits
 
 **Questions do not answer on the deployed instance.**
@@ -101,6 +112,10 @@ needed.
 **Filters are disabled.** The capability probe finds the hosted backend drops
 caller-supplied filters, so the chips render disabled with an explanation.
 They enable themselves once the backend takes filters, with no redeploy.
+`kaCapabilities=filters` forces them on if the probe cannot get an answer.
+Against a slow backend the probe can stay unsettled for about 9 minutes
+(three tries of 60 s, 1 and 5 minutes apart), with the filters hidden, and
+then answers no until the app restarts.
 
 **The hosted dataset key is `kudos`, not `default`.** Getting it wrong fails
 every call with "API key is not allowed to access the requested dataset",

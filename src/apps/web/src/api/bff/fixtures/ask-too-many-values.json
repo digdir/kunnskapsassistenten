@@ -1,0 +1,6 @@
+{
+  "error": "Du har valgt 150 virksomheter. Velg høyst 100, eller alle, som er det samme som ingen avgrensning.",
+  "code": "filter-too-many-values",
+  "field": "orgs_long",
+  "max": 100
+}

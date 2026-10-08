@@ -1,6 +1,6 @@
 /** EventSource cannot POST, so this reads the body directly — and can abort. */
 import { useCallback, useRef, useState } from 'preact/hooks';
-import type { Source, Stage, TurnEvent } from '@ka/contract';
+import type { Source, Stage, TurnEventV1 as TurnEvent } from '@ka/contract';
 
 export interface Turn {
   id: number;

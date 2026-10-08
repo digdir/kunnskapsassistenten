@@ -1,3 +1,6 @@
+import { defaultClientFrom, type Client } from './clientSwitch.ts';
+import { parseDataset, parseFilterFields } from './datasetConfig.ts';
+
 function required(name: string): string {
   const v = process.env[name];
   if (!v) {
@@ -65,6 +68,17 @@ function authConfig() {
   };
 }
 
+const datasetConfigKey = process.env.DIGDIR_DATASET_CONFIG_KEY ?? 'default';
+
+function defaultClient(): Client {
+  try {
+    return defaultClientFrom(process.env.KA_DEFAULT_CLIENT);
+  } catch (err) {
+    console.error((err as Error).message);
+    process.exit(1);
+  }
+}
+
 export const config = {
   port: Number(process.env.PORT ?? 8787),
   apiBase: (process.env.DIGDIR_API_BASE ?? 'http://localhost:8099').replace(/\/$/, ''),
@@ -74,7 +88,10 @@ export const config = {
   tool: process.env.DIGDIR_TOOL ?? 'builtin.agent-rag-agent__agent-rag-graph-bundled',
   tenant: process.env.DIGDIR_TENANT ?? 'public-sector-knowledge',
   agentId: process.env.DIGDIR_AGENT_ID ?? 'builtin/agent-rag-agent',
-  datasetConfigKey: process.env.DIGDIR_DATASET_CONFIG_KEY ?? 'default',
+  datasetConfigKey,
+  /** No fields configured means no filter panel, not a guessed field name. */
+  filterFields: parseFilterFields(process.env.KA_FILTER_FIELDS, datasetConfigKey),
+  dataset: parseDataset(process.env.KA_DATASETS, datasetConfigKey),
 
   kudosBase: (process.env.KUDOS_BASE ?? 'https://kudos.dfo.no').replace(/\/$/, ''),
 
@@ -84,7 +101,12 @@ export const config = {
 
   maxQueryLength: 4000,
 
+  /** The build of apps/web, the client `ny`. */
   webRoot: process.env.WEB_ROOT ?? '',
+  /** The build of apps/web-preact, the client `gammel`. */
+  webRootPreact: process.env.WEB_ROOT_PREACT ?? '',
+  /** The client a browser without the `ka_klient` cookie gets. */
+  defaultClient: defaultClient(),
 
   auth: authConfig(),
 } as const;

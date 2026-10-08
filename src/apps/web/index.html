@@ -1,17 +1,38 @@
 <!doctype html>
-<html lang="nb" data-color-scheme="light" data-size="md">
+<html lang="nb" data-color-scheme="auto">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kunnskapsassistenten</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/favicon.svg" />
+    <!-- Inter is the font Designsystemet is designed and built with, weights
+         400, 500 and 600. See design/designsystemet/oppsett.md. -->
     <link
       rel="stylesheet"
       href="https://altinncdn.no/fonts/inter/v4.1/inter.css"
       integrity="sha384-OcHzc/By/OPw9uJREawUCjP2inbOGKtKb4A/I2iXxmknUfog2H8Adx71tWVZRscD"
       crossorigin="anonymous"
     />
+    <title>Kunnskapsassistenten</title>
+    <!--
+      Dark mode follows the operating system by default. A stored override is
+      applied before the first paint by src/layout/colorSchemeBoot.js, which
+      vite.config.ts links at the top of this <head>. Not inline: the BFF's
+      Content-Security-Policy refuses inline scripts.
+    -->
   </head>
-  <body>
+  <!--
+    data-size and data-color sit on <body>, not on <html>, on purpose.
+    Designsystemet's [data-size] rule sets font-size on the element it
+    matches. On <html> that makes 1rem 18px instead of 16px, and then EVERY
+    --ds-size-* token scales up 12.5%, because they are computed from
+    calc(1rem * 4 / 18 * 1.125). Designsystemet says so itself in base.css:
+    "Setting default font on <body> not :root/<html> to ensure 1rem is still
+    16px". Measured: 36px becomes 40px with the attribute on <html>.
+
+    lang="nb" stays on <html>: several Designsystemet components only use
+    their Norwegian default strings when the nearest lang starts with nb.
+  -->
+  <body data-size="md" data-color="accent">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

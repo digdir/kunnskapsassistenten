@@ -16,6 +16,6 @@
     "hono": "^4.13.7"
   },
   "devDependencies": {
-    "@types/node": "^22.20.2"
+    "@types/node": "^24.13.3"
   }
 }

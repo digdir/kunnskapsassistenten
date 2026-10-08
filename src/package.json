@@ -11,18 +11,18 @@
     "dev:server": "npm run dev --workspace apps/server",
     "dev:web": "npm run dev --workspace apps/web",
     "doctor": "npm run doctor --workspace apps/server",
-    "build": "npm run build --workspace apps/web",
+    "build": "npm run build --workspace apps/web && npm run build --workspace apps/web-preact",
     "start": "npm run start --workspace apps/server",
-    "test": "npm run test --workspace apps/server && npm run test --workspace apps/web",
-    "typecheck": "tsc -p packages/contract && tsc -p apps/server && tsc -p apps/web",
+    "test": "npm run test --workspace apps/server && npm run test --workspace apps/web && npm run test --workspace apps/web-preact",
+    "typecheck": "tsc -p packages/contract && tsc -p apps/server && tsc -p apps/web-preact && npm run typecheck --workspace apps/web",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "engines": {
-    "node": ">=22.18"
+    "node": ">=24.15"
   },
   "devDependencies": {
     "prettier": "^3.9.6",
-    "typescript": "^5.7.2"
+    "typescript": "~6.0.2"
   }
 }

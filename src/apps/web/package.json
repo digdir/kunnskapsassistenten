@@ -1,28 +1,67 @@
 {
   "name": "@ka/web",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "prepare": "simple-git-hooks",
     "preview": "vite preview",
-    "test": "vitest run"
+    "start": "node server/index.ts",
+    "lint": "npm run --silent lint:js; js=$?; npm run --silent lint:css; css=$?; exit $(( js > css ? js : css ))",
+    "lint:js": "oxlint",
+    "lint:css": "stylelint \"src/**/*.css\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "tokens:build": "designsystemet tokens create --config designsystemet.config.json && designsystemet tokens build -t ./design-tokens -o ./design-tokens-build",
+    "tokens:verify": "designsystemet tokens create --config designsystemet.config.json && designsystemet tokens build -t ./design-tokens -o ./.tokens-verify && diff -q ./.tokens-verify/digdir.css ./design-tokens-build/digdir.css && diff -q ./.tokens-verify/types.d.ts ./design-tokens-build/types.d.ts && rm -rf ./.tokens-verify && echo 'tokens:verify OK'"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "[ -f src/apps/web/scripts/hooks/pre-commit.sh ] || exit 0; cd src/apps/web && sh scripts/hooks/pre-commit.sh",
+    "pre-push": "[ -f src/apps/web/scripts/hooks/pre-push.sh ] || exit 0; cd src/apps/web && sh scripts/hooks/pre-push.sh"
+  },
+  "lint-staged": {
+    "*.css": "stylelint",
+    "*.{ts,tsx}": "oxlint",
+    "*": "prettier --check --ignore-unknown"
   },
   "dependencies": {
-    "@digdir/designsystemet-css": "^1.21.1",
-    "@digdir/designsystemet-web": "^1.21.1",
-    "@ka/contract": "*",
-    "dompurify": "^3.2.7",
-    "marked": "^16.4.1",
-    "preact": "^10.27.2"
+    "@digdir/designsystemet-css": "1.21.0",
+    "@digdir/designsystemet-react": "1.21.0",
+    "@navikt/aksel-icons": "8.16.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-markdown": "10.1.0",
+    "react-router": "8.3.1",
+    "remark-gfm": "4.0.1"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.10.2",
-    "@testing-library/preact": "^3.2.4",
-    "jsdom": "^30.0.1",
-    "typescript": "^5.9.3",
-    "vite": "^7.1.9",
-    "vitest": "^5.0.1"
+    "@axe-core/playwright": "4.13.0",
+    "@digdir/designsystemet": "1.21.0",
+    "@digdir/designsystemet-types": "1.21.0",
+    "@playwright/test": "1.63.0",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "29.1.1",
+    "lint-staged": "17.5.1",
+    "oxlint": "^1.81.0",
+    "prettier": "^3.9.6",
+    "simple-git-hooks": "2.14.0",
+    "stylelint": "16.26.1",
+    "stylelint-browser-compat": "1.0.0-beta.180",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0",
+    "vitest": "5.0.0"
   }
 }

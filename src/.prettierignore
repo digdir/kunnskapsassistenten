@@ -2,3 +2,7 @@ dist/
 package-lock.json
 docs/fixtures/*.sse
 docs/backend-patches/*.patch
+apps/web/design-tokens/
+apps/web/design-tokens-build/
+apps/web/.tokens-verify/
+apps/web/src/api/mock/corpus/kudos-korpus.json

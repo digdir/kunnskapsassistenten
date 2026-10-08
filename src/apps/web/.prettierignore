@@ -1,0 +1,10 @@
+dist
+design-tokens
+design-tokens-build
+.tokens-verify
+package-lock.json
+
+# Generert av scripts/fetch-mock-corpus.mjs, som eier formatet sitt. Prettier
+# ville reformatert 938 dokumenter og gjort hver ny henting til en diff der
+# alt så endret ut.
+src/api/mock/corpus/kudos-korpus.json

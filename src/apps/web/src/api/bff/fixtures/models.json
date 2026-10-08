@@ -1,0 +1,125 @@
+{
+  "agents": [
+    {
+      "id": "builtin/agent-rag-agent",
+      "label": "agent-rag",
+      "description": "General-purpose agentic retrieval assistant.",
+      "modes": [
+        {
+          "id": "builtin.agent-rag-agent__agent-rag-graph-bundled",
+          "label": "bundled",
+          "isDefault": true
+        },
+        {
+          "id": "builtin.agent-rag-agent__agent-rag-graph-faithful",
+          "label": "faithful",
+          "isDefault": false
+        }
+      ]
+    },
+    {
+      "id": "builtin/ai-overview-agent",
+      "label": "ai-overview",
+      "description": "Short, fully-cited overview answer presented ahead of the underlying results. Declines rather than answering when retrieval is thin.",
+      "modes": [
+        {
+          "id": "builtin.ai-overview-agent__ai-overview",
+          "label": "ai-overview",
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "id": "builtin/fact-checker-agent",
+      "label": "fact-checker",
+      "description": "Verification-focused agent for checking claims against evidence.",
+      "modes": [
+        {
+          "id": "builtin.fact-checker-agent__fact-checker",
+          "label": "fact-checker",
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "id": "builtin/research-assistant-agent",
+      "label": "research-assistant",
+      "description": "Breadth-first retrieval with a synthesis-heavy answer, for questions that want a survey of the sources rather than a single fact.",
+      "modes": [
+        {
+          "id": "builtin.research-assistant-agent__agent-rag-graph-bundled",
+          "label": "bundled",
+          "isDefault": false
+        },
+        {
+          "id": "builtin.research-assistant-agent__agent-rag-graph-faithful",
+          "label": "faithful",
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "id": "builtin/retrieve-only-agent",
+      "label": "retrieve-only",
+      "description": "Diagnostic agent that returns retrieved and reranked evidence without generating an answer.",
+      "modes": [
+        {
+          "id": "builtin.retrieve-only-agent__retrieve-only",
+          "label": "retrieve-only",
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "id": "digdir/altinn-docs-tuned",
+      "label": "digdir/altinn-docs-tuned",
+      "description": "Round-5-tuned retrieval for the altinn-docs corpus. Phrase-only weights with strategy caps; opt-in alternative to the general-purpose agent.",
+      "modes": [
+        {
+          "id": "digdir.altinn-docs-tuned__agent-rag-graph-bundled",
+          "label": "bundled",
+          "isDefault": false
+        },
+        {
+          "id": "digdir.altinn-docs-tuned__agent-rag-graph-faithful",
+          "label": "faithful",
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "id": "e2e/altinn-docs-default",
+      "label": "altinn-docs-default",
+      "description": "E2E fixture: no skill-params overrides; falls through to dataset + code defaults.",
+      "modes": [
+        {
+          "id": "e2e.altinn-docs-default__agent-rag-graph-bundled",
+          "label": "bundled",
+          "isDefault": false
+        },
+        {
+          "id": "e2e.altinn-docs-default__agent-rag-graph-faithful",
+          "label": "faithful",
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "id": "e2e/altinn-docs-tuned",
+      "label": "e2e/altinn-docs-tuned",
+      "description": "E2E fixture: carries the Round-5 phrase-only-with-caps skill-params on the agent.",
+      "modes": [
+        {
+          "id": "e2e.altinn-docs-tuned__agent-rag-graph-bundled",
+          "label": "bundled",
+          "isDefault": false
+        },
+        {
+          "id": "e2e.altinn-docs-tuned__agent-rag-graph-faithful",
+          "label": "faithful",
+          "isDefault": true
+        }
+      ]
+    }
+  ]
+}

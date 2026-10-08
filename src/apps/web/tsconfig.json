@@ -1,11 +1,4 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact",
-    "noEmit": true,
-    "types": ["@digdir/designsystemet-web", "vite/client"],
-    "paths": { "react": ["../../node_modules/preact/compat"] }
-  },
-  "include": ["src"]
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
 }

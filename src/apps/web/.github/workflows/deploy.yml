@@ -1,0 +1,180 @@
+# Rolls main out to the test environment in Azure Container Apps: build the
+# image, push it tagged with the commit, point the app at it, and check that
+# the new revision answers. See docs/deploy.md for the one-time setup.
+#
+# No secrets. `azure/login` exchanges GitHub's OIDC token for an Azure one,
+# and Azure only accepts it for `repo:<owner>/<repo>:ref:refs/heads/main`
+# (the federated credential in deploy/main.bicep). What the workflow needs to
+# know is not secret either, so it lives in repository variables.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # From the Actions tab: a re-run of the current main, or the first run
+  # during setup.
+  workflow_dispatch:
+
+# One rollout at a time, and never cancelled halfway: an update interrupted
+# between the push and the healthz check leaves nobody knowing which revision
+# is live. A newer merge waits and then goes out.
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+# The registry has no default: it is ours alone, made by deploy/main.bicep
+# with a name derived from the resource group, and the template prints it.
+env:
+  RESOURCE_GROUP: ${{ vars.KA_RESOURCE_GROUP || 'rg-ka-test' }}
+  REGISTRY: ${{ vars.KA_REGISTRY }}
+  APP: ${{ vars.KA_APP_NAME || 'ka-frontend-test' }}
+
+jobs:
+  # Before the one-time setup there is nothing to deploy to, and main must not
+  # turn red because of it. This job says so in words and lets the rest skip.
+  configured:
+    name: Azure configured?
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          # A manual run can be started from any branch, and Azure accepts the
+          # token only from main. Saying so beats a login error.
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            message="Hopper over utrullingen: bare main rulles ut, og dette er $GITHUB_REF."
+            echo "::notice title=Ingen utrulling::$message"
+            echo "$message" >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -n "$CLIENT_ID" ] && [ -n "$TENANT_ID" ] && [ -n "$SUBSCRIPTION_ID" ] && [ -n "$REGISTRY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          message="Hopper over utrullingen: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID og KA_REGISTRY er ikke alle satt som repo-variabler. Se «Første gang» i docs/deploy.md."
+          echo "::notice title=Ingen utrulling::$message"
+          echo "$message" >> "$GITHUB_STEP_SUMMARY"
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Build, push and roll out
+    needs: configured
+    if: needs.configured.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      url: ${{ steps.check.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Log in to Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Tagged with the full commit, never `latest`: the tag says exactly what
+      # is running, and rolling back is rolling out an older tag.
+      - name: Build and push the image
+        id: image
+        run: |
+          image="$REGISTRY.azurecr.io/$APP:$GITHUB_SHA"
+          # AcrPush on our own registry is all the identity has there. Without
+          # read on it in ARM, `az acr login` falls back to <name>.azurecr.io
+          # by itself (az 2.89.1, acr/_docker_utils.py).
+          az acr login --name "$REGISTRY"
+          docker build --tag "$image" .
+          docker push "$image"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+      - name: Point the app at the new image
+        id: update
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: |
+          az extension add --name containerapp --upgrade --only-show-errors
+          if ! az containerapp show -n "$APP" -g "$RESOURCE_GROUP" --query name -o tsv > /dev/null; then
+            echo "::error title=Appen finnes ikke::Bildet er pushet som $IMAGE, men $APP i $RESOURCE_GROUP finnes ikke eller kan ikke leses. Første gang er det ventet: kjør steg 5 i docs/deploy.md med imageTag=$GITHUB_SHA."
+            exit 1
+          fi
+          # Unique per run, so re-running the same commit is a new revision
+          # rather than a clash with the old one's name.
+          suffix="sha${GITHUB_SHA::7}-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          az containerapp update -n "$APP" -g "$RESOURCE_GROUP" \
+            --image "$IMAGE" --revision-suffix "$suffix" --only-show-errors > /dev/null
+          echo "revision=$APP--$suffix" >> "$GITHUB_OUTPUT"
+
+      # The new revision's own address, not the app's: the app's goes on
+      # answering from the old revision until the new one is ready, and a check
+      # against it would pass on the wrong code.
+      - name: Check that the new revision answers
+        id: check
+        env:
+          REVISION: ${{ steps.update.outputs.revision }}
+        run: |
+          fqdn=$(az containerapp revision show -n "$APP" -g "$RESOURCE_GROUP" \
+            --revision "$REVISION" --query properties.fqdn -o tsv)
+          app_fqdn=$(az containerapp show -n "$APP" -g "$RESOURCE_GROUP" \
+            --query properties.configuration.ingress.fqdn -o tsv)
+          for _ in $(seq 1 30); do
+            # Without an address of its own, the app's counts only once the
+            # platform says the new revision is the one it serves.
+            if [ -z "$fqdn" ]; then
+              ready=$(az containerapp show -n "$APP" -g "$RESOURCE_GROUP" \
+                --query properties.latestReadyRevisionName -o tsv)
+              [ "$ready" = "$REVISION" ] || { sleep 10; continue; }
+            fi
+            # The body, not only the status. A 302 to the sign-in page is a
+            # success to `curl -f`, with an empty body, and behind the login
+            # that is what an /healthz that is not excluded answers (KA CC
+            # on #169). Only the server itself says "ok":true.
+            if body=$(curl -fsS --max-time 5 "https://${fqdn:-$app_fqdn}/healthz") && [[ $body == *'"ok":true'* ]]; then
+              echo "$REVISION svarer: $body"
+              echo "url=https://$app_fqdn" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error title=Ny revisjon svarer ikke::$REVISION svarte ikke på /healthz på fem minutter. Den gamle revisjonen svarer fortsatt; se «Logger» i docs/deploy.md."
+          exit 1
+
+      - name: Write the address
+        env:
+          URL: ${{ steps.check.outputs.url }}
+        run: |
+          echo "::notice title=Rullet ut::$URL"
+          {
+            echo "### Rullet ut"
+            echo
+            echo "$URL"
+            echo
+            echo "Commit \`$GITHUB_SHA\`, revisjon \`${{ steps.update.outputs.revision }}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # The address on the repository's front page, under Deployments, and on the
+  # merged pull request. A job of its own because a job with `environment`
+  # gets a different OIDC subject (`environment:test`), which the federated
+  # credential does not accept; this one never logs in.
+  environment:
+    name: Publish the address
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: test
+      url: ${{ needs.deploy.outputs.url }}
+    steps:
+      - run: echo "${{ needs.deploy.outputs.url }}"

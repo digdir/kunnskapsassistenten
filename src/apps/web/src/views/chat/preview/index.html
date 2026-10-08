@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="nb" data-color-scheme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forhåndsvisning av chat-flyten</title>
+  </head>
+  <!-- Same attribute placement as index.html: data-size on body, never on
+       html, or every --ds-size-* token scales 12.5 % up. `auto` for the colour
+       scheme too, so the rig follows the operating system the way the real
+       page does. A rig pinned to one scheme is the first thing anyone copies
+       when they build the next one. -->
+  <body data-size="md" data-color="accent">
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

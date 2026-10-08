@@ -1,4 +1,11 @@
-import type { Source, Stage, TurnEvent } from '@ka/contract';
+import type {
+  DeltaEvent,
+  ErrorEvent,
+  Source,
+  Stage,
+  ToolCallEvent,
+  TurnEvent,
+} from '@ka/contract';
 import { config } from './config.ts';
 import { excerpts } from './excerpts.ts';
 
@@ -24,13 +31,57 @@ function headers(method: string, userId: string, toolName?: string): Record<stri
   return h;
 }
 
+/** As the backend sends it, unchecked: every field is read with a type check. */
+interface ToolCall {
+  tool?: unknown;
+  'duration-ms'?: unknown;
+  'result-summary'?: unknown;
+  args?: { queries?: unknown; query?: unknown; chunk_ids?: unknown };
+}
+
+const strings = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+
+/** As the backend sends it: the text fields are read with a type check. */
 interface ProgressMeta {
   event?: string;
-  delta?: string;
+  delta?: unknown;
   iteration?: number | string;
   'max-iterations'?: number | string;
   'tool-calls'?: unknown;
-  reasoning?: string;
+  reasoning?: unknown;
+}
+
+/**
+ * The calls in an `agent/turn-completed`, as events of their own.
+ *
+ * Everything the backend says about a call is passed on: which tool, what it
+ * found (`result-summary`), the search strings it ran, how long it took, and
+ * how many chunks it asked to read. The client decides what the reader sees;
+ * measured against the backend 2026-09-29, a single question ran
+ * `plan_queries`, two `search`, `inspect_filters`, three `read_chunks` and
+ * `generate_response`, each with its own summary and duration.
+ */
+function toolCallEvents(raw: unknown): ToolCallEvent[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((value): ToolCallEvent[] => {
+    const call = value as ToolCall;
+    if (!call || typeof call.tool !== 'string') return [];
+    const { queries: many, query: one, chunk_ids: chunkIds } = call.args ?? {};
+    const queries = Array.isArray(many) ? strings(many) : typeof one === 'string' ? [one] : [];
+    const chunkCount = Array.isArray(chunkIds) ? chunkIds.length : 0;
+    const detail = call['result-summary'];
+    return [
+      {
+        type: 'tool-call',
+        tool: call.tool,
+        ...(typeof detail === 'string' && detail ? { detail } : {}),
+        ...(queries.length ? { queries } : {}),
+        ...(typeof call['duration-ms'] === 'number' ? { durationMs: call['duration-ms'] } : {}),
+        ...(chunkCount ? { chunkCount } : {}),
+      },
+    ];
+  });
 }
 
 const num = (v: unknown, fallback: number): number => {
@@ -111,45 +162,98 @@ function safeHttpUrl(value: string): string {
   }
 }
 
-/** `/documents/<n>`, not `/files/` — the latter 404s. */
+const DIGITS = /^\d+$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * `/documents/<n>`, not `/files/` — the latter 404s.
+ *
+ * Kudos answers the two shapes of a document number at different addresses
+ * (measured 30.09): `/documents/<number>` is a 301 to the document,
+ * `/documents/<uuid>` is a 404, and `/dokument/<uuid>` is the document. The
+ * Kudos API now gives only UUIDs (headless-rag #25), so a corpus loaded again
+ * after that fix has them. A number in neither shape gets no link rather than
+ * a guess, which also keeps anything but digits or a UUID out of the path.
+ */
 function documentUrl(chunk: ResultChunk): string {
   if (chunk.url) {
     const safe = safeHttpUrl(chunk.url);
     if (safe) return safe;
   }
-  if (chunk.doc_num) return `${config.kudosBase}/documents/${chunk.doc_num}`;
+  const num = chunk.doc_num?.trim() ?? '';
+  if (DIGITS.test(num)) return `${config.kudosBase}/documents/${num}`;
+  if (UUID.test(num)) return `${config.kudosBase}/dokument/${num}`;
   return '';
 }
 
+/**
+ * The retrieved chunks as sources, one per chunk and in retrieval order.
+ *
+ * The marker is the position in this list. That assumes `[N]` in the answer
+ * is the N-th chunk of the result, and it does not always hold: synthesis
+ * numbers its own context and compacts what it cited to 1..k
+ * (skills/builtin/synthesis.clj, `renumber-citations`), so an answer that
+ * cited its context 2 and 5 says [1] and [2]. Nothing in the result says
+ * which chunk an `[N]` is. A test in mcp.test.ts pins the assumption until
+ * headless-rag sends that (digdir/digdir-headless-rag#36), and the mapping
+ * then goes by `chunk_id`.
+ *
+ * Until then, nothing here may reorder the list, group it or drop an entry,
+ * or the assumption fails also where it holds. An earlier version grouped by
+ * document and numbered the documents, which shifted every marker as soon as
+ * one document gave two chunks. A chunk without a `doc_num` keeps its place
+ * with an empty `docNum` for the same reason, and the client names it by its
+ * marker.
+ */
 export async function toSources(
   chunks: ResultChunk[] | undefined,
   lookup: (ids: string[]) => Promise<Map<string, string>> = excerpts,
 ): Promise<Source[]> {
   if (!chunks?.length) return [];
-  const byDoc = new Map<string, { chunk: ResultChunk; chunkIds: string[] }>();
-  for (const c of chunks) {
-    const key = c.doc_num || c.url;
-    if (!key) continue;
-    const entry = byDoc.get(key) ?? { chunk: c, chunkIds: [] };
-    if (c.chunk_id) entry.chunkIds.push(c.chunk_id);
-    byDoc.set(key, entry);
-  }
 
   let text = new Map<string, string>();
   try {
-    text = await lookup([...byDoc.values()].flatMap((e) => e.chunkIds));
+    text = await lookup(chunks.flatMap((c) => (c.chunk_id ? [c.chunk_id] : [])));
   } catch {}
 
-  return [...byDoc.values()].map(({ chunk, chunkIds }, i) => {
-    const passages = chunkIds.map((id) => text.get(id)).filter(Boolean) as string[];
+  return chunks.map((chunk, i) => {
+    const passage = chunk.chunk_id ? text.get(chunk.chunk_id) : undefined;
     return {
       docNum: chunk.doc_num ?? '',
       title: chunk.title || `Dokument ${chunk.doc_num ?? ''}`.trim(),
       url: documentUrl(chunk),
       marker: i + 1,
-      ...(passages.length ? { excerpt: passages.join('\n\n') } : {}),
+      ...(chunk.chunk_id ? { chunkId: chunk.chunk_id } : {}),
+      ...(passage ? { excerpt: passage } : {}),
     };
   });
+}
+
+/**
+ * An error the backend reported, as the browser gets it: a fixed sentence and
+ * the backend's code. The backend's own text goes to the log and no further.
+ * It is whatever the failure said — for an exception, its message, with host
+ * names and replies from Typesense or the model in it (mcp/transport.clj).
+ *
+ * `JSON.stringify` keeps the text on one line, so it cannot start a log line
+ * of its own.
+ */
+function backendError(
+  code: string | undefined,
+  text: string | undefined,
+  conversationId?: string,
+): ErrorEvent {
+  console.error(
+    'backend error %s: %s',
+    JSON.stringify(code ?? null),
+    JSON.stringify(text ?? null),
+  );
+  return {
+    type: 'error',
+    message: 'Backend svarte med en feil.',
+    ...(code ? { code } : {}),
+    ...(conversationId ? { conversationId } : {}),
+  };
 }
 
 /** Never accumulates the upstream body: that would stall the stream. */
@@ -180,15 +284,39 @@ export async function* ask(
     },
   };
 
-  const upstream = await fetch(`${config.apiBase}/api/mcp`, {
-    method: 'POST',
-    headers: { ...headers('tools/call', userId, tool), Accept: 'text/event-stream' },
-    body: JSON.stringify(body),
-    signal,
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${config.apiBase}/api/mcp`, {
+      method: 'POST',
+      headers: { ...headers('tools/call', userId, tool), Accept: 'text/event-stream' },
+      body: JSON.stringify(body),
+      signal,
+    });
+  } catch (err) {
+    // An abort is the caller's own doing and stays an exception, so the route
+    // can tell it from a failure. Everything else here is the backend not
+    // being there at all — a DNS miss, a refused connection, a dead TLS
+    // session — which is a different thing from any answer it could give, and
+    // the only place that knows it is this one.
+    if (err instanceof Error && err.name === 'AbortError') throw err;
+    const why =
+      err instanceof Error ? ((err.cause as { code?: string })?.code ?? err.name) : '';
+    yield {
+      type: 'error',
+      message: `Fikk ikke kontakt med backend${why ? ` (${why})` : ''}.`,
+      code: 'backend_unreachable',
+    };
+    return;
+  }
 
   if (!upstream.ok || !upstream.body) {
-    yield { type: 'error', message: `Backend svarte ${upstream.status}.` };
+    // The sentence keeps the status, because that is what anyone debugging
+    // from a screenshot has to go on; the code is what the client acts on.
+    yield {
+      type: 'error',
+      message: `Backend svarte ${upstream.status}.`,
+      code: `backend_http_${upstream.status}`,
+    };
     return;
   }
 
@@ -199,6 +327,23 @@ export async function* ask(
   let streamedAnyText = false;
   let iteration = 0;
   let maxIterations = 10;
+  // A `response/chunk` is not known to be answer text when it arrives, so
+  // deltas are held: `agent/thinking` drops them, `agent/finalized` and the
+  // result release them. headless-rag sends an `agent/thinking` with the same
+  // text after every model response that is not blank, the last one too
+  // (agent/iteration_bundled.clj, agent/loop.clj). Against it nothing streams:
+  // the plan is dropped, and so is a direct answer, which then comes whole in
+  // the final frame like every other answer.
+  let pending: string[] = [];
+  function* release(): Generator<DeltaEvent> {
+    for (const text of pending) {
+      // Blank text has not told the reader anything, so the answer in the
+      // result is still to come.
+      if (text.trim()) streamedAnyText = true;
+      yield { type: 'delta', text };
+    }
+    pending = [];
+  }
 
   while (true) {
     const { done, value } = await reader.read();
@@ -219,11 +364,15 @@ export async function* ask(
         const convo: string | undefined = sc.conversation_id ?? meta.conversation_id;
 
         if (r.isError) {
-          const text = r.content?.[0]?.text ?? 'Ukjent feil fra backend.';
-          yield { type: 'error', message: text, conversationId: convo };
+          // The backend names the condition in `_meta.code`
+          // (digdir/mcp/tools.clj, `error->tool-result`), and that is what the
+          // client acts on. The text is its `:message`.
+          const code = typeof meta.code === 'string' ? meta.code : undefined;
+          yield backendError(code, r.content?.[0]?.text, convo);
           return;
         }
 
+        yield* release();
         if (!streamedAnyText) {
           const full = r.content?.find((b: { type?: string }) => b.type === 'text')?.text;
           if (full) yield { type: 'delta', text: full };
@@ -239,6 +388,23 @@ export async function* ask(
         return;
       }
 
+      // A tools/call that named something nonexistent comes back as a
+      // JSON-RPC error with the code in `data.code`, not as a result
+      // (digdir/mcp/transport.clj, `invalid-params`). Nothing read these
+      // frames, so the stream simply ran out and the reader was told the
+      // connection broke.
+      if (msg.error) {
+        const e = msg.error as { message?: string; code?: number; data?: { code?: unknown } };
+        // The backend's code when it sent one. An exception has none: it is
+        // -32603 with the exception's message (mcp/transport.clj).
+        const code =
+          typeof e.data?.code === 'string'
+            ? e.data.code
+            : `backend_jsonrpc${typeof e.code === 'number' ? `_${e.code}` : ''}`;
+        yield backendError(code, e.message ?? `JSON-RPC ${e.code ?? ''}`.trim());
+        return;
+      }
+
       const meta: ProgressMeta = msg.params?._meta ?? {};
       const event = meta.event;
       if (!event) continue;
@@ -251,11 +417,26 @@ export async function* ask(
           lastStage = 'writing';
           yield { type: 'stage', stage: 'writing', iteration, maxIterations };
         }
-        if (meta.delta) {
-          streamedAnyText = true;
-          yield { type: 'delta', text: meta.delta };
-        }
+        if (typeof meta.delta === 'string' && meta.delta) pending.push(meta.delta);
         continue;
+      }
+
+      if (event === 'agent/thinking') pending = [];
+      if (event === 'agent/finalized') yield* release();
+
+      /*
+       * The agent's own account of what it is doing, on its way through.
+       *
+       * Sent as well as the stage, not instead of it: a stage says which
+       * phase the agent is in, and these say what it actually did. The client
+       * draws the reader's sentences from them, the way the live path already
+       * does from the same frames.
+       */
+      if (event === 'agent/thinking' && typeof meta.reasoning === 'string' && meta.reasoning) {
+        yield { type: 'thinking', reasoning: meta.reasoning };
+      }
+      if (event === 'agent/turn-completed') {
+        yield* toolCallEvents(meta['tool-calls']);
       }
 
       const stage = toStage(event, meta);
@@ -273,5 +454,9 @@ export async function* ask(
     }
   }
 
-  yield { type: 'error', message: 'Forbindelsen til backend ble brutt.' };
+  yield {
+    type: 'error',
+    message: 'Forbindelsen til backend ble brutt.',
+    code: 'stream_broken',
+  };
 }

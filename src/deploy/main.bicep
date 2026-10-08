@@ -12,6 +12,12 @@ param digdirApiBase string = 'https://test.rag.digdir.cloud'
 @description('Hosted uses `kudos`; a local backend uses `default`.')
 param digdirDatasetConfigKey string = 'kudos'
 
+@description('The dataset\'s filter fields, as `id:field[:valueType[:label]]|…` with id documentType, organisation or year. The year needs `integer`, or it finds nothing. Empty: no filter panel.')
+param kaFilterFields string = 'documentType:type|organisation:orgs_long|year:concerned_years:integer'
+
+@description('The dataset\'s name in the client, as `Name` or `Name|description`.')
+param kaDataset string = 'Kudos'
+
 @description('Entra ID app registration. Sign-in is always on; `off` is local development only.')
 param azureTenantId string = tenant().tenantId
 param azureClientId string
@@ -30,6 +36,13 @@ param typesenseApiKey string = ''
 
 param typesenseHost string = ''
 param kudosDocsCollection string = ''
+
+@description('What the capability probe would find, forced: `filters` or `no-filters`. Empty lets the probe decide.')
+param kaCapabilities string = ''
+
+@description('The client a browser without the `ka_klient` cookie gets: `ny` (apps/web) or `gammel` (apps/web-preact). Empty: `gammel`.')
+@allowed(['', 'ny', 'gammel'])
+param kaDefaultClient string = ''
 
 var appHost = empty(publicHost) ? '${name}.${containerEnv.properties.defaultDomain}' : publicHost
 
@@ -113,6 +126,18 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             ],
             empty(typesenseApiKey) ? [] : [
               { name: 'TYPESENSE_API_KEY_ADMIN', secretRef: 'typesense-key' }
+            ],
+            empty(kaCapabilities) ? [] : [
+              { name: 'KA_CAPABILITIES', value: kaCapabilities }
+            ],
+            empty(kaFilterFields) ? [] : [
+              { name: 'KA_FILTER_FIELDS', value: '${digdirDatasetConfigKey}=${kaFilterFields}' }
+            ],
+            empty(kaDataset) ? [] : [
+              { name: 'KA_DATASETS', value: '${digdirDatasetConfigKey}=${kaDataset}' }
+            ],
+            empty(kaDefaultClient) ? [] : [
+              { name: 'KA_DEFAULT_CLIENT', value: kaDefaultClient }
             ]
           )
           probes: [
