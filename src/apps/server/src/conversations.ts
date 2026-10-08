@@ -37,8 +37,11 @@ export class BackendHttpError extends Error {
  */
 export function failure(error: string, err: unknown): { error: string; code?: string } {
   if (err instanceof BackendHttpError) return { error, code: `backend_http_${err.status}` };
-  // fetch throws a TypeError when it cannot reach the backend at all.
-  if (err instanceof TypeError) return { error, code: 'backend_unreachable' };
+  // fetch's own TypeError when it cannot reach the backend; any other TypeError
+  // is from our code, and says nothing about the backend.
+  if (err instanceof TypeError && err.message === 'fetch failed') {
+    return { error, code: 'backend_unreachable' };
+  }
   return { error };
 }
 
