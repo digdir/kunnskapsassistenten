@@ -8,8 +8,8 @@ COPY apps/web/package.json apps/web/
 COPY apps/web-preact/package.json apps/web-preact/
 RUN npm ci
 COPY . .
-# apps/web reads VITE_API_MODE when it is built, and defaults to its mock.
-# apps/web-preact has no modes.
+# apps/web reads VITE_API_MODE when it is built; a production build without it is bff.
+# Set here anyway, so the image does not depend on that default. apps/web-preact has no modes.
 RUN VITE_API_MODE=bff npm run build
 
 FROM node:24.21.0-alpine AS runtime
