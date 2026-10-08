@@ -23,33 +23,8 @@ export type AnswerHits = {
 
 /**
  * The search hits inside one rendered answer: how many, and which one the
- * reader is standing on.
- *
- * Counted from the DOM rather than from the markdown, and that is the whole
- * idea. `Markdown` renders an answer through react-markdown, so the text the
- * reader sees is not the string that went in: headings lose their `#`, bold
- * loses its stars, a `[3]` becomes a link. Counting matches in the markdown
- * source would give a number that does not match the highlights on screen —
- * and the counter's only job is to describe those highlights.
- *
- * So `Markdown` marks every match, purely and in document order, and this
- * reads them back with `querySelectorAll`, which returns them in exactly that
- * order. Reading order is a question about the rendered document, and the
- * rendered document is what answers it.
- *
- * The current hit is marked with a `data-current` attribute set here rather
- * than rendered, because which mark is current is a fact about the rendered
- * order and not about any one block of markdown.
- *
- * Which is why it is re-applied after EVERY render and not only when the
- * index changes. Measured in the browser 2026-09-15: stepping to hit 2 set
- * the attribute, and it was gone a moment later. The chat view re-renders on
- * scroll — `useFollowAnswer` watches the main column — and the smooth scroll to
- * the hit is itself scrolling, so the render that followed took the attribute
- * with it while the effect that sets it sat still on unchanged dependencies.
- * Scrolling is the one thing that stays behind a dependency list: an effect
- * that scrolled on every render would take the page away from a reader who
- * had just scrolled it themselves.
+ * reader stands on. Counted from the DOM and not the markdown, because the
+ * counter's job is to describe the highlights actually on screen.
  */
 export function useAnswerHits(
   containerRef: RefObject<HTMLElement | null>,
@@ -67,9 +42,8 @@ export function useAnswerHits(
     setCurrentIndex(0);
   }
 
-  // No dependency list on purpose: see the note above. Both `setState` calls
-  // are no-ops when the value has not changed, so a render that changed
-  // nothing settles here rather than looping.
+  // No dependency list on purpose; see above. Both `setState` calls are
+  // no-ops when the value has not changed, so it settles rather than loops.
   // oxlint-disable-next-line exhaustive-deps
   useEffect(() => {
     const marks = markElements(containerRef.current);
@@ -95,9 +69,8 @@ export function useAnswerHits(
   return {
     hitCount,
     currentIndex,
-    // `stepHit` stops at the ends rather than wrapping (brukerblikk
-    // 2026-09-15, funn 11), and it is the sources panel's own: one search
-    // mechanism, not two.
+    // `stepHit` stops at the ends rather than wrapping, and it is the
+    // sources panel's own: one search mechanism, not two.
     step: (step) => setCurrentIndex((current) => stepHit(hitCount, current, step)),
   };
 }

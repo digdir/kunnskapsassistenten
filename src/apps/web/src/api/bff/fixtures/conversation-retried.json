@@ -1,0 +1,99 @@
+{
+  "conversation": {
+    "id": "xcjJhTtot9XMHwAKuKbRJ",
+    "topic": "Hva skriver Nkom om måloppnåelse i årsrapporten for 2024?",
+    "created": 1791472252182
+  },
+  "messages": [
+    {
+      "id": "761PTRCmZ7lth2hN29CpC",
+      "role": "user",
+      "text": "Hva skriver Nkom om måloppnåelse i årsrapporten for 2024?",
+      "created": 1791472252229
+    },
+    {
+      "id": "W6qGJhabmJbgzXO4YYDiw",
+      "role": "assistant",
+      "text": "LLM request failed at iteration 4: Interceptor Exception: ",
+      "created": 1791472278070
+    },
+    {
+      "id": "hKdhIS1s4j7qgx6iTbo-T",
+      "role": "user",
+      "text": "Hva skriver Nkom om måloppnåelse i årsrapporten for 2024?",
+      "created": 1791472502214
+    },
+    {
+      "id": "yKpZDzPfu3T4X-B7juwA1",
+      "role": "assistant",
+      "text": "Jeg klarer dessverre ikke å gi et tilstrekkelig sikkert svar på Nkoms **samlede** vurdering av måloppnåelsen i årsrapporten for 2024, fordi den relevante konklusjonsteksten ikke lot seg hente ut.\n\nI de delene av rapporten som var tilgjengelige, beskriver Nkom måloppnåelse gjennom arbeid med blant annet:\n\n- sikkerhet og beredskap i ekomnett og -tjenester  \n- tilsyn med marked, utstyr, sikkerhet og forbrukerforhold  \n- konkurranse i bredbåndsmarkedet, herunder åpning av fibernett  \n- forvaltning av frekvenser, nummerressurser og domenenavn.\n\nRapporten peker også på et konkret forbehold: Rapporteringen om priser på grensekryssende post gir **ikke et fullstendig bilde**, fordi enkelte store internasjonale pakkedistribusjonsselskaper verken hadde registrert seg som postoperatører eller levert etterspurte data.",
+      "created": 1791472557100
+    }
+  ],
+  "sources": [
+    {
+      "docNum": "370449",
+      "title": "Årsrapport Nasjonal kommunikasjonsmyndighet 2024",
+      "url": "https://kudos.dfo.no/documents/370449",
+      "marker": 1,
+      "chunkId": "275f1bb58d3c",
+      "excerpt": "Nkom har et særlig ansvar knyttet til sikkerhet og beredskap i elektroniske kommunikasjonsnett og -tjenester. Nkom har 24/7-vaktordninger for overvåkning og rapportering på sikkerhetshendelser på fysisk og logisk nivå, og følger opp taushetsplikten og kommunikasjonsvernet i elektronisk kommunikasjon.\n\nNkom skal legge til rette for at alle aktører skal kunne konkurrere på like vilkår, som igjen gir priskonkurranse og valgmuligheter for kunder. Markeder skal selv få virke og utvikle bærekraftig konkurranse der det er mulig. Nkom vurderer om det er behov for regulering av tilbydere. Dette gjelder både innen post- og ekomtjenester.\n\nFrekvenser utgjør en verdifull og begrenset naturressurs som enhver innbygger og virksomhet har behov for. Frekvenser benyttes til all trådløs kommunikasjon som trådløse nett, mobiltelefoni, radio og fjernsyn, og Nkom forvalter frekvenser i Norge etter internasjonale regler. Tilgang til frekvenser er viktig for at alle kan få tilgang til gode, rimelige og fremtidsrettede tjenester i hele landet. For Nkom er det spesielt viktig å tilrettelegge for, og tildele nye frekvensbånd for nye tjenester. Nummerressursene i Norge, som for eksempel\n\ntelefonnummer, forvaltes av Nkom, og tildeles etter søknad til tilbydere."
+    },
+    {
+      "docNum": "370449",
+      "title": "Årsrapport Nasjonal kommunikasjonsmyndighet 2024",
+      "url": "https://kudos.dfo.no/documents/370449",
+      "marker": 2,
+      "chunkId": "760d0b4dcaae",
+      "excerpt": "Nkom fører tilsyn gjennom systematisk markedskontroll med omsetning av radio-, teleterminal-, og nettutstyr, for å sjekke at produktene samsvarer med regelverket. En egen autorisasjonsordning for ekominstallasjoner skal sikre trygge nett for hele samfunnet. Nkom fører også tilsyn med ekom-bransjens priser og tilbud til forbrukere, og med ekomlovens krav om forsvarlig sikkerhet i nett og tjenester. Fra 2019 har Nkom også hatt det sektorvise tilsynsansvaret etter sikkerhetsloven, og har i ny ekomlov fått ansvar for å føre tilsyn med Datasenter. Nkom måler stråling fra elektronisk utstyr, og følger opp ulovlig bruk av frekvenser, som for eksempel jammere som forstyrrer og blokkerer samfunnskritiske tjenester. Vi har også tilsynsansvaret for at norsk domeneforvaltning og toppdomenet «.no» forblir en sikker og trygg ressurs. Nkom har også ansvar for å føre tilsyn med tilbydere av eID og tillitstjenester som er en elektronisk tjeneste som normalt tilbys mot betaling, for eksempel hvor det kreves elektroniske signaturer, nettstedautentisering og lignende."
+    },
+    {
+      "docNum": "370449",
+      "title": "Årsrapport Nasjonal kommunikasjonsmyndighet 2024",
+      "url": "https://kudos.dfo.no/documents/370449",
+      "marker": 3,
+      "chunkId": "87d107ec1b01",
+      "excerpt": "Telenor har hatt en synkende markedsandel de siste årene, men er likevel den største tilbyderen av fast bredbåndsaksess i privatmarkedet på landsbasis med en markedsandel på 29,9 % målt etter omsetning ved utgangen av 2023. Lyse1 er den nest største tilbyderen med en markedsandel på 14,4 % ved utgangen av 2023, etterfulgt av Telia med 12,8 %. Tilbudssiden i privatmarkedet omfatter også en rekke mindre tilbydere som hver for seg har mindre enn 4 % markedsandel, herunder flere lokale/ regionale aktører, som til sammen representerer i overkant av ¼ av omsetningen for faste bredbåndsaksesser i privatmarkedet.\n\nNkom årsrapport 2024 Nkom årsrapport 2024\n\n{19}\n\n------------------------------------------------\n\n\n\n<span id=\"page-19-0\"></span>I privat- og bedriftsmarkedet for fast bredbåndsaksess samlet sett har Telenor en markedsandel på 28,4 % målt etter omsetning. Den nest største tilbyderen i det samlede markedet for fast bredbåndsaksess er Lyse med en markedsandel på 13,7 %, fulgt av Telia med 11,7 % og GlobalConnect med 9,3 %. Tilbydere med markedsandel under 4 % representerer i sum 28,3 % av dette markedet.\n\nNkom ser i 2024 en fortsettelse av trenden de siste årene hvor Telenor taper markedsandeler. Tilbakemeldinger fra markedet til Nkom gjennom 2024 kan tyde på at Telenor tar aktive steg for å ta tilbake markedsandeler, primært gjennom overbygging i områder hvor det allerede finnes fibernett og hvor markedsgrunnlaget er godt nok til å etablere et sekundært nett. Denne typen utbygginger har ofte sammenheng med utbygging av fiber til for eksempel basestasjoner eller større bedriftskunder, og hvor det kan tilbys fiber til privathusholdninger i tilknytning til et slikt prosjekt. Telenor uttalte høsten 2024 at de ser for seg å kjøpe opp andres nett i tiden fremover. Lyse har gjennom 2024 økt sine markedsandeler. Veksten kommer fra utbygging og gjennom organisk vekst, men vil i neste rapporteringsperiode også inkludere oppkjøp av Altifiber og Bergen Fiber. I tillegg har Lyse vært en av kjøperne av Sandefjord Bredbånd, men da som en minoritetseier (ca. 10%). Også flere mindre aktører på fibermarkedet har inngått ulike samarbeidskonstellasjoner eller kjøpt opp andre selskap. NEAS slo seg i slutten av 2024 sammen med VIT-nett og RenRøros, mens Nkom ser konturene av et større samarbeid mellom aktørene i Lofoten-området. Eksemplene peker i retning av et marked som er på vei inn i en ny fase med nye strategier for videre vekst og effektivisering etter at mesteparten av fiberaksessene som kan etableres på kommersielt grunnlag er etablert. Aktører som har tilknytning til bredbåndsmarkedet, for eksempel Analyses Mason, peker på at dette er en naturlig utvikling som vi bare har sett starten på i 2024.\n\nEn annen og sentral trend i bredbåndsmarkedene i 2024, har vært at flere aktører har utspill om frivillig åpning av egne fibernett. Flere selskaper som Nkom varslet som mulig SMP-aktører i Nkom sitt første høringsutspill til regulering har gått sammen og dannet selskapet Fiberhub. Selskapet jobber med å etablere en plattform for å gjøre eierselskapene sin fiberinfrastruktur tilgjengelig på en felles markedsplass og får andre selskaper til å gjøre det samme. Mot slutten av 2024 ga Telenor forsikringer om at deres fibernett ville holdes åpent, uavhengig av om Telenor blir regulert av Nkom i fremtiden. Nkom kjenner også til andre konkrete prosjekter som tar sikte på å legge til rette for kjøp og salg av tilgang i andres fibernett. Disse initiativene viser at bredbåndsmarkedet er i ferd med å gå fra å være lukkede til i større grad åpne opp for konkurranse på tjenestenivå. Nkom har lenge jobbet for en slik utvikling og ser positivt på denne utviklingen. Samtidig er det viktig at en slik åpning faktisk fører til reell konkurranse og valgmuligheter for bredbåndskundene i de åpnede nettene. Nkom vil derfor i 2025 fortsette arbeidet for å få flere aktører til å åpne fibernettene sine og at det skjer på rimelige og rettferdige vilkår."
+    },
+    {
+      "docNum": "370449",
+      "title": "Årsrapport Nasjonal kommunikasjonsmyndighet 2024",
+      "url": "https://kudos.dfo.no/documents/370449",
+      "marker": 4,
+      "chunkId": "4434545520a8",
+      "excerpt": "Nkom skal videreføre arbeidet med å legge til rette for konkurranse i postmarkedet og registrere relevante tilbydere av posttjenester i henhold til postlovens bestemmelser. Nkom skal styrke det regulatoriske tilsynet med pakkeleveringstjenester, bidra til økt transparens av visse enkelttariffer samt vurdere tariffer for visse pakkeleveringstjenester over landegrensene. Informasjon om pakkeleveringstjenester skal rapporteres til Europakommisjonen på bakgrunn av implementeringen av pakkepostforordningen. Nkom har i 2024 rapportert inn priser\n\n40\n\nfor grensekryssende post til Europakommisjonen i henhold til oppdrag gitt av Samferdselsdepartementet for 2024. Det er første gang Nkom samler inn og rapporterer disse tallene, og arbeidet har vært preget av at flere av de store internasjonale pakkedistrubusjonsselskapene ikke har etterkommet Nkom sin anmodning om å registrere seg som postoperatører i Norge, og har dermed heller ikke imøtekommet Nkom sine forespørsler om å utlevere data for denne rapporteringen. Rapporteringen for 2024 viser derfor ikke et fullstendig bilde av status i Norge, men har blitt gjort ut ifra de data Nkom har hatt tilgjengelig.\n\n41\n\n{21}\n\n------------------------------------------------"
+    },
+    {
+      "docNum": "370449",
+      "title": "Årsrapport Nasjonal kommunikasjonsmyndighet 2024",
+      "url": "https://kudos.dfo.no/documents/370449",
+      "marker": 5,
+      "chunkId": "c390636360e1",
+      "excerpt": "Som andre statlige virksomheter sikter Nkom mot å jobbe «aktivt, målrettet og planmessig for å fremme likestilling og hindre diskriminering». Nkoms lønnspolitikk legger til rette for like utviklings- og karrieremuligheter uavhengig av kjønn, krav til tilrettelegging eller livssituasjon.\n\nDet ble høsten 2024 igangsatt en virksomhetsomfattende risikokartlegging hvor alle HMS- og ARP-relaterte faktorer inngår. Det ble i den forbindelse opprettet en arbeidsgruppe bestående av representanter fra ledelsen og de ansatte (AMU, SU og HVO). Det vil i 2025 bli opprettet et årshjul slik at man sikrer løpende oppfølging, implementering og evaluering av identifiserte risikofaktorer og tiltak, i tillegg til at dette blir et fast punkt i Arbeidsmiljøutvalgets møter gjennom året.\n\nFor å sikre en mer helhetlig tilnærming, er ansvaret for oppfølgingen av HMS, Arbeidsmiljøutvalget (AMU), og likestillings- og inkluderingsarbeidet i Nkom samlet i én stilling.\n\nNkom årsrapport 2024 Nkom årsrapport 2024\n\n{33}\n\n------------------------------------------------"
+    },
+    {
+      "docNum": "370449",
+      "title": "Årsrapport Nasjonal kommunikasjonsmyndighet 2024",
+      "url": "https://kudos.dfo.no/documents/370449",
+      "marker": 6,
+      "chunkId": "2d5214125c48",
+      "excerpt": "|                                       |    | Kvinner |     | Menn<br>Antall Andel Antall Andel Antall | Totalt |\n|---------------------------------------|----|---------|-----|------------------------------------------|--------|\n| Totalt alle<br>ansatte                | 62 | 37 %    | 105 | 63 %                                     | 167    |\n| Direktør<br>gruppen                   | 1  | 20 %    | 4   | 80 %                                     | 5      |\n| Seksjonssjef<br>gruppen               | 3  | 25 %    | 9   | 75 %                                     | 12     |\n| Fagsjef<br>gruppen                    | 3  | 30 %    | 7   | 70 %                                     | 10     |\n| Senior<br>personale                   | 39 | 35 %    | 73  | 65 %                                     | 112    |\n| Øvrige saks<br>behandlere<br>og andre | 16 | 57 %    | 12  | 43 %                                     | 28     |\n\nVed utgangen av 2024 besto Nkoms ansatte av 37 prosent kvinner og 63 prosent menn. Nkom følger hovedavtalens bestemmelser om kvotering av underrepresenterte grupper i rekrutteringsprosessene. Likevel er det ofte en majoritet av mannlige søkere til tekniske stillinger. Innenfor faggrupper som jurister, økonomer og i mer administrative stillinger er kjønnsbalansen mer likefordelt. Antall ledere med personalansvar var 19. Av disse var seks kvinner. Andelen kvinner i ledelsen er dermed om lag 32 prosent. Ved utgangen av 2024 var det to ansatte i midlertidige stillinger.\n\nNkom har i lønnskartleggingen delt opp lønn i fastlønn og variable tillegg (overtid og vakttillegg). Nedenfor er benyttet gjennomsnittsbeløp per gruppe."
+    },
+    {
+      "docNum": "370449",
+      "title": "Årsrapport Nasjonal kommunikasjonsmyndighet 2024",
+      "url": "https://kudos.dfo.no/documents/370449",
+      "marker": 7,
+      "chunkId": "8a71772a5c9f",
+      "excerpt": "10\n\nNkom har et aktivt og godt samarbeid med bransjer og myndigheter, og tilbyr samarbeidsplattformer i\n\nform av konferanser og møteplasser. Internasjonalt er Nkom aktive i en rekke fora innen EU for å sikre koordinering av internasjonale regelverk for post og ekom på tvers av landegrenser. Nkom representerer også Norge i en rekke EØS-komiteer."
+    },
+    {
+      "docNum": "370449",
+      "title": "Årsrapport Nasjonal kommunikasjonsmyndighet 2024",
+      "url": "https://kudos.dfo.no/documents/370449",
+      "marker": 8,
+      "chunkId": "d5eeb9e2780a",
+      "excerpt": "På kapittel 1543 er det regnskapsført 264,1 mill. kr på post 01. Lønn og andre personalutgifter utgjør 169,9 mill. kr, noe som tilsvarer 65 % av driftsutgiftene. Det er regnskapsført 18,5 mill. kr til husleie og drift av bygninger, 27,1 mill. kr til kjøp av konsulenttjenester, 14,0 mill. kr til lisenser og leie av *Lønn og godtgjørelser (169,9) 65 % Husleie og drift av bygninger (18,5) 7 % Lisenser og leie av datasystemer (14) 5 % Konsulenttjenester (27,1) 10 % Reiser og diett (7,8) 3 % Øvrige driftsutgifter (26,8) 10 %*"
+    }
+  ]
+}

@@ -1,31 +1,18 @@
 import type { SourceDocument } from '../../model';
 
-/**
- * The answer as text rather than as markup.
- *
- * Two places need the answer without its markup: the clipboard («Kopier
- * svaret», answer 15) and the live region that follows a streaming answer.
- * `Markdown` renders; it does not read back, so this is the small amount of
- * text handling that stays here. It deliberately does no block parsing and no
- * component mapping — that is `src/components/Markdown.tsx` and only there.
- */
+/* The answer as text rather than markup, for the clipboard and the live
+  region. `Markdown` renders and does not read back, so this much stays here;
+  it deliberately does no block parsing and no component mapping. */
 
-/*
- * A marker and the space in front of it. The space goes with the marker,
- * because «kvartalsvis [1].» would otherwise be pasted as «kvartalsvis .»
- */
+// A marker and the space in front of it: the space goes with the marker, or
+// «kvartalsvis [1].» is pasted as «kvartalsvis .»
 const CITATION = /[ \t]?\[\d{1,3}\]/g;
 const BLOCK_SYNTAX = /^(#{1,6}\s+|[-*]\s+|\d+\.\s+|>\s?)/;
 
 /**
- * Markdown stripped down to what a reader would paste into a document.
- *
- * The `[1]` markers go by default: on their own they are bookkeeping that
- * points at a panel the clipboard cannot carry. `keepCitations` keeps them,
- * for the one case where the clipboard DOES carry the panel — see
- * {@link answerWithSources}. Headings and list items keep their text and lose
- * their marks. Table rows become tab separated, so a paste into a spreadsheet
- * still has columns.
+ * Markdown stripped to what a reader would paste into a document. The `[1]`
+ * markers go by default, since alone they point at a panel the clipboard
+ * cannot carry; `keepCitations` is for when it does. Tables go tab separated.
  */
 export function answerAsPlainText(markdown: string, keepCitations = false): string {
   return markdown
@@ -48,13 +35,8 @@ export function answerAsPlainText(markdown: string, keepCitations = false): stri
     .trim();
 }
 
-/**
- * How much of a streaming answer is safe to announce.
- *
- * A screen reader must not hear every token, and it must not hear half a
- * sentence either. Everything up to the last blank line is finished text; the
- * tail is still being written, so it waits.
- */
+/** How much of a streaming answer is safe to announce: everything up to the
+   last blank line is finished text, and the tail is still being written. */
 export function announcedText(markdown: string): string {
   const lastBreak = markdown.lastIndexOf('\n\n');
   if (lastBreak < 0) return '';
@@ -62,18 +44,9 @@ export function announcedText(markdown: string): string {
 }
 
 /**
- * The reference list under a copied answer, one line per `[n]`.
- *
- * Norwegian APA-like, as the insight work asked for: «[1] Nasjonal
- * kommunikasjonsmyndighet (2022). Årsrapport …, s. 41. https://…». Every part
- * is dropped when the corpus does not have it — a folder-based corpus has no
- * URL and no page, and a reference with «, s. undefined» in it is worse than
- * one without the page.
- *
- * One line per CITED EXCERPT and not per document: `[n]` points at an
- * excerpt, two excerpts from the same report are `[1]` and `[2]`, and they
- * are on different pages. Excerpts the answer never cited carry no number and
- * are left out — they were retrieved, not used.
+ * The reference list under a copied answer, Norwegian APA-like, with each
+ * part dropped when the corpus lacks it. One line per CITED EXCERPT and not
+ * per document: two excerpts from one report are on different pages.
  */
 export function referenceList(documents: SourceDocument[]): string[] {
   return documents
@@ -98,16 +71,9 @@ export function referenceList(documents: SourceDocument[]): string[] {
 const REFERENCE_HEADING = 'Kilder';
 
 /**
- * What «Kopier svaret» puts on the clipboard.
- *
- * The answer with its `[n]` markers intact, then the references they point
- * at. Reise 13, 14 and 20 in brukerreiser-2026-09-15.md: the one thing that
- * moves an answer out of KA moved it out without its provenance, which is
- * precisely what KA is for.
- *
- * With nothing behind the answer — a stopped turn, a corpus that returned
- * nothing — it falls back to today's clean text, markers and all removed.
- * Markers pointing at a list that is not there would be worse than no markers.
+ * What «Kopier svaret» puts on the clipboard: the answer with its `[n]` and
+ * the references under it, since an answer must not leave KA without its
+ * provenance. With no sources it falls back to clean text.
  */
 export function answerWithSources(markdown: string, documents: SourceDocument[] = []): string {
   const references = referenceList(documents);

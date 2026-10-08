@@ -1,16 +1,9 @@
 import type { StreamEvent, ThinkingStep } from '../../model';
 
 /**
- * What one answer showed while it was being written, taken from the events on
- * their way to the chat, so it can be written down with the answer
- * (sourceStore.ts, issue 88).
- *
- * The steps, as they arrived, and how long the agent thought: from the first
- * step to the first word of the answer. That is the interval `useChat`
- * measures for `Message.thoughtMs`, read off the same events in the same
- * order, so the number brought back after a reload is the one that was on
- * screen (brukerblikk runde 2, funn 5: two honest numbers for one turn is one
- * too many).
+ * The steps and thinking time one answer showed, taken from the events on their way to the chat so
+ * they can be stored with the answer (sourceStore.ts). Measured the way `useChat` measures
+ * `Message.thoughtMs`, so the number after a reload is the one that was on screen.
  */
 export class TurnRecorder {
   readonly #steps: ThinkingStep[] = [];

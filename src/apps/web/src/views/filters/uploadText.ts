@@ -1,26 +1,7 @@
 import { MAX_UPLOAD_BYTES, type UploadErrorCode } from '../../model';
 
-/**
- * What to say about an upload that did not work, in Norwegian.
- *
- * One table for two places, and that is the point. A refused file in the list
- * and a drop zone that is switched off in live mode are the same four causes
- * — `useUserDocuments` reports both as an {@link UploadErrorCode} for exactly
- * this reason (asked for by #2, 21.09) — and two tables would drift into
- * saying different things about one cause.
- *
- * `unavailable` is not a failure the reader caused or can retry: there is no
- * upload endpoint at all (API-bestilling A3). It says so instead of «noe gikk
- * galt», which would send them off looking for a mistake they did not make.
- */
-/**
- * The limit in words, written once.
- *
- * Mebibytes, because `MAX_UPLOAD_BYTES` is 20 × 1024 × 1024 and the number a
- * reader is told has to be the number the check uses. {@link fileSize} counts
- * in decimal units like a file manager does, and would call the same limit
- * «21 MB» — true, and two different numbers for one rule.
- */
+/** The limit in words, in mebibytes like the check (`MAX_UPLOAD_BYTES`); {@link fileSize}
+    counts in decimal units and would say «21 MB». */
 export const MAX_UPLOAD_TEXT = `${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB`;
 
 const UPLOAD_ERROR_TEXT: Record<UploadErrorCode, string> = {
@@ -30,34 +11,20 @@ const UPLOAD_ERROR_TEXT: Record<UploadErrorCode, string> = {
   unavailable: 'Opplasting er ikke tilgjengelig i denne tjenesten ennå.',
 };
 
-/**
- * What the zone says where there is nowhere to upload to yet.
- *
- * Not the `unavailable` sentence above, which is a refusal: nothing was tried
- * here, so there is nothing to refuse. It is the design's wording (30.09), and it
- * is word for word what the compose field's paper clip says (#3,
- * src/views/chat/attachmentText.ts): one missing feature, one sentence,
- * wherever the reader meets it (KA CC, 30.09). Two views may not import each
- * other, so if it changes, it changes in both places.
- */
+/** What the zone says while there is nowhere to upload to; not a refusal, as nothing was tried.
+    Word for word the compose field's (src/views/chat/attachmentText.ts); views may not import
+    each other, so change both. */
 export const UPLOAD_COMING_TEXT = 'Snart kan du laste opp dokumenter her';
 
+/** An upload failure in Norwegian, from one table for the file list and the drop zone.
+    `unavailable` says there is no upload at all rather than «noe gikk galt», so the reader
+    does not look for a mistake they did not make. */
 export function uploadErrorText(code: UploadErrorCode): string {
   return UPLOAD_ERROR_TEXT[code];
 }
 
-/**
- * A file size a reader can read, in Norwegian.
- *
- * Decimal units and not binary: a reader who sees «2,4 MB» here and 2,4 MB in
- * their own file manager should see the same number, and every file manager
- * on every platform they use counts in thousands. The unit is the largest one
- * that leaves a number below 1000, so nothing reads «0,002 MB».
- *
- * One decimal from a megabyte up, none below: «812 kB» is exact enough to
- * recognise a file by, and «812,4 kB» is four characters of noise in a panel
- * that pays for every line.
- */
+/** A file size in Norwegian, in decimal units as file managers count, so the numbers match.
+    One decimal from MB up; below that the whole number is exact enough. */
 export function fileSize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) return '';
   if (bytes < 1000) return `${Math.round(bytes)} B`;

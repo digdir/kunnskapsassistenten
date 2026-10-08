@@ -1,21 +1,9 @@
 import type { UserDocument } from '../model';
 import { createUploadClient } from './uploadFactory';
 
-/**
- * The reader's own documents, as state two views share.
- *
- * A module store and not a context, for the reason src/api/corpus.ts gives at
- * length: the parties are in different places. The compose field (#3) starts
- * an upload, «Dine dokumenter» in the filter panel (#2) draws the list, and
- * the sources panel (#4) reads what an answer cited. A context would have to
- * sit above all three, and the client that does the work is not a component
- * at all.
- *
- * The list here is the truth on screen — including documents that are still
- * uploading, which the CLIENT never stores. Only a finished document reaches
- * `localStorage`; a bar at 40 % is a fact about this page, not something to
- * restore after a reload as an upload that will never continue.
- */
+// The reader's own documents, shared by the compose field, the filter panel and
+// the sources panel (a store for the reason corpus.ts gives). Uploads in
+// progress live only here and are never stored: one cannot resume after a reload.
 let documents: UserDocument[] = [];
 let loaded = false;
 const listeners = new Set<() => void>();
@@ -43,28 +31,15 @@ function put(document: UserDocument): void {
   announce();
 }
 
-/**
- * Swap the pending row for the finished one, in place.
- *
- * In place, so the row does not jump to the end of the list the moment it
- * finishes. Under the CLIENT's id and not the pending one: the client is what
- * stores the document, so if the store kept its own id the two would disagree
- * and `remove` would match neither. Measured the first time this was written
- * the other way round — the row vanished from the list and stayed in
- * `localStorage`.
- */
+// Swap the pending row for the finished one in place, so it does not jump to
+// the end. Under the client's id, the one it stores and `remove` must match.
 function replace(pendingId: string, finished: UserDocument): void {
   const index = documents.findIndex((existing) => existing.id === pendingId);
   documents = index === -1 ? [...documents, finished] : documents.toSpliced(index, 1, finished);
   announce();
 }
 
-/**
- * Read what was stored, once per page.
- *
- * Idempotent on purpose: every view that shows documents calls it on mount,
- * and three panels asking at once must not produce three lists.
- */
+/** Read what was stored, once per page, though every view calls it on mount. */
 export async function loadUserDocuments(): Promise<void> {
   if (loaded) return;
   loaded = true;
@@ -73,12 +48,8 @@ export async function loadUserDocuments(): Promise<void> {
 }
 
 /**
- * Upload one file, with the row appearing at once and the bar moving.
- *
- * The row is put in the list BEFORE the client is called, at 0 %, because
- * that is what makes the wait legible: a reader who picked a file sees it
- * land immediately. It is replaced by whatever the client resolves with —
- * ready or failed — under the same id.
+ * Upload one file. The row goes in at 0 % before the client is called, so the
+ * reader sees it land at once, and is replaced by the result, ready or failed.
  */
 export async function uploadUserDocument(file: File, signal?: AbortSignal): Promise<UserDocument> {
   const pending: UserDocument = {
@@ -101,9 +72,8 @@ export async function uploadUserDocument(file: File, signal?: AbortSignal): Prom
     replace(pending.id, finished);
     return finished;
   } catch (error) {
-    // Only an abort reaches here — see `UploadClient`. The row goes away,
-    // because the reader cancelled it and a cancelled upload is not a failure
-    // to read about.
+    // Only an abort reaches here (see `UploadClient`). The reader cancelled, so
+    // the row goes rather than showing as failed.
     documents = documents.filter((document) => document.id !== pending.id);
     announce();
     throw error;

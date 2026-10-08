@@ -1,29 +1,14 @@
-/*
- * The pages about Kunnskapsassistenten, in the answer column.
- *
- * Almost nothing: the text inside is drawn by `Markdown`, which already
- * carries Designsystemet's typography and the spacing between blocks
- * (`.markdown` in global.css). What is left is the air between the page
- * heading and the parts under it.
- *
- * None of the old page's CSS came along; see InfoPage.tsx.
- */
+/* Typography and block spacing come from `.markdown` in global.css. */
 .info-page {
   display: flex;
   flex-direction: column;
   gap: var(--ds-size-6);
-  /*
-   * Room under the last line. `.main` keeps its own end padding for the
-   * compose field, which these pages do not have, and text that stops exactly
-   * at the fold reads as a page that was cut off.
-   */
+  /* `.main`'s end padding is for the compose field; without this, text ends at the fold and
+     reads as cut off. */
   padding-block-end: var(--ds-size-8);
 }
 
-/*
- * A foldout is a block among the blocks, not a card in the margin, so it
- * lines up with the text above it and takes the full reading width.
- */
+/* A foldout is a block among the blocks, so it takes the full reading width. */
 .info-page details {
   inline-size: 100%;
 }

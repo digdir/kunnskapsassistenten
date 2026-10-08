@@ -13,31 +13,15 @@ type Failure = { name: string; message: string };
 type AppErrorBoundaryState = { failure: Failure | undefined };
 
 /**
- * The last line before a white page.
- *
- * An error React cannot recover from unmounts the whole root, and what the
- * reader sees is an empty window with nothing to click. That happened in the
- * test environment on 30.09, starting a new thread: `NotFoundError:
- * Failed to execute 'removeChild' on 'Node'`. That one is thrown in React's
- * commit phase when something outside React has moved or replaced a node
- * React still thinks it owns — a page translator or an extension rewriting
- * text while an answer streams in is enough, and it is reproduced that way in
- * design/_briefs/bygg/maalt-hvit-skjerm-ny-traad.md. This boundary does not
- * prevent that; it turns it into a page that says what happened and offers
- * the one thing that helps, which is loading again.
- *
- * A class, because only a class can be an error boundary in React 19. It sits
- * outside the router in main.tsx, so the page it draws depends on nothing
- * that may have been what failed.
+ * The last line before a white page. A known cause is `NotFoundError` from `removeChild`, when a
+ * translator or extension rewrites the DOM while an answer streams. A class, since React 19 has
+ * no hook for this; outside the router so it depends on nothing that may have failed.
  */
 export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
   state: AppErrorBoundaryState = { failure: undefined };
 
-  /*
-   * The name is read off whatever was thrown, not only off an `Error`. The
-   * DOM throws a `DOMException`, and whether that is an `instanceof Error`
-   * depends on the environment — it is in the browsers, and not in jsdom.
-   */
+  // Read the name off whatever was thrown: a `DOMException` is an `instanceof Error` in browsers
+  // but not in jsdom.
   static getDerivedStateFromError(thrown: unknown): AppErrorBoundaryState {
     const named = typeof thrown === 'object' && thrown !== null ? (thrown as Partial<Failure>) : {};
     return {
@@ -59,18 +43,8 @@ function reloadPage() {
   window.location.reload();
 }
 
-/**
- * What stands where the app was.
- *
- * Its own `main` and level 1 heading, because it IS the page now: a screen
- * reader user landing here has nothing else to navigate by. The heading takes
- * the focus, since whatever held it has just been unmounted and focus is on
- * `<body>`; from there the next Tab is the button.
- *
- * The error text itself is behind a Details and not on the page, because it
- * is English and technical and not written for a reader, but it is what a
- * reader can copy into a message to us.
- */
+// What stands where the app was: its own `main` and h1, since it IS the page now, and the heading
+// takes the focus left on `<body>`. The error text is behind a Details: technical, but copyable.
 function CrashedPage({ failure, onReload }: { failure: Failure; onReload: () => void }) {
   const heading = useRef<HTMLHeadingElement>(null);
 
@@ -78,11 +52,8 @@ function CrashedPage({ failure, onReload }: { failure: Failure; onReload: () => 
     heading.current?.focus();
   }, []);
 
-  /*
-    The one cause this error is known to have from outside the app, named
-    only for it. `NotFoundError` is the DOM saying a node React meant to move
-    or remove was not where React left it.
-  */
+  // `NotFoundError`: a node React meant to move or remove was gone. Its one known cause is
+  // outside the app, so only it gets an explanation.
   const changedFromOutside = failure.name === 'NotFoundError';
 
   return (

@@ -1,36 +1,9 @@
 import { kaEnv } from './runtimeConfig';
 
 /**
- * Where a corpus's documents can be read, as templates per dataset.
- *
- * The chunks the backend returns carry the document's number (`doc_num`) and,
- * for Kudos, no address: measured in the test environment 30.09, every source
- * said «Dokumentet har ingen offentlig lenke» (issue 92). The address
- * is knowledge about a corpus, so it is configuration and not code, like the
- * filter fields (src/decisions/0004-corpus-knowledge-and-facets.md).
- * The BFF in digdir/kunnskapsassistenten reads it the same way, from
- * `KUDOS_BASE`.
- *
- * `VITE_KA_DOCUMENT_URLS`, in the grammar of `VITE_KA_DATASETS`: semicolons
- * between datasets, the first `=` after the key, and `{doc_num}` where the
- * number goes. Two templates, split by `|`: the first for a number that is
- * all digits, the second for one that is a UUID.
- *
- *   kudos-full=https://kudos.dfo.no/documents/{doc_num}|https://kudos.dfo.no/dokument/{doc_num}
- *
- * Two, because one corpus can hand out both. Kudos's own API now gives only
- * a UUID (headless-rag issue #25), so a corpus loaded again after that fix has
- * UUIDs where it had numbers, and Kudos answers them at different addresses:
- * `/documents/<number>` is a 301 to the document and `/documents/<uuid>` is a
- * 404, while `/dokument/<uuid>` is the document (measured by #4 and by #5,
- * 30.09). Which address goes with which shape is the corpus's business and
- * stays out of `src/`; the shape itself is not about any corpus.
- *
- * Either template may be left empty, and a dataset with no entry gets no
- * link, which the sources panel already draws honestly. A template that is
- * not an http(s) address with `{doc_num}` in it drops the entry with one
- * warning: a link built from it would go nowhere, or somewhere a link from
- * here must never go.
+ * `VITE_KA_DOCUMENT_URLS`: per dataset, as in `VITE_KA_DATASETS`, an http(s) template
+ * with `{doc_num}` for numeric numbers and one for UUIDs, split by `|`, since Kudos
+ * serves the two at different addresses (headless-rag issue #25; src/decisions/0004).
  */
 
 export const DOC_NUM = '{doc_num}';
@@ -89,12 +62,8 @@ export function parseDocumentUrls(raw: string | undefined): ReadonlyMap<string, 
 let parsed:
   { raw: string | undefined; templates: ReadonlyMap<string, DocumentTemplates> } | undefined;
 
-/**
- * `kaEnv()` and not `import.meta.env`, so one container image can be pointed
- * at another corpus by its environment alone, as with the filter fields.
- * Parsed once per value, so a bad entry is warned about once and not per
- * chunk.
- */
+// `kaEnv()`, so an image can be pointed at another corpus; parsed once per
+// value, so a bad entry is warned about once and not per chunk.
 function configured(): ReadonlyMap<string, DocumentTemplates> {
   const raw = kaEnv().VITE_KA_DOCUMENT_URLS;
   if (parsed === undefined || parsed.raw !== raw) {
@@ -104,16 +73,9 @@ function configured(): ReadonlyMap<string, DocumentTemplates> {
 }
 
 /**
- * The address of one document, or undefined when the corpus has none.
- *
- * `dataset` is the corpus the chunk was retrieved from. Without one — a turn
- * where the backend picked, a thread from before there was a choice — it is
- * the dataset live asks when nothing is chosen, which is what those were
- * asked of.
- *
- * A number in neither shape gets no link rather than a guess. That is also
- * what keeps whatever the backend sends from reaching the path as anything
- * but digits or a UUID: nothing else is ever put in.
+ * The address of one document, or undefined. Without `dataset`, the one live
+ * asks by default. A number in neither shape gets no link, so nothing but
+ * digits or a UUID from the backend ever reaches the path.
  */
 export function documentUrl(
   dataset: string | undefined,

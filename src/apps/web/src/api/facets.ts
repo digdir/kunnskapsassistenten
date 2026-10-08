@@ -9,20 +9,9 @@ function capitalised(label: string): string {
 }
 
 /**
- * Facets in the generic format as the filter panel's dropdowns. The format is
- * the BFF's, and our own server answers in it too (server/facets.ts), so
- * bff and live both come through here.
- *
- * A facet whose field no dimension is mapped to is left out: the reader could
- * tick it, and nothing would carry the tick to the backend.
- *
- * The counts are the whole corpus's, from the BFF and from our server alike.
- * That is the right number for a dimension as long as nothing is ticked in
- * the OTHERS —
- * a dimension never narrows its own counts (`ChatClient.listFacets`). Once
- * something is, the whole-corpus number is not the answer to the question the
- * panel asks, so the count is left out and the panel draws none. Unknown is
- * honest; «Årsrapport (2874)» under a filter that leaves twelve is not.
+ * Generic facets (the BFF's format, and server/facets.ts's) as dropdowns, mapped
+ * dimensions only. Counts are whole-corpus, so they are dropped once another
+ * dimension is narrowed: no count beats a wrong one.
  */
 export function facetsFrom(
   facets: Facet[],

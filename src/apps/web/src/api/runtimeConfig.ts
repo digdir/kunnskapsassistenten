@@ -1,27 +1,8 @@
 import { apiMode } from './apiMode';
 
-/**
- * The environment, whether it was baked in at build time or handed over at
- * runtime.
- *
- * `import.meta.env` is Vite's, and Vite substitutes it during `vite build` —
- * so a built bundle has its corpus frozen into it. That is right for a
- * developer running `npm run dev` and wrong for a container: the dataset it
- * asks has to be a deployment's decision rather than a rebuild.
- *
- * The mode is the exception, and it is the build's alone (apiMode.ts): it
- * decides which clients are in the bundle, so a value set at runtime could
- * only name one that is not there.
- *
- * So the server writes `window.__KA_CONFIG__` into a small script the page
- * loads before the bundle (see server/config.ts), and this is the one place
- * that knows both sources exist. Everything else reads `kaEnv()` and cannot
- * tell which one answered.
- *
- * Runtime wins where both have a value, because runtime is the later and more
- * specific statement: the image was built with some default, and the
- * container was started with an intention.
- */
+// Vite bakes `import.meta.env` into the bundle, but the dataset must be the
+// deployment's choice, so the server also writes `window.__KA_CONFIG__`
+// (server/config.ts). The mode stays build-only (apiMode.ts).
 
 declare global {
   interface Window {
@@ -31,15 +12,8 @@ declare global {
 }
 
 /**
- * Read with `?.` twice over, because this module is evaluated outside a
- * browser and outside Vite as well.
- *
- * `import.meta.env` is undefined in plain Node, which is where Playwright
- * loads spec files that import `src/api/mock` — the whole suite died on
- * `Cannot read properties of undefined` before a single test ran once the
- * mock client began reading the corpus store. `window` is undefined in the
- * same place. No environment means no configuration, which is mock mode:
- * the same answer the app gives a developer who has set nothing.
+ * The merged environment; runtime wins, as the container's later word. Guarded
+ * because plain Node, where Playwright loads specs, has no `import.meta.env` or `window`.
  */
 export function kaEnv(): Partial<ImportMetaEnv> {
   const built: Partial<ImportMetaEnv> = import.meta.env ?? {};

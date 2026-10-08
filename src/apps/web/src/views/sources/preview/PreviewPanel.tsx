@@ -7,19 +7,8 @@ import { SourcesView } from '../SourcesView';
 import { kudosMarkdownSources } from './kudosExcerpts';
 import './preview.css';
 
-/**
- * A harness for building and reviewing the sources view on its own.
- *
- * DEV ONLY, see `main.tsx`. It exists because loading, empty and collapsed are
- * states the real app cannot be steered into by hand, and because the shell
- * does not mount this view yet.
- *
- * The panel sits in an `<aside>` with the accessible name the slot gives it,
- * behind the same collapse button and the same `hidden` wrapper the shell
- * uses, so an accessibility snapshot of this page shows the structure the
- * shell will have — including the `[hidden]` behaviour the view has to
- * survive.
- */
+// Dev only: loading, empty and collapsed, which the app cannot be steered into
+// by hand, in the shell's structure.
 type PreviewState =
   | 'ready'
   | 'eget-dokument'
@@ -45,12 +34,8 @@ const STATE_LABELS: Record<PreviewState, string> = {
   'kudos-markdown': 'Utdrag fra Kudos',
 };
 
-/**
- * The same sources, with the last excerpt stripped of its `citationNumber`.
- *
- * The model allows it — the search finds more than the answer cites — and the
- * mock fixtures never produce it, so this is the only way to see that path.
- */
+// The last excerpt without its `citationNumber`: the model allows it, and the
+// mock never produces it.
 const uncitedSources = fixtures.nkomSources.map((source, index) =>
   index < fixtures.nkomSources.length - 1
     ? source
@@ -60,14 +45,7 @@ const uncitedSources = fixtures.nkomSources.map((source, index) =>
       },
 );
 
-/**
- * Numbers the excerpts from 1, as an answer does.
- *
- * Every answer starts its own count, which is exactly why the panel cannot
- * hold one flat list: two answers both have a `[1]`, and it points at
- * different documents in each. The harness has to reproduce that or it cannot
- * show the thing being fixed.
- */
+// Numbers from 1 per answer, as answers do, so two answers both have a `[1]`.
 function renumbered(sources: SourceDocument[]): SourceDocument[] {
   let next = 1;
   return sources.map((source) => ({
@@ -124,13 +102,7 @@ function answersFor(state: PreviewState): readonly AnswerSources[] | undefined {
   }
 }
 
-/**
- * A source from a file the reader uploaded, built the way the mock builds it.
- *
- * `fixtures.userDocumentSource` is what `MockChatClient` calls when a question
- * carries `attachments`, so the harness shows the real shape rather than a
- * hand-written guess at it.
- */
+// An uploaded file's source, built by `fixtures.userDocumentSource` as the mock does.
 const ownDocument: SourceDocument = fixtures.userDocumentSource(
   {
     id: 'doc-egen',
@@ -155,13 +127,7 @@ const renumberedCorpus: SourceDocument[] = (() => {
   }));
 })();
 
-/**
- * `?kilde=3` mounts the view with a citation already set.
- *
- * That is the one case the harness could not otherwise reach, and it is the
- * case where the view must NOT move focus: a citation that was already there
- * when the view mounted is not something the user just did.
- */
+// `?kilde=3`: a citation set on mount, where the view must not move focus.
 type PreviewCitation = { number: number; nonce: number; messageId?: string };
 
 function citationFromUrl(): PreviewCitation | undefined {
@@ -169,11 +135,7 @@ function citationFromUrl(): PreviewCitation | undefined {
   return Number.isInteger(value) && value > 0 ? { number: value, nonce: 0 } : undefined;
 }
 
-/**
- * The two widths the slot actually has, as `viewModel.ts` declares them: 432
- * preferred, 336 when the window is short of room. They are two layouts and
- * not one stretched, so both have to be reviewable by hand.
- */
+// The slot's two widths in `viewModel.ts`: two layouts, not one stretched.
 const WIDTH_LABELS = { wide: '432 px', narrow: '336 px' } as const;
 
 type PreviewWidth = keyof typeof WIDTH_LABELS;
@@ -205,10 +167,8 @@ export function PreviewPanel() {
               variant={state === value ? 'primary' : 'secondary'}
               data-size="sm"
               onClick={() => {
-                // The citation goes with the thread it was clicked in. Left
-                // standing, it would arrive at the next fixture set as a
-                // citation «already set on mount» and send the panel to the
-                // answer it named — correct in the app, misleading here.
+                // The citation belongs to the thread it was clicked in, not to
+                // the next fixture set.
                 setState(value);
                 setCitation(undefined);
               }}
@@ -283,13 +243,8 @@ export function PreviewPanel() {
 
         <div id={contentId} hidden={collapsed} className="preview__aside-content">
           <SourcesView
-            /*
-              Remounts when the fixture set changes. Switching state here swaps
-              one thread for another, and the view remembers which answer the
-              reader stepped to — which is right in the app and misleading in a
-              harness, where the reader steps in one thread and reads the
-              result in a different one.
-            */
+            // Remounts per fixture set: the view remembers which answer the
+            // reader stepped to, which misleads when the harness swaps threads.
             key={state}
             answers={answers}
             collapsed={collapsed}

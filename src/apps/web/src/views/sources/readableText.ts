@@ -1,52 +1,13 @@
 import type { Excerpt, SourceDocument } from '../../model';
 
-/**
- * Excerpts as text a reader can read.
- *
- * The chunks are the corpus's own `content_markdown`: what Marker made of a
- * PDF. Measured on Kudos 2026-09-28 (`KUDOS_preprod_v4_*`), they
- * carry page markers (`{5}` on a line of its own, then a line of 48 dashes),
- * pipe tables with `<br>` inside the cells, `<sup>1)</sup>` footnote marks,
- * `**bold**`, `*italic*` and `- ` lists. The heading path carries the anchor
- * Marker puts before a heading, `<span id="page-4-0"></span>`, with its quotes
- * still escaped from the Clojure string it arrived in. All of it reached the
- * panel as literal text (#4 on #170, #5 on #168).
- *
- * **Stripped to text, not rendered as markdown.** An excerpt is a quote, and
- * the panel says so above the list. The search in this panel counts and
- * steps through hits by their offsets in `excerpt.text`, and the closed
- * excerpt shows the first 180 characters of it; both need the string on
- * screen to be the string they measured. Rendering markdown would draw
- * something other than what was searched, and `Markdown.tsx` would also turn
- * any heading inside a chunk into a heading in the panel's outline.
- *
- * What survives is what carries meaning: paragraphs and line breaks (drawn
- * with `white-space: pre-line`), list items as «•», and table rows as lines
- * with their cells joined by « · ». An empty cell inside a row becomes «–», so
- * the numbers in a sparse row keep their column. Footnote marks and exponents
- * stay raised, as superscript characters.
- *
- * **Not a sanitiser, and it does not need to be one.** The result is only
- * ever drawn as a React text node, never as HTML, so a tag that slipped
- * through would be seen, not run. Tags are removed because they are noise.
- */
+// Excerpts as plain text: Marker's markdown, stripped rather than rendered,
+// since the search counts hits by offsets in this string. Only drawn as a text
+// node, so not a sanitiser; tags go because they are noise.
 
 const HEADING_SEPARATOR = ' › ';
 
-/**
- * Markdown's backslash escapes, and the `\"` the heading path keeps from the
- * Clojure string it was cut out of.
- *
- * Swapped for a placeholder first and put back last, so an escaped `*` or `|`
- * is never read as emphasis or as a table cell on the way.
- *
- * The placeholders are Unicode noncharacters, U+FDD0 onwards: code points the
- * standard keeps for a program's own use and never gives to text. Any the
- * input carries are dropped first, so every placeholder put back is one made
- * here. Private-use characters from U+E000 were used until 2026-09-29, and a
- * real one in the text came back as ASCII: Kudos has U+E037, U+E039 and
- * U+E03C in its chunks, which became «7», «9» and «<».
- */
+// Backslash escapes become noncharacters (U+FDD0 on) until the end, so an
+// escaped `*` or `|` is never markup. Not private-use: Kudos has some in its text.
 const ESCAPABLE = '\\`*_{}[]()#+-.!|"\'~<>';
 const ESCAPED = /\\([\\`*_{}[\]()#+\-.!|"'~<>])/g;
 const PLACEHOLDER_BASE = 0xfdd0;
@@ -71,24 +32,12 @@ function restoreEscapes(text: string): string {
 const SCRIPT_OR_STYLE = /<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi;
 const HTML_COMMENT = /<!--[\s\S]*?-->/g;
 const LINE_BREAK_TAG = /<br\s*\/?>/gi;
-/**
- * An HTML tag: a letter after `<` or `</`. A `<` in prose, as in «< 5 %» or
- * «a<b», has no letter straight after it, or no `>` to close it, and stays.
- *
- * The name ends at a space or at a `/`, as an HTML parser reads it, so
- * `<br/>` and `<svg/onload=…>` are tags too.
- */
+/** `<` or `</` and a letter; the name ends at a space or `/`, as HTML reads it. */
 const TAG = /<\/?[a-z][a-z0-9-]*(?:[\s/][^<>]*)?>/gi;
 
 /**
- * `patterns` taken out in turn, round after round, until a round changes
- * nothing.
- *
- * One round can put together what it took apart: `<scr<script>ipt>` loses the
- * tag in the middle and leaves `<script>`, and a comment inside a comment
- * leaves a comment. Repeated, neither is left on screen. This is for the
- * reader and not for safety: the text is only drawn as text (see the top of
- * this file), so a tag that was left would be seen, not run.
+ * Repeated until nothing changes, since one round of `<scr<script>ipt>` leaves
+ * `<script>`. For the reader, not for safety.
  */
 function removeUntilStable(text: string, ...patterns: RegExp[]): string {
   let result = text;
@@ -100,15 +49,7 @@ function removeUntilStable(text: string, ...patterns: RegExp[]): string {
   return result;
 }
 
-/**
- * Superscript as the characters for it, so a footnote mark or an exponent
- * stays raised: `Husleie<sup>1)</sup>` reads «Husleie¹⁾», `m<sup>2</sup>`
- * reads «m²». Content with a character that has no superscript form keeps
- * its plain characters, as before.
- *
- * The search in the panel reads the same string, so it finds «Husleie», not
- * «1)».
- */
+/** `<sup>` as superscript characters, «Husleie¹⁾», when every character has one. */
 const SUPERSCRIPT_TAG = /<sup\b[^<>]*>([\s\S]*?)<\/sup\s*>/gi;
 const RAISED: Record<string, string> = {
   '0': '⁰',
@@ -137,18 +78,8 @@ function raised(text: string): string | undefined {
 }
 
 /**
- * A footnote mark Marker left as plain digits: «Husleie1)» in a table cell,
- * where the PDF had a raised «1)». One or two digits and a `)` straight after
- * a letter, with no letter or digit after it.
- *
- * Only in table cells, which is where it was found (375022/117). In prose the
- * same shape can be something else: «Q4)», or a chunk that starts inside a
- * parenthesis its previous chunk opened («tonn CO2) per år»).
- *
- * A `)` that closes a `(` earlier in the same cell is a parenthesis,
- * not a mark: «(1 000 m2)» and «(CO2)» keep theirs. A `)` with nothing open
- * closes nothing, so a numbered point before it, as in «1) Utslipp (tonn
- * CO2)», does not cancel the `(` that is still open.
+ * «Husleie1)» in a table cell is a footnote mark that lost its raise; in prose
+ * the shape can mean something else. A `)` that closes an open `(` is kept.
  */
 const GLUED_FOOTNOTE = /(?<=\p{L})\d{1,2}\)(?![\p{L}\p{N}])/gu;
 
@@ -225,14 +156,8 @@ const TABLE_ROW = /^\|.*\|$/;
 /** `|---|:---:|`, the line under a table's header. */
 const TABLE_DELIMITER = /^\|?(?:\s*:?-+:?\s*\|)*\s*:?-+:?\s*\|?$/;
 
-/**
- * One table row as one line: cells joined by « · ».
- *
- * A row of nothing but empty cells is spacing Marker added, and goes. Empty
- * cells at the end say nothing about where the others sit, and go too. An
- * empty cell before a filled one becomes «–», so a sparse row of numbers keeps
- * its columns.
- */
+// One row as one line, cells joined by « · ». Empty rows and trailing cells go;
+// an empty cell before a filled one is «–», so the columns keep their place.
 function tableRow(line: string): string | undefined {
   const cells = line
     .slice(1, -1)
@@ -323,10 +248,8 @@ function readableExcerpt(excerpt: Excerpt): Excerpt {
 }
 
 /**
- * The documents with every excerpt made readable.
- *
- * Applied once, where the view receives the documents, so the search, the
- * closed preview and the open quote all read the same string.
+ * The documents with every excerpt made readable. Applied once, where the view
+ * receives the documents, so the search and the quote read the same string.
  */
 export function readableDocuments(documents: SourceDocument[]): SourceDocument[] {
   return documents.map((document) => ({

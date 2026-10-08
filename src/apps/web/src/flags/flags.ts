@@ -1,22 +1,6 @@
-/**
- * Feature flags: experiments that can be tried side by side and taken out
- * again once a choice is made.
- *
- * Not settings. A setting (`#innstillinger`) is a choice that stays, like how
- * much of the answer's making to show. A flag is a trial of something that is
- * not decided yet, such as the panels as a row at the top on a phone (#120),
- * and every flag here is meant to be removed: either the trial becomes the
- * way the app works, or it goes.
- *
- * Every flag is off unless this browser has turned it on, in the hidden menu
- * (`#feature-flags`) or with a link (`?flagg=<id>`, see `flagLink.ts`).
- *
- * Shaped like `src/layout/footerMode.ts`: a module store read through
- * `useSyncExternalStore`, the same storage guard, and a value read once and
- * kept so the snapshot is stable. One stored object for all flags rather than
- * one key each, so «Logg ut» has one key to remove and a flag taken out of
- * the list leaves nothing behind that anything reads.
- */
+// Feature flags: trials meant to be removed once decided, unlike settings, which
+// stay. Off unless this browser turned them on. One stored list, not a key per
+// flag, so «Logg ut» has one key to remove.
 
 import { useSyncExternalStore } from 'react';
 
@@ -31,10 +15,7 @@ export type Flag = {
   issue: string;
 };
 
-/**
- * The flags there are. A flag no longer here is ignored where it is stored,
- * and dropped the next time anything is written.
- */
+/** A flag removed from here is ignored in storage and dropped on the next write. */
 export const FLAGS = [
   {
     id: 'mobile-top-row',
@@ -79,11 +60,8 @@ export function isFlagId(value: unknown): value is FlagId {
   return FLAGS.some((flag) => flag.id === value);
 }
 
-/**
- * Storage can throw rather than return null — Safari in private mode, and any
- * browser with site data blocked — and an experiment is never worth a blank
- * page. Anything that is not a list of known ids reads as «all off».
- */
+// Storage can throw (Safari private mode, blocked site data), and a trial is
+// never worth a blank page. Anything but a list of known ids reads as all off.
 function readStored(): FlagState {
   try {
     const raw = localStorage.getItem(FLAGS_STORAGE_KEY);
@@ -104,14 +82,11 @@ function writeStored(state: FlagState): void {
     if (on.length === 0) localStorage.removeItem(FLAGS_STORAGE_KEY);
     else localStorage.setItem(FLAGS_STORAGE_KEY, JSON.stringify(on));
   } catch {
-    // Ignored on purpose: the flag still applies for this page load.
+    // The flag still applies for this page load.
   }
 }
 
-/*
- * Read once and kept, so `getSnapshot` can hand React the same value twice.
- * Reading storage on every call is what makes `useSyncExternalStore` loop.
- */
+// Read once: a fresh read per `getSnapshot` makes `useSyncExternalStore` loop.
 let current: FlagState | undefined;
 
 const listeners = new Set<() => void>();
@@ -149,11 +124,7 @@ export function subscribeToFlags(listener: () => void): () => void {
   };
 }
 
-/**
- * For «Logg ut» (`beforeLogout` in session.ts): the flags are kept per
- * browser and not per user, like the answers and the agent choice, so the
- * next reader in this browser starts with every experiment off.
- */
+/** For «Logg ut»: flags are per browser, so the next reader starts with all off. */
 export function forgetFlags(): void {
   try {
     localStorage.removeItem(FLAGS_STORAGE_KEY);

@@ -15,22 +15,9 @@ export type InfoPageEntry = {
 };
 
 /**
- * The three pages about Kunnskapsassistenten itself, in the order the old
- * Kunnskapsassistenten lists them at the foot of its sidebar (issue
- * 85, design/_sources/eksisterende-ka-sider/lenkene-i-foten.png).
- *
- * One list and not two, because the address, the name and the icon are needed
- * in two places that must not drift: the links in `SidebarFooter` and the
- * routes in `App.tsx`. Adding a page here is enough to get both.
- *
- * Norwegian addresses, unlike `/threads/:threadId`: these are the addresses
- * the old Kunnskapsassistenten uses (`/onboarding`, `/endringslogg`,
- * `/om-prosjektet`), and a link somebody saved should still land somewhere.
- *
- * The icons are the old page's own — a book for the two pages that explain
- * something and a wrench for the changelog. Imported straight from
- * aksel-icons: neither carries a side in its name, so neither goes through
- * `src/components/icons.ts` (regler.md).
+ * The pages about Kunnskapsassistenten, in the previous client's order. One list, so the links
+ * in `SidebarFooter` and the routes in `App.tsx` cannot drift. The Norwegian paths are the
+ * previous client's, so saved links still land somewhere.
  */
 export const infoPages: InfoPageEntry[] = [
   { path: 'onboarding', title: 'Onboarding', Icon: BookIcon, parts: onboardingParts },

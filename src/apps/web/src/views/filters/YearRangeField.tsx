@@ -22,26 +22,9 @@ import {
 /** What the field says when it has nothing to offer for the text. */
 const HINT = 'Skriv et år eller en periode, som 2021 eller 2023–2028';
 
-/**
- * The year filter as periods, behind the `year-ranges` flag (#115).
- *
- * The same field as `FacetField` — Designsystemet's Suggestion with
- * `multiple`, the same label row, «Velg alle», «Tøm» and the limit — with two
- * differences:
- *
- *   1. The list is not the years. It is what the text so far can become,
- *      from `suggestPeriods`: the period the text is when it is one («2021»,
- *      «2023-2028», «23-28»), the years with documents that begin with the
- *      digits typed («2», «202»), and the periods whose end is being typed
- *      («2019-20»). So `filter={false}`, and each option has the number of
- *      documents the facets count in it. A whole period with no documents
- *      still shows, with 0, and can be chosen.
- *   2. The chips are periods. The selection is still a list of years — that
- *      is what the backend takes — and the chips are that list drawn by
- *      `toRanges`: years in a row are one chip, a gap starts the next. A chip
- *      is removed as one; taking one year out of the middle of a period is
- *      not in this round.
- */
+/** FacetField for years, behind `year-ranges` (digdir/kunnskapsassistenten#115). The list is
+ * what the text can become (`suggestPeriods`), hence `filter={false}`; a period with 0
+ * documents can still be chosen. Chips are the chosen years as periods, removed whole. */
 export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }), []);
@@ -83,13 +66,8 @@ export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldPro
     input.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  /*
-   * The periods back into years. An option that overlaps a chip, or sits
-   * next to it, simply joins it the next time the chips are drawn.
-   *
-   * A value of '' is the hint, chosen by Enter when nothing fits: it is not
-   * a choice, and the text stays to be finished, as in FacetField.
-   */
+  // Periods back into years; an overlapping or adjacent one joins its chip.
+  // '' is the hint, chosen by Enter when nothing fits: not a choice, as in FacetField.
   function change(items: { value: string }[]) {
     if (items.some((item) => item.value === '')) return;
     const years = new Set<number>();
@@ -157,31 +135,12 @@ export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldPro
           placeholder="Skriv et år eller en periode"
           onInput={(event) => setQuery(event.currentTarget.value)}
         />
-        {/*
-          No Toggle: there is no list of years to open, only the period the
-          text makes, and an arrow that opened an empty box promised one.
-        */}
+        {/* No Toggle: there is no list to open, and an arrow promises one. */}
         <Suggestion.Clear />
         <Suggestion.List data-overscroll="contain" data-autoplacement="false">
-          {/*
-            The options or the hint, never both. u-datalist decides whether the
-            empty option shows when the input event arrives, before React has
-            drawn the options, so with both in the list the hint stood over
-            the options it was wrong about (measured in Chromium).
-
-            The hint is an option too, with an empty value: a click on it
-            empties the field. While a year was half typed («2», «202») it was
-            all the list held, and a click there took the text away instead
-            of choosing anything (measured on main 879f0de). So it is only
-            there when nothing fits.
-
-            The `label` of the period the text reads as is the text as typed.
-            Enter in the field chooses the option whose label is what the
-            field holds, as it does in the other fields when a value's name
-            is typed in full — so «23-28» and Enter is 2023–2028. The others
-            are labelled as they read. What the reader sees and hears is the
-            children: the period written out, and its documents.
-          */}
+          {/* Options or the hint, never both: u-datalist decides on the empty option before
+              React draws the options. The period the text reads as is labelled as typed, so
+              Enter chooses it («23-28» is 2023–2028). */}
           {suggestions.length > 0 ? (
             suggestions.map((range) => {
               const key = rangeKey(range);

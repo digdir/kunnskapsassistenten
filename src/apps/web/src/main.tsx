@@ -11,14 +11,12 @@ if (import.meta.env.PROD) {
   window.dsWarnings = false;
 }
 
-// Applies the stored colour scheme and exposes window.ka.colorScheme before
-// the first render. colorSchemeBoot.js has already applied the same value, so
-// this installs the console API rather than preventing a flash.
+// colorSchemeBoot.js has already applied the stored scheme, so this installs
+// the console API (window.ka.colorScheme) rather than preventing a flash.
 initColorScheme();
 
-// The boundary is outermost, outside the router, so the page it draws on a
-// crash depends on nothing that may have been what failed. See
-// src/layout/AppErrorBoundary.tsx.
+// Outermost, outside the router, so the crash page depends on nothing that may
+// have been what failed.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AppErrorBoundary>

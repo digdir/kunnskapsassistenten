@@ -9,6 +9,23 @@ function onPlatform(userAgent: string) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('shortcutHint', () => {
+  it('names whichever modifier the shell names', async () => {
+    /*
+     * The shell's skip link and this hint say the same key out loud, so they
+     * have to agree on the word. One test of the machine, in
+     * `src/layout/shortcutModifier.ts`; this asserts the hint reads it rather
+     * than keeping a second copy that can drift from it.
+     */
+    vi.doMock('../../layout/shortcutModifier', () => ({ shortcutModifier: () => 'Cmd' }));
+    vi.resetModules();
+    const { shortcutHint: readsTheShell } = await import('./text');
+
+    expect(readsTheShell()).toBe('Trykk Cmd + / for å hoppe hit');
+
+    vi.doUnmock('../../layout/shortcutModifier');
+    vi.resetModules();
+  });
+
   it('names Cmd on a Mac', () => {
     onPlatform('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15');
     expect(shortcutHint()).toBe('Trykk Cmd + / for å hoppe hit');

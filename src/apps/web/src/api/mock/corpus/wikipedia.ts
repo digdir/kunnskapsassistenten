@@ -2,38 +2,15 @@ import type { SourceDocument } from '../../../model';
 import type { CorpusDocument } from './index';
 
 /**
- * A second corpus for mock mode, so switching corpus can be seen and measured.
- *
- * **Everything here is invented.** That is the difference between this file
- * and `kudos-korpus.json` beside it: the Kudos corpus is real metadata and
- * real summaries, fetched and committed as the record of what Kudos served,
- * and nothing in it is generated. This one is written by us to stand in for a
- * corpus of Wikipedia articles, because mock mode had one corpus and a
- * chooser with one entry draws nothing — so corpus switching could not be
- * seen in mock, or measured in e2e (KA CC on #129).
- *
- * It is written in TypeScript rather than as a second JSON on purpose. A JSON
- * file in this folder reads as a fetched record, and a fabricated one sitting
- * next to a real one under the same extension is exactly the kind of thing
- * somebody later mistakes for data.
- *
- * The articles are modelled on the NorQuAD corpus the live stack holds —
- * `norquad-docs`, 351 Norwegian Wikipedia articles — so the shape a reader
- * meets in mock is the shape live has. Eight, not 351: enough for the facets
- * to have something to count and the list to have something to show.
+ * A second, invented corpus, so corpus switching can be seen in mock and measured in e2e. In
+ * TypeScript, not JSON, so it is never mistaken for fetched data like `kudos-korpus.json`.
+ * Modelled on the live stack's NorQuAD corpus (`norquad-docs`), but only eight articles.
  */
 export const WIKIPEDIA_MOCK_KEY = 'norquad-mock';
 
 /**
- * Articles carry no `documentType` the way a Kudos report does, so the type
- * is «Artikkel» throughout and the facet is honest about being one value
- * wide. The organisation is the encyclopedia itself, and the year is the
- * article's own subject year where it has one.
- *
- * `url` is empty and that is deliberate: these documents do not exist, and a
- * link to a Wikipedia article whose text we invented would send a reader off
- * to check a quotation they would not find. `sourceFrom` is not used for
- * them; the sources below carry no `kudosUrl` at all.
+ * One type («Artikkel») and one organisation (Wikipedia). `url` is empty on purpose: the articles
+ * do not exist, and a link would send the reader to check a quotation they would not find.
  */
 export const wikipediaDocuments: CorpusDocument[] = [
   {
@@ -119,14 +96,9 @@ export const wikipediaDocuments: CorpusDocument[] = [
 ];
 
 /**
- * The one canonical answer this corpus gives, with its sources.
- *
- * One and not eleven: what this corpus is for is showing that a switch
- * changes the answer, the sources and the suggestions. A second scripted
- * conversation would be a second thing to keep true.
- *
- * The markers are 1-indexed into the flat excerpt list below, the same rule
- * the Kudos answer follows.
+ * The one canonical answer this corpus gives. One is enough to show that a
+ * switch changes the answer, sources and suggestions. Markers index the flat
+ * excerpt list below, as for Kudos.
  */
 export const WIKIPEDIA_MOCK_ANSWER = `# Artikler i dette korpuset
 
@@ -151,8 +123,7 @@ export const wikipediaMockSources: SourceDocument[] = [
     documentType: 'Artikkel',
     organisation: 'Wikipedia',
     year: 2010,
-    // No `url` and no `kudosUrl`: the article is invented, and a link would
-    // send the reader to check a quotation that is not there.
+    // No `url` or `kudosUrl`: the article is invented.
     excerpts: [
       {
         id: 'wiki-vinter-ol-2010-1',

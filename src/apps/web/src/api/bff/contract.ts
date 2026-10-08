@@ -1,25 +1,6 @@
-/**
- * The wire format between the browser and the BFF in
- * digdir/kunnskapsassistenten, as that server writes it.
- *
- * Copied from `src/packages/contract/src/index.ts` in digdir/kunnskapsassistenten,
- * branch `feat/ny-klient` (`9172aeb`), and only the parts this client reads.
- * A copy and not a dependency, because the package is not published: the day
- * this client moves into that repo as `apps/web`, the import replaces this
- * file (src/decisions/0005-client-behind-the-bff.md).
- *
- * The shapes are the package's, under names with `Bff` in front, so that
- * import is a list of `Source as BffSource` and nothing else changes. One
- * field is here and not there: `sources` on `BffConversationDetail`, which
- * the BFF on that branch sends and the package does not declare yet. The same
- * goes for `BffModels` (`{ agents? }` around `GET /api/models`) and `BffMe`
- * (`{ tool? }` from `GET /api/me`): the package has no types for either, so
- * they stay here when the rest becomes an import.
- *
- * The `{ conversations }` around the list is not in the package; it is read
- * off `apps/server/src/server.ts` and checked against a running BFF on
- * 2026-09-28 — see the fixtures beside this file.
- */
+// The BFF wire format, copied from `src/packages/contract/src/index.ts` in
+// digdir/kunnskapsassistenten (branch `feat/ny-klient`) under `Bff` names; a copy because the
+// package is unpublished (src/decisions/0005). Types the package lacks say so where they are.
 
 import type { FilterDimension } from '../../model';
 
@@ -27,15 +8,7 @@ export interface BffSource {
   docNum: string;
   title: string;
   url: string;
-  /**
-   * 1-based, and ONE PER CHUNK, which is what `[N]` in the answer counts.
-   *
-   * It used to be one per document, with a document's chunks joined into a
-   * single excerpt. The two only agreed when every document gave exactly one
-   * chunk: measured against kudos-full 2026-09-29, a question returned eight
-   * chunks of the same document and the answer cited `[1]`..`[8]`, while the
-   * BFF offered one source with marker 1.
-   */
+  /** 1-based and one per CHUNK, which is what `[N]` in the answer counts. */
   marker: number;
   /** The chunk this marker points at, when the backend named it. */
   chunkId?: string;
@@ -54,20 +27,9 @@ export type BffTurnEvent =
       maxIterations: number;
       queries?: string[];
     }
-  /**
-   * The agent's own words about what it is doing, one per `agent/thinking`.
-   *
-   * `stage` says which phase the agent is in and nothing about what it did.
-   * That was all the BFF sent, so the panel drew four fixed sentences, while
-   * live — reading the same frames straight from the backend — showed the
-   * agent's reasoning, what each tool call found and how long it took.
-   */
+  /** The agent's own words, one per `agent/thinking`; `stage` only names the phase. */
   | { type: 'thinking'; reasoning: string }
-  /**
-   * One tool call, as `agent/turn-completed` reported it. One per call and
-   * not per frame: a frame carries several, and three `read_chunks` in a row
-   * is ordinary.
-   */
+  /** One per tool call, not per `agent/turn-completed` frame, which can carry several. */
   | {
       type: 'tool-call';
       tool: string;
@@ -106,24 +68,23 @@ export interface BffAgentOption {
 }
 
 /**
- * `GET /api/models`. `{ models: [] }` when the backend said no and
- * `{ agents: [] }` when it could not be reached, so both mean none.
- *
- * Calling it is also what makes the BFF accept a `model` at all: it lets
- * through only the tools the last call listed (`setAllowedTools` in its
- * `mcp.ts`), and answers with its default for anything else.
+ * `GET /api/models`, not in the package. `{ models: [] }` and `{ agents: [] }` both mean none.
+ * Calling it also sets which `model` values the BFF accepts (`setAllowedTools` in its `mcp.ts`).
  */
 export interface BffModels {
   agents?: BffAgentOption[];
 }
 
-/** The part of `GET /api/me` read for the agents: the tool it answers with by default. */
+/** `GET /api/me`, not in the package. `tool` is the tool the BFF answers with by default. */
 export interface BffMe {
   tool?: string;
   /** Who is signed in, as the BFF names them to the backend. */
   userId?: string;
 }
 
+/**
+ * `GET /api/conversations` wraps these in `{ conversations }`, which the package does not declare.
+ */
 export interface BffConversationSummary {
   id: string;
   topic: string;
@@ -136,6 +97,8 @@ export interface BffMessage {
   role: 'user' | 'assistant' | 'system';
   text: string;
   created: number;
+  /** A turn the backend stored as failed (digdir/digdir-headless-rag#22); the text is empty. */
+  failed?: boolean;
 }
 
 /** `GET /api/conversations/:id`. */
@@ -143,11 +106,7 @@ export interface BffConversationDetail {
   conversation: BffConversationSummary;
   messages: BffMessage[];
   /**
-   * The LAST answer's sources, kept in the BFF's memory. Empty after a
-   * restart, and never there for the earlier answers.
-   *
-   * Not in the package's `ConversationDetail`, but the BFF on `feat/ny-klient`
-   * sends it (`sourceStore.recall` in `apps/server/src/server.ts`).
+   * The last answer's sources, from the BFF's memory (gone after a restart). Not in the package.
    */
   sources?: BffSource[];
   /** The filter the thread was started with. The BFF holds it for the thread. */
@@ -155,15 +114,8 @@ export interface BffConversationDetail {
 }
 
 /**
- * One entry of `GET /api/facets`.
- *
- * `id` and `valueType` come from the BFF's `KA_FILTER_FIELDS` (D16, the pod's
- * `bff/filterkjede`). That BFF sends only the fields it has an id for, so the
- * package has `id` as required, and so does this copy.
- *
- * The BFF on `8639267` predates it and sends no `id`. `fieldsFromFacets`
- * still checks for one, and without it the field names come from this build
- * (src/decisions/0006).
+ * One entry of `GET /api/facets`. `id` and `valueType` come from the BFF's `KA_FILTER_FIELDS`;
+ * an older BFF sends no `id`, so `fieldsFromFacets` still checks (src/decisions/0006).
  */
 export interface BffFacet {
   /** Which of the three dimensions. */
@@ -198,8 +150,8 @@ export interface BffFilterInvalidValue {
 }
 
 /**
- * `400` from `POST /api/ask` when the filter has a key that is not one of the
- * corpus's field names (`field` in `/api/facets`), such as a dimension id.
+ * `400` from `POST /api/ask` when the filter has a key that is not one of the corpus's field names
+ * (`field` in `/api/facets`), such as a dimension id.
  */
 export interface BffFilterUnknownField {
   error: string;

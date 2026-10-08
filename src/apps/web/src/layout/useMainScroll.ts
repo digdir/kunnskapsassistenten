@@ -2,11 +2,7 @@ import { use, useCallback, type RefObject } from 'react';
 import { MainScrollContext } from './scrollContext';
 
 export type MainScroll = {
-  /**
-   * The scrolling element in the main slot. Read `ref.current` in an effect
-   * or a handler, never during render: it is null until the shell is mounted,
-   * and reading it while rendering will not re-render when it changes.
-   */
+  /** The main slot's scrolling element. Read `current` in effects or handlers, never in render. */
   ref: RefObject<HTMLElement | null>;
   /** Scrolls the main slot to the bottom. Does nothing if it is not mounted. */
   scrollToBottom: (behavior?: ScrollBehavior) => void;

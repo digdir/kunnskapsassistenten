@@ -1,21 +1,10 @@
 import { CHUNK_ID, MAX_EXCERPT_IDS } from '../../../shared/excerpts.ts';
 import type { SourceDocument } from '../../model';
 
-/**
- * The text of an answer's chunks, from our own server's `/api/excerpts`
- * (server/excerpts.ts, src/decisions/0008).
- *
- * The MCP answer names its chunks and leaves their text out, so every excerpt
- * in live arrived with an empty `text` and nothing saying why — the sources
- * panel drew the heading path and a blank box (issue 86d). This fills
- * the text in, or says it could not be had.
- */
+// The text of an answer's chunks, from our own server's `/api/excerpts` (src/decisions/0008):
+// the MCP answer names its chunks but leaves their text out.
 
-/**
- * Long enough for the server's own 5 s towards Typesense, and a little more:
- * the server's 502 is the answer that should arrive, and this is the backstop
- * for a server that does not answer at all.
- */
+/** A little over the server's own 5 s towards Typesense, so its 502 arrives first. */
 export const EXCERPT_TIMEOUT_MS = 6_000;
 
 /** One request, or undefined when it failed. */
@@ -27,8 +16,8 @@ async function fetchBatch(
   timeoutMs: number,
 ): Promise<Map<string, string> | undefined> {
   const query = new URLSearchParams({ dataset, ids: ids.join(',') });
-  // The caller's signal and a timeout, as one. By hand rather than with
-  // `AbortSignal.any`, which the test environment does not have.
+  // The caller's signal and a timeout, as one. By hand rather than with `AbortSignal.any`, which
+  // the test environment does not have.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const stop = () => controller.abort();
@@ -56,17 +45,8 @@ async function fetchBatch(
 }
 
 /**
- * The texts by chunk id, or undefined when they could not be fetched at all.
- *
- * Undefined and an empty map are told apart on purpose: undefined is «the
- * lookup failed», an empty map is «it answered, and none of these were
- * found». The excerpts come out the same either way — `textUnavailable` —
- * but only the first is worth a line in the console.
- *
- * In requests of `MAX_EXCERPT_IDS`, side by side. headless-rag gives one
- * answer at most that many chunks today, so this is one request; the day it
- * gives more, the answer still gets its text instead of a 400 (KA CC on
- * #227). A request that fails costs only its own ids.
+ * The texts by chunk id, or undefined when the lookup failed (an empty map means none were found).
+ * Requests go in parallel, `MAX_EXCERPT_IDS` ids each, so a failed one costs only its own ids.
  */
 export async function fetchExcerptTexts(
   basePath: string,
@@ -89,10 +69,7 @@ export async function fetchExcerptTexts(
 }
 
 /**
- * Every chunk id in the documents that can be asked for, in order, once each.
- *
- * Checked against the server's own grammar (shared/excerpts.ts). An excerpt
- * whose chunk came with no id has one this client made up, and an id the
+ * Every chunk id the server's grammar accepts (shared/excerpts.ts), in order, once each: an id the
  * server refuses would cost the whole request.
  */
 export function excerptIds(documents: SourceDocument[]): string[] {
@@ -101,12 +78,8 @@ export function excerptIds(documents: SourceDocument[]): string[] {
 }
 
 /**
- * The documents with each excerpt's text filled in, or `textUnavailable` set
- * where there is none: the lookup failed, or this chunk was not found.
- *
- * `textUnavailable` is the model's own word for it, and the sources panel says
- * it in words (source.ts). An empty `text` with no flag is what live used to
- * send, and it drew as a box with nothing in it.
+ * The documents with each excerpt's text filled in, or `textUnavailable` set where there is none,
+ * so the sources panel says so instead of drawing an empty box.
  */
 export function withExcerptTexts(
   documents: SourceDocument[],

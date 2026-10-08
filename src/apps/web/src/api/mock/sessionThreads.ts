@@ -1,42 +1,17 @@
 import type { ThreadCertainty } from '../chatClient';
-import type { Message, Thread, ThreadDetail } from '../../model';
+import { withoutRetriedAttempts, type Message, type Thread, type ThreadDetail } from '../../model';
 
 /**
- * The conversations this browser tab has had, so a reload does not lose them.
- *
- * Reise 12 and 14 in design/brukerreiser-2026-09-15.md, punkt 16 on the
- * ranked list — the worst journey in the app: ask a question on `/`, get an
- * address, reload, and the conversation is gone while the address still looks
- * like it means something. The backend cannot fix it yet (gap 4: a
- * `conversation_id` from `tools/call` is not readable back through
- * `/api/conversations`, API-bestilling A6), so the mock does what a backend
- * with a thread API would do, and the live client keeps saying the truth.
- *
- * `sessionStorage` and not `localStorage`, on purpose. This is a stand-in for
- * a server, not a record: it lives as long as the tab, it is not shared with
- * other tabs, and it goes away when the browser is closed — which is the
- * honest lifetime for something that exists because the real store is
- * missing. It also means a fixture corpus cannot slowly fill a reader's disk
- * with answers they never asked to keep.
- *
- * Only the turns produced HERE are stored. A fixture thread the reader asked
- * a follow-up in keeps its fixture messages in code and gets the new turn
- * appended on read, so the same answer is never written down twice.
- *
- * Every access is guarded the same way the colour scheme is: storage throws
- * outright in Safari's private mode and with site data blocked, and the quota
- * is finite. A remembered conversation is never worth a blank page, so a bad
- * or full store simply means the app behaves as it did before this existed.
+ * This tab's conversations, so a reload keeps them as a backend with a thread
+ * API would. `sessionStorage`: a stand-in for a server, not a record. Only turns
+ * made here are stored, and any storage error just means they are forgotten.
  */
 
 export const SESSION_STORAGE_KEY = 'ka.mock.threads.v1';
 
 /** One conversation, as it is written down. */
 type StoredThread = {
-  /**
-   * Identity and title. For a fixture thread, only `updatedAt` is used — and
-   * the title, once the reader has given it a new one.
-   */
+  /** Identity and title. For a fixture thread, only `updatedAt` and a new title are used. */
   thread: Thread;
   /** The turns this tab produced, oldest first. Fixture turns are not here. */
   messages: Message[];
@@ -48,15 +23,8 @@ type StoredThread = {
 
 type Store = Record<string, StoredThread>;
 
-/**
- * Which thread the next answer belongs to.
- *
- * Module state rather than an instance field, because there is more than one
- * client instance in the running app — the shell builds one to read the
- * thread, the chat view builds another to ask questions — and they have to
- * agree about which conversation is on screen. A mock is a stand-in for one
- * server, so it has one session.
- */
+// Module state, not an instance field: the shell and the chat view each build a client, and
+// they must agree on which conversation is on screen.
 let openThreadId: string | undefined;
 
 function read(): Store {
@@ -76,31 +44,14 @@ function write(store: Store): void {
   try {
     sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(store));
   } catch {
-    // Out of quota, or storage blocked. The conversation is still on screen;
-    // it just will not survive the reload.
+    // Out of quota, or storage blocked. It just will not survive a reload.
   }
 }
 
 /**
- * Remember a thread, and make it the one the next answer is filed under.
- *
- * Called by the shell for both kinds of thread: the one it just minted for a
- * question asked on `/`, and the one it read from `/threads/:threadId`. An
- * entry that exists keeps its messages — opening a thread is not the same as
- * emptying it.
- *
- * `certainty` is the caller saying how much of the thread is real. The shell
- * can open one before it has read it — a question asked while `/threads/:id`
- * is still loading has to be filed somewhere — and then it is sure of the id
- * and stands in for the rest. A stand-in only makes sure there is somewhere
- * to file the answer; it never writes over what is already here, and it never
- * keeps the real thread from landing a moment later.
- *
- * Told rather than worked out. Keeping whatever was written FIRST looks like
- * the same rule and is not: in that one gap it is the stand-in that writes
- * first, so the conversation would have ended up named after the newest
- * question asked in it, with the real title arriving 700 ms too late to get in
- * (KA CC on #153).
+ * Remember a thread and file the next answer under it; an existing entry keeps
+ * its messages. With `certainty: 'id-only'` (opened before it was read) it never
+ * overwrites what is stored, or the thread would be named after a later question.
  */
 export function openMockThread(thread: Thread, certainty: ThreadCertainty = 'known'): void {
   openThreadId = thread.id;
@@ -119,9 +70,8 @@ export function openMockThread(thread: Thread, certainty: ThreadCertainty = 'kno
 
 /**
  * A new title, the way the BFF's `PUT /api/conversations/:id` gives one.
- *
- * Written into the entry whether or not this tab made the thread: a fixture
- * thread has no entry until something happens to it, and this is something.
+ * Written even for a fixture thread, which has no entry until something
+ * happens to it.
  */
 export function renameMockThread(thread: Thread, title: string): void {
   const store = read();
@@ -148,17 +98,8 @@ export function deleteMockThread(thread: Thread): void {
   write(store);
 }
 
-/**
- * An id for a conversation the mock owns, told apart from the shell's at a
- * glance.
- *
- * The mock used to file conversations under the id the SHELL made up, and
- * that is why nobody saw brukerblikk 8's finding for a week: live's backend
- * names its own conversations, so mock and live disagreed about precisely the
- * thing that was broken, and a test could pass in mock while the address was
- * dead in live. Now both name their own, and the prefix is there so a failing
- * assertion says which side minted the id it is looking at.
- */
+// Ids the mock mints itself, as the live backend does. The prefix tells a failing assertion
+// which side minted it.
 let mockThreadCounter = 0;
 
 export function newMockThreadId(): string {
@@ -171,25 +112,14 @@ export type MockTurn = {
   question: string;
   /** The answer's own id, the one the `done` event reported. */
   answerId: string;
-  /**
-   * The answer, carrying its own `createdAt`.
-   *
-   * The time comes with the turn rather than being taken here, because the
-   * same turn is also on screen and the two have to say the same thing. They
-   * did not: the message was stamped when its placeholder was made and the
-   * stored copy when it was written down, which is the whole length of the
-   * answer apart — «14:32» on screen, «14:32:15» after a reload, one answer
-   * that had not changed (KA CC on #71).
-   */
+  /** The answer, with its own `createdAt` so screen and store agree after a reload. */
   answer: Omit<Message, 'id' | 'role'>;
 };
 
 /**
- * Write a finished turn into the open thread.
- *
- * A no-op when no thread is open, which is the case in a unit test that calls
- * `ask()` on its own: nothing has said where the answer belongs, so there is
- * nowhere to put it and nothing to guess.
+ * Write a finished turn into the open thread. A no-op when no thread is open,
+ * as in a unit test that calls `ask()` on its own: there is nowhere to put it
+ * and nothing to guess.
  */
 export function recordMockTurn(turn: MockTurn): void {
   if (!openThreadId) return;
@@ -216,11 +146,9 @@ export function recordMockTurn(turn: MockTurn): void {
 }
 
 /**
- * The thread list, with this tab's own conversations mixed in.
- *
- * A thread the fixtures already know keeps its fixture entry but takes the
- * stored `updatedAt`, so a follow-up moves it to «I dag» in the grouping. One
- * this tab made is appended; the list view sorts by `updatedAt` itself.
+ * The thread list, with this tab's own conversations mixed in. A fixture
+ * thread takes the stored `updatedAt`, so a follow-up moves it to «I dag».
+ * The list view sorts by `updatedAt` itself.
  */
 export function mockThreadList(fixtures: Thread[]): Thread[] {
   const store = read();
@@ -247,10 +175,7 @@ export function mockThreadList(fixtures: Thread[]): Thread[] {
 
 /**
  * One thread, with this tab's turns appended to whatever the fixtures hold.
- *
- * `fixture` is what the fixtures answered, null when they know nothing about
- * the id. A thread that is in neither place is still null, which is what
- * makes «Fant ikke tråden» reachable.
+ * Null when neither knows the id, which makes «Fant ikke tråden» reachable.
  */
 export function mockThreadDetail(id: string, fixture: ThreadDetail | null): ThreadDetail | null {
   const stored = read()[id];
@@ -262,7 +187,7 @@ export function mockThreadDetail(id: string, fixture: ThreadDetail | null): Thre
     ...base,
     updatedAt: stored.thread.updatedAt,
     ...(stored.renamed ? { title: stored.thread.title, titleFromQuestion: false } : {}),
-    messages: [...base.messages, ...stored.messages],
+    messages: withoutRetriedAttempts([...base.messages, ...stored.messages]),
   };
 }
 

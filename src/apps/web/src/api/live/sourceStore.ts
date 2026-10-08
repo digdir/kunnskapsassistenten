@@ -1,42 +1,15 @@
 import type { RetrievalDetails, ThinkingStep, ThinkingStepKind } from '../../model';
 import type { McpChunk } from './mcp';
 
-/**
- * What each answer was built from and how, kept in this browser, so the
- * sources and «Fremgangsmåte» come back when the page is loaded again
- * (runde 3, ekstra 2, and issue 88; src/decisions/0008).
- *
- * The backend keeps the answer's text and nothing else: a thread read back
- * has `chunks: []` on every message (headless-rag #21), and no steps at all.
- * So the one record of them is what the live answer carried, and this is
- * where it is written down.
- *
- * Only what the answer itself carried is kept. For the chunks: the id, the
- * document's number, its title, its address and the heading path. No passage
- * from any document is written to the browser; the text is looked up again
- * from the same route a fresh answer uses (excerpts.ts), so a fresh answer and
- * one read back cannot show two texts for one chunk. For the steps: what the
- * stream said, which is the agent's own words about what it did, the search
- * strings it ran, the numbers of hits and documents, and how long it thought.
- *
- * Keyed by the conversation and by the answer's text, because nothing else
- * survives: the live stream names its answer `msg-<time>`, and the store gives
- * the same answer an id of its own. The stored text was measured to be the
- * text `tools/call` returned, character for character (30.09, one answer).
- *
- * Everything here fails quietly. Storage that is full, blocked or corrupt
- * leaves the reader where they were before this existed — sources gone after
- * a reload — and never costs them an answer.
- */
+// What each answer was built from and how, kept in this browser because the backend keeps only
+// the answer's text (headless-rag #21). No passage is stored, and everything fails quietly.
+// Keyed by thread and answer text, since nothing else survives. See src/decisions/0008.
 
 export const SOURCES_STORAGE_KEY = 'ka.sources.v1';
 
 /**
- * The most this store takes, in characters of JSON. A chunk is about 380
- * (KA CC measured 5308 for 14 on #227), an answer at most 20 chunks and its
- * steps, so this is well over a hundred answers at their largest and many
- * more as they come. Browsers give an origin about five million, and the rest
- * of this app needs some of it.
+ * Characters of JSON: well over a hundred answers at their largest, and well under the origin's
+ * limit of about five million, which the rest of the app shares.
  */
 export const MAX_STORED_CHARS = 1_000_000;
 
@@ -44,12 +17,8 @@ export const MAX_STORED_CHARS = 1_000_000;
 export type StoredChunk = Pick<McpChunk, 'chunk_id' | 'doc_num' | 'title' | 'url' | 'metadata'>;
 
 /**
- * What is kept of one answer: the fields of `Message` the backend forgets,
- * under the same names, so restoring one is copying it across.
- *
- * Every field but `chunks` is optional, and absent means «the stream did not
- * say», never zero: an answer from before the steps were kept has none, and
- * draws as it did then.
+ * The fields of `Message` the backend forgets, under the same names. Absent means «the stream did
+ * not say», never zero.
  */
 export type StoredAnswer = {
   /** In the order the answer numbered them. */
@@ -80,13 +49,8 @@ type StoredThread = {
 type Store = { threads: Record<string, StoredThread> };
 
 /**
- * A short, stable name for an answer's text: its length and an FNV-1a hash of
- * it. Trimmed first, because whitespace at the ends is the one difference a
- * store could introduce without changing the answer.
- *
- * Not a secret and not a guard against anyone: two answers in one thread with
- * the same length and hash would share their sources, and those are the odds
- * of a 32-bit collision among a handful of strings.
+ * The answer text's length and FNV-1a hash, trimmed first. Not a guard: two answers in one thread
+ * with the same length and hash would share their sources.
  */
 export function answerFingerprint(text: string): string {
   const trimmed = text.trim();
@@ -194,10 +158,7 @@ function read(): Store {
   }
 }
 
-/**
- * Drops the threads used longest ago until the store fits `limit`. The thread
- * just written is the newest, so it is the last to go.
- */
+/** Drops the least recently used threads until the store fits; the newest goes last. */
 function trimmed(store: Store, limit: number): string {
   let json = JSON.stringify(store);
   const oldestFirst = Object.entries(store.threads)
@@ -210,10 +171,7 @@ function trimmed(store: Store, limit: number): string {
   return json;
 }
 
-/**
- * Writes the store, and when the browser says it is full anyway, tries once
- * more with half the room. Never throws.
- */
+/** Writes the store, retrying once with half the room when the browser says it is full. */
 function write(store: Store): void {
   try {
     localStorage.setItem(SOURCES_STORAGE_KEY, trimmed(store, MAX_STORED_CHARS));
@@ -221,18 +179,14 @@ function write(store: Store): void {
     try {
       localStorage.setItem(SOURCES_STORAGE_KEY, trimmed(store, MAX_STORED_CHARS / 2));
     } catch {
-      // Blocked or full. The reader loses their sources at the next reload,
-      // which is what happened before this store existed.
+      // Blocked or full: the reader loses the sources at the next reload, and nothing worse.
     }
   }
 }
 
 /**
- * Writes down what one answer was built from and how. An answer with neither
- * chunks nor steps writes nothing, and there is nothing to bring back for it.
- *
- * Every value is put through the same check as on the way in from storage,
- * so what is written is exactly what can be read back.
+ * Stores what one answer was built from, through the same checks as reading, so what is written
+ * can be read back. Nothing is stored for an answer with neither chunks nor steps.
  */
 export function rememberAnswer(
   threadId: string,
@@ -263,9 +217,8 @@ export function rememberAnswer(
 }
 
 /**
- * What was written down for one thread's answers, by fingerprint, or
- * undefined when there is nothing. Opening a thread counts as using it, so a
- * thread the reader keeps coming back to is not the one dropped.
+ * One thread's stored answers by fingerprint, or undefined. Opening a thread counts as using it,
+ * so it is not the one dropped.
  */
 export function recallThread(
   threadId: string,
@@ -281,13 +234,8 @@ export function recallThread(
 }
 
 /**
- * Forgets everything this store holds, for «Logg ut» (session.ts).
- *
- * The store is per browser and not per user, and part of it comes of the
- * reader's own questions: the search words and the agent's plan
- * (src/decisions/0008, «What the store holds»). The next person to sign
- * in on the same browser should not find them. Fails quietly, like the rest
- * of this file: storage that cannot be reached has nothing to forget.
+ * Forgets everything, for «Logg ut» (session.ts): the store is per browser, and part of it comes
+ * from the reader's own questions (src/decisions/0008).
  */
 export function forgetAllAnswers(): void {
   try {

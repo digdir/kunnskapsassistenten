@@ -8,27 +8,13 @@ export type RenameThreadProps = {
   onCancel: () => void;
 };
 
-/**
- * The row, while the reader gives the thread a new name.
- *
- * In the row rather than in a dialog: the name is short, the reader is
- * looking at the row, and a dialog would cover the list they are naming a
- * thread in. «Lagre» and «Avbryt» are on screen, and not only Enter and
- * Escape, because a keyboard shortcut nobody can see is not an interface —
- * the keys work as well, for whoever expects them.
- *
- * A blur does nothing. Saving on blur, as a click elsewhere, would rename the
- * thread to whatever half a name was typed when the reader went to check
- * something; cancelling on blur would throw away a name they were about to
- * save. The field waits for one of the two buttons.
- */
+/** The row while renaming, in place rather than in a dialog over the list. */
 export function RenameThread({ thread, onSave, onCancel }: RenameThreadProps) {
   const [title, setTitle] = useState(thread.title);
   const [empty, setEmpty] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Into the field with the old name selected, so typing replaces it and an
-  // arrow key keeps it: the two things a reader renaming a thread does next.
+  // Old name selected: typing replaces it, an arrow key keeps it.
   useEffect(() => {
     inputRef.current?.focus();
     inputRef.current?.select();
@@ -42,15 +28,13 @@ export function RenameThread({ thread, onSave, onCancel }: RenameThreadProps) {
       inputRef.current?.focus();
       return;
     }
-    // The same name is not a change, and no request is made for it.
     if (trimmed === thread.title) onCancel();
     else onSave(trimmed);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Escape') return;
-    // Stop here: in the drawer the panel is a dialog, and Escape is its own
-    // close request as well (the same collision RowOverlay handles).
+    // Stop here: in the drawer the panel is a dialog that Escape would close.
     event.preventDefault();
     event.stopPropagation();
     onCancel();
@@ -58,6 +42,7 @@ export function RenameThread({ thread, onSave, onCancel }: RenameThreadProps) {
 
   return (
     <form className="threads-view__rename" onSubmit={save} noValidate>
+      {/* No blur handler: saving would keep half a name, cancelling lose a whole one. */}
       <Textfield
         ref={inputRef}
         label="Nytt navn på tråden"
@@ -70,6 +55,7 @@ export function RenameThread({ thread, onSave, onCancel }: RenameThreadProps) {
         onKeyDown={onKeyDown}
         error={empty ? 'Tråden må ha et navn.' : undefined}
       />
+      {/* Visible buttons, since Enter and Escape alone are a shortcut nobody sees. */}
       <div className="threads-view__rename-actions">
         <Button type="submit" data-size="sm">
           Lagre

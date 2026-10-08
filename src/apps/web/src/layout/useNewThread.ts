@@ -6,33 +6,9 @@ import { useDrawerMode } from './useDrawerMode';
 import type { Slot } from './viewModel';
 
 /**
- * «Ny tråd» as the whole action, and not only the link to `/` (issue
- * 114): an empty conversation, an empty filter, the drawer out of the way and
- * the keyboard in the compose field. The link still does the navigating, so
- * it stays a real link — middle-click and «open in new tab» work, and a
- * screen reader says «lenke». The conversation is emptied by the navigation
- * itself; see the key in ChatSlotView.tsx.
- *
- * The rest is done on the click, before the link navigates:
- *
- *   - The filter is emptied. A new thread starts from the whole corpus, which
- *     is what the reader expects to see (issue 114). The reader's own choice
- *     goes, not only the lock: the lock goes by itself when the thread does.
- *   - An open drawer is closed. Below the drawer breakpoint the list is a
- *     modal over the conversation, and the new one would start behind it.
- *     Only then: beside the answer column the panel is not in the way, and
- *     closing it would be closing something the reader opened.
- *   - The compose field is asked for, and the chat slot gives it focus when
- *     the new conversation has mounted — after the drawer has shut and the
- *     browser has handed focus back to the rail button. See
- *     `takeComposerFocusRequest`.
- *
- * A click that opens a new tab or window changes nothing here: this page is
- * not the one the reader is going to.
- *
- * Both contexts are read without requiring them, so a view mounted on its own
- * — every view test — keeps working; there is simply nothing to empty or to
- * close there.
+ * «Ny tråd» as the whole action (digdir/kunnskapsassistenten#114). The link still navigates, so
+ * middle-click and «open in new tab» work. A plain click also empties the filter, closes an open
+ * drawer (it would cover the new thread) and asks for focus in the compose field.
  */
 export function useNewThread(): (event: MouseEvent<HTMLAnchorElement>) => void {
   const filter = use(FilterContext);
@@ -62,19 +38,9 @@ export function useNewThread(): (event: MouseEvent<HTMLAnchorElement>) => void {
 
 const sidebars: Slot[] = ['primary-sidebar', 'secondary-sidebar'];
 
-/**
- * Whether «Ny tråd» asked for the compose field, and the answer only once.
- *
- * A module variable and not router state. State lives in `history.state`,
- * which survives a reload, and the next page load would take the focus away
- * from the skip link. Nothing here outlives the page, which is right: the
- * request is about the navigation that is happening now.
- *
- * **Once** is the whole contract. Every conversation asks on mount, and only
- * the one the link navigated to is allowed a yes — a thread opened from the
- * list a moment later would otherwise pull the keyboard out of the row the
- * reader was standing in.
- */
+// Whether «Ny tråd» asked for the compose field, answered once: only the conversation the link
+// opened may take focus. A module variable, not `history.state`, which survives a reload and
+// would steal focus from the skip link.
 let composerFocusRequested = false;
 
 export function takeComposerFocusRequest(): boolean {
@@ -83,34 +49,15 @@ export function takeComposerFocusRequest(): boolean {
   return requested;
 }
 
-/**
- * How many times «Ny tråd» has been clicked in this page load, or the open
- * thread deleted.
- *
- * The chat slot keys `/` on this number, so those give a new conversation
- * and nothing else does. It used to key on `location.key`, which is a fair
- * reading of «a navigation to `/` is a new front page» — but it counts
- * navigations nobody asked a new conversation of. Closing the settings menu
- * is one: it is `navigate({ hash: '' }, { replace: true })`, which mints a new
- * `location.key`, so a half-written question on `/` was wiped by opening and
- * shutting a dialog (KA CC on #208, with #203 in).
- *
- * A counter and not a boolean, because two «Ny tråd» clicks in a row are two
- * new conversations and a boolean would make the second one a no-op.
- *
- * Subscribable rather than read bare: a module variable changing is not
- * something React can see, and the click that bumps it has to re-render the
- * slot that reads it. Same shape as `subscribeToCorpus` in src/api/corpus.ts.
- */
+// How often «Ny tråd» was clicked or the open thread deleted; the chat slot keys `/` on it. Not
+// `location.key`: closing a dialog navigates too, and would wipe a half-written question.
+// Subscribable, because the click has to re-render the slot.
 let newThreads = 0;
 const listeners = new Set<() => void>();
 
 /**
- * A new conversation in the chat slot, and nothing else of «Ny tråd».
- *
- * For deleting the thread on screen (ThreadsView.tsx). A thread started on
- * `/` has its address from `history.replaceState`, so the router still says
- * `/` and navigating there changes nothing: the key has to move by this.
+ * A new conversation in the chat slot, for deleting the thread on screen: a thread started on `/`
+ * still has `/` in the router, so navigating there changes nothing.
  */
 export function askedForNewThread(): void {
   newThreads += 1;

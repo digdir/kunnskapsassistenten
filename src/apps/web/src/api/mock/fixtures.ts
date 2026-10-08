@@ -14,33 +14,13 @@ import { daysAgo } from './clock';
 import { scriptedThreads } from './conversations/threads';
 import { sourceFrom } from './conversations/types';
 
-/**
- * Norwegian fixtures for development without a backend.
- *
- * The text is taken from the September 2026 specifications in
- * design/omraader/september-2026/: the NKOM answer, the thread titles from
- * the thread list, the facet values and counts from the filter, and the
- * excerpt headings from the sources panel.
- *
- * Two deliberate departures from Figma's sample data:
- *
- *   1. The search keywords in Figma («Datadeling kunstig intelligens» …)
- *      belong to a different question than the NKOM answer they sit next to.
- *      The keywords here match the question instead, so the mock is coherent.
- *   2. Figma repeats «Årsrapport NKOM 2024» seven times in the document list.
- *      Distinct documents here, per answer 58.
- */
-
-/** Timestamps relative to now, so the thread grouping has something to group. */
+// Fixtures for development without a backend. Unlike Figma's sample data, the keywords match
+// the NKOM question and the documents are distinct.
 
 const NKOM_QUESTION =
   'Hvordan jobber Nasjonal kommunikasjonsmyndighet med måloppnåelse, og hvor kommer målene fra?';
 
-/**
- * The answer, as markdown. Heading plus paragraph, with a list and a simple
- * table inside the flow (answer 14). The `[n]` markers are 1-indexed into
- * `nkomCitations`, the same convention the backend uses.
- */
+/** The answer as markdown; `[n]` is 1-indexed into `nkomCitations`, as the backend does. */
 const NKOM_ANSWER = `# Måloppnåelse i Nasjonal kommunikasjonsmyndighet
 
 Nkom styres mot mål som settes i tildelingsbrevet og gjøres opp i
@@ -82,21 +62,8 @@ Merk at årsrapporten i dette korpuset er for 2025 og tildelingsbrevet for
 2026. De hører til hver sin runde av syklusen, så de beskriver den samme
 styringsmodellen og ikke det samme året.`;
 
-/**
- * The document the answer cites that is NOT in Kudos, and deliberately so.
- *
- * A corpus can be a folder as well as Kudos, and then the backend returns
- * `url: null` — the panel has to draw an excerpt with nowhere to go. Nothing
- * in the fetched corpus has a null URL (checked: 0 of 938), so the case can
- * only be covered by a document written here.
- *
- * Which also settles what may be invented. The text below is ours, and it
- * says so by belonging to a document that makes no claim to be in Kudos:
- * there is no link to be wrong and no real document to misquote. That is the
- * difference from what this fixture used to do, which was to put invented
- * text under invented Kudos addresses — eight links, all 404, measured by #4
- * in design/kudos-lenker-og-usikre-2026-09-16.md.
- */
+// Not in Kudos, on purpose: covers the folder-corpus `url: null` case, which no fetched document
+// has. Its text is ours, so it claims no Kudos address; never put invented text under one.
 const nkomInstruks: SourceDocument = {
   id: 'nkom-instruks-oekonomistyring',
   title: 'Instruks for økonomi- og virksomhetsstyring i Nkom',
@@ -116,32 +83,9 @@ const nkomInstruks: SourceDocument = {
 };
 
 /**
- * What the answer builds on: two real Kudos documents and one that is not in
- * Kudos at all.
- *
- * The two real ones go through `sourceFrom`, the same machinery the scripted
- * conversations use, so title, type, organisation, year and the Kudos URL all
- * come from the fetched corpus and none of them can drift from it. The
- * excerpts are literal sentences from each document's summary, which is the
- * rule `ExcerptDraft` states and `conversations.test.ts` enforces.
- *
- * These are the only two Nkom documents the corpus holds. The fixture used to
- * show three annual reports — 2021, 2022 and 2023 — and none of them exists:
- * the ids were slugs somebody wrote by hand, so a freely typed question gave
- * eight links that all 404, while a scripted conversation gave nine that all
- * answered 200.
- *
- * The 2025 annual report has no link since 30.09: Kudos answers 404 for its
- * page and for the document in its API, so the corpus carries `urlMissing`
- * instead (DEAD_LINKS in scripts/fetch-mock-corpus.mjs), and the panel says
- * «ingen offentlig lenke». Moving the fixture to a report Kudos still has is
- * for the next fetch of the corpus.
- *
- * No `page` on any excerpt any more. Kudos gives a summary per document and
- * no page for any part of it, the backend's chunk schema has no page either,
- * and `#page=N` only works on the PDF's own address, which the corpus does
- * not carry. A page number written over a sentence lifted from a summary
- * would be a new untruth in place of a broken link.
+ * The only two Nkom documents in the corpus (via `sourceFrom`, so metadata cannot drift) and one
+ * outside Kudos. The 2025 report has no link (Kudos 404, see DEAD_LINKS in
+ * scripts/fetch-mock-corpus.mjs). No `page`: summaries have none, and a made-up one is untrue.
  */
 export const nkomSources: SourceDocument[] = [
   sourceFrom('a1c6feb9-3a47-4889-b049-92adae575b9f', [
@@ -176,19 +120,9 @@ export const nkomSources: SourceDocument[] = [
 ];
 
 /**
- * A source from one of the reader's OWN documents.
- *
- * Built per question rather than fixed, because the title is the file the
- * reader actually uploaded — a fixture cannot know it. `origin: 'user'` is
- * what the sources panel reads to tell it from a Kudos document (#4 asked for
- * it on the model rather than on the title), and there is no `kudosUrl`: it
- * is the reader's own file, and nobody else can open it.
- *
- * The excerpt text says it is mock data IN THE FIXTURE, not in any UI string.
- * Nothing draws this sentence as chrome — it is quoted as if it came out of
- * the document — so the honesty has to be in the words themselves, or a
- * screenshot of the mock would read as a real quotation from the reader's
- * file.
+ * A source from the reader's OWN upload, built per question (the title is the file name), with
+ * `origin: 'user'` and no `kudosUrl`. Its text says it is mock data, or a screenshot would pass
+ * for a real quote.
  */
 export function userDocumentSource(document: UserDocument, citationNumber: number): SourceDocument {
   return {
@@ -218,12 +152,9 @@ export const nkomCitations: Citation[] = nkomSources.flatMap((document) =>
 );
 
 /**
- * «10 treff i 3 dokumenter», as the design writes it.
- *
- * `hitCount` counts what the SEARCH found — 10 relevant chunks — not what the
- * answer cited. The answer used 5 of them, which is why the sources below
- * hold five excerpts and not ten. That gap is normal and worth showing: it is
- * the difference between what was read and what was used.
+ * «10 treff i 3 dokumenter». `hitCount` is what the SEARCH found, not what the
+ * answer cited (five excerpts below): the gap between read and used is normal
+ * and worth showing.
  */
 export const nkomRetrieval: RetrievalDetails = {
   hitCount: 10,
@@ -270,26 +201,13 @@ export const nkomThinkingSteps: ThinkingStep[] = [
   },
 ];
 
-/**
- * The one thread written by hand, and the only one that is not a scripted
- * conversation.
- *
- * It stays because it is the only fixture with `page` on its excerpts — Kudos
- * gives a summary per document and no page for any part of it, so the
- * scripted conversations have none, and this is what keeps the sources
- * panel's page rendering drawn by something. It is also the thread the
- * end-to-end suite opens by name.
- */
+// The one hand-written thread: the only one with a non-Kudos document (`nkomInstruks`), and
+// the end-to-end suite opens it by name.
 const nkomThread: Thread = {
   id: 'nkom-maaloppnaaelse',
   title: 'NKOM måloppnåelse',
-  /*
-   * An hour later than a scripted conversation from the same day, which are
-   * asked at 8 and answered at 9 (conversations/threads.ts). Sharing those
-   * hours put this thread and «Regnskap og bevilgning i DSS» on the same
-   * instant, and two rows at the same instant have no order — the list would
-   * draw them either way round on different runs. Measured 2026-09-16.
-   */
+  // An hour after the scripted conversations (asked at 8, answered at 9), so no two rows share
+  // an instant and the list order is stable.
   createdAt: daysAgo(0, 9),
   updatedAt: daysAgo(0, 10),
   conversationId: 'conv-nkom-1',
@@ -304,16 +222,8 @@ function withoutMessages({ messages, ...thread }: ThreadDetail): Thread {
 }
 
 /**
- * The thread list.
- *
- * Every row has a conversation under it, which it did not until 2026-09-15:
- * the list was twelve titles and one of them had messages, so eleven of the
- * twelve threads a reader could open were empty. The scripted conversations
- * were sitting right there with the whole shape of a real turn — answer,
- * sources, thinking steps, «Fremgangsmåte» — and reachable only by typing the
- * question they answer. Punkt 16 på brukerreise-lista, målt av #4.
- *
- * Sorting is the list view's own business; it orders by `updatedAt`.
+ * The thread list. Every row has a full conversation under it, so no thread
+ * opened from the list is empty. The list view sorts by `updatedAt` itself.
  */
 export const threads: Thread[] = [nkomThread, ...scriptedThreads.map(withoutMessages)];
 
@@ -354,11 +264,7 @@ export function findThread(threadId: string): ThreadDetail | null {
   return { ...thread, messages: messagesByThread[thread.id] ?? [] };
 }
 
-/**
- * The filter dropdowns. Values and counts are the ones drawn in
- * design/omraader/molecules/skjermer/filter.md. The counts are sample data:
- * no backend produces them yet (API-bestilling A2).
- */
+/** The filter dropdowns, with the values the design draws. The counts are sample data. */
 export const facets: FilterFacet[] = [
   {
     dimension: 'documentType',

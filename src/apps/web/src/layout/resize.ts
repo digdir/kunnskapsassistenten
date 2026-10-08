@@ -9,26 +9,9 @@ import {
 } from './viewModel';
 
 /**
- * How wide a panel may be dragged, right now, in this window.
- *
- * Two limits, and both are real:
- *
- *   the model's own floors — 400 for the navigation panel, 336 for the
- *   sources panel — which are the widths the design was drawn for. Neither
- *   has a ceiling of its own since issue 80;
- *
- *   and what is left in the window once the OTHER panel and the answer
- *   column's 640 px floor have had theirs. A drag takes its room from the
- *   answer column and from nothing else. It could take it from the other
- *   panel instead — `fittedWidths` gives the sources panel away first when
- *   the WINDOW runs short — but a reader dragging one edge and watching the
- *   opposite edge move would be watching the app do something they did not
- *   ask for. Widening the navigation panel past what is free means narrowing
- *   the sources panel first, by hand, which is a second deliberate act.
- *
- * The two can cross: at 1440 with both panels open, everything is already on
- * its floor and there is nothing to drag. `min` wins then, and the separator
- * reports a value it cannot move away from, which is the truth.
+ * How wide a panel may be dragged in this window: from its floor up to what is left once the
+ * OTHER panel and the answer column's floor have theirs. A drag takes room only from the answer
+ * column, so the opposite edge never moves. If the limits cross, `min` wins.
  */
 export type WidthRange = { min: number; max: number };
 
@@ -52,13 +35,8 @@ export function clampWidth(width: number, range: WidthRange): number {
 }
 
 /**
- * Which way the pointer has to travel to make this panel wider: away from the
- * answer column.
- *
- * `+1` means «toward the inline end», so a panel that sits before the answer
- * column grows with a rising x and one that sits after it shrinks. Read off
- * `slotOrder` rather than written down per slot, so a layout that puts the
- * sources panel first is not a second place to remember.
+ * Which way the pointer travels to widen this panel: away from the answer column (`+1` is toward
+ * the inline end). Read off `slotOrder`, so reordering the slots needs no change here.
  */
 export function growthDirection(slot: SidebarSlot): 1 | -1 {
   return slotOrder.indexOf(slot) < slotOrder.indexOf('main') ? 1 : -1;

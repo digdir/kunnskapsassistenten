@@ -7,19 +7,8 @@ export type SourcesEmptyState = {
 };
 
 /**
- * Nothing has been asked yet — the untouched front page.
- *
- * This is the only empty state that may say «når du har stilt et spørsmål»,
- * and keeping it apart from the ones below is the point of this file. The
- * panel used to show it after a stopped answer too, which told a reader who
- * had just watched a question being answered that they had not asked one
- * (design/brukerreiser-2026-09-15.md, punkt 7).
- *
- * It names the corpus for the same reason everything else in this panel does:
- * «et dokument på Kudos» over a NorQuAD deployment is a false promise about
- * what the reader is about to search (KA CC on #139). The SELECTED corpus,
- * not an answer's — there is no answer here, that is what this state is — so
- * it is the one place in the panel where the chooser is the right source.
+ * Nothing has been asked yet. The only state that may say «når du har stilt et
+ * spørsmål», and it names the selected corpus, since there is no answer.
  */
 export function noAnswerYet(corpusName: string): SourcesEmptyState {
   return {
@@ -28,17 +17,7 @@ export function noAnswerYet(corpusName: string): SourcesEmptyState {
   };
 }
 
-/**
- * What an answer with no sources means, per status.
- *
- * `streaming` is missing on purpose: an answer still being written is not
- * empty, it is loading, and the view draws `SourcesPlaceholder` for it. The
- * `Exclude` is what makes the compiler say so if anyone adds a status later.
- *
- * The texts avoid claiming more than the frontend knows. «Svaret viser ikke
- * til noen utdrag» is observable; «den fant ingenting» would be a guess about
- * what the search did.
- */
+// Per status, without `streaming`, which is loading; only what the frontend sees.
 const BY_STATUS: Record<Exclude<MessageStatus, 'streaming'>, SourcesEmptyState> = {
   complete: {
     title: 'Ingen kilder til dette svaret',
@@ -59,28 +38,14 @@ const BY_STATUS: Record<Exclude<MessageStatus, 'streaming'>, SourcesEmptyState> 
   },
 };
 
-/**
- * An answer whose excerpts were never stored, which is not an answer without
- * sources.
- *
- * Live mode, measured 2026-09-16: the backend keeps the conversation but not
- * the chunks behind it, so a thread opened from the list has an answer with
- * `[1]`–`[4]` in it and nothing behind them. «Svaret viser ikke til noen
- * utdrag fra dokumentene» is then a sentence the reader can disprove by
- * looking at the answer beside it.
- */
+// Markers, but no stored excerpts: live keeps the conversation, not the chunks.
 const NOT_STORED: SourcesEmptyState = {
   title: 'Kildene er ikke lagret for denne samtalen',
   description:
     'Svaret viser til utdrag, men de ble ikke lagret sammen med samtalen. Still spørsmålet på nytt for å få et svar med kilder du kan åpne.',
 };
 
-/**
- * An answer read back from a store that keeps no sources per answer, with no
- * markers in it. Not the sentence above: there is nothing on screen that
- * «viser til utdrag», and nothing here knows whether the answer had sources.
- * The BFF is such a store; see `Message.sourcesNotStored`.
- */
+// No markers, from a store that keeps no sources (the BFF): unknown, not none.
 const NOT_KEPT: SourcesEmptyState = {
   title: NOT_STORED.title,
   description:
@@ -90,8 +55,7 @@ const NOT_KEPT: SourcesEmptyState = {
 /**
  * @param citationCount how many `[n]` the answer carries, when that is known.
  *   A finished answer that cited something and has no excerpts lost them; one
- *   that cited nothing never had any. Undefined keeps the older wording, so
- *   nothing changes until the chat view starts counting.
+ *   that cited nothing never had any.
  * @param sourcesNotStored the store kept no sources for this answer, so none
  *   is not known to mean none.
  */

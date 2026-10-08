@@ -9,17 +9,7 @@ export type FeatureFlagsDialogProps = {
   onClose: () => void;
 };
 
-/**
- * The hidden menu for feature flags, opened by `#feature-flags`.
- *
- * Built like `SettingsDialog` on purpose, so the two hidden menus open, close
- * and look the same: a modal Designsystemet `Dialog`, mounted only while the
- * hash is there, and a choice that applies on the spot with nothing to save.
- *
- * A `Switch` per flag rather than radios: a flag is on or off, and turning it
- * on is meant to change the page at once, which is what Designsystemet says a
- * switch is for. The label names the trial, not the state.
- */
+/** The hidden flags menu, opened by `#feature-flags`; built like `SettingsDialog`. */
 export function FeatureFlagsDialog({ onClose }: FeatureFlagsDialogProps) {
   const headingId = useId();
 
@@ -58,6 +48,7 @@ function FlagSwitch({ flag }: { flag: (typeof FLAGS)[number] }) {
   const on = useFlag(flag.id);
   const issueNumber = flag.issue.split('/').at(-1);
 
+  // A switch: it takes effect at once, which is what Designsystemet says a switch is for.
   return (
     <Switch
       checked={on}
@@ -66,8 +57,7 @@ function FlagSwitch({ flag }: { flag: (typeof FLAGS)[number] }) {
           {flag.description}{' '}
           <Link href={flag.issue} rel="noreferrer" target="_blank">
             Sak {issueNumber}
-            {/* Leaving the app is said in words as well as with the icon, as
-                on the source links (SourceExcerpt.tsx). */}
+            {/* The icon is aria-hidden, so the new tab is said in words too. */}
             <span className="ds-sr-only"> (åpnes i ny fane)</span>
             <ExternalLinkIcon aria-hidden />
           </Link>

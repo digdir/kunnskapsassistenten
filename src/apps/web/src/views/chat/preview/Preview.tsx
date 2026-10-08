@@ -7,20 +7,11 @@ import { LayoutProvider } from '../../../layout/LayoutProvider';
 import { MainScrollContext } from '../../../layout/scrollContext';
 import { ChatView } from '../ChatView';
 
-/**
- * A harness for the chat view, for development only.
- *
- * It exists because the routes and the shell belong to the foundation, and a
- * view cannot be looked at until someone mounts it. Vite's dev server serves
- * any HTML file by path, so this one is reachable at
- * /src/views/chat/preview/index.html without touching anyone else's files,
- * and the production build never sees it: `vite build` only follows
- * index.html.
- *
- * It is also what the accessibility snapshot is taken against.
- */
+/** A harness for the chat view, for development only, so it can be looked at
+   without mounting the shell. The production build never sees it: `vite
+   build` follows index.html alone. */
 
-/** A client that fails, so the error state can be looked at (answer 35). */
+/** A client that fails, so the error state can be looked at. */
 const failingClient: ChatClient = {
   async *ask(): AsyncIterable<StreamEvent> {
     await new Promise((resolve) => setTimeout(resolve, 600));

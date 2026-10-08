@@ -1,19 +1,7 @@
 /**
- * Dark mode. Decided 2026-09-11 that KA ships it, straight from the
- * Digdir theme's tokens — the theme carries 147 light/dark variables, so the
- * cost is verifying screens, not building anything.
- *
- * The visible control is `ColorSchemeToggle`, at the foot of the navigation
- * panel (issue 85). The console command it was until then still works:
- *
- *   window.ka.colorScheme.set('dark' | 'light' | 'auto')
- *   window.ka.colorScheme.get()
- *
- * `auto` follows the operating system and is the default. The choice is
- * stored per browser and read before the first paint by a small script,
- * colorSchemeBoot.js, so the page never flashes the wrong scheme. That
- * script and this module must agree on STORAGE_KEY and ATTRIBUTE; they are
- * the only two strings duplicated between them.
+ * Dark mode from the Digdir theme's tokens; `auto` follows the OS. Also set from the console:
+ * `window.ka.colorScheme.set('dark' | 'light' | 'auto')`. colorSchemeBoot.js applies the stored
+ * choice before first paint and must agree with this file on STORAGE_KEY and ATTRIBUTE.
  */
 
 export type ColorScheme = 'light' | 'dark' | 'auto';
@@ -26,11 +14,7 @@ function isColorScheme(value: unknown): value is ColorScheme {
   return value === 'light' || value === 'dark' || value === 'auto';
 }
 
-/**
- * Storage can throw, not just return null: Safari in private mode and
- * browsers with site data blocked throw on access. A colour scheme is never
- * worth a blank page, so every access is guarded.
- */
+/** Storage can throw (Safari in private mode, blocked site data), so every access is guarded. */
 function readStored(): ColorScheme | undefined {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -70,13 +54,8 @@ export function setColorScheme(scheme: ColorScheme): ColorScheme {
 }
 
 /**
- * Called when the choice changes: from the control, from the console, or in
- * another tab of the same app.
- *
- * The other tab is the `storage` event, which fires only in the tabs that did
- * NOT write. Without it a reader with two tabs open would switch one to dark
- * and find the other still light, with its control saying so — two answers
- * to one setting.
+ * Called when the choice changes, also in another tab (the `storage` event fires only in tabs
+ * that did NOT write), so open tabs never disagree.
  */
 export function subscribeToColorScheme(listener: () => void): () => void {
   if (listeners.size === 0) window.addEventListener('storage', onStorage);
@@ -104,9 +83,8 @@ declare global {
 }
 
 /**
- * Applies the stored scheme and exposes the console API. Called from
- * main.tsx before the first render; colorSchemeBoot.js has usually
- * applied the same value already, and applying it twice is harmless.
+ * Applies the stored scheme and exposes the console API; called from main.tsx before the first
+ * render. Applying it again after colorSchemeBoot.js is harmless.
  */
 export function initColorScheme(): void {
   document.documentElement.setAttribute(ATTRIBUTE, getColorScheme());
