@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, test } from 'node:test';
+import { format } from 'node:util';
 import { events, fakeBackend, setEnvironment, type Backend } from '../fixtures/backend.ts';
 
 /*
@@ -116,6 +117,33 @@ describe('/api/ask, as the client in apps/web-preact asks', () => {
 });
 
 describe('the rest of /api/*, in main’s shape', () => {
+  test("a turn stored as failed reads back as a sentence of ours, not the backend's", async (t) => {
+    const error = t.mock.method(console, 'error', () => {});
+    backend.messages = [
+      { id: 'm1', role: 'user', text: 'Hva sier årsrapportene?', created: 1 },
+      {
+        id: 'm2',
+        role: 'assistant',
+        // How headless-rag stores a failed turn (digdir/digdir-headless-rag#22).
+        text: 'LLM request failed at iteration 2: Interceptor Exception: llm.internal',
+        created: 2,
+      },
+    ];
+    try {
+      const text = await (await app.request('/api/conversations/c9')).text();
+      assert.doesNotMatch(text, /LLM request failed|llm\.internal/);
+      assert.deepEqual(JSON.parse(text).messages[1], {
+        id: 'm2',
+        role: 'assistant',
+        text: 'Svaret kom ikke fram.',
+        created: 2,
+      });
+      assert.ok(error.mock.calls.some((c) => format(...c.arguments).includes('llm.internal')));
+    } finally {
+      backend.messages = [];
+    }
+  });
+
   test('/api/facets gives field, label and options, and nothing else', async () => {
     const body = (await (await app.request('/api/facets')).json()) as {
       facets: Array<Record<string, unknown>>;

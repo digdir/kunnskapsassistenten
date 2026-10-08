@@ -238,6 +238,11 @@ export interface Message {
   role: 'user' | 'assistant' | 'system';
   text: string;
   created: number;
+  /**
+   * A turn that failed at the backend, which stores its error sentence as the
+   * answer (digdir/digdir-headless-rag#22). The text is then empty. `/api/v2` only.
+   */
+  failed?: boolean;
 }
 
 /** `GET …/conversations/:id`. */

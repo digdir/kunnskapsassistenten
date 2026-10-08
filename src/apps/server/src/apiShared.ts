@@ -3,6 +3,7 @@ import type {
   ConversationDetail,
   ConversationListResponse,
   MeResponse,
+  Message,
   ModelsResponse,
   Source,
 } from '@ka/contract';
@@ -102,5 +103,29 @@ export async function rememberedThread(
   id: string,
 ): Promise<ConversationDetail & { sources: Source[] }> {
   const detail = await convos.detail(userId, id);
-  return { ...detail, sources: sourceStore.recall(id), filter: threadFilters.recall(id) };
+  return {
+    ...detail,
+    messages: withoutStoredFailures(id, detail.messages),
+    sources: sourceStore.recall(id),
+    filter: threadFilters.recall(id),
+  };
+}
+
+/** The agent loop's sentence for a failed turn, which headless-rag stores as the answer. */
+const STORED_FAILURE = /^LLM request failed\b/;
+
+/**
+ * A failed turn is marked `failed` and its text goes to the log, as for F5:
+ * it can name hosts and replies from the model.
+ */
+function withoutStoredFailures(conversationId: string, messages: Message[]): Message[] {
+  return messages.map((message) => {
+    if (message.role !== 'assistant' || !STORED_FAILURE.test(message.text)) return message;
+    console.error(
+      'stored failed turn %s: %s',
+      JSON.stringify(conversationId),
+      JSON.stringify(message.text),
+    );
+    return { ...message, text: '', failed: true };
+  });
 }

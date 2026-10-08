@@ -46,12 +46,18 @@ v1.get('/conversations/:id', async (c) => {
     const thread = await rememberedThread(c.get('userId'), c.req.param('id'));
     return c.json({
       ...thread,
+      messages: thread.messages.map(({ failed, ...message }) =>
+        failed ? { ...message, text: FAILED_TURN } : message,
+      ),
       sources: perDocument(thread.sources),
     } satisfies ConversationDetail);
   } catch {
     return c.json({ error: 'Fant ikke samtalen.' }, 404);
   }
 });
+
+/** A failed turn in main's format, which has nothing but the text to say so. */
+const FAILED_TURN = 'Svaret kom ikke fram.';
 
 /**
  * The six event types main sent, which is all useTurn.ts in apps/web-preact

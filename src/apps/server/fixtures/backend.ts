@@ -80,6 +80,8 @@ export interface Backend {
   failing: boolean;
   /** While set, `/api/mcp` waits for it, so a test can act in the middle of a turn. */
   held: Promise<void> | null;
+  /** The messages a thread read back has, as headless-rag stores them. */
+  messages: Array<{ id: string; role: string; text: string; created: number }>;
   restore(): void;
 }
 
@@ -93,6 +95,7 @@ export function fakeBackend(): Backend {
     facetFetches: 0,
     failing: false,
     held: null,
+    messages: [],
     restore: () => {
       globalThis.fetch = original;
     },
@@ -118,7 +121,12 @@ export function fakeBackend(): Backend {
         : Response.json({ conversations: [conversation('c1')] });
     }
     const thread = /^\/api\/conversations\/([^/]+)$/.exec(url.pathname);
-    if (thread) return Response.json({ conversation: conversation(thread[1]!), messages: [] });
+    if (thread) {
+      return Response.json({
+        conversation: conversation(thread[1]!),
+        messages: backend.messages,
+      });
+    }
     if (url.pathname === '/api/mcp') {
       backend.mcp.push(JSON.parse(String(init?.body)));
       if (backend.held) await backend.held;
