@@ -79,6 +79,60 @@ describe('the filter of a new thread', () => {
   });
 });
 
+describe('headless-rag down', () => {
+  const down = async (path: string, init?: RequestInit) => {
+    backend.down = true;
+    try {
+      const res = await app.request(path, init);
+      return { status: res.status, body: await res.json() };
+    } finally {
+      backend.down = false;
+    }
+  };
+
+  test('a new question gets a 502 with a code, not only a sentence', async () => {
+    assert.deepEqual(
+      await down('/api/v2/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: 'Hva sier årsrapportene?' }),
+      }),
+      {
+        status: 502,
+        body: { error: 'Kunne ikke opprette samtale.', code: 'backend_unreachable' },
+      },
+    );
+  });
+
+  test('the thread list, a rename and a delete get the code too, in both versions', async () => {
+    for (const base of ['/api', '/api/v2']) {
+      assert.deepEqual(await down(`${base}/conversations`), {
+        status: 502,
+        body: { error: 'Kunne ikke hente samtaler.', code: 'backend_unreachable' },
+      });
+      assert.deepEqual(
+        await down(`${base}/conversations/c1`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: 'Nytt navn' }),
+        }),
+        { status: 502, body: { error: 'Kunne ikke endre navn.', code: 'backend_unreachable' } },
+      );
+      assert.deepEqual(
+        await down(`${base}/conversations/c1`, {
+          method: 'DELETE',
+          // A browser sends its origin with a DELETE; the CSRF check asks for it.
+          headers: { Origin: 'http://localhost:8787' },
+        }),
+        {
+          status: 502,
+          body: { error: 'Kunne ikke slette samtalen.', code: 'backend_unreachable' },
+        },
+      );
+    }
+  });
+});
+
 describe('start-up', () => {
   test('warms the facets, so the first question after it is answered from the cache', async () => {
     facets.resetFacetCache();

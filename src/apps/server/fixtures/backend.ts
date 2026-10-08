@@ -80,6 +80,8 @@ export interface Backend {
   failing: boolean;
   /** While set, `/api/mcp` waits for it, so a test can act in the middle of a turn. */
   held: Promise<void> | null;
+  /** When true, headless-rag cannot be reached; Typesense still answers. */
+  down: boolean;
   /** The messages a thread read back has, as headless-rag stores them. */
   messages: Array<{ id: string; role: string; text: string; created: number }>;
   restore(): void;
@@ -95,6 +97,7 @@ export function fakeBackend(): Backend {
     facetFetches: 0,
     failing: false,
     held: null,
+    down: false,
     messages: [],
     restore: () => {
       globalThis.fetch = original;
@@ -113,6 +116,7 @@ export function fakeBackend(): Backend {
         })),
       });
     }
+    if (backend.down) throw new TypeError('fetch failed');
     const conversation = (id: string) => ({ id, topic: 'Hva sier årsrapportene?', created: 1 });
     if (url.pathname === '/api/conversations') {
       // c1, c2, …: a new thread for every question that has none.

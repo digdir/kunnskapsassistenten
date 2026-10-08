@@ -66,8 +66,8 @@ export function askRoute<E>(present: Present<E>) {
         // Now, not after the answer: the client reads the thread when
         // `conversation` arrives, and locks the filter from what it reads.
         threadFilters.remember(conv.id, requested);
-      } catch {
-        return c.json({ error: 'Kunne ikke opprette samtale.' }, 502);
+      } catch (err) {
+        return c.json(convos.failure('Kunne ikke opprette samtale.', err), 502);
       }
     }
 

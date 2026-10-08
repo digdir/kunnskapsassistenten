@@ -66,8 +66,8 @@ shared.get('/conversations', async (c) => {
     return c.json({
       conversations: await convos.list(c.get('userId')),
     } satisfies ConversationListResponse);
-  } catch {
-    return c.json({ error: 'Kunne ikke hente samtaler.' }, 502);
+  } catch (err) {
+    return c.json(convos.failure('Kunne ikke hente samtaler.', err), 502);
   }
 });
 
@@ -77,8 +77,8 @@ shared.put('/conversations/:id', async (c) => {
   try {
     await convos.rename(c.get('userId'), c.req.param('id'), title.trim());
     return c.json({ ok: true });
-  } catch {
-    return c.json({ error: 'Kunne ikke endre navn.' }, 502);
+  } catch (err) {
+    return c.json(convos.failure('Kunne ikke endre navn.', err), 502);
   }
 });
 
@@ -88,8 +88,8 @@ shared.delete('/conversations/:id', async (c) => {
     sourceStore.forget(c.req.param('id'));
     threadFilters.forget(c.req.param('id'));
     return c.json({ ok: true });
-  } catch {
-    return c.json({ error: 'Kunne ikke slette samtalen.' }, 502);
+  } catch (err) {
+    return c.json(convos.failure('Kunne ikke slette samtalen.', err), 502);
   }
 });
 
