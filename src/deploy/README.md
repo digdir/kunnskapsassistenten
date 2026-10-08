@@ -45,6 +45,32 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app
   --revision-suffix sha$SHA
 ```
 
+**The first rollout of an image with the new client** (`apps/web` and
+`apps/web-preact` side by side) needs two variables a deployment from before it
+does not have. The path above swaps the image and nothing else: without
+`KA_FILTER_FIELDS` the BFF has no facets and no filter panel, and without
+`KA_DATASETS` no name for the dataset. Set them in the same update, once, with
+the template's defaults under the dataset key `kudos`:
+
+```sh
+git status --short
+SHA=$(git rev-parse --short HEAD)
+
+az acr build --subscription Altinn-AI-Assistant --registry altinnaicontainers --image ka-app:$SHA \
+  --file src/Dockerfile src
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app \
+  --image altinnaicontainers.azurecr.io/ka-app:$SHA \
+  --set-env-vars 'KA_FILTER_FIELDS=kudos=documentType:type|organisation:orgs_long|year:concerned_years:integer' 'KA_DATASETS=kudos=Kudos' \
+  --revision-suffix sha$SHA
+```
+
+The values are quoted because `|` is a pipe to the shell. `--set-env-vars`
+adds or updates the variables it names and leaves the others as they are.
+`KA_DEFAULT_CLIENT` is left unset, so a browser without the `ka_klient` cookie
+gets the current client; add `KA_DEFAULT_CLIENT=ny` to the same list when the
+new one is to be the default. Later rollouts take the path above, and the
+variables stay.
+
 Config or a secret, about 30 seconds and no rebuild. `read -rs` reads the
 value without showing it or keeping it in the shell history:
 
