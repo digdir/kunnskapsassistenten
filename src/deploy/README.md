@@ -30,10 +30,12 @@ tree, so nothing needs pushing to GitHub first.
 `.github/workflows/ci.yml` still runs format, typecheck, tests and build on
 pull requests.
 
-Code change, about three minutes:
+Code change, about three minutes. Commit first: `az acr build` uploads the
+working tree as it is, and the image is tagged with the commit. The first line
+prints nothing when there is nothing uncommitted.
 
 ```sh
-git diff --quiet HEAD || { echo 'uncommitted changes'; exit 1; }
+git status --short
 SHA=$(git rev-parse --short HEAD)
 
 az acr build --subscription Altinn-AI-Assistant --registry altinnaicontainers --image ka-app:$SHA \
@@ -43,10 +45,12 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app
   --revision-suffix sha$SHA
 ```
 
-Config or a secret, about 30 seconds and no rebuild:
+Config or a secret, about 30 seconds and no rebuild. `read -rs` reads the
+value without showing it or keeping it in the shell history:
 
 ```sh
-az containerapp secret set --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app --secrets digdir-api-key=<verdi>
+read -rs KEY
+az containerapp secret set --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app --secrets digdir-api-key="$KEY"
 az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app --revision-suffix key$(date +%H%M%S)
 ```
 
@@ -55,11 +59,14 @@ by a new revision, which the second command forces. Secrets are write-only in
 the portal, though `az containerapp secret show` will read one back.
 
 The old revision serves until the new one is healthy, so a bad image does not
-take the site down. Roll back by deploying an older tag:
+take the site down. Roll back by deploying an older tag. The first command
+lists the five newest; type the one to go back to:
 
 ```sh
+az acr repository show-tags --subscription Altinn-AI-Assistant --name altinnaicontainers --repository ka-app --orderby time_desc --top 5 -o tsv
+read -r OLDER
 az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app \
-  --image altinnaicontainers.azurecr.io/ka-app:<older-sha> \
+  --image altinnaicontainers.azurecr.io/ka-app:$OLDER \
   --revision-suffix rollback$(date +%H%M%S)
 ```
 
