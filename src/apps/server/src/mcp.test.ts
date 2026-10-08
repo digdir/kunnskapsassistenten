@@ -425,6 +425,19 @@ describe('ask: plan and answer', () => {
     assert.equal(sent.at(-1)?.message, 'Forbindelsen til backend ble brutt.');
   });
 
+  test('an abort while the stream is read stays an exception, so the turn is «Avbrutt.»', async () => {
+    // The route tells a stopped turn from a failure by the exception.
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.error(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+      },
+    });
+    await assert.rejects(
+      events(async () => new Response(body)),
+      { name: 'AbortError' },
+    );
+  });
+
   test('a stream that ends without a result is a broken stream, with a code', async () => {
     const [event] = await events(async () => sse(''));
     assert.equal(event?.type, 'error');
