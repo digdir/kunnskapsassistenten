@@ -14,6 +14,9 @@
   /* What the greeting and the compose area are each set in from the free
      room between them. The same on both sides; see `.ka-chat-greeting`. */
   --ka-chat-room-inset: var(--ds-size-3);
+  /* The seam over the compose field. Named, because what scrolls up to the
+     field has to clear the fade as well as the field itself. */
+  --ka-composer-fade: var(--ds-size-6);
 
   display: flex;
   flex-direction: column;
@@ -583,6 +586,13 @@
   scroll-margin-block-end: 0;
 }
 
+/* The copy receipt scrolls itself into view when it appears
+   (AnswerActions.tsx), so it has to clear the fade too: landing right on the
+   field leaves its last line washed out. */
+.ka-answer-actions__receipt {
+  scroll-margin-block-end: calc(var(--ka-composer-block-size, 0px) + var(--ka-composer-fade));
+}
+
 /* «Bla til nederst», in the sticky area so it stays in one place. Out of the
    flow, so nothing moves when it comes and goes, and on the page's own
    ground, because the secondary variant is transparent. */
@@ -608,7 +618,7 @@
   position: absolute;
   inset-inline: 0;
   inset-block-end: 100%;
-  block-size: var(--ds-size-6);
+  block-size: var(--ka-composer-fade);
   background: linear-gradient(to top, var(--ds-color-neutral-background-tinted), transparent);
   pointer-events: none;
 }
