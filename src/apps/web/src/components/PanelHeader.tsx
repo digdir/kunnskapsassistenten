@@ -4,11 +4,7 @@ import type { ReactNode } from 'react';
 export type PanelHeaderProps = {
   /** Norwegian. The panel's visible heading. */
   title: string;
-  /**
-   * Heading level, semantics only. The shell renders the page title as
-   * level 1, so a panel heading is level 2 unless it sits inside another
-   * section.
-   */
+  /** Heading level, semantics only: 2 under the page's h1, unless inside another section. */
   level?: 2 | 3 | 4 | 5 | 6;
   /** Visual size, independent of `level`. */
   size?: '2xs' | 'xs' | 'sm' | 'md';

@@ -42,6 +42,12 @@ if (typeof document.getAnimations !== 'function') {
   document.getAnimations = () => [];
 }
 
+/*
+ * jsdom lays nothing out and has no scrolling; the call that keeps the copy
+ * receipt clear of the compose field has to go somewhere.
+ */
+Element.prototype.scrollIntoView ??= () => {};
+
 /** A client whose whole turn is decided up front. */
 function clientYielding(events: StreamEvent[]): ChatClient {
   return {

@@ -1,18 +1,12 @@
-/*
- * The switches in the hidden flags menu, one under the other with room
- * between, so one switch's description does not read as the next one's label.
- */
+/* Room between switches, so a description does not read as the next label. */
 .ka-flags__list {
   display: grid;
   gap: var(--ds-size-4);
   margin-block-start: var(--ds-size-4);
 }
 
-/*
- * The line under the switches, as in the settings menu: Designsystemet puts
- * no space between what is inside a Dialog.Block, and without it the note
- * reads as the last switch's description.
- */
+/* Designsystemet puts no space between what is inside a Dialog.Block; without
+   it the note reads as the last switch's description. */
 .ka-flags__note {
   margin-block-start: var(--ds-size-6);
   color: var(--ds-color-neutral-text-subtle);

@@ -1,9 +1,5 @@
 /**
- * Where this client's API is in the BFF.
- *
- * The version is in the path, and each client asks for its own: `/api` is the
- * format the previous client reads, and `/api/v2` is this one's (0009 in
- * src/decisions, digdir/kunnskapsassistenten). A response can then be read
- * from its URL alone. `/auth` is not versioned.
+ * This client's API path in the BFF. Each client asks for its own version, so a response can be
+ * read from its URL alone (ADR 0009 in src/decisions, digdir/kunnskapsassistenten).
  */
 export const BFF_API = '/api/v2';

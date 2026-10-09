@@ -8,30 +8,9 @@ import { PreviousClientThread } from './routes/PreviousClientThread';
 import { Thread } from './routes/Thread';
 
 /**
- * Routes are English, like the rest of the code. The text they render is
- * Norwegian.
- *
- *   /                   new conversation, empty state
- *   /threads/:threadId  one conversation
- *   /chat/:threadId     the same, as the previous client links to it
- *   /onboarding         ┐
- *   /endringslogg       ├ a page about Kunnskapsassistenten itself
- *   /om-prosjektet      ┘
- *   anything else       «siden finnes ikke»
- *
- * Two layout routes and not one, because the shell is mounted differently for
- * the two kinds of page. The conversation routes let the view in the slot draw
- * the main column; every other page draws its own (`routeOwnsMain`). A single
- * layout route could not say that, and `/tull` would get the front page's
- * welcome screen under the words «siden finnes ikke» — as would the changelog.
- *
- * The three information pages are Norwegian addresses among English routes,
- * and on purpose: they are the addresses the old Kunnskapsassistenten uses.
- * They come from one list, see src/routes/info/infoPages.tsx.
- *
- * Switching between the two remounts the shell. The layout lives above it, in
- * `LayoutProvider`, so nothing a reader has set up is lost — and navigating
- * to or from a broken address is not a thing that happens twice a minute.
+ * Two layout routes: on conversation routes the slot's view draws the main column, every other
+ * page draws its own (`routeOwnsMain`). Layout state lives in `LayoutProvider`, above the shell,
+ * so remounting the shell between them loses nothing.
  */
 export function App() {
   return (

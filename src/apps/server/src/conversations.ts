@@ -21,6 +21,30 @@ const toSummary = (c: BackendConversation): ConversationSummary => ({
   created: c.created ?? 0,
 });
 
+/** The backend answered, with a status that is not ok. */
+export class BackendHttpError extends Error {
+  readonly status: number;
+
+  constructor(call: string, status: number) {
+    super(`${call} ${status}`);
+    this.status = status;
+  }
+}
+
+/**
+ * The body of a 502 for a failed call to the backend: a fixed sentence and,
+ * when the failure is known, the code the stream uses for it (mcp.ts).
+ */
+export function failure(error: string, err: unknown): { error: string; code?: string } {
+  if (err instanceof BackendHttpError) return { error, code: `backend_http_${err.status}` };
+  // fetch's own TypeError when it cannot reach the backend; any other TypeError
+  // is from our code, and says nothing about the backend.
+  if (err instanceof TypeError && err.message === 'fetch failed') {
+    return { error, code: 'backend_unreachable' };
+  }
+  return { error };
+}
+
 export function topicFrom(query: string): string {
   const one = query.replace(/\s+/g, ' ').trim();
   return one.length <= 60 ? one : `${one.slice(0, 57)}…`;
@@ -30,7 +54,7 @@ export async function list(userId: string): Promise<ConversationSummary[]> {
   const res = await fetch(`${config.apiBase}/api/conversations?page_size=100`, {
     headers: headers(userId),
   });
-  if (!res.ok) throw new Error(`list ${res.status}`);
+  if (!res.ok) throw new BackendHttpError('list', res.status);
   const body = (await res.json()) as { conversations?: BackendConversation[] };
   return (body.conversations ?? []).map(toSummary).sort((a, b) => b.created - a.created);
 }
@@ -41,7 +65,7 @@ export async function create(userId: string, topic: string): Promise<Conversatio
     headers: headers(userId),
     body: JSON.stringify({ agentId: config.agentId, title: topic }),
   });
-  if (!res.ok) throw new Error(`create ${res.status}`);
+  if (!res.ok) throw new BackendHttpError('create', res.status);
   const body = (await res.json()) as { conversation: BackendConversation };
   const summary = toSummary(body.conversation);
   noteTitleFromBackend(topic, summary.topic);
@@ -52,7 +76,7 @@ export async function detail(userId: string, id: string): Promise<ConversationDe
   const res = await fetch(`${config.apiBase}/api/conversations/${encodeURIComponent(id)}`, {
     headers: headers(userId),
   });
-  if (!res.ok) throw new Error(`detail ${res.status}`);
+  if (!res.ok) throw new BackendHttpError('detail', res.status);
   const body = (await res.json()) as {
     conversation: BackendConversation;
     messages?: Array<{ id: string; role: string; text: string; created: number }>;
@@ -74,7 +98,7 @@ export async function rename(userId: string, id: string, title: string): Promise
     headers: headers(userId),
     body: JSON.stringify({ title }),
   });
-  if (!res.ok) throw new Error(`rename ${res.status}`);
+  if (!res.ok) throw new BackendHttpError('rename', res.status);
 }
 
 export async function remove(userId: string, id: string): Promise<void> {
@@ -82,5 +106,5 @@ export async function remove(userId: string, id: string): Promise<void> {
     method: 'DELETE',
     headers: headers(userId),
   });
-  if (!res.ok) throw new Error(`delete ${res.status}`);
+  if (!res.ok) throw new BackendHttpError('delete', res.status);
 }

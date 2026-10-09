@@ -78,6 +78,14 @@ export interface Backend {
   facetFetches: number;
   /** When true, the next turns end in a JSON-RPC error, as for an exception. */
   failing: boolean;
+  /** While set, `/api/mcp` waits for it, so a test can act in the middle of a turn. */
+  held: Promise<void> | null;
+  /** When true, headless-rag cannot be reached; Typesense still answers. */
+  down: boolean;
+  /** When set, headless-rag answers every call with this status. */
+  status: number | null;
+  /** The messages a thread read back has, as headless-rag stores them. */
+  messages: Array<{ id: string; role: string; text: string; created: number }>;
   restore(): void;
 }
 
@@ -90,6 +98,10 @@ export function fakeBackend(): Backend {
     mcp: [],
     facetFetches: 0,
     failing: false,
+    held: null,
+    down: false,
+    status: null,
+    messages: [],
     restore: () => {
       globalThis.fetch = original;
     },
@@ -107,6 +119,8 @@ export function fakeBackend(): Backend {
         })),
       });
     }
+    if (backend.down) throw new TypeError('fetch failed');
+    if (backend.status) return new Response('nope', { status: backend.status });
     const conversation = (id: string) => ({ id, topic: 'Hva sier årsrapportene?', created: 1 });
     if (url.pathname === '/api/conversations') {
       // c1, c2, …: a new thread for every question that has none.
@@ -115,9 +129,15 @@ export function fakeBackend(): Backend {
         : Response.json({ conversations: [conversation('c1')] });
     }
     const thread = /^\/api\/conversations\/([^/]+)$/.exec(url.pathname);
-    if (thread) return Response.json({ conversation: conversation(thread[1]!), messages: [] });
+    if (thread) {
+      return Response.json({
+        conversation: conversation(thread[1]!),
+        messages: backend.messages,
+      });
+    }
     if (url.pathname === '/api/mcp') {
       backend.mcp.push(JSON.parse(String(init?.body)));
+      if (backend.held) await backend.held;
       return new Response(backend.failing ? FAILURE : STREAM, {
         headers: { 'Content-Type': 'text/event-stream' },
       });

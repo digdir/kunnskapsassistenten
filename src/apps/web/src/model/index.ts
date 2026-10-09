@@ -1,11 +1,6 @@
 /**
- * The shared domain types. Every view codes against these; ask before
- * changing one, because all four panels read them.
- *
- * Fields the design needs and the backend does not have yet are marked
- * `backend: mangler, se API-bestilling A1/A2/A3` where they are declared.
- * A1 is source attribution, A2 facet counts, A3 upload. See
- * design/skal-dette-implementeres.md.
+ * The shared domain types every view codes against; ask before changing one.
+ * Fields the backend does not provide yet say so where they are declared.
  */
 export type { Agent, AgentList } from './agent';
 export type { Citation } from './citation';
@@ -13,6 +8,7 @@ export type { FacetValue, FilterDimension, FilterFacet, FilterSelection } from '
 export { emptyFilterSelection, filterDimensions, isEmptySelection } from './filter';
 export type { Message, MessageRole, MessageStatus } from './message';
 export type { RetrievalDetails, ThinkingStep, ThinkingStepKind } from './retrieval';
+export { withoutRetriedAttempts } from './retriedTurns';
 export type {
   AnswerSources,
   CitationTarget,

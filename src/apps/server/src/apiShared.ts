@@ -3,6 +3,7 @@ import type {
   ConversationDetail,
   ConversationListResponse,
   MeResponse,
+  Message,
   ModelsResponse,
   Source,
 } from '@ka/contract';
@@ -65,8 +66,8 @@ shared.get('/conversations', async (c) => {
     return c.json({
       conversations: await convos.list(c.get('userId')),
     } satisfies ConversationListResponse);
-  } catch {
-    return c.json({ error: 'Kunne ikke hente samtaler.' }, 502);
+  } catch (err) {
+    return c.json(convos.failure('Kunne ikke hente samtaler.', err), 502);
   }
 });
 
@@ -76,8 +77,8 @@ shared.put('/conversations/:id', async (c) => {
   try {
     await convos.rename(c.get('userId'), c.req.param('id'), title.trim());
     return c.json({ ok: true });
-  } catch {
-    return c.json({ error: 'Kunne ikke endre navn.' }, 502);
+  } catch (err) {
+    return c.json(convos.failure('Kunne ikke endre navn.', err), 502);
   }
 });
 
@@ -87,8 +88,8 @@ shared.delete('/conversations/:id', async (c) => {
     sourceStore.forget(c.req.param('id'));
     threadFilters.forget(c.req.param('id'));
     return c.json({ ok: true });
-  } catch {
-    return c.json({ error: 'Kunne ikke slette samtalen.' }, 502);
+  } catch (err) {
+    return c.json(convos.failure('Kunne ikke slette samtalen.', err), 502);
   }
 });
 
@@ -102,5 +103,29 @@ export async function rememberedThread(
   id: string,
 ): Promise<ConversationDetail & { sources: Source[] }> {
   const detail = await convos.detail(userId, id);
-  return { ...detail, sources: sourceStore.recall(id), filter: threadFilters.recall(id) };
+  return {
+    ...detail,
+    messages: withoutStoredFailures(id, detail.messages),
+    sources: sourceStore.recall(id),
+    filter: threadFilters.recall(id),
+  };
+}
+
+/** The agent loop's sentence for a failed turn, which headless-rag stores as the answer. */
+const STORED_FAILURE = /^LLM request failed\b/;
+
+/**
+ * A failed turn is marked `failed` and its text goes to the log, as for F5:
+ * it can name hosts and replies from the model.
+ */
+function withoutStoredFailures(conversationId: string, messages: Message[]): Message[] {
+  return messages.map((message) => {
+    if (message.role !== 'assistant' || !STORED_FAILURE.test(message.text)) return message;
+    console.error(
+      'stored failed turn %s: %s',
+      JSON.stringify(conversationId),
+      JSON.stringify(message.text),
+    );
+    return { ...message, text: '', failed: true };
+  });
 }

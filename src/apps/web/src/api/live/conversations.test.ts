@@ -481,3 +481,62 @@ describe('korpuset på en tur lest tilbake', () => {
     expect(turns.find((turn) => turn.role === 'assistant')?.corpusKey).toBe('norquad-docs');
   });
 });
+
+describe('messagesFromApi, et forsøk som ble prøvd på nytt', () => {
+  const question = (id: string, text = 'Hva skriver Nkom om måloppnåelse?'): ApiMessage => ({
+    id,
+    role: 'user',
+    text,
+  });
+  const answer = (id: string, text: string): ApiMessage => ({ id, role: 'assistant', text });
+  const shape = (messages: ApiMessage[]) =>
+    messagesFromApi(messages).map((message) => `${message.role}:${message.status}`);
+
+  it('tar ut forsøket som feilet når det samme spørsmålet kom rett etter', () => {
+    expect(
+      shape([
+        question('q1'),
+        answer('a1', 'LLM request failed at iteration 4: Interceptor Exception: '),
+        question('q2'),
+        answer('a2', 'Nkom skriver at målene er nådd.'),
+      ]),
+    ).toEqual(['user:complete', 'assistant:complete']);
+  });
+
+  it('tar ut et spørsmål som ikke fikk noe svar lagret, når det ble stilt igjen', () => {
+    expect(
+      shape([question('q1'), question('q2'), answer('a2', 'Nkom skriver at målene er nådd.')]),
+    ).toEqual(['user:complete', 'assistant:complete']);
+  });
+
+  it('lar et forsøk som feilet stå når ingen prøvde igjen', () => {
+    expect(
+      shape([
+        question('q1'),
+        answer('a1', 'LLM request failed at iteration 4: Interceptor Exception: '),
+      ]),
+    ).toEqual(['user:complete', 'assistant:error']);
+  });
+
+  it('lar det samme spørsmålet stå to ganger når begge fikk svar', () => {
+    expect(
+      shape([
+        question('q1'),
+        answer('a1', 'Første svar.'),
+        question('q2'),
+        answer('a2', 'Andre svar.'),
+      ]),
+    ).toEqual(['user:complete', 'assistant:complete', 'user:complete', 'assistant:complete']);
+  });
+
+  it('lar et forsøk som feilet stå når det neste spørsmålet er et annet', () => {
+    expect(
+      shape([
+        question('q1'),
+        answer('a1', 'LLM request failed at iteration 4: Interceptor Exception: '),
+        question('q2', 'Og i 2023?'),
+        answer('a2', 'I 2023 …'),
+      ]),
+    ).toEqual(['user:complete', 'assistant:error', 'user:complete', 'assistant:complete']);
+  });
+});

@@ -14,18 +14,12 @@ export function remember(conversationId: string, filter: Record<string, string[]
 }
 
 /**
- * Remembers a new thread's filter once its first turn has an answer.
- *
- * Not when the thread is created: a filter the backend refuses fails the
- * turn, and every follow-up would then be asked with the stored filter and
- * fail the same way. A turn that ends in `error` stores nothing.
+ * Forgets a new thread's filter when its first turn ends in `error`, as when
+ * the backend refuses the filter: every follow-up would fail the same way.
  */
-export function rememberWhenAnswered(
-  conversationId: string,
-  filter: Record<string, string[]>,
-): (event: TurnEvent) => void {
+export function forgetIfFailed(conversationId: string): (event: TurnEvent) => void {
   return (event) => {
-    if (event.type === 'done') remember(conversationId, filter);
+    if (event.type === 'error') forget(conversationId);
   };
 }
 

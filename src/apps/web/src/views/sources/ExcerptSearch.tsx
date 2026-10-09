@@ -3,12 +3,7 @@ import { useId } from 'react';
 import { MIN_QUERY_LENGTH } from '../../components';
 
 type ExcerptSearchProps = {
-  /**
-   * The element this field is described by: the Kudos disclaimer.
-   *
-   * Passed in rather than owned here, because the disclaimer is drawn outside
-   * the sticky head while the field is inside it. See `CorpusDisclaimer`.
-   */
+  /** The disclaimer's id: it is drawn outside the sticky head, the field inside. */
   descriptionId: string;
   query: string;
   onQueryChange: (query: string) => void;
@@ -19,21 +14,8 @@ type ExcerptSearchProps = {
 };
 
 /**
- * Search inside the excerpts, with a hit counter and previous/next.
- *
- * `Search` rather than a hand-drawn field: Figma draws the field and the clear
- * cross by hand, and `Search.Input` plus `Search.Clear` is the same thing with
- * a working `aria-label` on the cross («Tøm», Norwegian by default) and the
- * correct `type='search'` semantics. `Search.Clear` is `type='reset'`, which
- * is why there is a real `<form>` around it.
- *
- * Previous/next move up and down through a vertical text, not sideways through
- * pages, so this is not `Pagination` — `search-excerpts.md` makes the same
- * point.
- *
- * The counter is a live region. Without it the search is silent for a screen
- * reader user: `<mark>` is not announced, so «1 av 26 treff» is the only thing
- * that says the search did anything.
+ * Search inside the excerpts, with a hit counter and previous/next. The counter
+ * is a live region, because `<mark>` is not announced.
  */
 export function ExcerptSearch({
   query,
@@ -47,18 +29,8 @@ export function ExcerptSearch({
   // one id, and `htmlFor` would then point at the wrong field.
   const fieldId = useId();
 
-  // The ends are ends: `stepHit` stops there, so the button that would do
-  // nothing says so rather than staying the same blue as the one that works
-  // (docs/review/brukerblikk-2026-09-15.md, funn 11).
-  //
-  // `aria-disabled` and not `disabled`, and that is the point of the pair
-  // rather than a detail: stepping is something the user does by pressing the
-  // same button over and over, and a `disabled` button drops focus to the body
-  // the moment it turns off — so reaching the last hit would take the keyboard
-  // out of the control the user was working in. `aria-disabled` keeps the tab
-  // stop, and Designsystemet already draws `[aria-disabled='true']` exactly
-  // like `:disabled` (button.css), so the two look the same. The click handler
-  // is what makes it inert, since the browser still delivers the event.
+  // `aria-disabled`, not `disabled`, which would drop focus to the body at the
+  // last hit. The click handler is what makes it inert.
   const atFirst = currentHitIndex === 0;
   const atLast = currentHitIndex >= hitCount - 1;
 
@@ -104,10 +76,8 @@ export function ExcerptSearch({
             {status}
           </Paragraph>
 
-          {/* Figma only has previous/next in the `results` variant, so they do
-              not exist before there is something to step through. Rendered
-              rather than disabled: a disabled control the user has never been
-              able to use only adds a tab stop and a question. */}
+          {/* Left out until there are hits: a control the reader has never
+              been able to use only adds a tab stop. */}
           {hitCount > 0 && (
             <div className="sources-search__steps">
               <Button

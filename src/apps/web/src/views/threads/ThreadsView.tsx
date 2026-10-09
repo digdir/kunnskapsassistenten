@@ -33,16 +33,7 @@ export type ThreadsViewProps = Pick<SlotViewProps, 'siblingViews' | 'onShowView'
 /** Where focus goes when the row it was on has gone: the way to a new thread. */
 const NEW_THREAD = '\u0000new-thread';
 
-/**
- * The thread list: a new thread, a search field, and earlier threads grouped
- * by period.
- *
- * The view fetches what it renders, so the shell mounts it without wiring.
- * Data comes from the ChatClient, which is the mock until the live client
- * exists. `useThreadList` reads it again when the conversation on screen
- * moves, so a thread the reader starts while the list is open appears in it
- * without a detour through another view.
- */
+/** The thread list. It fetches what it renders, so the shell mounts it without wiring. */
 export function ThreadsView({
   siblingViews,
   onShowView,
@@ -51,22 +42,10 @@ export function ThreadsView({
   actions: givenActions,
   session,
 }: ThreadsViewProps) {
-  // Which conversation is on screen, whoever put it there. See
-  // src/layout/openThreadContext.ts.
+  // From the shell, not the router; see src/layout/openThreadContext.ts.
   const openThreadId = useOpenThread();
-  /*
-   * Which corpus a thread was asked of, for the rows — and only when there is
-   * more than one to tell apart. With a single corpus the label would be the
-   * same word under every row in the list, which is noise rather than
-   * information, and the panel pays for it in height.
-   *
-   * The WHOLE label, not the short name the corpus line above uses: the row
-   * and the chooser name the same corpora, and a reader who picked «Kudos,
-   * 938 dokumenter (mock)» should find those words again under the thread. It
-   * costs a second line when the label is long — see `.threads-view__meta` in
-   * threads.css, which wraps — and that cost belongs to whoever writes the
-   * label in `VITE_KA_DATASETS`.
-   */
+  // The corpus under each row only when there are several to tell apart, and
+  // the whole label, so the reader finds the words they picked in the chooser.
   const { options, choosable } = useCorpus();
   const corpusLabel = (key?: string) =>
     choosable ? options.find((candidate) => candidate.key === key)?.label : undefined;
@@ -78,21 +57,9 @@ export function ThreadsView({
   /** «Ny tråd» as the whole action: empty filter, drawer shut, focus in the field. */
   const startNewThread = useNewThread();
 
-  /*
-   * And the panel goes to the filters (issue 75, round 2). A new
-   * thread starts from the whole corpus, and the filter view is where the
-   * reader narrows it before the first question; the thread list has nothing
-   * new to show until that question is asked.
-   *
-   * The same plain click `useNewThread` acts on, and only that: a click that
-   * opens a new tab leaves this page as it was, the panel included. Only
-   * when the slot holds the filters as well, since `onShowView` switches
-   * between the views of one slot.
-   *
-   * Focus stays with the compose field, which is what the click asked for.
-   * The filter view takes focus on a switch only when it was dropped; see
-   * FiltersView.
-   */
+  // And the panel goes to the filters, where a new thread is narrowed. Only on
+  // a plain click (a new-tab click leaves this page alone), and only when the
+  // slot holds the filters.
   function newThread(event: MouseEvent<HTMLAnchorElement>) {
     startNewThread(event);
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
@@ -101,30 +68,22 @@ export function ThreadsView({
     if (siblingViews.includes('filters')) onShowView('filters');
   }
 
-  /*
-   * Rename and delete, when this deployment has them (bff and mock, not
-   * live). Without them the rows have no menu at all, rather than two
-   * buttons that fail on every press.
-   */
+  // Without rename and delete (live), the rows get no menu rather than two
+  // buttons that fail on every press.
   const actions = useMemo(
     () => (givenActions === undefined ? createThreadActions() : (givenActions ?? undefined)),
     [givenActions],
   );
   /** The row being renamed, by thread id. */
   const [renaming, setRenaming] = useState<string | undefined>(undefined);
-  /** The thread the delete dialog is asking about. */
   const [deleting, setDeleting] = useState<Thread | undefined>(undefined);
-  /** What went wrong with the last rename or delete, for the alert region. */
   const [actionError, setActionError] = useState<string | undefined>(undefined);
   /** What a screen reader is told a rename or a delete did. */
   const [announcement, setAnnouncement] = useState('');
   const menuRefs = useRef(new Map<string, HTMLButtonElement | null>());
   const newThreadRef = useRef<HTMLAnchorElement>(null);
-  /*
-   * Where focus goes once the list has been drawn again, by thread id, or
-   * NEW_THREAD. In an effect, because the button to focus is not there — or
-   * not yet gone — until React has drawn the change.
-   */
+  // Where focus goes after the next render, by thread id or NEW_THREAD. In an
+  // effect, because the target is not there (or not yet gone) until then.
   const focusAfter = useRef<string | undefined>(undefined);
 
   useEffect(() => {
@@ -135,34 +94,19 @@ export function ThreadsView({
     (button ?? newThreadRef.current)?.focus();
   }, [threads, renaming, deleting]);
 
-  /*
-   * Focus after a switch from the filter view, which unmounted the button the
-   * user pressed and dropped focus on the body. The shell says whether a user
-   * asked for this view or the page merely opened on it, so this never fires
-   * ahead of the skip link. See SlotViewProps.
-   */
-  // The flag is settled before this view mounts and does not flip while it is
-  // mounted: the button that switches away from a view is the only one that
-  // sets it, and it is in the OTHER view. So this runs on mount and no later.
+  // Focus after a switch from the filter view, which unmounted the pressed
+  // button. Not on a fresh page load, where the skip link comes first; the flag
+  // does not flip while this view is mounted, so this runs on mount only.
   useEffect(() => {
     if (switchedByUser) filterRef.current?.focus();
   }, [switchedByUser]);
 
   const loading = !failed && !threads;
-  /*
-   * Known to be empty, as opposed to not known yet. Only then does «Ny tråd»
-   * become «Start din første tråd»; while the list loads, or when it could
-   * not be fetched, it stays «Ny tråd», since a new thread works whether or
-   * not the list does.
-   */
+  // Known to be empty, not just unknown: only then «Start din første tråd»,
+  // since a new thread works whether or not the list loaded.
   const empty = threads?.length === 0;
-  /*
-   * The search goes with the field. A list that empties while a query stands
-   * — the last thread deleted mid-search — hides the field, and the query
-   * would otherwise come back invisibly with the next thread and filter it
-   * away. Adjusted during render, as React has it for state that follows a
-   * change in what was handed in.
-   */
+  // An emptied list hides the search field, so the query goes too, or it would
+  // filter the next thread away unseen. Set during render, as React advises.
   if (empty && query !== '') setQuery('');
   const trimmed = query.trim().toLocaleLowerCase('nb-NO');
   const matches = useMemo(
@@ -172,13 +116,8 @@ export function ThreadsView({
   );
   const groups = useMemo(() => groupThreads(matches), [matches]);
 
-  /*
-   * A new name, on screen at once and taken back if the backend says no.
-   *
-   * Only the one thread's title goes back on a failure, not the list as it
-   * was: a delete or a refresh may have landed in between, and the reader
-   * did not ask for those to be undone.
-   */
+  // On failure only this thread's title goes back, not the whole list: a
+  // delete or a refresh may have landed meanwhile.
   function rename(thread: Thread, title: string) {
     if (!actions) return;
     setRenaming(undefined);
@@ -189,13 +128,8 @@ export function ThreadsView({
     );
     setAnnouncement(`Tråden heter nå «${title}».`);
     actions.rename(thread, title).catch(() => {
-      /*
-       * Back to the old title only if the row still shows the one this call
-       * sent, the rule the rename store keeps for the heading
-       * (threadActions.ts). Renamed again in the meantime, the row is the
-       * later rename's, and there is nothing to put back or to tell the
-       * reader.
-       */
+      // Only if the row still shows this call's title (the rule threadActions.ts
+      // keeps for the heading); otherwise a later rename owns it.
       let putBack = false;
       change((list) =>
         list.map((row) => {
@@ -215,23 +149,9 @@ export function ThreadsView({
     focusAfter.current = thread.id;
   }
 
-  /*
-   * A deletion, the same way: the row goes at once, and comes back if the
-   * backend says no.
-   *
-   * Focus goes to the next row's menu — where a reader clearing out old
-   * threads is heading — then the one before, and to «Start din første tråd»
-   * when the list is empty. The row is put back by id, and the list sorts
-   * itself by `updatedAt`, so it lands where it was.
-   *
-   * The thread on screen is left for a new one, since there is nothing to
-   * show for it any more. If the delete then fails, the row is back in the
-   * list and one click away. By the «Ny tråd» count as well as the address:
-   * a thread started on `/` is still `/` to the router, so the navigation
-   * alone left the deleted conversation on screen, and the next question
-   * went to it. Only the count, not the rest of «Ny tråd»: focus stays in
-   * the list and the filter as it is.
-   */
+  // A failed delete puts the row back, and the sort returns it to its place.
+  // An open thread goes through the «Ny tråd» count, not just the address: a
+  // thread started on `/` is still `/` to the router and would stay on screen.
   function remove(thread: Thread) {
     if (!actions) return;
     setDeleting(undefined);
@@ -263,13 +183,7 @@ export function ThreadsView({
 
   return (
     <div className="threads-view" aria-busy={loading || undefined}>
-      {/*
-        The way in to filtering. The slot tells the view which other views it
-        holds, so the button appears only when there is somewhere to go.
-        Conditional rendering, not Tabs: this is navigation between two modes,
-        not two views that exist side by side. See
-        design/designsystemet/behov-til-komponent.md.
-      */}
+      {/* Not Tabs: this switches between two modes, not two views side by side. */}
       {siblingViews.includes('filters') && (
         <Button
           ref={filterRef}
@@ -282,26 +196,8 @@ export function ThreadsView({
         </Button>
       )}
 
-      {/*
-        No `aria-current` here, and that is the same distinction the rows
-        below make: «Ny tråd» is an ACTION, and marking it as the current page
-        told a screen reader user that the button they are about to press is
-        the page they are already on. The thread rows are places, and they are
-        marked (answer 7).
-
-        Over an empty list it is «Start din første tråd», and it is alone
-        there (issue 82, round 2): «Ingen tråder ennå» and the sentence
-        under it said twice what the button says once. The same link with
-        other words rather than a second link further down, so it stands
-        exactly where «Ny tråd» stands — lower down, it had the hit count's
-        empty region and one more gap over it, 48 px under «Filtrer
-        dokumenter» against 24. And focus has one element to go to when the
-        last thread is deleted.
-
-        A screen reader loses nothing it needs without the heading. The
-        panel's level 2, «Tidligere tråder», still follows, and «første» says
-        the list is empty.
-      */}
+      {/* No `aria-current`: «Ny tråd» is an action, not a place like the rows.
+          Over an empty list it reads «Start din første tråd», with no text to repeat it. */}
       <Button asChild>
         <RouterLink to="/" ref={newThreadRef} onClick={newThread}>
           {empty ? 'Start din første tråd' : 'Ny tråd'}
@@ -309,29 +205,14 @@ export function ThreadsView({
         </RouterLink>
       </Button>
 
-      {/*
-        «Tidligere tråder» is gone from the screen (decided 23.09): the panel is
-        a list of threads, the search field says «Søk i tråder», and the
-        groups under it name themselves. It stays for a screen reader, and
-        that is measured rather than kept out of habit — the group headings
-        are level 3, so without a level 2 over them the panel jumps from the
-        page's h1 to h3 and a reader moving by headings loses the step that
-        says what the list under it is.
-      */}
+      {/* Hidden on screen, where the groups name themselves; kept so the outline
+          does not jump from the page's h1 to the groups' h3. */}
       <Heading level={2} data-size="xs" className="ds-sr-only">
         Tidligere tråder
       </Heading>
 
-      {/*
-        <search> is the landmark; the <form> inside it is what makes
-        Search.Clear work, since that button is type="reset". Submitting
-        does nothing because the list filters as the user types.
-
-        Not drawn over a list known to be empty (KA CC on #197, the same
-        thought as issue 82): there is nothing to search, and «Start
-        din første tråd» should stand alone. While the list loads, or could
-        not be fetched, it stays, as «Ny tråd» does.
-      */}
+      {/* The <form> makes Search.Clear (type="reset") work; the list filters as
+          the user types. Not drawn over a list known to be empty. */}
       {!empty && (
         <search className="threads-view__search">
           <form onSubmit={(event) => event.preventDefault()} onReset={() => setQuery('')}>
@@ -348,36 +229,23 @@ export function ThreadsView({
         </search>
       )}
 
-      {/*
-        The hit count, and the loading message under it, are both rendered
-        permanently with their text coming and going. A live region only
-        announces content that appears inside a region that already existed,
-        so mounting the region together with its text — which is what a
-        `{trimmed && …}` around it did — said nothing on the first search.
-        ErrorState keeps its alert container for the same reason.
-      */}
+      {/* Always rendered, like the output below, with the text coming and going:
+          a live region announces only changes inside a region that exists. */}
       <Paragraph asChild data-size="sm">
         <output id={searchStatusId} className="threads-view__search-status">
           {trimmed ? (matches.length === 1 ? '1 tråd' : `${matches.length} tråder`) : ''}
         </output>
       </Paragraph>
 
-      {/*
-        One alert region for both kinds of failure. Two would be two voices
-        with no order between them, and «Prøv igjen» belongs to the list only:
-        a failed rename or delete has already been put back, and doing it
-        again is the reader's call, from the row.
-      */}
+      {/* One alert region, not two voices in no order. «Prøv igjen» is for the
+          list only: a failed rename or delete is already put back. */}
       <ErrorState
         message={failed ? 'Klarte ikke å hente trådene.' : actionError}
         onRetry={failed ? retry : undefined}
       />
 
-      {/*
-        Skeleton is aria-hidden, so this carries the message. It also says
-        what a rename or a delete did: both change the list without moving
-        the reader, so nothing else would tell a screen reader it happened.
-      */}
+      {/* Skeleton is aria-hidden, so this carries the loading message, and what a
+          rename or delete did, since neither moves focus. */}
       <output className="ds-sr-only">{loading ? 'Henter tråder' : announcement}</output>
 
       {loading && (
@@ -394,16 +262,7 @@ export function ThreadsView({
 
       {groups.map((group) => (
         <section key={group.id} className="threads-view__group">
-          {/*
-            The heading on its own, without `PanelHeader` (decided 23.09):
-            bigger, in the default text colour, and without the box that
-            component draws around a panel's top. It is a label over a group
-            of rows, not the head of a panel — the panel's head is the row
-            above with «Skjul tråder og filter» in it.
-
-            Level 3 unchanged: the semantics are the same as before, and it is
-            only the size and the wrapper that moved.
-          */}
+          {/* Not `PanelHeader`: this labels a group of rows, not a panel. */}
           <Heading level={3} data-size="xs" className="threads-view__group-title">
             {group.title}
           </Heading>
@@ -419,13 +278,6 @@ export function ThreadsView({
                     />
                   ) : (
                     <div className="threads-view__row">
-                      {/*
-                        Its own component because it measures itself: a title
-                        cut off at one line shows the whole row again on hover
-                        and on focus, and a title that fits does not. The row
-                        is the whole link — title, time and corpus. See
-                        ThreadLink.tsx.
-                      */}
                       <ThreadLink
                         thread={thread}
                         current={thread.id === openThreadId}

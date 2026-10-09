@@ -1,19 +1,7 @@
 import { sourceFrom, type ScriptedConversation } from './types';
 
-/**
- * The eleven cached conversations.
- *
- * Three of them are the kickstarter questions from the empty state word for
- * word, so pressing a suggestion and sending it gets a real answer. That is
- * the whole of point 5 in the brief, and it needed no change to the chat
- * view: the questions were already written, so the answers were written to
- * fit them rather than the other way round.
- *
- * Two of those three ask about years the corpus does not hold, and the
- * answers say so. That is not a gap in the fixture — it is what a retrieval
- * assistant does when the archive stops short of the question, and it is
- * worth being able to look at.
- */
+// Three of these are the empty state's kickstarter questions word for word. Two ask about years
+// the corpus does not hold, and the answers say so on purpose, as a retrieval assistant should.
 
 /** «Hva rapporteres om regnskap … i DSS sine årsrapporter for 2022 og 2023?» */
 const dssRegnskap: ScriptedConversation = {
@@ -942,7 +930,7 @@ teller som oppnådd, står ikke i sammendraget.`,
   ],
 };
 
-/** All eleven, in the order they were written. */
+/** All of them, in the order they were written. */
 export const scriptedConversations: ScriptedConversation[] = [
   dssRegnskap,
   udirLaererspesial,

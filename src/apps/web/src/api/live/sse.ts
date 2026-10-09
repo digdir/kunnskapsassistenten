@@ -1,10 +1,6 @@
 /**
- * A server-sent events decoder.
- *
- * Kept separate from the MCP client because it is the part with the sharp
- * edges: a frame can be split across two network chunks, a comment line
- * (`: ping`, which this server sends every 15 seconds) is not data, and a
- * frame can carry several `data:` lines that belong together.
+ * A server-sent events decoder, kept apart for its sharp edges: frames split across chunks,
+ * comment lines (the server's `: ping` keep-alive) and multi-line `data:`.
  */
 export type SseMessage = {
   /** The `event:` field, when the frame has one. */
@@ -25,8 +21,8 @@ function parseFrame(raw: string): SseMessage | undefined {
   let event: string | undefined;
 
   for (const line of raw.split('\n')) {
-    // A line starting with a colon is a comment. The server uses those as
-    // keep-alives through intermediate proxies.
+    // A line starting with a colon is a comment. The server uses those as keep-alives through
+    // intermediate proxies.
     if (line.startsWith(':')) continue;
 
     const colon = line.indexOf(':');

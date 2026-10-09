@@ -9,29 +9,15 @@ export type DeleteThreadDialogProps = {
   onCancel: () => void;
 };
 
-/**
- * «Slette tråden?», before a deletion that cannot be undone.
- *
- * What dialog.md prescribes for exactly this case in KA: modal, closed only
- * by a close request and not by a click on the backdrop, focus on «Avbryt»,
- * and the delete button in `danger`. The focus is set from here rather than
- * with `autoFocus`, which the linter forbids (jsx-a11y) and which
- * Designsystemet only honours at the end of an opening animation — so not
- * at all under `prefers-reduced-motion` (dialog.md, «Kjente begrensninger»). Closing it any other way — Escape, the
- * close button — is «Avbryt», the safe choice («Å lukke uten å velge skal
- * utløse det tryggeste alternativet»).
- *
- * Rendered permanently, with `open` following the thread, so the element is
- * there to animate and to take focus the moment one is asked about.
- */
+/** «Slette tråden?»; always rendered, so it can animate and take focus at once. */
 export function DeleteThreadDialog({ thread, onConfirm, onCancel }: DeleteThreadDialogProps) {
   const headingId = useId();
   const cancelRef = useRef<HTMLButtonElement>(null);
   const asking = thread !== undefined;
 
-  // After Designsystemet's own effect has opened the dialog, which is a child
-  // and runs first; opening moves focus to the close button, and this moves
-  // it on to «Avbryt».
+  // Not `autoFocus`: Designsystemet honours it only after the opening animation,
+  // so never under `prefers-reduced-motion`. Runs after the dialog's own effect
+  // has focused the close button.
   useEffect(() => {
     if (asking) cancelRef.current?.focus();
   }, [asking]);

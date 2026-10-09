@@ -14,40 +14,15 @@ export type AnswerSearchProps = {
   /** Escape, and the close button. */
   onClose: () => void;
   fieldRef: RefObject<HTMLInputElement | null>;
-  /**
-   * Which answer is being searched: «Søk i svar 2 av 3», or «Søk i svaret»
-   * in a conversation with one.
-   *
-   * It matters because the strip is pinned to the top of the column and not
-   * to the answer it belongs to. Detached from its card it has to say what it
-   * is searching, the same way the sources panel's pinned head says «Kilder
-   * til svar 1 av 2».
-   */
+  /** Which answer is being searched. It matters because the strip is pinned
+      to the top of the column, not to the answer, so detached from its card
+      it has to say what it is searching. */
   label: string;
 };
 
-/**
- * Search inside one answer (design/brukerreiser-2026-09-15.md, punkt 13).
- *
- * The sources panel has had a search with a hit counter and previous/next
- * since PR #26, and the answer beside it had nothing — so a reader looking for
- * one number in a long answer had the browser's own find or nothing. This is
- * the same control, in the answer's action row, and deliberately the same
- * shape: `Search` with `Search.Clear`, a live counter, «Forrige» and «Neste»
- * that stop at the ends rather than wrapping (brukerblikk 2026-09-15, funn
- * 11), and `aria-disabled` rather than `disabled` so stepping never drops the
- * keyboard out of the control.
- *
- * It does not take Ctrl+F. The browser's find is the one keyboard shortcut
- * every reader already has, and a page that swallows it takes away a working
- * tool to offer its own — the brief asks for an alternative to it, not a
- * replacement. Escape closes, which is what a reader expects of a strip that
- * opened over what they were reading.
- *
- * The counter is a live region for the same reason as in the sources panel:
- * `<mark>` is not announced, so «2 av 7 treff» is the only thing that tells a
- * screen reader user the search did anything.
- */
+/** Search inside one answer, the same control as the sources panel's. **It
+    does not take Ctrl+F**, and the counter is a live region, because `<mark>`
+    is not announced and the count is the only sign anything happened. */
 export function AnswerSearch({
   query,
   onQueryChange,
@@ -78,15 +53,9 @@ export function AnswerSearch({
     // needs, since it is a `type='reset'` button and a reset button outside a
     // form does nothing.
     <search className="ka-answer-search">
-      {/*
-        The keydown sits on the form rather than on the field, so Escape also
-        closes from the step buttons — a reader who has tabbed to «Neste» is
-        still inside the search and expects the same key to get out of it. The
-        rule below guards against giving a non-interactive element the
-        behaviour of a control; nothing of the sort happens here. The form
-        takes no focus and gets no role, it only listens to what bubbles up
-        from the controls inside it, and every one of those is a real one.
-      */}
+      {/* The keydown sits on the form, so Escape also closes from the step
+          buttons. The form takes no focus and no role; it listens to what
+          bubbles up from the real controls inside it. */}
       {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <form
         className="ka-answer-search__form"

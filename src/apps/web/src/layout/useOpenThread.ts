@@ -1,26 +1,14 @@
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { OpenThreadContext, type OpenThreadContextValue } from './openThreadContext';
 
-/**
- * The conversation on screen. Undefined on a page that has none.
- *
- * Read by whatever has to point at it — today the thread list, which marks
- * its row with `aria-current="page"`.
- */
+/** The conversation on screen, or undefined on a page that has none. */
 export function useOpenThread(): string | undefined {
   return use(OpenThreadContext).openThreadId;
 }
 
 /**
- * Report the conversation on screen for as long as this view holds it.
- *
- * Shaped like `useNoAnswers` and `useComposerPresence`: a value rather than a
- * hook the caller may or may not call, because the caller renders in both
- * states and a hook cannot be called conditionally.
- *
- * The cleanup is what makes leaving honest. A route with no conversation —
- * «Siden finnes ikke» — must not leave the last thread marked as open in a
- * list the reader is still looking at.
+ * Report the conversation on screen for as long as this view holds it. The cleanup matters: a
+ * route with no conversation («Siden finnes ikke») must not leave the last thread marked open.
  */
 export function useReportOpenThread(threadId: string | undefined): void {
   const { setOpenThreadId } = use(OpenThreadContext);

@@ -6,24 +6,9 @@ import type { UploadClient } from './uploadClient';
 let client: UploadClient | undefined;
 
 /**
- * The upload client for this mode, built once.
- *
- * `VITE_API_MODE` is the same switch `createChatClient()` reads: mock mode
- * does the whole flow in the browser, and every other mode refuses honestly
- * because there is no endpoint (API-bestilling A3). That includes `bff`:
- * the BFF in digdir/kunnskapsassistenten has no upload route either, and a
- * test that asked only «is it live?» handed the pod the mock, which took
- * files that went nowhere.
- * Found by #2 on 30.09. Mock is the one mode named, so a mode added later
- * refuses until someone gives it an upload.
- *
- * Cached, unlike `createChatClient()` — but not because two instances would
- * disagree. They would not: `MockUploadClient` holds no state of its own and
- * reads `localStorage` on every call, so a second instance would answer
- * exactly the same. The cache is here so that `unavailable` is read off one
- * object rather than a new one per render, and so a test that swaps the mode
- * has one place to reset. That is a smaller claim than the one this comment
- * used to make, and it is the true one. KA CC on #117.
+ * The upload client for this mode, built once. Only mock uploads; every other
+ * mode, `bff` included, has no endpoint and refuses. Cached so `unavailable` is
+ * read off one object, and a test that swaps the mode has one place to reset.
  */
 export function createUploadClient(): UploadClient {
   client ??=

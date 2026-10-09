@@ -10,13 +10,9 @@ import type { UploadClient, UploadProgress } from '../uploadClient';
 export const DOCUMENTS_STORAGE_KEY = 'ka.documents.v1';
 
 /**
- * A file whose name starts with this always fails, however valid it is.
- *
- * The error path needs to be reachable on demand. Every other failure here
- * depends on having a file of the wrong kind or the wrong size to hand, and
- * «find a 21 MB PDF» is a poor way to look at an error state. Prefix and not
- * an exact name so a reader can try `feil-rapport.pdf` and `feil2.docx`
- * without learning a magic string.
+ * A file whose name starts with this always fails, however valid it is, so
+ * the error state can be reached without a file of the wrong kind or size.
+ * A prefix so `feil-rapport.pdf` and `feil2.docx` both work.
  */
 export const ALWAYS_FAILS_PREFIX = 'feil';
 
@@ -28,13 +24,7 @@ function newId(): string {
   return crypto.randomUUID?.() ?? `doc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/**
- * Reads what is stored, and never lets a bad entry cost the whole list.
- *
- * Anything unreadable is dropped rather than thrown: this is a convenience
- * store in the browser, and a reader whose list will not load has lost their
- * documents for no reason a reload could fix.
- */
+// Anything unreadable is dropped rather than thrown, so one bad entry never costs the list.
 function read(): UserDocument[] {
   try {
     const raw = localStorage.getItem(DOCUMENTS_STORAGE_KEY);
@@ -66,23 +56,12 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * The reader's own documents, in the browser.
- *
- * **Metadata only, never the file.** Name, type, size and status are kept in
- * `localStorage`; the bytes are read for nothing and dropped. That is not a
- * shortcut, it is the honest shape of a mock with no backend behind it: a
- * document the mock «has» cannot be searched, and storing megabytes of base64
- * in `localStorage` would fill the quota and pretend otherwise.
- *
- * The limits are the ones the design promises: PDF and .docx, 20 MB. They are
- * enforced here so the whole flow — refusal, message, the document appearing
- * as failed — can be built and seen before A3 exists.
+ * The reader's documents, metadata only, in `localStorage`: with no backend the file cannot be
+ * searched anyway, and base64 would fill the quota. Enforces the design's limits (PDF, .docx,
+ * 20 MB) so the flow can be built before there is an upload endpoint.
  */
 export class MockUploadClient implements UploadClient {
-  /**
-   * Undefined, because uploading works here. Declared rather than left off so
-   * the two clients are visibly answering the same question.
-   */
+  /** Undefined: uploading works here. Declared so both clients answer the same question. */
   readonly unavailable = undefined;
 
   async upload(
@@ -94,9 +73,7 @@ export class MockUploadClient implements UploadClient {
     const base = {
       id: newId(),
       name: file.name,
-      // Something has to be recorded for a file we refuse, and the name is
-      // what the reader sees. `pdf` is the placeholder; `errorCode` is what
-      // says the type was the problem.
+      // A refused file still needs a type; `errorCode` says the type was the problem.
       type: type ?? 'pdf',
       size: file.size,
       uploadedAt: new Date().toISOString(),
@@ -109,9 +86,7 @@ export class MockUploadClient implements UploadClient {
       errorCode,
     });
 
-    // Checked before any waiting: a file that cannot be taken should be
-    // refused at once, not after a second and a half of a bar that was
-    // never going anywhere.
+    // Refused at once, not after a progress bar that was never going anywhere.
     if (type === undefined) return refuse('wrong-type');
     if (file.size > MAX_UPLOAD_BYTES) return refuse('too-large');
 
@@ -122,17 +97,8 @@ export class MockUploadClient implements UploadClient {
     }
 
     if (file.name.toLocaleLowerCase('nb-NO').startsWith(ALWAYS_FAILS_PREFIX)) {
-      /*
-       * After the progress, not before: this is the failure that happens on
-       * the way home, which is the one a view has to draw over a bar that had
-       * already filled.
-       *
-       * Not written to storage, the same as a file refused before it started.
-       * A failure is something to see and try again after, not a document —
-       * and one that survived a reload would come back as a dead row with a
-       * full bar and no way to retry it. One rule for both: a failed upload
-       * lives in the session, never in the store. Found by KA CC on #117.
-       */
+      // After the progress: the failure on the way home, over a full bar. Not stored: after a
+      // reload it would be a dead row with no way to retry.
       return { ...refuse('failed'), progress: 100 };
     }
 

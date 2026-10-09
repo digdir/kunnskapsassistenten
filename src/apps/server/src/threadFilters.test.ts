@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { forget, recall, remember, rememberWhenAnswered } from './threadFilters.ts';
+import { forget, forgetIfFailed, recall, remember } from './threadFilters.ts';
 
 const done = { type: 'done', conversationId: 'c', insufficient: false } as const;
 
@@ -30,15 +30,16 @@ test('a thread that was read recently outlives older ones', () => {
 });
 
 test('a thread whose first turn failed keeps no filter, so a follow-up is not stuck with it', () => {
-  const note = rememberWhenAnswered('t5', { concerned_years: ['2024'] });
+  remember('t5', { concerned_years: ['2024'] });
+  const note = forgetIfFailed('t5');
   note({ type: 'error', message: 'Søket ble avvist.', code: 'invalid_overrides' });
   assert.equal(recall('t5'), undefined);
 });
 
-test('the filter is kept once the turn has its answer', () => {
-  const note = rememberWhenAnswered('t6', { type: ['Evaluering'] });
+test('the filter stays through a turn that has its answer', () => {
+  remember('t6', { type: ['Evaluering'] });
+  const note = forgetIfFailed('t6');
   note({ type: 'delta', text: 'Svaret.' });
-  assert.equal(recall('t6'), undefined, 'not before the answer is done');
   note(done);
   assert.deepEqual(recall('t6'), { type: ['Evaluering'] });
 });

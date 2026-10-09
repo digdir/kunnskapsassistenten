@@ -12,22 +12,9 @@ type AgentPickerProps = {
 };
 
 /**
- * Which agent answers, chosen in the compose field beside the send button,
- * the way claude.ai chooses its model (decided 06.10).
- *
- * The button is the agent's name and nothing else: no frame and no fill
- * (`tertiary`), because «it is information until you press it». It opens a
- * list with each agent's name, its one line of description, and a check by
- * the one that is chosen.
- *
- * Designsystemet's `Dropdown`, which is a list of buttons and not an ARIA
- * menu, and on purpose: a `role="menu"` without the arrow keys and typeahead
- * of the pattern would be worse than none (dropdown.md, «Tilgjengelighet»),
- * and Tab between a handful of buttons reads plainly. The dropdown has no
- * selected state of its own, so the chosen one says it with `aria-current`
- * and the check is decoration.
- *
- * Nothing at all with fewer than two agents: one agent is no choice.
+ * Which agent answers. A `Dropdown` of buttons and not an ARIA menu, which
+ * without arrow keys and typeahead is worse than none; it has no selected
+ * state, so the chosen one says so with `aria-current`.
  */
 export function AgentPicker({ agents, current, onChoose }: AgentPickerProps) {
   const [open, setOpen] = useState(false);
@@ -45,12 +32,9 @@ export function AgentPicker({ agents, current, onChoose }: AgentPickerProps) {
 
   return (
     <Dropdown.TriggerContext>
-      {/*
-        The name says what the button changes, and contains what it shows, so
-        a reader who says the visible word to their voice control still hits
-        it (WCAG 2.5.3). A label and not a hidden span before the name: how a
-        space between two spans is counted differs between engines.
-      */}
+      {/* The name contains what the button shows, so voice control still
+          hits it (WCAG 2.5.3). A label and not a hidden span, because engines
+          differ on how the space between two spans is counted. */}
       <Dropdown.Trigger
         aria-label={`${AGENT_PREFIX}${label}`}
         className="ka-agent-picker__trigger"
@@ -62,11 +46,9 @@ export function AgentPicker({ agents, current, onChoose }: AgentPickerProps) {
         <span className="ka-agent-picker__current">{label}</span>
         <ChevronDownIcon aria-hidden />
       </Dropdown.Trigger>
-      {/*
-        Above the button, since the field is at the bottom of the window and
-        a list below it would open off the screen. Controlled, as in
-        ThreadMenu: a press inside the list does not close it on its own.
-      */}
+      {/* Above the button, since the field is at the bottom and a list below
+          would open off the screen. Controlled, so a press inside the list
+          does not close it on its own. */}
       <Dropdown
         className="ka-agent-picker"
         // Neutral, not the accent blue the list's buttons take by default: a

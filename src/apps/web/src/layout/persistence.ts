@@ -1,37 +1,6 @@
-/**
- * What the layout remembers from one visit to the next.
- *
- * Until now `localStorage` held one thing, the colour scheme, and everything
- * else started over on every reload: collapse a panel, tick three filters,
- * press F5, and all of it is back to `defaultLayout`. Finding in reise 16 of
- * design/brukerreiser-2026-09-15.md, punkt 9 on the ranked list. The vision is
- * a workspace where the reader decides what sits where (answers 10 and 48),
- * and that starts with the choice surviving a reload.
- *
- * Two keys, both carrying a version, because the two hold different kinds of
- * thing and go stale for different reasons:
- *
- *   ka.layout.v1  which sidebars are collapsed, how wide they are, and
- *                 whether the reader has said no to the sources panel. Shaped
- *                 by the slots, which change when the layout model changes.
- *   ka.filter.v1  the document filter. Shaped by the CORPUS: the values are
- *                 the keys the backend filters on, so a new corpus can make
- *                 every stored value meaningless. Bump the version then.
- *
- * `ka.color-scheme` in colorScheme.ts is the third and stays where it is: it
- * is applied before React exists, by an inline script in index.html.
- *
- * Every access is guarded, the same way and for the same reason as the colour
- * scheme: `localStorage` throws outright in Safari's private mode and with
- * site data blocked, and can hold anything at all, since the reader is free to
- * edit it. A remembered panel is never worth a blank page, so a bad value is
- * dropped and the app opens on its defaults.
- *
- * Widths joined the key on 2026-09-15, when the drag handle gave the reader a
- * way to produce one (rolle-5i). Only a width that differs from the design's
- * own is written down, so resetting an edge removes it again rather than
- * storing the default a second time.
- */
+// Layout and filter state kept across reloads, under versioned keys: bump the filter key when the
+// corpus changes (its values are backend filter keys), the layout key when the slots change.
+// Every read is validated, because storage can throw and the reader can edit it.
 
 import { emptyFilterSelection, type FilterDimension, type FilterSelection } from '../model';
 import {
@@ -50,21 +19,9 @@ export const FILTER_STORAGE_KEY = 'ka.filter.v1';
 export type StoredLayout = {
   /** Per sidebar. A slot missing here simply keeps whatever the default says. */
   collapsed: Partial<Record<SidebarSlot, boolean>>;
-  /**
-   * Per sidebar, in CSS pixels, and only for a panel the reader has actually
-   * moved. A slot missing here is a slot at the width the design draws.
-   */
+  /** Per sidebar, in CSS pixels, only for a panel the reader has moved. */
   widths: Partial<Record<SidebarSlot, number>>;
-  /**
-   * Has the reader said, in so many words, that they do not want the sources
-   * panel?
-   *
-   * It has to be stored next to `collapsed` and not derived from it, because
-   * collapsed is also the default. Without it, «I closed this» is
-   * indistinguishable from «I have not opened it yet» after a reload, and the
-   * first answer with sources would push the panel back in the face of
-   * somebody who had just shut it. See LayoutProvider.
-   */
+  /** The reader shut the sources panel. Stored, since `collapsed` alone is also the default. */
   sourcesDismissed: boolean;
 };
 
@@ -90,13 +47,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/**
- * Read the remembered layout, or undefined when there is nothing usable.
- *
- * Every field is checked rather than trusted. This is a string the reader can
- * edit by hand, and a `collapsed` that is the number 3 would otherwise reach
- * `aria-expanded`.
- */
+/** The remembered layout, or undefined. Every field is checked, since the reader can edit it. */
 export function readStoredLayout(): StoredLayout | undefined {
   const value = readJson(LAYOUT_STORAGE_KEY);
   if (!isRecord(value)) return undefined;
@@ -107,9 +58,8 @@ export function readStoredLayout(): StoredLayout | undefined {
     if (typeof stored[slot] === 'boolean') collapsed[slot] = stored[slot];
   }
 
-  // A width has to be a finite number and nothing else. `Infinity` and `NaN`
-  // both survive `typeof === 'number'` and both reach CSS as a broken length;
-  // the bounds are applied later, by `withWidth`, against the model.
+  // Finite numbers only: `Infinity` and `NaN` pass `typeof` and break CSS. `withWidth` applies
+  // the bounds later.
   const storedWidths = isRecord(value.widths) ? value.widths : {};
   const widths: Partial<Record<SidebarSlot, number>> = {};
   for (const slot of sidebarSlots) {
@@ -124,10 +74,9 @@ export function writeStoredLayout(layout: Layout, sourcesDismissed: boolean): vo
   const collapsed: Partial<Record<SidebarSlot, boolean>> = {};
   for (const slot of sidebarSlots) collapsed[slot] = layout.slots[slot].collapsed;
 
-  // Only a width the reader has moved. Writing the default down as well would
-  // make «tilbakestill» and «never touched» two different stored states that
-  // mean the same thing, and the day a default changes, every browser that
-  // had merely opened the app once would hold the old number.
+  // Only a width the reader has moved. Storing the default too would make «reset» and «never
+  // touched» differ, and a changed default would not reach browsers that had merely opened the
+  // app once.
   const widths: Partial<Record<SidebarSlot, number>> = {};
   for (const slot of sidebarSlots) {
     const sizing = layout.slots[slot].sizing;
@@ -140,18 +89,8 @@ export function writeStoredLayout(layout: Layout, sourcesDismissed: boolean): vo
 }
 
 /**
- * Apply what was remembered to a layout.
- *
- * Only collapse, and only for the slots that were stored. Widths are the
- * other half and are applied by `withStoredWidths` below; the rest of the
- * layout — which views exist, which one is active — comes from the code, so a
- * stored value can never resurrect a slot that has been removed or a view
- * that has been renamed.
- *
- * It can produce a layout that breaks rule B, with both sidebars open in a
- * window too narrow for them. That is fine and is not fixed here:
- * `LayoutProvider` applies the rule on the first render precisely because
- * `initialLayout` cannot be assumed to know about the window.
+ * Apply the remembered collapse state to the stored slots only, so a removed slot cannot come
+ * back. May leave both sidebars open in a narrow window; `LayoutProvider` fixes that.
  */
 export function withStoredCollapse(layout: Layout, stored: StoredLayout | undefined): Layout {
   if (!stored) return layout;
@@ -164,15 +103,7 @@ export function withStoredCollapse(layout: Layout, stored: StoredLayout | undefi
   return next;
 }
 
-/**
- * Apply the remembered widths.
- *
- * `withWidth` clamps to the model's own bounds, so a stored 900 from a
- * browser that once ran a version with a different ceiling comes back as the
- * ceiling rather than as a panel wider than the window. What FITS is a
- * separate question and belongs to the window, not to storage; see
- * `fittedWidths`.
- */
+/** Apply the remembered widths, clamped by `withWidth`; what fits the window is `fittedWidths`. */
 export function withStoredWidths(layout: Layout, stored: StoredLayout | undefined): Layout {
   if (!stored) return layout;
 
@@ -188,19 +119,8 @@ export function withStoredWidths(layout: Layout, stored: StoredLayout | undefine
 const dimensions = Object.keys(emptyFilterSelection) as FilterDimension[];
 
 /**
- * Read the remembered filter.
- *
- * A dimension that is missing or malformed comes back empty, which is the
- * same as «no restriction on this dimension». Values are not checked against
- * the corpus: the facets are loaded asynchronously by the filter view, they
- * differ between mock and live, and a selection the current corpus has no
- * documents for is a real, honest state — the counts say zero.
- *
- * Except the empty string, which no facet holds. Enter in a filter field
- * with no arrow first chose «Ingen treff», whose value is '' (#288), and
- * that was stored here. Read back, it went with every question until the
- * field was changed, narrowed it to nothing — «Svaret har ingen kilder» —
- * and the field said «1 av N valgt» over a chip with no text.
+ * The remembered filter; a missing or malformed dimension comes back empty. Values are not checked
+ * against the corpus, but '' («Ingen treff») is dropped, since it would match nothing.
  */
 export function readStoredFilter(): FilterSelection | undefined {
   const value = readJson(FILTER_STORAGE_KEY);
@@ -220,11 +140,7 @@ export function writeStoredFilter(selection: FilterSelection): void {
   writeJson(FILTER_STORAGE_KEY, selection);
 }
 
-/**
- * For «Logg ut» (`beforeLogout` in session.ts): the filter is kept per
- * browser and not per user, so the next reader in this browser would ask
- * their first question with it.
- */
+/** For «Logg ut» (`beforeLogout` in session.ts): the filter is per browser, not per user. */
 export function forgetStoredFilter(): void {
   try {
     localStorage.removeItem(FILTER_STORAGE_KEY);

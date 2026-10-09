@@ -1,39 +1,12 @@
 import { corpusDisplayName, type CorpusOption } from '../../api';
 import type { FilterFacet } from '../../model';
 
-/**
- * One line saying what the corpus behind the answers actually is.
- *
- * The word «Kudos» appeared nowhere a first-time user could see it — only
- * inside a collapsed panel — so nothing on screen said where the answers come
- * from, how much there is, or which years it covers (brukerreiser
- * 2026-09-15, punkt 11, retningslinje 6).
- *
- * Everything in the sentence is read off the facets, so it follows the corpus
- * instead of being a claim someone has to remember to update. The facets have
- * to be the unconditional ones for that to hold: a count narrowed by the
- * user's own selection would make the line say the corpus shrank when all
- * that happened was that they ticked a box.
- *
- * Every clause is optional and drops out when the data behind it is missing.
- * Live mode has no facet aggregation at all (API-bestilling A2), so there the
- * line is the corpus's own words: its description from the environment, or
- * its name when it has none. «Kudos» was the constant here until a reader
- * could choose the corpus (#106) — it is now whatever is being searched, and
- * «standardkorpuset» when nothing names it.
- */
+// One line on what the corpus behind the answers is, read off the unconditional facets so a
+// ticked box cannot shrink it. A clause drops out when its data is missing; live mode has no
+// facet aggregation, so there the line is the corpus's description or name.
 
-/**
- * Norwegian plurals for the document types we have seen.
- *
- * A generic rule cannot do this: «tildelingsbrev» is a neuter noun and does
- * not change, and «proposisjon til Stortinget» pluralises in the middle. A
- * type that is not in the table keeps the facet's own label, lowercased —
- * the word the dropdown under it uses — rather than an invented plural.
- *
- * This is where the team's wording lives; extend it when the corpus grows a
- * type. Nothing breaks without it, the line just reads slightly stiffer.
- */
+/* Norwegian plurals; no generic rule gets «tildelingsbrev» or «proposisjoner til Stortinget»
+   right. Other types keep the facet's label, lowercased. Extend when the corpus grows a type. */
 const PLURAL_NB: Record<string, string> = {
   Evaluering: 'evalueringer',
   'Proposisjon til Stortinget': 'proposisjoner til Stortinget',
@@ -42,13 +15,7 @@ const PLURAL_NB: Record<string, string> = {
   Årsrapport: 'årsrapporter',
 };
 
-/**
- * How many types the sentence names before it gives up and says «med flere».
- *
- * The cut only happens when it actually saves something: with exactly one
- * type over the cap, «med flere» is longer than the type it replaces and says
- * less, so the last one is named too. See {@link documentTypes}.
- */
+/** Types named before «med flere». One over is named too: «med flere» would say less. */
 const MAX_TYPES = 5;
 
 function plural(label: string): string {
@@ -61,17 +28,8 @@ function list(parts: string[]): string {
   return `${parts.slice(0, -1).join(', ')} og ${parts.at(-1)}`;
 }
 
-/**
- * How many documents there are.
- *
- * Summed over one dimension, not over all of them: every document has exactly
- * one type and one year, so either sum is the total, while summing both would
- * count everything twice. `documentType` first because it is the dimension
- * most likely to be complete; `year` is the fallback.
- *
- * Undefined when any value in the dimension is missing its count — a partial
- * sum is a wrong number, and a wrong number is worse than no number.
- */
+/** Summed over one dimension, as every document has one type and one year (`documentType` is
+    likelier complete). Undefined when any count is missing: a partial sum is wrong. */
 function totalDocuments(facets: FilterFacet[]): number | undefined {
   for (const dimension of ['documentType', 'year'] as const) {
     const facet = facets.find((candidate) => candidate.dimension === dimension);
@@ -87,8 +45,7 @@ function documentTypes(facets: FilterFacet[]): string {
   const facet = facets.find((candidate) => candidate.dimension === 'documentType');
   if (!facet || facet.values.length === 0) return '';
 
-  // Biggest first, so the types that actually make up the corpus are the ones
-  // that survive the cut. Facet order is kept when there are no counts.
+  // Biggest first, so the cut keeps the types that make up the corpus.
   const ordered = [...facet.values].sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
   const truncated = ordered.length > MAX_TYPES + 1;
   const named = (truncated ? ordered.slice(0, MAX_TYPES) : ordered).map((value) =>
@@ -111,16 +68,7 @@ function yearRange(facets: FilterFacet[]): string {
   return first === last ? String(first) : `${first}–${last}`;
 }
 
-/**
- * The line, in the two parts the panel draws it in.
- *
- * `source` names the corpus and is always there; `detail` is what is in it,
- * and is what «Vis mer» holds. Split because the sentence whole is two lines
- * in a 327 px panel — 63 px of a filter head that was 179 (measured at 1440)
- * — and the panel is over its height budget (hoydebudsjett-forslag,
- * 2026-09-21, N2). The name is the half that changes when a reader switches
- * corpus (#103, #106), so it is the half that stays on screen.
- */
+/** The line in two parts: `source` stays on screen, `detail` is behind «Vis mer». */
 export type CorpusLine = {
   /** «Dokumenter fra Wikipedia (NorQuAD)». Never empty. */
   source: string;
@@ -143,15 +91,7 @@ export function corpusLine(facets?: FilterFacet[], corpus?: CorpusOption): Corpu
   const source = `Dokumenter fra ${corpusDisplayName(corpus)}`;
   if (clauses.length > 0) return { source, detail: clauses.join(', ') };
 
-  /*
-   * Nothing to count, so the corpus says what it is in its own words — the
-   * description from the environment. The opening stays either way, because
-   * it carries the one thing the description cannot be trusted to: where the
-   * documents come from. That was the whole reason the line exists
-   * (brukerreiser punkt 11), and a description written in a deployment's
-   * environment may well name only what is inside.
-   *
-   * This is the live path — there is no facet aggregation there (A2).
-   */
+  // Nothing to count (live mode): the corpus's own description. `source` stays, since a
+  // description may say what is inside but not where it comes from.
   return corpus?.description ? { source, detail: corpus.description } : { source };
 }

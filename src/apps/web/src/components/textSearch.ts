@@ -1,31 +1,9 @@
-/**
- * Finding a string in a piece of text, and saying where it was found.
- *
- * **One** search mechanism was asked for, not two (answers 27 and 55): the
- * sources panel searches excerpts today, the answer and whole documents are
- * next. That is why this is not «excerpt search» — it knows nothing about
- * excerpts, documents or sources. It takes a flat list of pieces of text with
- * an id each, and gives back where the matches are.
- *
- * What stays with the caller is what the pieces ARE.
- * `buildSearchIndex` in src/views/sources/search.ts turns documents into
- * items, because only that view knows what a document is. The day the chat
- * view searches an answer it writes its own three lines and reuses
- * everything here.
- *
- * Moved out of the sources view 2026-09-15 at #3's request, unchanged: the
- * matching, the counter and the previous/next navigation were already general,
- * and the only thing holding them in one view was the folder they sat in.
- */
+// Text search shared by every view: texts with ids in, match positions out. Each view builds
+// its own items (see `buildSearchIndex` in src/views/sources/search.ts).
 
 /**
- * What kind of thing a piece of indexed text came from.
- *
- * A hit carries it so the caller can tell «found in an excerpt» from «found in
- * the document body» without looking the id up again. `answer` is one block of
- * a rendered answer in the main column — the chat searches a paragraph at a
- * time, because that is the shape react-markdown hands it (brukerreiser punkt
- * 13).
+ * Where an indexed text came from, so a hit can tell excerpt from document body without a
+ * lookup. `answer` is one block, because react-markdown hands the chat a paragraph at a time.
  */
 export type SearchableKind = 'excerpt' | 'document' | 'answer';
 
@@ -50,18 +28,9 @@ export type SearchHit = {
 export const MIN_QUERY_LENGTH = 2;
 
 /**
- * All matches, in reading order: index order first, then position in the text.
- *
- * Matching is a plain case-insensitive substring search. `toLowerCase()` keeps
- * the length of every Norwegian character, æ ø å included, so the offsets stay
- * valid against the original string — which is what lets us search a
- * lowercased copy and highlight the original.
- *
- * Superscript digits and signs compare as the plain ones, so «m2» finds the
- * «m²» the sources panel shows for `m<sup>2</sup>`
- * (src/views/sources/readableText.ts): a keyboard has no «²». Each is one
- * UTF-16 unit, as the character it stands for is, so the offsets hold here
- * too.
+ * All matches in reading order, case-insensitive. Superscripts fold to plain, since a keyboard has
+ * no «²». `toLowerCase()` keeps the length of æ ø å and each superscript is one UTF-16 unit like
+ * its plain twin, so offsets found in the folded copy are valid in the original.
  */
 export function findHits(items: SearchableItem[], query: string): SearchHit[] {
   const raised = '⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾';
@@ -96,14 +65,9 @@ export function hitsFor(hits: SearchHit[], itemId: string): SearchHit[] {
 }
 
 /**
- * Move one hit, and stop at the ends.
- *
- * It used to wrap, and wrapping is what made «Forrige» look usable on hit 1 of
- * 8 (docs/review/brukerblikk-2026-09-15.md, funn 11): the button was the same
- * blue as «Neste» and said nothing about where it would land. The review left
- * the choice open — disable it, or say that it goes round — and the decision
- * was to disable. So the ends are ends here too, and the buttons that call
- * this are `aria-disabled` when they would be no-ops.
+ * Move one hit, and stop at the ends rather than wrap: a wrapping «Forrige» on
+ * the first hit looks usable and says nothing about where it lands. The
+ * buttons that call this are `aria-disabled` when they would be no-ops.
  */
 export function stepHit(total: number, current: number, step: 1 | -1): number {
   if (total === 0) return 0;

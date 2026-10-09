@@ -47,11 +47,105 @@ describe('the filter of a new thread', () => {
     }
   });
 
+  test('is there when the thread is read at the conversation event', async () => {
+    // The client reads the thread when `conversation` arrives, before the turn
+    // has an answer, and locks the filter from what it reads.
+    let release = () => {};
+    backend.held = new Promise((resolve) => (release = resolve));
+    try {
+      const res = await app.request('/api/v2/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: 'Hva sier årsrapportene?', filter }),
+      });
+      const reader = res.body!.getReader();
+      const first = new TextDecoder().decode((await reader.read()).value);
+      const created = JSON.parse(first.slice(first.indexOf('{'), first.indexOf('\n')))
+        .id as string;
+      assert.deepEqual(await filterOf(created), filter);
+      release();
+      while (!(await reader.read()).done);
+    } finally {
+      backend.held = null;
+      release();
+    }
+  });
+
   test('is kept once the first turn has its answer', async () => {
     const sent = await ask({ query: 'Hva sier årsrapportene?', filter });
     const created = sent.find((e) => e.type === 'conversation')?.id as string;
     assert.equal(sent.at(-1)?.type, 'done');
     assert.deepEqual(await filterOf(created), filter);
+  });
+});
+
+describe('headless-rag down', () => {
+  const down = async (path: string, init?: RequestInit) => {
+    backend.down = true;
+    try {
+      const res = await app.request(path, init);
+      return { status: res.status, body: await res.json() };
+    } finally {
+      backend.down = false;
+    }
+  };
+
+  test('a new question gets a 502 with a code, not only a sentence', async () => {
+    assert.deepEqual(
+      await down('/api/v2/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: 'Hva sier årsrapportene?' }),
+      }),
+      {
+        status: 502,
+        body: { error: 'Kunne ikke opprette samtale.', code: 'backend_unreachable' },
+      },
+    );
+  });
+
+  test('the thread list, a rename and a delete get the code too, in both versions', async () => {
+    for (const base of ['/api', '/api/v2']) {
+      assert.deepEqual(await down(`${base}/conversations`), {
+        status: 502,
+        body: { error: 'Kunne ikke hente samtaler.', code: 'backend_unreachable' },
+      });
+      assert.deepEqual(
+        await down(`${base}/conversations/c1`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: 'Nytt navn' }),
+        }),
+        { status: 502, body: { error: 'Kunne ikke endre navn.', code: 'backend_unreachable' } },
+      );
+      assert.deepEqual(
+        await down(`${base}/conversations/c1`, {
+          method: 'DELETE',
+          // A browser sends its origin with a DELETE; the CSRF check asks for it.
+          headers: { Origin: 'http://localhost:8787' },
+        }),
+        {
+          status: 502,
+          body: { error: 'Kunne ikke slette samtalen.', code: 'backend_unreachable' },
+        },
+      );
+    }
+  });
+});
+
+describe('headless-rag answering with an error', () => {
+  test('the 502 names the status it answered with', async () => {
+    backend.status = 503;
+    try {
+      const res = await app.request('/api/v2/conversations');
+      assert.equal(res.status, 502);
+      assert.deepEqual(await res.json(), {
+        error: 'Kunne ikke hente samtaler.',
+        code: 'backend_http_503',
+      });
+    } finally {
+      backend.status = null;
+    }
   });
 });
 

@@ -16,15 +16,7 @@ export type UserDocuments = {
   ready: UserDocument[];
   /** True while at least one is still on its way. */
   uploading: boolean;
-  /**
-   * Why uploading cannot work here at all, known before anyone picks a file.
-   * Undefined means it works.
-   *
-   * The drop zone reads this to say the honest thing up front in live mode,
-   * rather than taking a file and refusing it a moment later. A code and not
-   * a boolean, so the same Norwegian sentences that cover a refused file
-   * cover a switched-off zone. Asked for by #2, 21.09.
-   */
+  /** Why uploading cannot work here, before a file is picked. A code, so messages are shared. */
   unavailable?: UploadErrorCode;
   /** Take a file. Resolves with the finished document, ready or failed. */
   upload: (file: File, signal?: AbortSignal) => Promise<UserDocument>;
@@ -32,25 +24,15 @@ export type UserDocuments = {
 };
 
 /**
- * The reader's own documents, for the views that show or change them.
- *
- * The React end of the store in src/api/userDocuments.ts, the same shape
- * `useCorpus` has: `useSyncExternalStore` reads during render, so the first
- * paint after an upload is already right.
- *
- * Three views use it and want different halves. The compose field (#3)
- * uploads and needs `uploading`; «Dine dokumenter» (#2) draws `documents`,
- * failures included, because a refused file has to say why it was refused;
- * whatever attaches documents to a question wants `ready`, since a document
- * that failed cannot be searched.
+ * The reader's own documents, from the store in src/api/userDocuments.ts. `ready` is what a
+ * question can use, since a failed document cannot be searched; `documents` keeps failures so a
+ * refused file can say why.
  */
 export function useUserDocuments(): UserDocuments {
   const documents = useSyncExternalStore(subscribeToUserDocuments, userDocuments);
 
-  // Reads what was stored, once per page however many views ask. An effect
-  // and not a render-time call: it is a side effect that touches storage, and
-  // the first render is correct without it — an empty list is what a reader
-  // with no documents has.
+  // Loads what was stored, once per page however many views ask. An effect because it touches
+  // storage, and the first render (an empty list) is correct without it.
   useEffect(() => {
     void loadUserDocuments();
   }, []);
@@ -61,8 +43,8 @@ export function useUserDocuments(): UserDocuments {
   );
   const remove = useCallback((id: string) => removeUserDocument(id), []);
 
-  // Read from the client rather than held as state: it is a property of the
-  // mode the app was built in and cannot change while the page is open.
+  // Read from the client, not held as state: it depends on the build mode and cannot change
+  // while the page is open.
   const unavailable = createUploadClient().unavailable;
 
   return useMemo(

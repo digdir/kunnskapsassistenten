@@ -1,56 +1,34 @@
-/**
- * Years as periods: the text a reader types, and the set of chosen years
- * drawn as ranges. Pure, so every form the field understands is a unit test.
- *
- * Behind the `year-ranges` flag (#115). The filter is still a list of years —
- * that is what the backend takes, and nothing about the request changes. The
- * periods are only how the field reads and draws that list: three years in a
- * row are one chip, «2022–2024», and a gap makes two.
- */
+/** Years as periods for the `year-ranges` flag (digdir/kunnskapsassistenten#115); pure, for
+ * unit tests. The filter stays a list of years, which is what the backend takes; periods are
+ * only how the field reads and draws it. */
 
 import { currentYear } from '../../../shared/years.ts';
 
 /** From and to, both included. A single year has `from === to`. */
 export type YearRange = { from: number; to: number };
 
-/*
- * Between the two years: a hyphen, an en or em dash, or «til», with or
- * without spaces. Open periods («fra 2015», «til 2010») are not read in this
- * round, so «til» only counts between two years.
- */
+// A hyphen, an en or em dash, or «til» between two years; open periods are not read.
 const RANGE = /^(\d{2}|\d{4})\s*(?:-|–|—|til)\s*(\d{2}|\d{4})$/u;
 const SINGLE = /^(\d{2}|\d{4})$/u;
 
-/**
- * A two-digit year: the 2000s up to this year's last two digits, the 1900s
- * above them. In 2026, «23» is 2023 and «92» is 1992.
- */
+/** Two digits are the 2000s up to this year's last two, else the 1900s. */
 function fullYear(digits: string, thisYear: number): number {
   const value = Number(digits);
   if (digits.length === 4) return value;
   return value > thisYear % 100 ? 1900 + value : 2000 + value;
 }
 
-/**
- * The end of a range written with two digits, as in «2023–28» or «23-28»: the
- * first year from the start onwards that ends in those digits. The start is
- * read by the rule above and the end follows it, so «23-28» is 2023–2028 and
- * «92-00» is 1992–2000 even when 28 is above this year's two digits.
- */
+/** A two-digit end («2023–28», «92-00»): the first year from the start that ends in those
+ * digits, whatever this year is. */
 function endAfter(start: number, digits: string): number {
   const century = start - (start % 100);
   const candidate = century + Number(digits);
   return candidate >= start ? candidate : candidate + 100;
 }
 
-/**
- * What a reader typed, as a period. Undefined for anything else; while the
- * text is on its way to one, `suggestPeriods` offers what it may become.
- *
- * Understood: «2021», «2023-2028», «2023–2028», «2023 til 2028», «23-28»,
- * «92-00» and «2023–28». A range of full years written backwards is turned
- * round; one that ends in two digits always ends after its start.
- */
+/** What a reader typed, as a period, or undefined. Reads «2021», «2023-2028», «2023–2028»,
+ * «2023 til 2028», «23-28» and «2023–28». Full years written backwards are turned round; a
+ * two-digit end always follows its start. */
 export function parseYearInput(text: string, thisYear = currentYear()): YearRange | undefined {
   const input = text.trim().toLocaleLowerCase('nb-NO');
 
@@ -68,10 +46,7 @@ export function parseYearInput(text: string, thisYear = currentYear()): YearRang
   return from <= to ? { from, to } : { from: to, to: from };
 }
 
-/*
- * A start the reader has written in full, then the beginning of a period's
- * end: «2019-», «2019-2», «2019 til 20», or «2019 t» on the way to «til».
- */
+// A full start and the beginning of an end: «2019-», «2019 til 20», «2019 t».
 const OPEN_RANGE = /^(\d{2}|\d{4})\s*(?:(?:-|–|—|til)\s*(\d{0,4})|ti?)$/u;
 const DIGITS = /^\d{1,4}$/u;
 
@@ -80,11 +55,8 @@ function lastTwoDigits(year: number): string {
   return String(year % 100).padStart(2, '0');
 }
 
-/**
- * The years the facets hold documents for, in order. A year listed with no
- * count holds some as far as anyone knows: in bff and live the counts are
- * left out once another field is ticked (`facetsFrom`).
- */
+/** Years with documents, in order. No count counts as some: bff and live leave counts out
+ * once another field is ticked (`facetsFrom`). */
 function yearsWithDocuments(values: readonly { value: string; count?: number }[]): number[] {
   const years = values
     .filter((value) => value.count === undefined || value.count > 0)
@@ -93,23 +65,10 @@ function yearsWithDocuments(values: readonly { value: string; count?: number }[]
   return [...new Set(years)].sort((a, b) => a - b);
 }
 
-/**
- * What the list offers while the reader is still writing.
- *
- *   - The text read as a period by `parseYearInput`, when it is one, with or
- *     without documents, as before.
- *   - Digits that begin a year: the years with documents that begin with
- *     them. «2» is every year from 2000 on, «202» the 2020s.
- *   - A start and the beginning of an end: the periods from that start to a
- *     later year with documents whose end begins so, written in full or with
- *     two digits. «2019-2» and «2019-20» are 2019–2020, 2019–2021 and on.
- *
- * Years newest first, as the year field without the flag lists them (the
- * facets come so from the mock and the server). Periods from one start
- * shortest first, the order their ends are typed in.
- *
- * Empty when nothing fits, which is when the field shows its hint.
- */
+/** What the list offers for the text so far: the text as a period (`parseYearInput`), with
+ * documents or not; years with documents that begin with the digits typed; and periods from a
+ * typed start to later years with documents whose end, in full or two digits, begins as typed.
+ * Sorted by start, newest first, then shortest first. Empty when nothing fits. */
 export function suggestPeriods(
   text: string,
   values: readonly { value: string; count?: number }[],
@@ -155,11 +114,8 @@ function asYear(year: number | string): number {
   return /^\d+$/u.test(year.trim()) ? Number(year) : Number.NaN;
 }
 
-/**
- * A set of years as periods: years in a row are one range, a gap starts the
- * next. Duplicates and order do not matter, and anything that is not a whole
- * year is left out.
- */
+/** Years as periods, years in a row as one. Any order, duplicates allowed, and anything not a
+ * whole year is left out. */
 export function toRanges(years: Iterable<number | string>): YearRange[] {
   const sorted = [...new Set([...years].map(asYear))]
     .filter((year) => Number.isInteger(year))
@@ -192,12 +148,8 @@ export function rangeFromKey(key: string): YearRange | undefined {
   return from <= to ? { from, to } : undefined;
 }
 
-/**
- * How many documents a period holds, summed from the facet's counts. A year
- * the facet does not list holds none. Undefined when the facet has no counts
- * at all, as in live mode, so the field shows no number rather than a 0 that
- * is not true.
- */
+/** Documents in a period, from the facet's counts; an unlisted year holds none. Undefined when
+ * the facet has no counts (live), so no false 0 is shown. */
 export function documentsIn(
   range: YearRange,
   values: readonly { value: string; count?: number }[],

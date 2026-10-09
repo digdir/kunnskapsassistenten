@@ -1,6 +1,6 @@
-import { Button } from '@digdir/designsystemet-react';
+import { Button, Tooltip } from '@digdir/designsystemet-react';
 import { ClipboardIcon, ClipboardLinkIcon, MagnifyingGlassIcon } from '@navikt/aksel-icons';
-import type { RefObject } from 'react';
+import { useEffect, useId, useRef, type RefObject } from 'react';
 import type { SourceDocument } from '../../model';
 import { AnswerTime } from './AnswerTime';
 import { answerWithSources, copyReceipt, referenceList } from './answerText';
@@ -11,12 +11,10 @@ type AnswerActionsProps = {
   content: string;
   /** When the answer came, ISO 8601. Drawn at the end of the row. */
   createdAt: string;
-  /**
-   * The documents behind the answer. They become the reference list under the
-   * copied text, and the `[n]` markers are kept so they point at something.
-   */
+  /** The documents behind the answer. They become the reference list under the
+     copied text, and the `[n]` markers are kept so they point at something. */
   sources?: SourceDocument[];
-  /** Opens or closes the search inside this answer (brukerreiser punkt 13). */
+  /** Opens or closes the search inside this answer. */
   onToggleSearch?: () => void;
   searchOpen?: boolean;
   /** Where focus goes when the search strip closes. */
@@ -24,24 +22,15 @@ type AnswerActionsProps = {
 };
 
 /**
- * What a reader can do with a finished answer: copy it (answer 15), copy a
- * link to the thread (answer 16), and search in it. «Bla til nederst»
- * (answer 17) used to be here too, once per answer; it is one control for the
- * whole column now, over the compose field (issue, runde 3, ekstra 5).
- *
- * Copying takes the sources with it. An answer pasted into a submission
- * without its provenance is the one thing KA is not for (reise 13, 14 and 20
- * in design/brukerreiser-2026-09-15.md), so the markers stay and a reference
- * list follows them. The receipt counts what went along, because «Svaret er
- * kopiert» would not tell the reader that anything more did.
- *
- * The receipt under the row is rendered empty rather than hidden while there
- * is nothing to say. A live region that is `display: none` is not in the
- * accessibility tree, so the region and its text would appear in the same
- * frame and announce nothing — the same rule
- * `src/components/ErrorState.tsx` is built around.
- *
- * A clarification has its own, shorter row: see `Clarification.tsx`.
+ * The limit on a copied link, in one string: the tooltip, the description a
+ * screen reader reads, and the first half of the receipt say the same thing.
+ */
+const LINK_NOTE = 'Virker bare for deg, i denne nettleseren';
+
+/**
+ * What a reader can do with a finished answer. **Copying takes the sources
+ * with it**, and the receipt counts what went along; it is rendered empty
+ * rather than hidden, or the live region announces nothing.
  */
 export function AnswerActions({
   content,
@@ -52,6 +41,20 @@ export function AnswerActions({
   searchToggleRef,
 }: AnswerActionsProps) {
   const { receipt, copy } = useCopy();
+  const linkNoteId = useId();
+  const receiptRef = useRef<HTMLParagraphElement>(null);
+
+  // The receipt grows the column under a reader at the end; `nearest` moves it
+  // no further than it must, past the field (chat.css). A drawn focus ring then
+  // takes back what it needs; a pointer draws none, so the receipt keeps it all.
+  useEffect(() => {
+    if (receipt === null) return;
+    const focused = document.activeElement;
+    receiptRef.current?.scrollIntoView({ block: 'nearest' });
+    if (focused instanceof HTMLElement && focused.matches(':focus-visible')) {
+      focused.scrollIntoView({ block: 'nearest' });
+    }
+  }, [receipt]);
 
   return (
     <div className="ka-answer-actions">
@@ -70,23 +73,31 @@ export function AnswerActions({
         Kopier svaret
       </Button>
 
-      <Button
-        data-color="neutral"
-        data-size="sm"
-        onClick={() => void copy(window.location.href, 'Lenken til tråden er kopiert.')}
-        variant="tertiary"
-      >
-        <ClipboardLinkIcon aria-hidden />
-        Kopier lenke til tråden
-      </Button>
+      {/* The link opens the thread only in this browser (issue 119). The limit is
+          a description and not part of the name, so the row keeps its height
+          where the column is narrow. */}
+      <Tooltip content={LINK_NOTE}>
+        <Button
+          aria-describedby={linkNoteId}
+          data-color="neutral"
+          data-size="sm"
+          onClick={() =>
+            void copy(window.location.href, `Lenken til tråden er kopiert. ${LINK_NOTE}.`)
+          }
+          variant="tertiary"
+        >
+          <ClipboardLinkIcon aria-hidden />
+          Kopier lenke til tråden
+        </Button>
+      </Tooltip>
+      {/* `hidden` and not `ds-sr-only`: the description still reaches the
+          button, and the sentence is not a second stop for a reader walking
+          the row. One string, or a hidden element gets a gap before the dot. */}
+      <span hidden id={linkNoteId}>{`${LINK_NOTE}.`}</span>
 
-      {/*
-        The reader's own way into a long answer (brukerreiser punkt 13). The
-        browser's Ctrl+F is left alone on purpose — it is the one find every
-        reader already has, and a page that takes it away to offer its own has
-        made things worse. `aria-expanded` is what says the strip below
-        belongs to this button.
-      */}
+      {/* The reader's own way into a long answer; the browser's Ctrl+F is
+          left alone on purpose. `aria-expanded` is what says the strip below
+          belongs to this button. */}
       {onToggleSearch ? (
         <Button
           aria-expanded={searchOpen ?? false}
@@ -101,15 +112,11 @@ export function AnswerActions({
         </Button>
       ) : null}
 
-      {/*
-        When the answer came, after the things a reader can do with it: the
-        row is what to do first, and when it was is a fact about it. Outside
-        every button, so it never joins one's accessible name — the same
-        reason the thread list keeps it beside the link rather than inside.
-      */}
+      {/* When the answer came, after the things a reader can do with it.
+          Outside every button, so it never joins one's accessible name. */}
       <AnswerTime createdAt={createdAt} />
 
-      <p aria-live="polite" className="ka-answer-actions__receipt">
+      <p aria-live="polite" className="ka-answer-actions__receipt" ref={receiptRef}>
         {receipt}
       </p>
     </div>

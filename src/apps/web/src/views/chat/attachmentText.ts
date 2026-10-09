@@ -3,19 +3,9 @@ import { MAX_UPLOAD_BYTES, type UploadErrorCode } from '../../model';
 /** How many whole megabytes the limit is, for a sentence to name it. */
 const MAX_MEGABYTES = Math.round(MAX_UPLOAD_BYTES / (1024 * 1024));
 
-/**
- * Why a file did not make it, one sentence per case.
- *
- * Looked up from the code rather than written where the failure was caught,
- * the same reasoning `errorText.ts` gives for a failed turn: four situations
- * that need four different things from the reader, and «noe gikk galt» says
- * none of them.
- *
- * `unavailable` is the one that is not the reader's file's fault, and it says
- * so. There is no upload endpoint at all (API-bestilling A3), so «prøv igjen»
- * would send someone round a loop that cannot close — the sentence names the
- * service rather than the file.
- */
+// One sentence per case. `unavailable` is not the file's fault and says so:
+// there is no upload endpoint (API-bestilling A3), so «prøv igjen» would
+// send someone round a loop that cannot close.
 const UPLOAD_ERROR_TEXT: Record<UploadErrorCode, string> = {
   'too-large': `Filen er større enn ${MAX_MEGABYTES} MB.`,
   'wrong-type': 'Filtypen støttes ikke. Last opp PDF eller .docx.',
@@ -28,15 +18,9 @@ export function uploadErrorText(code: UploadErrorCode): string {
   return UPLOAD_ERROR_TEXT[code];
 }
 
-/**
- * Whether trying the same file again could work.
- *
- * Only the general failure. A file that is too large or of the wrong type is
- * the same file next time, and there is no endpoint for `unavailable` to
- * reach however many times it is asked — so «Prøv igjen» is drawn on one of
- * the four and «Fjern» on all of them. Same rule as `retryable` in
- * errorText.ts, for the same reason.
- */
+/** Whether trying the same file again could work: only the general failure.
+    A file too large or of the wrong type is the same file next time, and
+    `unavailable` has no endpoint to reach however often it is asked. */
 export function uploadRetryable(code: UploadErrorCode): boolean {
   return code === 'failed';
 }
@@ -44,13 +28,9 @@ export function uploadRetryable(code: UploadErrorCode): boolean {
 /** The paperclip. It says what it takes, since the picker filters silently. */
 export const ATTACH_LABEL = 'Legg ved dokument (PDF eller .docx)';
 
-/**
- * Why a question did not go while a file was still on its way.
- *
- * Only ready documents are sent, so sending now would drop the file the
- * reader just attached. Saying so beats a send button that does nothing, and
- * beats sending the question without the thing it was about.
- */
+/** Why a question did not go while a file was on its way: only ready
+    documents are sent, so sending now would drop the file the reader just
+    attached. */
 export const WAIT_FOR_UPLOADS = 'Vent til vedlegget er lastet opp.';
 
 /** What the attachment strip is called, for the list that holds the chips. */
@@ -69,13 +49,9 @@ export function retryAttachmentLabel(name: string): string {
   return `Prøv å laste opp ${name} på nytt`;
 }
 
-/**
- * What the polite region says when a file starts on its way.
- *
- * Once, and without a number. The percentage is drawn in the chip for anyone
- * watching it; read aloud it is eighteen sentences that say the same thing
- * eighteen times and end on a stale one.
- */
+/** What the polite region says when a file starts on its way: once, and
+    without a number. Read aloud, a percentage is a dozen sentences saying
+    the same thing and ending on a stale one. */
 export function uploadStartedAnnouncement(name: string): string {
   return `Laster opp ${name}.`;
 }

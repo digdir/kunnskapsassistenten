@@ -42,47 +42,23 @@ export type BffChatClientOptions = {
   /** Where the BFF's API is. Relative: the BFF serves this client itself. */
   basePath?: string;
   /**
-   * Which corpus the BFF answers from, read per call as in live.
-   *
-   * The BFF serves one dataset, set in its own environment, and this does not
-   * choose it — nothing on the wire says which one it is. It is the
-   * deployment's statement of the same thing, and it is used for two jobs:
-   * the field names in `VITE_KA_FILTER_FIELDS`, and saying which corpus an
-   * answer came from.
+   * The deployment's name for the one corpus the BFF serves; the wire does not say which it is.
    */
   datasetConfigKey?: () => string | undefined;
   /** Defaults to the deployment's configuration, as in live. */
   filterFields?: (datasetKey: string | undefined) => DatasetFilterFields | undefined;
-  /**
-   * What a 401 does, with the address to come back to. Defaults to the BFF's
-   * own sign-in, which comes back there. An option so a test can see it
-   * happen.
-   */
+  /** What a 401 does with the address to return to. Defaults to the BFF's sign-in. */
   onUnauthorized?: (returnTo: string) => void;
-  /**
-   * How long to wait between asking whether the BFF's startup probe has
-   * finished. See `#capabilities` and `SETTLE_DELAYS_MS`.
-   */
+  /** Waits between asking whether the BFF's startup probe is done. See `SETTLE_DELAYS_MS`. */
   settleDelaysMs?: number[];
 };
 
-/**
- * The conversation the questions that follow belong to. Module state for the
- * reason it is in live (LiveChatClient.ts): the shell and the chat view each
- * build a client, and they have to agree.
- */
+/** The open conversation; module state since the shell and chat view each build a client. */
 let openConversation: string | undefined;
 
-/**
- * A thread the shell is waiting to hear the real id of.
- *
- * The BFF has no endpoint that makes a conversation. `POST /api/ask` does it,
- * and says so in its first event. So `createThread` cannot make one — it
- * waits for the question that is about to be asked, and the `conversation`
- * event of that question is its answer. The shell calls it a tick before it
- * asks (ChatSlotView.tsx), which is why this is a promise and not a callback
- * the ask looks for.
- */
+// The BFF has no endpoint that makes a conversation; `POST /api/ask` does, in its first event. So
+// `createThread` waits on this promise for the next question's `conversation` event; the shell
+// calls it a tick before it asks (ChatSlotView.tsx).
 let creation: { promise: Promise<string | undefined>; settle: (id?: string) => void } | undefined;
 
 function awaitCreation(): NonNullable<typeof creation> {
@@ -98,12 +74,8 @@ function awaitCreation(): NonNullable<typeof creation> {
 /** What the BFF can do, once it has said so for certain. Kept for the page's life. */
 let settledCapabilities: BffCapabilities | undefined;
 
-/**
- * The BFF's facets, once it has given some. Kept for the page's life, like
- * the probe: they are a corpus's, and the BFF itself holds them ten minutes.
- * An empty answer is not kept, because that is also what a BFF without
- * Typesense says.
- */
+// The BFF's facets, kept for the page's life (the BFF caches them ten minutes). An empty answer is
+// not kept: a BFF without Typesense says the same.
 let knownFacets: BffFacet[] | undefined;
 
 /** Whether the deployment has been asked for its corpus on this page. */
@@ -119,16 +91,8 @@ export function resetBffClient(): void {
   resetSignIn();
 }
 
-/**
- * How long the filter panel waits for the BFF's startup probe, between asks.
- *
- * Quicker at first, then every 15 seconds for as long as the BFF says the
- * probe is still out (see `#capabilities`). One search in the probe took
- * 12–15 seconds at load 29, and the probe retries for about nine minutes
- * before it decides (#4, 29.09). The first version gave up after 12 seconds,
- * and a page loaded while the BFF was slow then had a dead panel for good.
- * While it waits, the panel says «Henter filtre».
- */
+// Waits for the BFF's startup probe, then every 15 s while it is out: the probe can retry for
+// about nine minutes, and giving up early would leave the filter panel dead for good.
 const SETTLE_DELAYS_MS = [2000, 3000, 5000, 5000, 5000, 10_000, 10_000, 15_000, 15_000];
 
 const NOT_SETTLED: BffCapabilities = {
@@ -153,12 +117,8 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 /**
- * The client against the BFF in digdir/kunnskapsassistenten (`apps/server`).
- *
- * The BFF holds the API key and the sign-in, and the identity comes from the
- * session cookie rather than from anything this client sends — so there is
- * no `X-User-Id` here, and no tenant or dataset on the wire. The browser
- * sends a question; the server decides what it is asked of
+ * The client against the BFF in digdir/kunnskapsassistenten. The BFF holds the API key, the
+ * sign-in and the corpus choice, so no identity or dataset goes on the wire
  * (src/decisions/0005-client-behind-the-bff.md).
  */
 export class BffChatClient implements ChatClient {
@@ -176,10 +136,7 @@ export class BffChatClient implements ChatClient {
     this.#settleDelaysMs = options.settleDelaysMs ?? SETTLE_DELAYS_MS;
   }
 
-  /**
-   * Every call goes through here, so a 401 anywhere leads to sign-in, with
-   * what the reader had written kept for when they are back (session.ts).
-   */
+  /** Every call goes through here, so any 401 leads to sign-in with the draft kept (session.ts). */
   async #fetch(path: string, init?: RequestInit): Promise<Response> {
     const response = await fetch(`${this.#basePath}${path}`, {
       ...init,
@@ -195,22 +152,9 @@ export class BffChatClient implements ChatClient {
     return (await response.json()) as T;
   }
 
-  /**
-   * What the BFF can do.
-   *
-   * It probes the backend when it starts, and until that is done it says
-   * `filters: false` with `settled: false`. A settled answer is kept; an
-   * unsettled one is not, so the next call asks afresh.
-   *
-   * `patient` is for the filter panel, which is drawn once and would
-   * otherwise say «no filters» for good to a page loaded in the seconds the
-   * probe takes. So it asks again a few times before it believes it. A
-   * question does not wait like that: it asks once, and without a settled yes
-   * it goes without the filter — the panel had none to offer anyway.
-   *
-   * No abort signal, on purpose. The answer is shared, and one caller giving
-   * up must not decide it for the others.
-   */
+  // The BFF says `settled: false` until its startup probe is done; only a settled answer is kept.
+  // `patient` (the filter panel) asks again until it settles; a question asks once. The request
+  // itself takes no abort signal, because the answer is shared.
   async #capabilities(patient = false, signal?: AbortSignal): Promise<BffCapabilities> {
     if (settledCapabilities) return settledCapabilities;
 
@@ -221,18 +165,14 @@ export class BffChatClient implements ChatClient {
         reached = false;
         return NOT_SETTLED;
       });
-      // The corpus is the deployment's and not the probe's, so an unsettled
-      // answer names it as well as a settled one.
+      // The corpus is the deployment's and not the probe's, so an unsettled answer names it too.
       if (found.dataset) adoptServerCorpus(found.dataset);
       if (found.settled) {
         settledCapabilities = found;
         return found;
       }
-      // Past the first delays, the panel keeps asking at the last one for as
-      // long as the BFF says its probe is still out: the probe retries for
-      // about nine minutes before it decides (#4's bff/infra-rettelser). A
-      // BFF that cannot be reached is not waited for like that; the panel
-      // gets an error it can offer «Prøv igjen» on.
+      // Past the first delays, keep asking at the last one while the probe is out. An unreachable
+      // BFF is not waited for: the panel gets an error it can offer a retry on.
       const delay = delays[attempt] ?? (reached ? delays.at(-1) : undefined);
       if (delay === undefined) {
         if (patient && delays.length > 0 && !reached) throw new Error('/capabilities unreachable');
@@ -242,11 +182,7 @@ export class BffChatClient implements ChatClient {
     }
   }
 
-  /**
-   * Ask the deployment for its corpus, once per page, without waiting for the
-   * answer. The shell calls it when it builds the client, so the corpus's
-   * name is there before anyone opens the filter panel.
-   */
+  /** Asks for the corpus once per page, so its name is known before the filter panel opens. */
   prime(): void {
     if (primed) return;
     primed = true;
@@ -261,10 +197,7 @@ export class BffChatClient implements ChatClient {
     return facets ?? [];
   }
 
-  /**
-   * The corpus's field names per dimension: the BFF's own when it tags its
-   * facets (D16), and this build's configuration for a BFF that does not.
-   */
+  /** Field names from the BFF's tagged facets, or this build's configuration when it tags none. */
   #fieldsFor(facets: BffFacet[], corpusKey: string | undefined): DatasetFilterFields | undefined {
     return fieldsFromFacets(facets) ?? this.#filterFields(corpusKey);
   }
@@ -289,23 +222,14 @@ export class BffChatClient implements ChatClient {
     return can.filters ? body : undefined;
   }
 
-  /**
-   * Which conversation the next question belongs to.
-   *
-   * `conversationId`, as in live — and for `id-only`, the id itself. That is
-   * the shell saying «the address names this thread, it has not been read
-   * yet»; the address is `/threads/<conversation id>`, so the id is the one
-   * thing about it that is certain, and it is the conversation's.
-   */
+  // `conversationId` as in live, or for `id-only` the id itself: the address is
+  // `/threads/<conversation id>`, so the id is the one thing about it that is certain.
   openThread(thread: Thread, certainty?: ThreadCertainty): void {
     openConversation = thread.conversationId ?? (certainty === 'id-only' ? thread.id : undefined);
   }
 
-  /**
-   * The thread as the BFF names it, once the question that makes it has been
-   * asked. See `creation`. When that question fails before the BFF names a
-   * conversation, this waits for the next question in the thread.
-   */
+  // Resolves when the question that makes the thread gets its `conversation` event (`creation`).
+  // If that question fails first, it waits for the next question in the thread.
   async createThread(thread: Thread): Promise<Thread | undefined> {
     openConversation = undefined;
     const id = await awaitCreation().promise;
@@ -316,10 +240,9 @@ export class BffChatClient implements ChatClient {
     const corpusKey = this.#corpusKey();
     const askedOf = corpusKey ? { corpusKey } : {};
     const conversationId = params.conversationId ?? openConversation;
-    // A question with no conversation makes one, and a thread may be waiting
-    // to hear what it is called. It hears it the moment the BFF says, not
-    // when the answer is done: the address should not wait for fifteen
-    // seconds of answer.
+    // A question with no conversation makes one, and a thread may be waiting to hear what it is
+    // called. It hears it the moment the BFF says, not when the answer is done: the address should
+    // not wait for the whole answer.
     const creating = conversationId ? undefined : awaitCreation();
     let named = false;
     const made = (id: string) => {
@@ -327,12 +250,9 @@ export class BffChatClient implements ChatClient {
       openConversation = id;
       creating?.settle(id);
     };
-    // The field is empty by now, so a 401 before the answer has to keep the
-    // question itself. Any 401 while it is out, not only the one on `/ask`:
-    // the filter can ask for the capabilities and the facets first. A
-    // question that starts a thread belongs on the front page until the BFF
-    // has named its conversation: the address it is under until then is a
-    // stand-in that leads nowhere after the sign-in.
+    // The input is empty by now, so a 401 on any call while this is out must keep the question. A
+    // question that starts a thread returns to the front page: until the BFF names it, its address
+    // is a stand-in that leads nowhere after sign-in.
     const arrived = noteQuestionInFlight(params.query, () =>
       creating && !named ? '/' : undefined,
     );
@@ -341,11 +261,9 @@ export class BffChatClient implements ChatClient {
       yield* this.#stream(params, conversationId, corpusKey, askedOf, made);
     } finally {
       arrived();
-      // A question that failed or was stopped before the BFF named a
-      // conversation leaves the thread waiting: it is still a stand-in, and
-      // the next question asked in it, «Prøv igjen» or a new one, is the one
-      // that makes it. Settling here would leave the address on the stand-in
-      // for good.
+      // A question that failed or was stopped before the BFF named a conversation leaves the thread
+      // waiting: it is still a stand-in, and the next question asked in it (a retry or a new one)
+      // makes it. Settling here would leave the address on the stand-in for good.
       if (named && creation === creating) creation = undefined;
     }
   }
@@ -436,8 +354,7 @@ export class BffChatClient implements ChatClient {
       await reader.cancel().catch(() => {});
     }
 
-    // The BFF always ends with `done` or `error`. A stream that stops without
-    // either was cut off somewhere between the two.
+    // The BFF always ends with `done` or `error`. A stream that stops without either was cut off.
     yield {
       type: 'error',
       error: { code: 'unknown', message: 'Forbindelsen brøt sammen mens svaret kom.' },
@@ -445,13 +362,8 @@ export class BffChatClient implements ChatClient {
     };
   }
 
-  /**
-   * The reader's conversations, newest first.
-   *
-   * Throws when they cannot be read. An empty list is an answer — «Start din
-   * første tråd» — and a failure read as one replaced a good list after a
-   * 502, where `useThreadList` keeps the last one and says so.
-   */
+  // Throws when the list cannot be read: an empty list is a real answer, and `useThreadList` keeps
+  // the last good list on failure.
   async listThreads(signal?: AbortSignal): Promise<Thread[]> {
     const { conversations } = await this.#json<{ conversations?: BffConversationSummary[] }>(
       '/conversations',
@@ -461,14 +373,8 @@ export class BffChatClient implements ChatClient {
     return (conversations ?? []).map((summary) => threadFromSummary(summary, corpusKey));
   }
 
-  /**
-   * Null when the BFF says the conversation is not there (404), which the
-   * main column draws as «Fant ikke tråden». Throws when it could not be read
-   * at all: the thread may well exist, and the reader can try again.
-   *
-   * With the filter the BFF has locked the thread to, by dimension, so the
-   * panel and «Avgrenset til» can say what the answers were asked with.
-   */
+  // Null on 404 («Fant ikke tråden»); throws on other failures, since the thread may exist. Adds
+  // the filter the BFF locked the thread to, by dimension.
   async getThread(threadId: string, signal?: AbortSignal): Promise<ThreadDetail | null> {
     const response = await this.#fetch(`/conversations/${encodeURIComponent(threadId)}`, {
       signal,
@@ -486,60 +392,42 @@ export class BffChatClient implements ChatClient {
     return filter ? { ...thread, filter } : thread;
   }
 
-  /**
-   * The facets the BFF counts, as the filter panel's dropdowns — or none when
-   * the BFF says its backend cannot filter, which the panel draws as
-   * «Filtrering er ikke tilgjengelig ennå».
-   *
-   * Throws when the BFF cannot be reached, so the panel can offer to try again.
-   */
+  // None when the BFF says its backend cannot filter; throws when the BFF cannot be reached, so the
+  // panel can offer a retry.
   async listFacets(signal?: AbortSignal, selection?: FilterSelection): Promise<FilterFacet[]> {
     const { capabilities: can } = await this.#capabilities(true, signal);
-    // The probe is not the caller's to cancel (see above), so the caller's
-    // own abort is honoured here — the panel drops a stale answer by it.
+    // The probe is not the caller's to cancel (see above), so the caller's own abort is honoured
+    // here: the panel drops a stale answer by it.
     signal?.throwIfAborted();
     if (!can.filters) return [];
     const facets = await this.#facets(signal);
     return facetsFrom(facets, this.#fieldsFor(facets, this.#corpusKey()), selection);
   }
 
-  /**
-   * The agents, and the one the BFF answers with by default.
-   *
-   * Both calls are allowed to fail on their own: without `/api/me` there is
-   * a list and no default, and without `/api/models` there is nothing to
-   * choose, which hides the choice.
-   */
+  // Each call may fail alone: without `/api/me` there is no default, without `/api/models` no
+  // choice to show.
   async listAgents(signal?: AbortSignal): Promise<AgentList> {
     const [models, me] = await Promise.all([
       this.#json<BffModels>('/models', signal).catch((): BffModels => ({})),
       this.#json<BffMe>('/me', signal).catch((): BffMe => ({})),
     ]);
-    // The same answer says who is signed in, which a draft kept at a 401 is
-    // tied to (session.ts).
+    // The same answer says who is signed in, which a draft kept at a 401 is tied to (session.ts).
     noteSignedIn(me.userId);
     return agentsFromBff(models.agents, me.tool);
   }
 }
 
-/**
- * An HTTP error from `/api/ask`, as a code — and, when the BFF's sentence is
- * one this client knows, a sentence of its own. The BFF's text is read like
- * the backend's and never shown as it stands: most of it is written for
- * whoever runs the service, and what is not («Spørsmålet er for langt (maks
- * 2000 tegn).») is translated in `errorFromBackend`, so the screen only ever
- * says what this client wrote.
- */
+// An HTTP error from `/api/ask` as a code, with this client's own sentence where it has one. The
+// BFF's text is never shown as it stands; `errorFromBackend` translates what it can.
 async function errorFromResponse(response: Response): Promise<ChatError> {
   const fromStatus = errorFromStatus(response.status);
   if (fromStatus.code !== 'unknown') return fromStatus;
   const body = (await response.json().catch(() => ({}))) as Partial<BffFilterRefused> & {
     error?: unknown;
   };
-  // The panel says so before it gets this far (#2); this is the BFF refusing
-  // what a panel let through, in words this client wrote.
-  // Its own code, so the reader is told what to change and is not offered a
-  // «Prøv igjen» that sends the same filter to the same refusal.
+  // The panel says so before it gets this far; this is the BFF refusing what a panel let through,
+  // in words this client wrote. Its own code, so the reader is told what to change and is not
+  // offered a «Prøv igjen» that sends the same filter to the same refusal.
   if (body.code === 'filter-too-many-values') {
     return { code: 'filter-refused', message: FILTER_REFUSED_MESSAGES.tooManyValues };
   }

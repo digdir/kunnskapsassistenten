@@ -1,12 +1,7 @@
 /**
- * An agent the reader can put the question to: the assistant behind the
- * answer, chosen in the compose field.
- *
- * Behind the BFF the list is `GET /api/models`, which is the backend's
- * `/v1/models` grouped by agent. One agent can come in several modes (the
- * same work split into steps differently, for the backend's own evaluation);
- * the reader is not asked about those, and each agent goes with the mode it
- * marks as its default.
+ * An agent the reader can put the question to, chosen in the compose field.
+ * From the BFF's `GET /api/models`, grouped by agent; each uses its default
+ * mode, since the modes exist for the backend's own evaluation.
  */
 export interface Agent {
   /** The agent itself, such as `builtin/agent-rag-agent`. What a choice is kept as. */
@@ -22,9 +17,6 @@ export interface Agent {
 /** The agents, and which one answers when the question names none. */
 export interface AgentList {
   agents: Agent[];
-  /**
-   * The agent the BFF answers with when no `model` is sent. Undefined when it
-   * did not say.
-   */
+  /** The agent the BFF answers with when no `model` is sent. Undefined when it did not say. */
   defaultId?: string;
 }

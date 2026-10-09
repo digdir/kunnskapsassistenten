@@ -1,7 +1,4 @@
-/*
- * Lifted from the old Kunnskapsassistenten, kept as content and nothing else:
- * no styling and no scripts came along. See InfoPage.tsx for how it is drawn.
- */
+/* Text from the previous Kunnskapsassistenten, content only. Drawn by InfoPage.tsx. */
 import type { InfoPart } from './InfoPage';
 
 export const omProsjektetParts: InfoPart[] = [

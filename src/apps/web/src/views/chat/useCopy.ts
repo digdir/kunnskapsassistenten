@@ -11,17 +11,9 @@ export type UseCopy = {
 };
 
 /**
- * Copying that says whether it worked.
- *
- * Shared by the answer's action row and the clarification card, because both
- * copy one piece of text and both owe the reader a receipt. The receipt is
- * one string for a visible element that is also a polite live region, so a
- * sighted reader and a screen reader user are told the same thing at the same
- * time — and the clipboard can refuse, in which case saying so is the only
- * honest outcome.
- *
- * The timer is cleared on unmount: a card that goes away mid-receipt must not
- * set state afterwards.
+ * Copying that says whether it worked, including when the clipboard refuses.
+ * One string for a visible element that is also a polite live region, so both
+ * readers hear the same thing; the timer is cleared on unmount.
  */
 export function useCopy(): UseCopy {
   const [receipt, setReceipt] = useState<string | null>(null);

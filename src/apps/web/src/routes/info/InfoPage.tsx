@@ -3,12 +3,9 @@ import { Markdown, PageTitle } from '../../components';
 import './info.css';
 
 /**
- * One piece of an information page.
- *
- * Almost everything is markdown. `details` is the exception: the old
- * Kunnskapsassistenten folds two long example answers away behind «Les
- * svaret», and flattening them would bury the point of the section — the
- * question, not the answer — under two screens of text.
+ * One piece of an information page. `details` exists because two long example
+ * answers are folded away behind «Les svaret»; flattening them would bury the
+ * point of the section, the question, under two screens of text.
  */
 export type InfoPart =
   { kind: 'markdown'; text: string } | { kind: 'details'; summary: string; text: string };
@@ -20,21 +17,8 @@ export type InfoPageProps = {
 };
 
 /**
- * A page of text in the answer column: onboarding, the changelog, about the
- * project. The words come from the old Kunnskapsassistenten (issue
- * 85); see the `*Parts.ts` files beside this one.
- *
- * Drawn by `Markdown`, which is the one place the mapping from markdown onto
- * Designsystemet lives — Heading, Paragraph, List, Link, Table. Nothing here
- * styles text of its own, and none of the old page's CSS came along.
- *
- * The title is visible and is the page's h1, unlike the two conversation
- * routes, which hide theirs: those pages are named by the thread, this one is
- * named by itself, and the old page drew the name too. The markdown under it
- * starts at `#`, which `Markdown` draws as an h2, so the outline holds.
- *
- * The shell is mounted with `routeOwnsMain` for these routes, so no chat view
- * is drawn underneath — see App.tsx.
+ * A page of text in the main column. Its h1 is visible, unlike on the conversation routes,
+ * because the page names itself. `Markdown` draws `#` as an h2, so the outline holds.
  */
 export function InfoPage({ title, parts }: InfoPageProps) {
   return (

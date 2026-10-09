@@ -3,22 +3,9 @@ import { useId, useState, useSyncExternalStore } from 'react';
 import { RobotIcon } from '@navikt/aksel-icons';
 import type { RetrievalDetails, ThinkingStep } from '../../model';
 
-/**
- * Where the procedure has room to stand open.
- *
- * 774 px is where the answer column stops being a reading width between two
- * rails and becomes the whole window — 67 + 640 + 67, the same sum
- * `drawerMaxViewport` is built from in src/layout/viewModel.ts. It is written
- * here rather than imported because it answers a different question than any
- * of the shell's breakpoints: not «where does a panel become a drawer» but
- * «is there room to read the procedure and the answer at once».
- *
- * Measured with a four-step answer and five keywords, open: 450 px of a
- * 900 px window at 1440, 487 of 1024 at 768, 783 of 956 at 440 and 965 of
- * 844 at 390. Above the line the answer's first heading is on screen under
- * it. Below it the procedure IS the screen, and someone who asked a question
- * would scroll past all of it to reach what they asked for.
- */
+/** Where the procedure has room to stand open. Written here and not imported
+    from the shell, because it answers a different question: «is there room to
+    read the procedure and the answer at once». */
 const ROOM_TO_STAND_OPEN = '(width >= 774px)';
 
 function subscribeToWidth(onChange: () => void): () => void {
@@ -53,56 +40,17 @@ function sameWords(a: string, b: string): boolean {
   return plain(a) === plain(b);
 }
 
-/**
- * The search words, less the one that is only the question over again.
- *
- * The agent plans its searches from the question, and the first thing it
- * plans is often the question itself: against the whole of Kudos the reader's
- * own sentence came back as one of the words it «searched for» (#4 on #208).
- * It is true, and it says nothing — the reader wrote it, and it is on screen
- * two lines above. What is worth reading here is what the agent made of it.
- *
- * Only at this level. The detailed panel shows what the machine did, verbatim,
- * and a developer reading it wants the list the backend actually sent.
- */
+/** The search words, less the one that is only the question over again,
+    which is true and says nothing. Only at this level; the detailed panel
+    shows the list the backend actually sent. */
 function worthShowing(keywords: readonly string[], question?: string): string[] {
   if (!question) return [...keywords];
   return keywords.filter((keyword) => !sameWords(keyword, question));
 }
 
-/**
- * «Fremgangsmåte»: what the assistant set out to do, in its own words.
- *
- * The standard half of the display level (issue 88), drawn after the sketch
- * in issue 113: one panel over the answer card with the steps under
- * «Tenker …», which becomes «Tenkte» when the answer starts, and the search
- * words under «Nøkkelord som ble brukt i søket».
- *
- * It draws the same steps the detailed panel draws, and nothing else from
- * them: no per-step detail, no per-step search strings, no times. What a step
- * SAYS is the agent's plan read back — «Jeg søker i korpuset», «Jeg leser
- * årsrapporten» — and that is what issue 88 asks to keep. What a step
- * measured is machinery, and that is what it asks to lose. The hit count goes with
- * it: «10 treff i 3 dokumenter» counts chunks, and a chunk is not a thing a
- * reader has ever seen.
- *
- * The keywords stay, and they are the reason the panel opens itself. They are
- * what an answer can be checked against — a search for the wrong words
- * explains a thin answer — and what makes an answer checkable should not be
- * behind a click. That was the old «Fremgangsmåte»'s rule inside the card,
- * and it moves up here with the name.
- *
- * It opens itself where there is room for both it and the answer, and stays
- * shut where there is not; `ROOM_TO_STAND_OPEN` above has the measurements. A
- * reader who has an opinion overrides it either way, for the rest of the turn.
- *
- * `Details`, like the detailed panel: the native `<details>` gives the summary
- * a button role, `aria-expanded` and the keyboard for free.
- *
- * It announces nothing, for the reason `ThinkingPanel` gives: the steps
- * arrive seconds apart, and the view's own region already says once that the
- * assistant is searching.
- */
+/** «Fremgangsmåte» (issue 88): the same steps as the detailed panel and
+    nothing else from them, since what a step SAYS is the agent's plan and
+    what it measured is machinery. The keywords are why it opens itself. */
 export function ProcedurePanel({ steps, status, retrieval, question }: ProcedurePanelProps) {
   const thinking = status === 'thinking';
   // The reader's own choice outranks the automatic state for the rest of the
@@ -165,15 +113,9 @@ export function ProcedurePanel({ steps, status, retrieval, question }: Procedure
           </ol>
         </div>
 
-        {/*
-          The words the search actually ran on, with the rule above them that
-          the design draws. Plain Tags: they are not clickable (answer 13), and
-          they wrap inside themselves rather than running out through the side
-          of the panel — see `ka-tag--wrapping`.
-
-          The list carries the lead-in as its accessible name, so a reader who
-          jumps by list hears what the list is instead of five bare strings.
-        */}
+        {/* The words the search actually ran on. Plain Tags, since they are
+            not clickable, and the list carries the lead-in as its accessible
+            name, so jumping by list hears what the list is. */}
         {keywords.length ? (
           <div className="ka-procedure__block ka-procedure__block--ruled">
             <Paragraph className="ka-procedure__label" data-size="sm" id={keywordLabelId}>

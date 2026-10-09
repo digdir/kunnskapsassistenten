@@ -4,19 +4,6 @@ import { AnswerSourcesContext } from '../../layout/answerSourcesContext';
 import { useOpenThread } from '../../layout/useOpenThread';
 import type { AnswerSources, Thread } from '../../model';
 
-/**
- * The thread list, kept in step with the conversation on screen.
- *
- * `ThreadsView` fetched once on mount, and that was wrong the moment the list
- * could be open while somebody asked a question: the thread they had just
- * made was not in the list until they switched to the filter view and back
- * (measured by KA CC on #63). The list is a view of the same conversations
- * the chat view is writing, so it has to re-read them when they change.
- *
- * Nothing polls. The shell already says everything needed to know that
- * something changed — see `conversationRevision` below — so a refresh happens
- * on the render where it happened and not a second later.
- */
 export type ThreadList = {
   /** Undefined until the first read answers. */
   threads: Thread[] | undefined;
@@ -24,36 +11,13 @@ export type ThreadList = {
   failed: boolean;
   /** Read again after a failure. */
   retry: () => void;
-  /**
-   * Change the list on screen before the backend has answered: a new name,
-   * a deleted row. Returns the list as it was, so a failure can put it back.
-   */
+  /** Changes the list before the backend answers. Returns the list as it was. */
   change: (update: (threads: Thread[]) => Thread[]) => Thread[] | undefined;
 };
 
-/**
- * What the shell knows about the conversation, as one comparable string.
- *
- * Two things move it, and between them they cover both ways the list goes
- * stale:
- *
- *   The open thread's id, which changes when a question asked on `/` mints a
- *   thread. That thread is in the store before the shell is told, so a read
- *   that follows this change sees it.
- *
- *   The answers that have stopped streaming, which is when a turn has been
- *   written down and the thread's `updatedAt` has moved. Streaming answers
- *   are deliberately left out: the row would be re-read once per token and
- *   nothing about it would differ.
- *
- * The sources are used as a clock rather than as data — the list draws none
- * of them. It is the only thing the shell holds that moves when an answer
- * lands, and `answers` is the honest half of it: it carries one entry per
- * answer with its status, so it says «a turn settled» without the list having
- * to know anything about what was in it. If the chat view ever stops
- * reporting its answers this stops ticking, and the list would then want a
- * signal of its own from the shell.
- */
+/** The open thread's id, `|`, and the ids of the answers no longer streaming, comma-separated:
+ * it moves when a question on `/` mints a thread or a turn is written. Streaming answers are
+ * left out, or the list would re-read once per token. */
 export function conversationRevision(
   openThreadId: string | undefined,
   answers: AnswerSources[] | undefined,
@@ -65,11 +29,8 @@ export function conversationRevision(
   return `${openThreadId ?? ''}|${settled.join(',')}`;
 }
 
-/**
- * Read the thread list, and read it again when the conversation moves.
- *
- * `given` overrides the fetch, for tests and for a view mounted with fixtures.
- */
+/** Reads the thread list, and again whenever `conversationRevision` moves (no polling).
+ * `given` overrides the fetch, for tests and fixtures. */
 export function useThreadList(given?: Thread[]): ThreadList {
   const client = useMemo(() => createChatClient(), []);
   const [threads, setThreads] = useState<Thread[] | undefined>(given);
@@ -77,30 +38,14 @@ export function useThreadList(given?: Thread[]): ThreadList {
   const [attempt, setAttempt] = useState(0);
 
   const openThreadId = useOpenThread();
-  /*
-   * The context itself and not `useAnswerSources()`, which throws outside a
-   * LayoutProvider. That is right for the sources panel, which has nothing to
-   * draw without it, and wrong here: this is a clock tick, and a list mounted
-   * on its own should still be a list. Same reason OpenThreadContext has an
-   * inert default.
-   */
+  // The context, not `useAnswerSources()`, which throws outside a
+  // LayoutProvider: a list mounted on its own should still be a list.
   const answers = use(AnswerSourcesContext)?.answers;
   const revision = conversationRevision(openThreadId, answers);
 
-  /*
-   * What is on screen, as a ref, so a failed read can tell the two cases
-   * apart: nothing to show, which is an error state, and a refresh that
-   * failed while a perfectly good list is on screen, which is not worth
-   * replacing the list with an error the reader can do nothing about.
-   */
   const shown = useRef<Thread[] | undefined>(given);
   const inFlight = useRef<AbortController | undefined>(undefined);
-  /*
-   * Which read is the current one. Two can overlap — the first one is still
-   * out when the reader's question settles — and the answer that comes back
-   * last is not necessarily the newest. The ticket, not the order of arrival,
-   * decides who may write.
-   */
+  // Reads can overlap and arrive out of order; only the latest ticket writes.
   const ticket = useRef(0);
 
   const read = useCallback(() => {
@@ -118,8 +63,8 @@ export function useThreadList(given?: Thread[]): ThreadList {
       })
       .catch(() => {
         if (mine !== ticket.current || abort.signal.aborted) return;
-        // A refresh that fails leaves the list alone. A first read that fails
-        // has left the reader with skeletons, and has to say so.
+        // A failed refresh leaves a good list alone rather than show an error
+        // the reader can do nothing about; a failed first read has to say so.
         if (!shown.current) setFailed(true);
       });
   }, [client]);
@@ -131,11 +76,7 @@ export function useThreadList(given?: Thread[]): ThreadList {
     return () => inFlight.current?.abort();
   }, [given, read, attempt]);
 
-  /*
-   * The revision as it was when this list was last read, so the mount does
-   * not read twice. A ref rather than state: it is bookkeeping for the effect
-   * below and nothing renders from it.
-   */
+  // The revision last read, so the mount does not read twice.
   const lastRead = useRef(revision);
 
   useEffect(() => {
@@ -154,13 +95,9 @@ export function useThreadList(given?: Thread[]): ThreadList {
     setAttempt((count) => count + 1);
   }, []);
 
-  /*
-   * A change the reader made wins over a read that was already out. That read
-   * was asked before the change reached the backend, so it answers with the
-   * old title or the deleted row, and landing after the change it would put
-   * them back for as long as the next read takes. The ticket moves on, and the
-   * answer is thrown away when it comes.
-   */
+  // A change wins over a read already out: asked before the change reached the
+  // backend, it would put the old title or the deleted row back. The ticket
+  // moves on, so its answer is thrown away.
   const change = useCallback((update: (threads: Thread[]) => Thread[]) => {
     const before = shown.current;
     if (!before) return undefined;

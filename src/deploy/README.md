@@ -6,8 +6,10 @@ origin is not cosmetic, it is what keeps the session cookie first-party.
 
 **Deployed and in use:** `https://qa.kunnskap.digdir.cloud`
 Resource group `rg-ka-app`, Norway East, subscription `Altinn-AI-Assistant`,
-images in `altinnaicontainers`. The DNS records for the domain live with
-`digdir.cloud` at Porkbun; the certificate is managed by Container Apps.
+images in `altinnaicontainers`. Every `az` command below names the
+subscription, because the one a machine has as its default may be another. The
+DNS records for the domain live with `digdir.cloud` at Porkbun; the certificate
+is managed by Container Apps.
 
 ## What is already set up
 
@@ -28,24 +30,54 @@ tree, so nothing needs pushing to GitHub first.
 `.github/workflows/ci.yml` still runs format, typecheck, tests and build on
 pull requests.
 
-Code change, about three minutes:
+Code change, about three minutes. Commit first: `az acr build` uploads the
+working tree as it is, and the image is tagged with the commit. The first line
+prints nothing when there is nothing uncommitted.
 
 ```sh
-git diff --quiet HEAD || { echo 'uncommitted changes'; exit 1; }
+git status --short
 SHA=$(git rev-parse --short HEAD)
 
-az acr build --registry altinnaicontainers --image ka-app:$SHA \
+az acr build --subscription Altinn-AI-Assistant --registry altinnaicontainers --image ka-app:$SHA \
   --file src/Dockerfile src
-az containerapp update -n ka-app -g rg-ka-app \
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app \
   --image altinnaicontainers.azurecr.io/ka-app:$SHA \
   --revision-suffix sha$SHA
 ```
 
-Config or a secret, about 30 seconds and no rebuild:
+**The first rollout of an image with the new client** (`apps/web` and
+`apps/web-preact` side by side) needs two variables a deployment from before it
+does not have. The path above swaps the image and nothing else: without
+`KA_FILTER_FIELDS` the BFF has no facets and no filter panel, and without
+`KA_DATASETS` no name for the dataset. Set them in the same update, once, with
+the template's defaults under the dataset key `kudos`:
 
 ```sh
-az containerapp secret set -n ka-app -g rg-ka-app --secrets digdir-api-key=<verdi>
-az containerapp update -n ka-app -g rg-ka-app --revision-suffix key$(date +%H%M%S)
+git status --short
+SHA=$(git rev-parse --short HEAD)
+
+az acr build --subscription Altinn-AI-Assistant --registry altinnaicontainers --image ka-app:$SHA \
+  --file src/Dockerfile src
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app \
+  --image altinnaicontainers.azurecr.io/ka-app:$SHA \
+  --set-env-vars 'KA_FILTER_FIELDS=kudos=documentType:type|organisation:orgs_long|year:concerned_years:integer' 'KA_DATASETS=kudos=Kudos' \
+  --revision-suffix sha$SHA
+```
+
+The values are quoted because `|` is a pipe to the shell. `--set-env-vars`
+adds or updates the variables it names and leaves the others as they are.
+`KA_DEFAULT_CLIENT` is left unset, so a browser without the `ka_klient` cookie
+gets the current client; add `KA_DEFAULT_CLIENT=ny` to the same list when the
+new one is to be the default. Later rollouts take the path above, and the
+variables stay.
+
+Config or a secret, about 30 seconds and no rebuild. `read -rs` reads the
+value without showing it or keeping it in the shell history:
+
+```sh
+read -rs KEY
+az containerapp secret set --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app --secrets digdir-api-key="$KEY"
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app --revision-suffix key$(date +%H%M%S)
 ```
 
 `secret set` alone changes nothing that is running: the value is only picked up
@@ -53,11 +85,14 @@ by a new revision, which the second command forces. Secrets are write-only in
 the portal, though `az containerapp secret show` will read one back.
 
 The old revision serves until the new one is healthy, so a bad image does not
-take the site down. Roll back by deploying an older tag:
+take the site down. Roll back by deploying an older tag. The first command
+lists the five newest; type the one to go back to:
 
 ```sh
-az containerapp update -n ka-app -g rg-ka-app \
-  --image altinnaicontainers.azurecr.io/ka-app:<older-sha> \
+az acr repository show-tags --subscription Altinn-AI-Assistant --name altinnaicontainers --repository ka-app --orderby time_desc --top 5 -o tsv
+read -r OLDER
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app \
+  --image altinnaicontainers.azurecr.io/ka-app:$OLDER \
   --revision-suffix rollback$(date +%H%M%S)
 ```
 
@@ -66,9 +101,9 @@ az containerapp update -n ka-app -g rg-ka-app \
 Only needed if the resource group is gone.
 
 ```sh
-az group create -n rg-ka-app -l norwayeast
-az acr build --registry altinnaicontainers --image ka-app:$(git rev-parse --short HEAD) --file src/Dockerfile src
-az deployment group create -g rg-ka-app --template-file src/deploy/main.bicep --parameters ...
+az group create --subscription Altinn-AI-Assistant -n rg-ka-app -l norwayeast
+az acr build --subscription Altinn-AI-Assistant --registry altinnaicontainers --image ka-app:$(git rev-parse --short HEAD) --file src/Dockerfile src
+az deployment group create --subscription Altinn-AI-Assistant -g rg-ka-app --template-file src/deploy/main.bicep --parameters ...
 ```
 
 The first `az deployment group create` **fails** on the image pull. That is
@@ -76,10 +111,10 @@ expected: the managed identity does not exist until the template creates it,
 and it has no rights to the registry until granted. Grant, then deploy again:
 
 ```sh
-az role assignment create --role AcrPull \
-  --assignee-object-id "$(az identity show -n ka-app-id -g rg-ka-app --query principalId -o tsv)" \
+az role assignment create --subscription Altinn-AI-Assistant --role AcrPull \
+  --assignee-object-id "$(az identity show --subscription Altinn-AI-Assistant -n ka-app-id -g rg-ka-app --query principalId -o tsv)" \
   --assignee-principal-type ServicePrincipal \
-  --scope "$(az acr show -n altinnaicontainers --query id -o tsv)"
+  --scope "$(az acr show --subscription Altinn-AI-Assistant -n altinnaicontainers --query id -o tsv)"
 ```
 
 Parameters the template needs are declared with `@description` in

@@ -346,7 +346,16 @@ export async function* ask(
   }
 
   while (true) {
-    const { done, value } = await reader.read();
+    let read: ReadableStreamReadResult<Uint8Array>;
+    try {
+      read = await reader.read();
+    } catch (err) {
+      // An abort is the caller's own, as at the fetch above. Anything else is
+      // the connection dropping mid-turn, which a read reports by throwing.
+      if (err instanceof Error && err.name === 'AbortError') throw err;
+      break;
+    }
+    const { done, value } = read;
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
 

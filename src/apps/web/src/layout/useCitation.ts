@@ -2,11 +2,9 @@ import { use } from 'react';
 import { CitationContext, type CitationContextValue } from './citationContext';
 
 /**
- * Connects the answer and the sources panel: the chat view calls
- * `showCitation(n)`, the sources panel reads `activeCitation`.
- *
- * The two views never import each other; the shell owns the state between
- * them, which is what lets either one move to another slot.
+ * Connects the answer and the sources panel: the chat view calls `showCitation(n)`, the sources
+ * panel reads `activeCitation`. The shell holds the state, so the views never import each other
+ * and either can move to another slot.
  */
 export function useCitation(): CitationContextValue {
   const value = use(CitationContext);

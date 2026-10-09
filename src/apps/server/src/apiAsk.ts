@@ -63,15 +63,18 @@ export function askRoute<E>(present: Present<E>) {
         const conv = await convos.create(userId, convos.topicFrom(query));
         conversationId = conv.id;
         created = { id: conv.id, topic: conv.topic };
-      } catch {
-        return c.json({ error: 'Kunne ikke opprette samtale.' }, 502);
+        // Now, not after the answer: the client reads the thread when
+        // `conversation` arrives, and locks the filter from what it reads.
+        threadFilters.remember(conv.id, requested);
+      } catch (err) {
+        return c.json(convos.failure('Kunne ikke opprette samtale.', err), 502);
       }
     }
 
     const filterBy = toFilterBy(threadFilters.recall(conversationId) ?? requested);
     const notes = [
       sourceStore.answerSources(conversationId),
-      ...(created ? [threadFilters.rememberWhenAnswered(created.id, requested)] : []),
+      ...(created ? [threadFilters.forgetIfFailed(created.id)] : []),
     ];
 
     // Accumulating, compressing or dropping X-Accel-Buffering re-buffers the stream.

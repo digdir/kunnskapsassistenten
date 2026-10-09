@@ -1,15 +1,7 @@
 /**
- * Which agent this browser has chosen, kept for the next visit.
- *
- * Per browser and not per user, like the answer store (`ka.sources.v1`), and
- * emptied with it at «Logg ut» (`beforeLogout` in session.ts): the next reader
- * in this browser starts on the default, not on the last one's choice.
- *
- * Only a choice away from the default is kept. A reader on the default then
- * follows whatever the BFF says the default is, also after it changes.
- *
- * Never throws. Storage is not readable in a private window or with site data
- * blocked, and then the choice lasts as long as the page does.
+ * Where the agent choice is kept: per browser, not per user, so «Logg ut» empties
+ * it. Only a non-default choice is kept, so the default follows the BFF's. Never
+ * throws; without storage the choice lasts as long as the page.
  */
 export const AGENT_STORAGE_KEY = 'ka.agent.v1';
 
