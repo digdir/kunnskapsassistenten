@@ -76,18 +76,6 @@ export function LayoutProvider({
   // The user shut the sources panel. Only their own collapse counts, not the one-sidebar rule's,
   // or a resize would switch it off; opening clears it. Stored, since collapsed is the default.
   const [sourcesDismissed, setSourcesDismissed] = useState(restored?.sourcesDismissed ?? false);
-  // The filters-over-sources trial (flag `filters-right-panel`, digdir/kunnskapsassistenten#84) is
-  // derived, never stored. Starting it opens the panel the filters moved to, where both sidebars
-  // fit, except on a page load where the reader had shut that panel.
-  const filtersBeside = useFlag('filters-right-panel');
-  const [appliedFiltersBeside, setAppliedFiltersBeside] = useState<boolean | null>(null);
-  if (filtersBeside !== appliedFiltersBeside) {
-    const firstRender = appliedFiltersBeside === null;
-    setAppliedFiltersBeside(filtersBeside);
-    if (filtersBeside && !narrow && !drawer && !(firstRender && sourcesDismissed)) {
-      setLayout((current) => withCollapsed(current, 'secondary-sidebar', false));
-    }
-  }
 
   // The view the user last switched each slot to. Empty on page load on purpose: a view mounted
   // by the default layout must not take focus off the skip link.
@@ -106,6 +94,19 @@ export function LayoutProvider({
     },
     [narrow],
   );
+
+  // The filters-over-sources trial (flag `filters-right-panel`, digdir/kunnskapsassistenten#84) is
+  // derived, never stored. Starting it opens the filters' panel through `fitted`, like the rail,
+  // except in drawer mode or on a load where the reader had shut it. Before the narrow rule below.
+  const filtersBeside = useFlag('filters-right-panel');
+  const [appliedFiltersBeside, setAppliedFiltersBeside] = useState<boolean | null>(null);
+  if (filtersBeside !== appliedFiltersBeside) {
+    const firstRender = appliedFiltersBeside === null;
+    setAppliedFiltersBeside(filtersBeside);
+    if (filtersBeside && !drawer && !(firstRender && sourcesDismissed)) {
+      setLayout((current) => fitted(current, 'secondary-sidebar', false));
+    }
+  }
 
   // Too narrow for both: the sources panel gives. During render, not in an effect, so it is never
   // painted open; only on the crossing, so the user may still open it. Starts false so a window

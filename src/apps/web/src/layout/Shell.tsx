@@ -333,6 +333,28 @@ function Sidebar({
     toggle.current?.focus();
   }, [hasFocus, state.collapsed, resizing]);
 
+  // Focus lent to a modal dialog (the flags menu) is handed back on close; if this slot collapsed
+  // meanwhile, the element is hidden and the focus is left in the closed dialog. Then the toggle.
+  // Noted in `onBlur`, since the slot no longer holds it; capture, since `close` does not bubble.
+  const lentToDialog = useRef(false);
+  useEffect(() => {
+    const onClose = (event: Event) => {
+      const lent = lentToDialog.current;
+      lentToDialog.current = false;
+      if (!lent) return;
+
+      const active = document.activeElement;
+      const lost =
+        active === null ||
+        active === document.body ||
+        !active.isConnected ||
+        (event.target instanceof Node && event.target.contains(active));
+      if (lost) toggle.current?.focus();
+    };
+    document.addEventListener('close', onClose, true);
+    return () => document.removeEventListener('close', onClose, true);
+  }, []);
+
   // From the slot's name, so a moved view keeps its wording. No count: a number
   // reads as a notification (issue 87). Must equal the tooltip, which
   // @digdir/designsystemet-web otherwise writes over `aria-label`.
@@ -463,7 +485,11 @@ function Sidebar({
       // inside.
       onFocus={() => setHasFocus(true)}
       onBlur={(event) => {
-        if (!element.current?.contains(event.relatedTarget)) setHasFocus(false);
+        const to = event.relatedTarget;
+        const leaving = !element.current?.contains(to);
+        if (leaving) setHasFocus(false);
+        lentToDialog.current =
+          leaving && to instanceof HTMLElement && to.closest('dialog[open]') !== null;
       }}
     >
       {/* The separator is in the landmark (axe `region`) but outside the clipping box. */}

@@ -41,11 +41,26 @@ function Probe() {
       <output data-testid="secondary">{side.views.join(',')}</output>
       <output data-testid="stacked">{String(side.stacked === true)}</output>
       <output data-testid="secondary-open">{String(!side.collapsed)}</output>
+      <output data-testid="primary-open">
+        {String(!layout.slots['primary-sidebar'].collapsed)}
+      </output>
     </>
   );
 }
 
 const read = (id: string) => screen.getByTestId(id).textContent;
+
+// What the browser keeps after the reader shut the sources panel.
+function rememberShut() {
+  window.localStorage.setItem(
+    LAYOUT_STORAGE_KEY,
+    JSON.stringify({
+      collapsed: { 'primary-sidebar': false, 'secondary-sidebar': true },
+      widths: {},
+      sourcesDismissed: true,
+    }),
+  );
+}
 
 describe('flagget filters-right-panel i layouten', () => {
   it('er som før når flagget er av', () => {
@@ -88,9 +103,8 @@ describe('flagget filters-right-panel i layouten', () => {
     expect(read('secondary-open')).toBe('false');
   });
 
-  it('lar navigasjonspanelet være det som er åpent når flagget slås på i et smalt vindu', () => {
-    // Too narrow for both sidebars, wide enough not to draw them as drawers.
-    setViewportWidth(bothSidebarsMinViewport - 1);
+  it('åpner ikke skuffen når flagget slås på mens siden er oppe', () => {
+    setViewportWidth(drawerMaxViewport - 1);
     render(
       <LayoutProvider>
         <Probe />
@@ -99,23 +113,58 @@ describe('flagget filters-right-panel i layouten', () => {
 
     act(() => setFlag('filters-right-panel', true));
 
-    expect(read('secondary')).toBe('filters,sources');
     expect(read('secondary-open')).toBe('false');
   });
 
-  describe('når leseren har lukket høyre panel selv', () => {
-    // What the browser keeps after the reader shut the sources panel.
-    function rememberShut() {
-      window.localStorage.setItem(
-        LAYOUT_STORAGE_KEY,
-        JSON.stringify({
-          collapsed: { 'primary-sidebar': false, 'secondary-sidebar': true },
-          widths: {},
-          sourcesDismissed: true,
-        }),
-      );
-    }
+  // Too narrow for both sidebars, wide enough not to draw them as drawers: the one-sidebar rule.
+  describe.each([drawerMaxViewport, bothSidebarsMinViewport - 1])(
+    'i et vindu på %i px',
+    (width) => {
+      beforeEach(() => setViewportWidth(width));
 
+      it('åpner høyre panel og lukker navigasjonspanelet ved innlasting med flagget på', () => {
+        setFlag('filters-right-panel', true);
+        render(
+          <LayoutProvider>
+            <Probe />
+          </LayoutProvider>,
+        );
+
+        expect(read('secondary')).toBe('filters,sources');
+        expect(read('secondary-open')).toBe('true');
+        expect(read('primary-open')).toBe('false');
+      });
+
+      it('åpner høyre panel og lukker navigasjonspanelet når flagget slås på mens siden er oppe', () => {
+        render(
+          <LayoutProvider>
+            <Probe />
+          </LayoutProvider>,
+        );
+        expect(read('primary-open')).toBe('true');
+
+        act(() => setFlag('filters-right-panel', true));
+
+        expect(read('secondary-open')).toBe('true');
+        expect(read('primary-open')).toBe('false');
+      });
+
+      it('lar navigasjonspanelet stå ved innlasting når leseren har lukket høyre panel selv', () => {
+        rememberShut();
+        setFlag('filters-right-panel', true);
+        render(
+          <LayoutProvider>
+            <Probe />
+          </LayoutProvider>,
+        );
+
+        expect(read('secondary-open')).toBe('false');
+        expect(read('primary-open')).toBe('true');
+      });
+    },
+  );
+
+  describe('når leseren har lukket høyre panel selv', () => {
     it('åpner det ikke ved innlasting med flagget på', () => {
       rememberShut();
       setFlag('filters-right-panel', true);
@@ -203,6 +252,19 @@ describe('flagget filters-right-panel i skallet', () => {
     const nav = screen.getByRole('navigation', { name: 'Tråder' });
     expect(within(nav).queryByRole('heading', { name: 'Filtrering' })).toBeNull();
     expect(within(nav).queryByRole('button', { name: 'Filter' })).toBeNull();
+  });
+
+  it('sier med knappene at høyre panel er åpent og navigasjonspanelet lukket i et smalt vindu', () => {
+    setViewportWidth(bothSidebarsMinViewport - 1);
+    setFlag('filters-right-panel', true);
+    openFrontPage();
+
+    expect(
+      screen.getByRole('button', { name: 'Skjul filter og kilder' }).getAttribute('aria-expanded'),
+    ).toBe('true');
+    expect(screen.getByRole('button', { name: 'Vis tråder' }).getAttribute('aria-expanded')).toBe(
+      'false',
+    );
   });
 
   it('er som før uten flagget', () => {
