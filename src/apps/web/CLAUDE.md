@@ -64,9 +64,11 @@ lokalt trenger en kjørende backend og en nøkkel i `.env.local` (se
 
 ## Utrulling
 
-Merge til `main` ruller ut til testmiljøet i Azure Container Apps
-(`.github/workflows/deploy.yml`). CI bygger og starter Docker-bildet på hver PR.
-Oppsett, rollback og logger: `docs/deploy.md`.
+Testmiljøet i Azure Container Apps rulles ut for hånd. Workflowene i
+`.github/` her kjører ikke, fordi GitHub bare leser `.github/workflows/` i
+repo-rota. Bildet bygges med `src/` som kontekst og `--file apps/web/Dockerfile`,
+fordi lockfila ligger i `src/`. Kommandoer, tilbakerulling og logger:
+`docs/deploy.md`.
 
 ## Ikke gjør
 

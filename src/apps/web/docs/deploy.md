@@ -6,10 +6,11 @@ kosmetikk — backenden svarer på en CORS-preflight med 401 og sender ingen
 CORS-hoder, så en nettleser kan ikke kalle den direkte uansett, og nøkkelen
 skal uansett aldri dit.
 
-**Ikke rullet ut ennå.** Alt under er skrevet og prøvd lokalt. Engangsoppsettet
-under [Første gang](#første-gang) gjør et menneske med rettigheter i Azure;
-etter det ruller hver merge til `main` ut av seg selv. Bakgrunn og
-avgjørelser: `design/plan-testmiljo-2026-09-22.md`.
+**Rulles ut for hånd.** Workflowene i `src/apps/web/.github/` kjører ikke i
+digdir/kunnskapsassistenten, fordi GitHub bare leser `.github/workflows/` i
+repo-rota. Bildet bygges og rulles ut med kommandoene i
+[Ny versjon](#ny-versjon). Bakgrunn og avgjørelser:
+`design/plan-testmiljo-2026-09-22.md`.
 
 Klienten i bildet er bygget for **live** (`VITE_API_MODE=live` i `Dockerfile`).
 Hvilken backend klienten bruker, avgjøres når bildet bygges. `KA_MODE` avgjør
@@ -21,11 +22,11 @@ bare om serveren sender kallene videre. Se
 | Fil                            | Hva                                                                                |
 | ------------------------------ | ---------------------------------------------------------------------------------- |
 | `server/`                      | Serveren. Node uten rammeverk og uten avhengigheter.                               |
-| `Dockerfile`                   | To steg: bygg med devDependencies, kjøretid uten node_modules.                     |
+| `Dockerfile`                   | To steg: bygg med devDependencies, kjøretid uten node_modules. Kontekst `src/`.    |
 | `deploy/main.bicep`            | Register, Container App, miljø, logganalyse, to identiteter og innloggingen        |
 | `deploy/test.bicepparam`       | Live-oppsettet for [Live for én person](#live-for-én-person). Ingen hemmeligheter. |
-| `.github/workflows/deploy.yml` | Bygger, pusher og ruller ut ved hver push til `main`.                              |
-| `.github/workflows/ci.yml`     | Bygger og starter bildet på hver PR, uten å pushe.                                 |
+| `.github/workflows/deploy.yml` | Bygger, pusher og ruller ut ved hver push til `main`. Kjører ikke her.             |
+| `.github/workflows/ci.yml`     | Bygger og starter bildet på hver PR, uten å pushe. Kjører ikke her.                |
 
 Serveren gjør fire ting: proxyer klientens kall under `/api/` til backenden med
 `X-API-Key` påsatt (bare i live; i mock svarer `/api/*` 404). Det er
@@ -36,6 +37,9 @@ serverer `dist/` med SPA-fallback, svarer på `/healthz`, og skriver
 også `X-User-Id` fra plattformen; se [Innlogging](#innlogging).
 
 ## Slik rulles det ut
+
+Slik var det før klienten flyttet hit, og slik blir det når workflowen ligger
+i repo-rota. Til da: [Ny versjon](#ny-versjon).
 
 Merge til `main`, og `Deploy`-workflowen gjør resten:
 
@@ -74,7 +78,7 @@ og adressene leses fra miljøvariabler når malen kjøres, så fila har ingen
 hemmeligheter, og en ny kjøring setter ikke appen tilbake til mock.
 
 Kommandoene her har abonnement og ressursgruppe skrevet ut, i denne
-rekkefølgen, så de kan kjøres som de står.
+rekkefølgen, så de kan kjøres som de står, fra `src/apps/web`.
 
 **Rullet ut av dirigenten 28.09**, bak adresselista: bildet hentet med
 registerets passord, innloggingen av, og 403 fra andre adresser (se steg 4).
@@ -87,7 +91,7 @@ liggende på disken. `az deployment group create` bygger den i minnet.
 
 ### 1. Grunnmuren
 
-I et nytt skall, fra repo-rota. Uten `KA_IMAGE_TAG` lager malen bare register,
+I et nytt skall, fra `src/apps/web`. Uten `KA_IMAGE_TAG` lager malen bare register,
 miljø, logger og identiteter, med admin-brukeren på registeret. Den andre
 linja henter registerets navn; kjør den igjen i hvert nytt skall senere.
 
@@ -103,18 +107,30 @@ Etter `docs/deploy-backend.md`, i miljøet steg 1 laget. Frontenden når den på
 
 ### 3. Bildet
 
-`az acr build` laster opp arbeidstreet og bygger i registeret. Funksjonen
-stopper hvis arbeidstreet har endringer som ikke er committet, fordi taggen
-er commiten.
+`az acr build` laster opp konteksten og bygger i registeret. Konteksten er
+`src/`, fordi arbeidsområdets eneste lockfil ligger der, og Dockerfila er
+`apps/web/Dockerfile`. Funksjonen bygger commiten og ikke arbeidstreet:
+`git archive` pakker ut `src/` slik den står i `HEAD`, så filer som ikke er
+committet, kommer ikke med. Den stopper hvis arbeidstreet har endringer, fordi
+taggen er commiten.
 
 ```sh
 build_image() {
+  local dir rc
   git diff --quiet HEAD || { echo "Ucommittede endringer. Commit først."; return 1; }
   KA_IMAGE_TAG=$(git rev-parse HEAD)
-  az acr build --subscription Altinn-AI-Assistant --registry "$ACR" --image "ka-frontend-test:$KA_IMAGE_TAG" .
+  dir=$(mktemp -d)
+  git -C "$(git rev-parse --show-toplevel)" archive HEAD src | tar -x -C "$dir"
+  (cd "$dir/src" && az acr build --subscription Altinn-AI-Assistant --registry "$ACR" --image "ka-frontend-test:$KA_IMAGE_TAG" --file apps/web/Dockerfile .)
+  rc=$?
+  rm -rf "$dir"
+  return $rc
 }
 build_image
 ```
+
+`--file` er relativ til mappa kommandoen kjøres fra, ikke til konteksten.
+Derfor kjøres den inne i `src/`.
 
 ### 4. Appen, i live
 
@@ -204,14 +220,24 @@ export TYPESENSE_URL TYPESENSE_API_KEY KA_FACET_COLLECTIONS KA_CHUNK_COLLECTIONS
 
 ### Ny versjon
 
+Fra en sjekkout av commiten som skal ut, med `build_image` fra
+[steg 3](#3-bildet) i skallet. Registeret er det eneste i `rg-ka-test`.
+Revisjonen får de sju første tegnene i commiten som suffiks, så den viser hva
+som kjører.
+
 ```sh
-build_image
-az containerapp update --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-frontend-test \
+ACR=$(az acr list --subscription Altinn-AI-Assistant -g rg-ka-test --query '[0].name' -o tsv)
+build_image && az containerapp update --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-frontend-test \
   --image "$ACR.azurecr.io/ka-frontend-test:$KA_IMAGE_TAG" --revision-suffix hand${KA_IMAGE_TAG:0:7}
+az containerapp show --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-frontend-test --query '{klar:properties.latestReadyRevisionName, siste:properties.latestRevisionName}' -o table
 ```
 
 `update` tar med seg nøkkelen, modusen og adresselista fra revisjonen før. Å
 kjøre steg 4 igjen gjør det samme, og setter i tillegg alt fra fila.
+
+Kjør den siste linja til begge kolonnene viser den nye revisjonen. Sjekk så
+med et ekte spørsmål i appen, ikke bare `/healthz`: den svarer også når
+backenden henger.
 
 ### Samme passord for backenden
 
@@ -285,7 +311,7 @@ svarer den gamle, med den gamle hemmeligheten.
 
 ## Første gang
 
-Oppskriften kjøres ovenfra og ned, i ett skall, fra repo-rota. Alt havner i
+Oppskriften kjøres ovenfra og ned, i ett skall, fra `src/apps/web`. Alt havner i
 `rg-ka-test`, også registeret bildene ligger i; se
 [Hvorfor eget register](#hvorfor-eget-register). Ressursgruppa finnes
 (`norwayeast`, taggene `prosjekt=kunnskapsassistenten` og `miljo=test`), så
@@ -517,15 +543,15 @@ GitHub-variabelen `KA_REGISTRY`.
 ## Verdiene i et nytt skall
 
 Kommandoene fra og med her bruker de samme variablene som oppskriften. I et
-skall der den ikke er kjørt, hentes de slik; registernavnet ligger i
-GitHub-variabelen fra steg 3.
+skall der den ikke er kjørt, hentes de slik; registeret er det eneste i
+ressursgruppa.
 
 ```sh
 SUB=Altinn-AI-Assistant
 RG=rg-ka-test
 APP=ka-frontend-test
 REPO=larsekhansen/kunnskapsassistenten-frontend
-ACR=$(gh variable get KA_REGISTRY -R $REPO)
+ACR=$(az acr list --subscription "$SUB" -g $RG --query '[0].name' -o tsv)
 ```
 
 ## Innlogging
@@ -676,20 +702,17 @@ er rullet ut (se [Bytte mellom mock og live](#bytte-mellom-mock-og-live)).
 
 ## Rulle tilbake
 
-- **Enklest, og uten Azure:** åpne den mergede PR-en på GitHub og trykk
-  **Revert**. Det gir en ny PR som angrer endringen; merge den, så rulles den
-  gamle versjonen ut som en hvilken som helst annen.
-- **Raskere, uten ny PR:** åpne en eldre, grønn kjøring under **Actions →
-  Deploy** og velg **Re-run all jobs**. En omkjøring bygger den commiten den
-  gjaldt, og ruller den ut. Neste merge ruller ut `main` igjen.
-- **Fra kommandolinja:** et eldre bilde, med en ny revisjon. Bytt ut verdien
-  av `COMMIT` med hele commit-sha-en fra en eldre, grønn kjøring.
+Fra kommandolinja, siden ingenting rulles ut av seg selv her: et eldre bilde,
+med en ny revisjon. Den første linja viser de nyeste taggene i registeret.
+Bytt ut verdien av `COMMIT` med en av dem. Bilder fra før klienten flyttet
+hit, har commiten fra det gamle repoet som tagg.
 
-  ```sh
-  COMMIT="lim-inn-commit-sha-her"
-  az containerapp update --subscription "$SUB" -n $APP -g $RG \
-    --image "$ACR.azurecr.io/$APP:$COMMIT" --revision-suffix rollback$(date +%H%M%S)
-  ```
+```sh
+az acr repository show-tags --subscription "$SUB" -n "$ACR" --repository $APP --orderby time_desc --top 5 -o tsv
+COMMIT="lim-inn-taggen-her"
+az containerapp update --subscription "$SUB" -n $APP -g $RG \
+  --image "$ACR.azurecr.io/$APP:$COMMIT" --revision-suffix rollback$(date +%H%M%S)
+```
 
 Ikke tilbake forbi #169 med innloggingen på: et eldre bilde leser ikke
 `KA_USER_ID_FROM`, og da gjelder nettleserens `X-User-Id` igjen bak
@@ -820,7 +843,7 @@ I mock sender serveren ingenting til backenden, heller ikke med nøkkelen satt.
 
 Modusen har to deler. `KA_MODE` er serverens, og byttes med en ny revisjon som
 under. Klientens modus er bygget inn i bildet (`src/api/apiMode.ts`), og
-`/config.js` kan ikke endre den. Bildet fra `Deploy` er bygget for live. Et
+`/config.js` kan ikke endre den. Bildet i testmiljøet er bygget for live. Et
 miljø der klienten svarer fra mocken, trenger et bilde bygget med
 `docker build --build-arg VITE_API_MODE=mock` i tillegg til `KA_MODE=mock`.
 
@@ -866,28 +889,12 @@ målt om Container Apps godtar en secret med tom verdi; utelatt virker uansett.
 
 ## Bygge og rulle ut for hånd
 
-For når GitHub ikke er et alternativ. `az acr build` laster opp arbeidstreet
-og bygger i registeret, så ingenting må pushes først. Contributor på
-ressursgruppa holder, siden registeret ligger der.
-
-Funksjonen stopper hvis arbeidstreet har endringer som ikke er committet. Den
-bruker `return` og ikke `exit`, for `exit` i et interaktivt skall lukker
-terminalen.
-
-```sh
-deploy_by_hand() {
-  git diff --quiet HEAD || { echo "Ucommittede endringer. Commit først."; return 1; }
-  SHA=$(git rev-parse HEAD)
-  az acr build --subscription "$SUB" --registry $ACR --image $APP:$SHA . || return 1
-  az containerapp update --subscription "$SUB" -n $APP -g $RG \
-    --image $ACR.azurecr.io/$APP:$SHA --revision-suffix hand${SHA:0:7}
-}
-deploy_by_hand
-```
+Se [Ny versjon](#ny-versjon). Contributor på ressursgruppa holder, siden
+registeret ligger der.
 
 ## Prøve det lokalt før Azure
 
-Nøkkelen leses med `read -rs`, som over:
+Fra `src/apps/web`. Nøkkelen leses med `read -rs`, som over:
 
 ```sh
 read -rs KEY
@@ -895,20 +902,22 @@ VITE_API_MODE=live npm run build
 KA_MODE=live DIGDIR_API_BASE=http://localhost:8080 DIGDIR_API_KEY="$KEY" npm start
 ```
 
-Eller i container. I mock, med klienten bygget for mock:
+Eller i container, fra `src/`, der lockfila ligger. I mock, med klienten
+bygget for mock:
 
 ```sh
-docker build --build-arg VITE_API_MODE=mock -t ka-frontend-test:mock .
+docker build --file apps/web/Dockerfile --build-arg VITE_API_MODE=mock -t ka-frontend-test:mock .
 docker run --rm -p 8787:8787 -e KA_MODE=mock ka-frontend-test:mock
 curl -fsS localhost:8787/healthz
 ```
 
 Den siste linja skal svare `{"ok":true,"mode":"mock"}`.
 
-Mot stacken på maskinen, med bildet bygget for live som i testmiljøet:
+Mot stacken på maskinen, med bildet bygget for live som i testmiljøet, også
+fra `src/`:
 
 ```sh
-docker build -t ka-frontend-test:local .
+docker build --file apps/web/Dockerfile -t ka-frontend-test:local .
 docker run --rm -p 8787:8787 \
   -e KA_MODE=live \
   -e DIGDIR_API_BASE=http://host.docker.internal:8080 \

@@ -8,15 +8,18 @@
 FROM node:24-alpine AS build
 WORKDIR /app
 
-# Avhengighetene først, så laget gjenbrukes når bare koden er endret.
+# Built with src/ as the context (docs/deploy.md): the npm workspace has one
+# lockfile, and it is there. npm ci needs only the root manifest and this one.
+# Dependencies first, so the layer is reused when only the code changes.
 COPY package.json package-lock.json ./
-RUN npm ci
+COPY apps/web/package.json apps/web/
+RUN npm ci --workspace apps/web
 
-COPY . .
+COPY apps/web apps/web
 # The client's backend is built into it (src/api/apiMode.ts). The test
 # environment's server forwards to the backend, so the client is live.
 ARG VITE_API_MODE=live
-RUN npm run build
+RUN npm run build --workspace apps/web
 
 # Kjøretid uten devDependencies, og faktisk uten node_modules i det hele tatt:
 # serveren har ingen avhengigheter. Det som følger med er den bygde klienten,
@@ -28,10 +31,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8787
 
-COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/server ./server
-COPY --from=build /app/shared ./shared
+COPY --from=build /app/apps/web/package.json ./package.json
+COPY --from=build /app/apps/web/dist ./dist
+COPY --from=build /app/apps/web/server ./server
+COPY --from=build /app/apps/web/shared ./shared
 
 # Ikke root. Bildet eier ingenting appen skriver til; alt den trenger er lest.
 USER node
