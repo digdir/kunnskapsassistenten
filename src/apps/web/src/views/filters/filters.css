@@ -321,10 +321,15 @@
   color: var(--ds-color-danger-text-default);
 }
 
-/* The year field offers nothing until something is typed, but Designsystemet
-   opens the list on a click anyway, which leaves an empty box under the field. */
-.year-range-field:has(input:placeholder-shown) u-datalist {
-  display: none;
+/* Over the years in the year field's list: as far in as an option's text, and
+   muted, as it is about the list and is not one of its choices. */
+.year-range-field__hint {
+  padding: var(--dsc-suggestion-option-padding);
+  padding-inline-start: calc(
+    var(--dsc-suggestion-option-padding) + var(--dsc-suggestion-option-checkmark-size) +
+      var(--dsc-suggestion-option-gap)
+  );
+  color: var(--ds-color-neutral-text-subtle);
 }
 
 /* A field's width while the facets load (FieldPlaceholder.tsx). */

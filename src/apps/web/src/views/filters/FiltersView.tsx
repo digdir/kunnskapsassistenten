@@ -119,7 +119,8 @@ export function FiltersView({
     // space makes them new.
     const text = [said, note].filter(Boolean).join(' ');
     if (text) setAnnouncement((previous) => (previous === text ? `${text}\u00a0` : text));
-    setSelection(next);
+    // A field may only tell, as of a period already chosen; a new selection would refetch.
+    if (!sameSelection(next, chosen)) setSelection(next);
   }
   const { documents } = useAnswerSources();
   const { options, active, option, choosable, set } = useCorpus();

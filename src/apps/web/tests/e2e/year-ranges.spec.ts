@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { covers } from './a11y';
+import { MOCK } from './helpers';
 
 /**
  * The year filter as periods, behind the `year-ranges` flag (#115), in a
@@ -41,7 +42,45 @@ test('årsfilteret med perioder foreslår år fra første siffer, og et klikk gi
   const year = ((await option.textContent()) ?? '').slice(0, 4);
   await option.click();
 
-  await expect(field.locator('ds-suggestion > data')).toHaveText([year]);
+  await expect(field.locator('ds-suggestion > data:visible')).toHaveText([year]);
   await expect(input).toHaveValue('');
   await expect(field.locator('[data-field="description"]')).toHaveText('1 år valgt');
 });
+
+test(
+  'årsfilteret med perioder viser årene ved klikk og krysser av de valgte',
+  MOCK,
+  async ({ page }, testInfo) => {
+    covers(testInfo, 'filtre kan velges og gir chips');
+
+    await page.addInitScript(() => {
+      localStorage.setItem('ka.flags.v1', JSON.stringify(['year-ranges']));
+    });
+    await page.goto('/');
+
+    const field = page.locator('.year-range-field');
+    const input = field.locator('input.ds-input');
+    await input.click();
+
+    // The years with documents, newest first, before anything is typed.
+    const options = field.getByRole('listbox').getByRole('option');
+    await expect(options).toHaveText([
+      '2026 (180)',
+      '2025 (344)',
+      '2024 (212)',
+      '2023 (70)',
+      '2022 (54)',
+      '2021 (45)',
+      '2020 (31)',
+    ]);
+
+    await options.nth(1).click();
+    await options.nth(0).click();
+
+    await expect(field.locator('ds-suggestion > data:visible')).toHaveText(['2025–2026']);
+    await expect(field.getByRole('option', { selected: true })).toHaveText([
+      '2026 (180)',
+      '2025 (344)',
+    ]);
+  },
+);

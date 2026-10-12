@@ -8,7 +8,9 @@ import {
 import { useImperativeHandle, useRef, type Ref } from 'react';
 import { useFlag } from '../../flags';
 import type { FilterFacet } from '../../model';
+import { chosenFirst, useChosenFirst } from './chosenFirst';
 import { renderChip, removedDrawnChip, valuesAfter, withDrawnChips } from './drawnChips';
+import { useListFollowsField } from './listFollowsField';
 import {
   allChosenText,
   MAX_VALUES_PER_FIELD,
@@ -29,16 +31,20 @@ export type FacetFieldProps = {
   facet: FilterFacet;
   /** Selected {@link FacetValue.value}s. Empty means «no restriction». */
   selected: string[];
-  /** `said` is for the view's live region: the change, where u-combobox says nothing. */
+  /** `said` is for the view's live region: the change, where u-combobox says nothing. With the
+   * values as they were, it is all there is to tell. */
   onChange: (values: string[], said?: string) => void;
 };
 
 /** Designsystemet's Suggestion with `multiple`, whose chips show the selection. `data-overscroll`
- * lifts its inline width lock so our CSS can widen the list; `autoPlacement` is a dead prop in
- * 1.21.0, `data-autoplacement` works. Its Clear clears only typed text, hence our «Tøm». */
+ * lifts its inline width lock so our CSS can widen the list. Its Clear clears only typed text,
+ * hence our «Tøm». */
 export function FacetField({ ref, facet, selected, onChange }: FacetFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDataListElement>(null);
   useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }), []);
+  const first = useChosenFirst(selected, listRef);
+  useListFollowsField(selected, listRef, inputRef);
   const total = facet.values.length;
   const chosen = selected.length;
   // Every listed value ticked, the rule `askedSelection` leaves the field out by. Not
@@ -216,8 +222,8 @@ export function FacetField({ ref, facet, selected, onChange }: FacetFieldProps) 
         />
         <Suggestion.Toggle />
         <Suggestion.Clear />
-        <Suggestion.List data-overscroll="contain" data-autoplacement="false">
-          {facet.values.map((value) => (
+        <Suggestion.List ref={listRef} data-overscroll="contain">
+          {chosenFirst(facet.values, (value) => first.has(value.value)).map((value) => (
             // The count stays out of `label`, which the chip and the filtering use.
             <Suggestion.Option key={value.value} value={value.value} label={value.label}>
               {value.count === undefined ? value.label : `${value.label} (${value.count})`}

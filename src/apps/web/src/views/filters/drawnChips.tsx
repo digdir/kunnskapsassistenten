@@ -3,7 +3,7 @@
 // u-combobox ticks the options, takes one value off when a ticked option is chosen, and reads
 // out and counts single values. The drawn chips come last, as `<data>` too: u-combobox gives
 // ArrowLeft and Backspace from the field to the last chip, and a hidden one cannot take focus.
-// `compact-filter-chips` draws one chip for the whole field; a year period can draw one per period.
+// `compact-filter-chips` draws one chip for the whole field; `year-ranges` draws one per period.
 
 import type { ReactNode } from 'react';
 
@@ -51,6 +51,48 @@ export function removedDrawnChip(
 ): boolean {
   const kept = new Set(items.map((item) => item.value));
   return drawn.some((chip) => !kept.has(valueOf(chip)));
+}
+
+/** The values of the chips Suggestion holds for a selection, as `withDrawnChips` lays them out. */
+export function chipValues(values: readonly string[], drawn: readonly DrawnChip[]): string[] {
+  return [...values, ...drawn.map(valueOf)];
+}
+
+/** How many chips come or go between two selections. u-combobox reads a change out itself only
+ * when it is one; then the field must not say it too, or it is heard twice. */
+export function changedChips(before: readonly string[], after: readonly string[]): number {
+  const was = new Set(before);
+  const is = new Set(after);
+  return (
+    [...is].filter((value) => !was.has(value)).length +
+    [...was].filter((value) => !is.has(value)).length
+  );
+}
+
+/**
+ * Focus after a drawn chip that held it goes. u-combobox moves it to the chip before, as it does
+ * for its own; before the first drawn chip stands a hidden one, which cannot take it. Then to the
+ * next drawn chip that stays, else the field.
+ */
+export function keepFocusFromDrawnChip(
+  items: readonly { value: string }[],
+  drawn: readonly DrawnChip[],
+  field: HTMLInputElement | null,
+) {
+  const focused = document.activeElement;
+  const row = field?.parentElement;
+  if (!field || !row || !(focused instanceof HTMLDataElement) || focused.parentElement !== row) {
+    return;
+  }
+  const kept = new Set(items.map((item) => item.value));
+  const gone = drawn.find((chip) => !kept.has(valueOf(chip)));
+  // On a drawn chip that stays: u-combobox found the one before.
+  if (!gone || (isDrawn(focused.value) && kept.has(focused.value))) return;
+  const chips = [...row.children].filter(
+    (chip): chip is HTMLDataElement => chip instanceof HTMLDataElement && isDrawn(chip.value),
+  );
+  const after = chips.slice(chips.findIndex((chip) => chip.value === valueOf(gone)) + 1);
+  (after.find((chip) => kept.has(chip.value)) ?? field).focus({ focusVisible: true });
 }
 
 /** Suggestion's `renderSelected`: the marker filters.css keeps a drawn chip visible by. */
