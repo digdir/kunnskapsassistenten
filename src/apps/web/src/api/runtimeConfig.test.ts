@@ -46,6 +46,15 @@ describe('kaEnv', () => {
     expect(env.VITE_MOCK_SPEED).toBe('fast');
   });
 
+  it('får ingenting fra en lokal .env.local', () => {
+    // Den som kjører live lokalt, har korpus, verktøy og dokumentlenker i
+    // .env.local. Vitest leser ingen .env-filer (vite.config.ts), så testene
+    // måler koden og ikke maskinen. CI har ingen slik fil og kan ikke se dette.
+    const fromFiles = Object.keys(kaEnv()).filter((name) => name.startsWith('VITE_KA_'));
+
+    expect(fromFiles).toEqual([]);
+  });
+
   it('tar med korpusvariablene serveren sender', () => {
     window.__KA_CONFIG__ = {
       VITE_KA_TENANT: 'digdir',
