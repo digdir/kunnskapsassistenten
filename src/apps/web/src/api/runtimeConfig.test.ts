@@ -46,10 +46,11 @@ describe('kaEnv', () => {
     expect(env.VITE_MOCK_SPEED).toBe('fast');
   });
 
-  it('får ingenting fra en lokal .env.local', () => {
-    // Den som kjører live lokalt, har korpus, verktøy og dokumentlenker i
-    // .env.local. Vitest leser ingen .env-filer (vite.config.ts), så testene
-    // måler koden og ikke maskinen. CI har ingen slik fil og kan ikke se dette.
+  it('får ingen VITE_KA_ utenfra, verken fra fil eller kommandolinje', () => {
+    // Testene skal måle koden og ikke maskinen. Den som kjører live lokalt, har
+    // korpus, verktøy og dokumentlenker i .env.local, og Vitest leser ingen
+    // .env-filer (vite.config.ts). En VITE_KA_ satt på kommandolinja når
+    // testene likevel, og da er det denne som blir rød. CI har ingen av delene.
     const fromFiles = Object.keys(kaEnv()).filter((name) => name.startsWith('VITE_KA_'));
 
     expect(fromFiles).toEqual([]);

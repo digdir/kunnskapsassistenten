@@ -127,8 +127,9 @@ function answerWithoutBackend(): Plugin {
 }
 
 /**
- * Whether this run reads `.env` files. Not under Vitest, and not in a mock
- * build, which is what the e2e suite builds (playwright.config.ts).
+ * Whether this run reads `.env` files. Not under Vitest, and not in mock
+ * mode, built or served: the e2e suite builds it (playwright.config.ts), and
+ * `VITE_API_MODE=mock npm run dev` reads no files either.
  *
  * Anyone who runs live locally has an `.env.local` full of live values
  * (.env.example), and Vite reads it in every mode. A unit test then got that
