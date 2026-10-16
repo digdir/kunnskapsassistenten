@@ -10,6 +10,7 @@
     "dev": "npm run dev --workspace apps/server & npm run dev --workspace apps/web",
     "dev:server": "npm run dev --workspace apps/server",
     "dev:web": "npm run dev --workspace apps/web",
+    "web": "VITE_API_MODE=live npm run dev --workspace apps/web --",
     "doctor": "npm run doctor --workspace apps/server",
     "build": "npm run build --workspace apps/web && npm run build --workspace apps/web-preact",
     "start": "npm run start --workspace apps/server",

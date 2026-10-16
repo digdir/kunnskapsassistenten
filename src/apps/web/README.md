@@ -18,6 +18,11 @@ Navnereglene står under [Naming](#naming), og kortversjonen av arbeidsreglene i
 
 ## Kom i gang
 
+The client against the shared backend is `npm run web` from `src/`. It runs in
+live and reads `.env.local` here, which is made from `.env.example` with the two
+keys filled in. Step by step, also for those who are not developers:
+[Run locally](docs/run-locally.md).
+
 I monorepoet står oppskriften i
 [`src/README.md`, «Komme i gang»](../../README.md#komme-i-gang): Node 24,
 `npm ci` i `src/`, BFF-en og klienten, testene og bildet. Skriptene under
@@ -877,25 +882,16 @@ rekker å trykke. En mock som strømmer momentant strømmer ikke.
 
 ## Ekte backend
 
-Uten `VITE_API_MODE` går `npm run dev` i live: `createChatClient()` gir
-`LiveChatClient`, og dev-serveren er proxyen som holder nøkkelen. Kopier
-`.env.example` til `.env.local` og fyll inn backenden, korpuset og Typesense:
+`npm run web` from `src/` runs in live, and so does `npm run dev` here without
+`VITE_API_MODE`: `createChatClient()` gives `LiveChatClient`, and the dev server
+is the proxy that holds the key. Copy `.env.example` to `.env.local` and fill in
+the two keys, `KA_API_KEY` and `TYPESENSE_API_KEY`. The rest is there for the
+shared backend and Typesense. Against the stack on your machine it is
+`KA_API_URL=http://localhost:8080` and the key from there.
 
-```sh
-KA_API_URL=http://localhost:8080
-KA_API_KEY=
-VITE_KA_TENANT=
-VITE_KA_DATASET_CONFIG_KEY=
-TYPESENSE_URL=
-TYPESENSE_API_KEY=
-KA_FACET_COLLECTIONS=
-KA_CHUNK_COLLECTIONS=
-VITE_KA_FILTER_FIELDS=
-```
-
-`TYPESENSE_API_KEY` er en søkenøkkel med tilgang til samlingene, aldri
-adminnøkkelen. Mangler noe av dette, skriver dev-serveren én linje ved oppstart
-om hva og hvor det settes. Ingenting fyller inn for det som mangler.
+`TYPESENSE_API_KEY` is a search key with access to the collections, never the
+admin key. If anything is missing, the dev server prints one line at startup
+saying what and where it is set. Nothing fills in for what is missing.
 
 **`VITE_API_MODE` skal ikke stå i `.env.local`.** Alle Vite-servere fra samme
 sjekkout leser den samme fila, så en modus lagt inn der slår inn for alle som

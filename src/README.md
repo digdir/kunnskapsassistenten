@@ -58,6 +58,10 @@ Fra en ny klone til appen på din maskin, med testene. Hver blokk kjøres for
 seg, og alle kommandoene etter `cd` kjøres i `src/`. Målt 06.10 på macOS med
 Node 24.21.0 og npm 11.19.0.
 
+Only the client against the shared backend, step by step and also for those
+who are not developers: [Run locally](apps/web/docs/run-locally.md). In short,
+`npm run web`, with `apps/web/.env.local` made from `.env.example`.
+
 ### 1. Klonen og Node 24
 
 `mise.toml` låser Node-versjonen. Med [mise](https://mise.jdx.dev) aktivert i
@@ -181,14 +185,13 @@ opptatt, velger Vite neste ledige port og skriver den ut.
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-Fyll inn `KA_API_URL` og `KA_API_KEY`, korpuset (`VITE_KA_TENANT` og
-`VITE_KA_DATASET_CONFIG_KEY`), Typesense (`TYPESENSE_URL`, `TYPESENSE_API_KEY`,
-`KA_FACET_COLLECTIONS` og `KA_CHUNK_COLLECTIONS`) og `VITE_KA_FILTER_FIELDS` i
-`apps/web/.env.local`. Typesense-nøkkelen er en søkenøkkel, aldri
-adminnøkkelen.
+Fill in the two keys in `apps/web/.env.local`: `KA_API_KEY` for the backend and
+`TYPESENSE_API_KEY`, a search key for Typesense and never the admin key. The
+rest is in `.env.example` for the shared backend. Without the file,
+`npm run web` has neither a backend nor keys.
 
 ```sh
-npm run dev:web
+npm run web
 ```
 
 Klienten i live på <http://localhost:5173>, slik testmiljøet kjører:
@@ -241,7 +244,7 @@ klient spør sin egen versjon av API-et: `apps/web-preact` `/api/*` og
 |                                         |                                                                                                               |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `npm run dev`                           | BFF-en og klienten, med watch. Klienten går i live uten `VITE_API_MODE=bff`, se [Komme i gang](#komme-i-gang) |
-| `npm run dev:web`                       | bare klienten, i live                                                                                         |
+| `npm run web`                           | only the client, in live, with `apps/web/.env.local`                                                          |
 | `npm run doctor`                        | sjekk forbindelsen til backenden                                                                              |
 | `npm run build`                         | produksjonsbygg av klienten                                                                                   |
 | `npm test`                              | server (node:test) og web (vitest)                                                                            |
