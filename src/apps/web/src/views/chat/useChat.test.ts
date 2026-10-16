@@ -102,6 +102,71 @@ describe('useChat', () => {
     expect(result.current.messages).toHaveLength(2);
   });
 
+  it('fills a step in when it comes again, instead of showing it twice', async () => {
+    const { client, turns } = heldClient();
+    const { result } = renderHook(() => useChat(client));
+
+    act(() => result.current.send('Hva er måloppnåelse?'));
+    await waitFor(() => expect(turns).toHaveLength(1));
+
+    // A backend that announces a tool when it starts, and reports it done later: the second
+    // frame carries the same step with what only the report knows.
+    act(() =>
+      turns[0].emit({
+        type: 'thinking-step',
+        step: { id: 'tool-1-search', kind: 'search', label: 'Jeg søker i dokumentene.' },
+      }),
+    );
+    await waitFor(() =>
+      expect(assistantMessages(result.current.messages)[0].thinkingSteps).toHaveLength(1),
+    );
+
+    act(() =>
+      turns[0].emit({
+        type: 'thinking-step',
+        step: {
+          id: 'tool-1-search',
+          kind: 'search',
+          label: 'Jeg søker i dokumentene.',
+          detail: '20 treff',
+          durationMs: 812,
+        },
+      }),
+    );
+
+    await waitFor(() =>
+      expect(assistantMessages(result.current.messages)[0].thinkingSteps?.[0].detail).toBe(
+        '20 treff',
+      ),
+    );
+    const [answer] = assistantMessages(result.current.messages);
+    expect(answer.thinkingSteps).toHaveLength(1);
+    expect(answer.thinkingSteps?.[0].durationMs).toBe(812);
+  });
+
+  it('keeps steps with different ids apart', async () => {
+    const { client, turns } = heldClient();
+    const { result } = renderHook(() => useChat(client));
+
+    act(() => result.current.send('Hva er måloppnåelse?'));
+    await waitFor(() => expect(turns).toHaveLength(1));
+
+    act(() => {
+      turns[0].emit({
+        type: 'thinking-step',
+        step: { id: 'tool-1-search', kind: 'search', label: 'Jeg søker i dokumentene.' },
+      });
+      turns[0].emit({
+        type: 'thinking-step',
+        step: { id: 'tool-2-read_chunks', kind: 'read', label: 'Jeg leser utdragene.' },
+      });
+    });
+
+    await waitFor(() =>
+      expect(assistantMessages(result.current.messages)[0].thinkingSteps).toHaveLength(2),
+    );
+  });
+
   it('still drops an answer whose turn failed before its first token', async () => {
     const { client, turns } = heldClient();
     const { result } = renderHook(() => useChat(client));

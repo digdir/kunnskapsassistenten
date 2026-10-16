@@ -25,6 +25,26 @@ describe('TurnRecorder', () => {
     expect(turn.thinkingSteps.map((s) => s.id)).toEqual(['1', '2']);
   });
 
+  it('keeps one step when the same one comes again, filled in', () => {
+    const turn = new TurnRecorder();
+
+    turn.observe(step('tool-1-search'));
+    turn.observe({
+      type: 'thinking-step',
+      step: {
+        id: 'tool-1-search',
+        kind: 'search',
+        label: 'Jeg søker i dokumentene.',
+        detail: '20 treff',
+      },
+    });
+    turn.observe(step('tool-2-read_chunks'));
+
+    // What is stored is what the screen showed: one step per call, with its summary.
+    expect(turn.thinkingSteps.map((s) => s.id)).toEqual(['tool-1-search', 'tool-2-read_chunks']);
+    expect(turn.thinkingSteps[0].detail).toBe('20 treff');
+  });
+
   it('måler tenketiden fra første steg til første ord, som useChat gjør', () => {
     const time = clock();
     const turn = new TurnRecorder(time.now);

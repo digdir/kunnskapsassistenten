@@ -8,6 +8,7 @@ import type {
   SourceDocument,
   StreamEvent,
   ThinkingStep,
+  ThinkingStepKind,
 } from '../../model';
 import { documentUrl } from '../documentUrls';
 import type { DatasetFilterFields } from '../filterFields';
@@ -100,6 +101,8 @@ type ProgressMeta = {
   reasoning?: string;
   iteration?: number;
   'tool-calls'?: ToolCall[];
+  /** `tool/call`: one call, sent when the tool starts rather than when it returns. */
+  'tool-call'?: ToolCall;
 };
 
 type ToolCall = {
@@ -214,18 +217,39 @@ export function toCitations(documents: SourceDocument[]): Citation[] {
   );
 }
 
+/** The tool that writes the answer. Its step is the one that says the answer is on its way. */
+const ANSWER_TOOL = 'generate_response';
+
+/** Said once per run, by whichever frame tells us the answer is being written first. */
+const WRITING_THE_ANSWER = 'Jeg skriver svaret med kildehenvisninger.';
+
+/**
+ * The search strings this call ran, under either of the names the backends use. The tool that
+ * writes the answer is handed the question itself, which is not a search and must not show up
+ * as one.
+ */
+function queriesOf(call: ToolCall): string[] | undefined {
+  if (call.tool === ANSWER_TOOL) return undefined;
+  return call.args?.queries ?? (call.args?.query ? [call.args.query] : undefined);
+}
+
+/** What one tool is doing, in the agent's own Norwegian. */
+function toolVoice(tool: string, isRead: boolean): { kind: ThinkingStepKind; label: string } {
+  if (tool === ANSWER_TOOL) return { kind: 'finalizing', label: WRITING_THE_ANSWER };
+  if (isRead) return { kind: 'read', label: 'Jeg leser utdragene.' };
+  return { kind: 'search', label: 'Jeg søker i dokumentene.' };
+}
+
 /** A Norwegian label for one tool call, for the thinking steps. */
 function toolCallStep(call: ToolCall, index: number): ThinkingStep {
   const tool = call.tool ?? 'ukjent';
-  const queries = call.args?.queries ?? (call.args?.query ? [call.args.query] : undefined);
   const isRead = tool.includes('read') || Boolean(call.args?.chunk_ids?.length);
 
   return {
     id: `tool-${index}-${tool}`,
-    kind: isRead ? 'read' : 'search',
-    label: isRead ? 'Jeg leser utdragene.' : 'Jeg søker i dokumentene.',
-    detail: call['result-summary'],
-    queries,
+    ...toolVoice(tool, isRead),
+    detail: tool === ANSWER_TOOL ? undefined : call['result-summary'],
+    queries: queriesOf(call),
     durationMs: call['duration-ms'],
   };
 }
@@ -241,6 +265,11 @@ export class McpStreamState {
   #answer = '';
   #keywords: string[] = [];
   #steps = 0;
+  /** Tools a `tool/call` frame announced in the turn now running, with the number their step
+      was drawn under: the turn's own report fills that step in instead of drawing a new one. */
+  #announced: { tool: string; index: number }[] = [];
+  /** Whether the step that says the answer is being written has been shown. */
+  #writing = false;
 
   /** The answer text released so far. Empty while nothing is confirmed. */
   get answerText(): string {
@@ -259,6 +288,14 @@ export class McpStreamState {
 
     this.#answer += pending.join('');
     return pending.map((text) => ({ type: 'token', text }));
+  }
+
+  /** Every search the agent ran, without repeats: the last one alone is often just an echo of
+      the user's question. */
+  #rememberQueries(queries: string[] | undefined): void {
+    for (const query of queries ?? []) {
+      if (!this.#keywords.includes(query)) this.#keywords.push(query);
+    }
   }
 
   /** Translates one progress frame. Returns nothing for frames we ignore. */
@@ -284,30 +321,49 @@ export class McpStreamState {
         ];
       }
 
+      // A backend that says a tool is starting lets the reader see it then, which matters most
+      // for the answer itself: writing it is the longest part of a turn and the quietest.
+      case 'tool/call': {
+        const call = meta['tool-call'];
+        if (!call?.tool) return [];
+        this.#rememberQueries(queriesOf(call));
+        this.#steps += 1;
+        this.#announced.push({ tool: call.tool, index: this.#steps });
+        const step = toolCallStep(call, this.#steps);
+        if (step.kind === 'finalizing') this.#writing = true;
+        return [{ type: 'thinking-step', step }];
+      }
+
       case 'agent/turn-completed': {
-        const calls = meta['tool-calls'] ?? [];
-        return calls.map((call) => {
-          this.#steps += 1;
-          const step = toolCallStep(call, this.#steps);
-          // Every search the agent ran, without repeats: the last one alone is often just an echo
-          // of the user's question.
-          for (const query of step.queries ?? []) {
-            if (!this.#keywords.includes(query)) this.#keywords.push(query);
-          }
-          return { type: 'thinking-step', step };
-        });
+        const events: StreamEvent[] = [];
+        for (const call of meta['tool-calls'] ?? []) {
+          this.#rememberQueries(queriesOf(call));
+          const announced = this.#announced.findIndex((seen) => seen.tool === call.tool);
+          // A call drawn when it started is sent again under the same id, now with what only
+          // the report knows: how long it took and what it found. The reader sees one step.
+          const index = announced === -1 ? (this.#steps += 1) : this.#announced[announced].index;
+          if (announced !== -1) this.#announced.splice(announced, 1);
+          const step = toolCallStep(call, index);
+          if (step.kind === 'finalizing') this.#writing = true;
+          events.push({ type: 'thinking-step', step });
+        }
+        this.#announced = [];
+        return events;
       }
 
       case 'agent/finalized': {
+        const released = this.flushPending();
+        if (this.#writing) return released;
         this.#steps += 1;
+        this.#writing = true;
         return [
-          ...this.flushPending(),
+          ...released,
           {
             type: 'thinking-step',
             step: {
               id: `finalizing-${this.#steps}`,
               kind: 'finalizing',
-              label: 'Jeg skriver svaret med kildehenvisninger.',
+              label: WRITING_THE_ANSWER,
             },
           },
         ];

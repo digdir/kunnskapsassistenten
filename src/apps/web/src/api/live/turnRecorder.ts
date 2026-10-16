@@ -6,7 +6,7 @@ import type { StreamEvent, ThinkingStep } from '../../model';
  * `Message.thoughtMs`, so the number after a reload is the one that was on screen.
  */
 export class TurnRecorder {
-  readonly #steps: ThinkingStep[] = [];
+  #steps: ThinkingStep[] = [];
   #firstStepAt: number | undefined;
   #thoughtMs: number | undefined;
   readonly #now: () => number;
@@ -26,7 +26,14 @@ export class TurnRecorder {
 
   observe(event: StreamEvent): void {
     if (event.type === 'thinking-step') {
-      this.#steps.push(event.step);
+      // The same step comes again, under the same id, when the turn reports what the tool
+      // found. The stored turn keeps one step, filled in, as the screen does.
+      const step = event.step;
+      if (this.#steps.some((seen) => seen.id === step.id)) {
+        this.#steps = this.#steps.map((seen) => (seen.id === step.id ? step : seen));
+      } else {
+        this.#steps.push(step);
+      }
       this.#firstStepAt ??= this.#now();
       return;
     }

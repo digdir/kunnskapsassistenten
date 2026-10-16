@@ -7,6 +7,7 @@ import {
   type FilterSelection,
   type Message,
   type MessageStatus,
+  type ThinkingStep,
 } from '../../model';
 import { announcedText } from './answerText';
 import {
@@ -50,6 +51,15 @@ function withoutTurnBeingRetried(messages: Message[]): Message[] {
   const replacing =
     last?.role === 'assistant' && (last.status === 'error' || last.status === 'aborted');
   return replacing ? messages.slice(0, -1) : messages;
+}
+
+/**
+ * A step comes twice when the backend announces a tool and then reports it done: the second one
+ * carries what the first could not know, under the same id. One step, filled in, not two.
+ */
+function withStep(steps: ThinkingStep[] | undefined, step: ThinkingStep): ThinkingStep[] {
+  if (!steps?.some((seen) => seen.id === step.id)) return [...(steps ?? []), step];
+  return steps.map((seen) => (seen.id === step.id ? step : seen));
 }
 
 export type UseChat = {
@@ -296,7 +306,7 @@ export function useChat(
               thinkingStartedAt ??= Date.now();
               patchAnswer(answerId, (message) => ({
                 ...message,
-                thinkingSteps: [...(message.thinkingSteps ?? []), event.step],
+                thinkingSteps: withStep(message.thinkingSteps, event.step),
               }));
               if (!saidSearching && isCurrentTurn()) {
                 saidSearching = true;
