@@ -1,0 +1,124 @@
+{
+  "run_id": "20261013-151341",
+  "date": "2026-10-13",
+  "fasit_sha256": "59aa6c6bb324fa90980b823cec1cc3588de7ad5963990c5e97e6ce26326732ea",
+  "fasit_pairs": 200,
+  "instruction": "Oversett denne teksten fra bokmål til nynorsk. Svar bare med oversettelsen, uten forklaringer.",
+  "metric": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0",
+  "run": {
+    "repetitions": 3,
+    "temperature": 0.3,
+    "base_seed": 1,
+    "max_tokens": 128,
+    "request_timeout_seconds": 120.0,
+    "max_consecutive_errors": 3
+  },
+  "baseline": {
+    "kopi-av-bokmaal": {
+      "corpus_chrf": 77.31486427024593,
+      "mean_sentence_chrf": 76.69021315414857,
+      "exact_match_rate": 0.0,
+      "empty_outputs": 0
+    }
+  },
+  "models": {
+    "normistral-7b-warm-instruct": {
+      "provider": "ollama",
+      "model": "hf.co/ltg/normistral-7b-warm-instruct:Q4_K_M",
+      "note": "Språkteknologigruppa ved UiO. Q4_K_M. Apache 2.0.",
+      "summary": {
+        "repetitions": 3,
+        "corpus_chrf_per_repetition": [
+          61.494762250843436,
+          63.66275396743685,
+          62.674492839118386
+        ],
+        "corpus_chrf_mean": 62.61066968579956,
+        "corpus_chrf_std": 1.0854041030782418,
+        "mean_sentence_chrf": 65.14611985501408,
+        "exact_match_rate_per_repetition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "exact_match_rate_mean": 0.0,
+        "empty_outputs": 1
+      },
+      "status": null
+    },
+    "borealis-open-4b": {
+      "provider": "ollama",
+      "model": "hf.co/NbAiLab/borealis-open-4b-gguf:Q4_K_M",
+      "note": "Nasjonalbiblioteket. Q4_K_M. Trent uten materiale fra presseavtalen. Gemma-lisens.",
+      "summary": {
+        "repetitions": 3,
+        "corpus_chrf_per_repetition": [
+          95.56625400813341,
+          95.73455543952328,
+          95.81706630756183
+        ],
+        "corpus_chrf_mean": 95.70595858507284,
+        "corpus_chrf_std": 0.12782815593400063,
+        "mean_sentence_chrf": 95.96622199328438,
+        "exact_match_rate_per_repetition": [
+          0.48,
+          0.48,
+          0.495
+        ],
+        "exact_match_rate_mean": 0.48500000000000004,
+        "empty_outputs": 0
+      },
+      "status": null
+    },
+    "borealis-4b": {
+      "provider": "ollama",
+      "model": "hf.co/NbAiLab/borealis-4b-gguf:Q4_K_M",
+      "note": "Nasjonalbiblioteket. Q4_K_M. Kan ha sett NTB/NPK-tekst i treningen, se README.",
+      "summary": {
+        "repetitions": 3,
+        "corpus_chrf_per_repetition": [
+          95.7220741345975,
+          95.85434410747052,
+          95.73028476595722
+        ],
+        "corpus_chrf_mean": 95.76890100267508,
+        "corpus_chrf_std": 0.07410969393166268,
+        "mean_sentence_chrf": 95.95923704224651,
+        "exact_match_rate_per_repetition": [
+          0.455,
+          0.495,
+          0.465
+        ],
+        "exact_match_rate_mean": 0.4716666666666667,
+        "empty_outputs": 0
+      },
+      "status": null
+    },
+    "borealis-open-12b": {
+      "provider": "ollama",
+      "model": "hf.co/NbAiLab/borealis-open-12b-gguf:Q4_K_M",
+      "note": "Nasjonalbiblioteket. Q4_K_M. Trent uten materiale fra presseavtalen. Gemma-lisens.",
+      "summary": {
+        "repetitions": 1,
+        "corpus_chrf_per_repetition": [
+          96.31264631841478
+        ],
+        "corpus_chrf_mean": 96.31264631841478,
+        "corpus_chrf_std": 0.0,
+        "mean_sentence_chrf": 96.51665406930547,
+        "exact_match_rate_per_repetition": [
+          0.545
+        ],
+        "exact_match_rate_mean": 0.545,
+        "empty_outputs": 0
+      },
+      "status": null
+    }
+  },
+  "not_completed": {
+    "borealis-open-12b": "1 of 3 repetitions",
+    "mistral-7b": "0 of 3 repetitions",
+    "nb-llama-3.1-8b": "0 of 3 repetitions",
+    "claude-haiku-5-5": "0 of 3 repetitions"
+  }
+}

@@ -1,0 +1,61 @@
+# Modeller som skal sammenlignes. Rekkefølgen er rekkefølgen de kjøres i,
+# én modell om gangen.
+#
+# provider er "ollama", "openai" eller "azure_openai", som i
+# eval_from_golden_questions/EVAL_PROVIDERS.md. "openai" virker også mot andre
+# OpenAI-kompatible API-er når base_url og api_key_env er satt.
+
+[run]
+repetitions = 3
+temperature = 0.3
+base_seed = 1
+max_tokens = 128
+
+[[models]]
+name = "borealis-open-12b"
+provider = "ollama"
+model = "hf.co/NbAiLab/borealis-open-12b-gguf:Q4_K_M"
+note = "Nasjonalbiblioteket. Q4_K_M. Trent uten materiale fra presseavtalen. Gemma-lisens."
+
+[[models]]
+name = "borealis-open-4b"
+provider = "ollama"
+model = "hf.co/NbAiLab/borealis-open-4b-gguf:Q4_K_M"
+note = "Nasjonalbiblioteket. Q4_K_M. Trent uten materiale fra presseavtalen. Gemma-lisens."
+
+[[models]]
+name = "borealis-4b"
+provider = "ollama"
+model = "hf.co/NbAiLab/borealis-4b-gguf:Q4_K_M"
+note = "Nasjonalbiblioteket. Q4_K_M. Kan ha sett NTB/NPK-tekst i treningen, se README."
+
+[[models]]
+name = "normistral-7b-warm-instruct"
+provider = "ollama"
+model = "hf.co/ltg/normistral-7b-warm-instruct:Q4_K_M"
+note = "Språkteknologigruppa ved UiO. Q4_K_M. Apache 2.0."
+
+[[models]]
+name = "mistral-7b"
+provider = "ollama"
+model = "mistral:latest"
+note = "Generell referanse uten norsk tilpasning. Q4_K_M. Apache 2.0."
+
+[[models]]
+name = "nb-llama-3.1-8b"
+provider = "ollama"
+model = "nb-llama-3.1-8b:latest"
+note = "Nasjonalbiblioteket, instruct-varianten. Q4_K_M. Lokal Modelfile med top_k 1, så gjentakene blir like."
+
+[[models]]
+name = "claude-haiku-5-5"
+provider = "openai"
+model = "claude-haiku-5-5"
+base_url = "https://api.anthropic.com/v1/"
+api_key_env = "ANTHROPIC_API_KEY"
+note = "API-modell som referanse, kjørt uten tenking. API-et avviser temperatur og seed, så modellen kjører med leverandørens standard."
+omit_sampling_params = true
+extra_body = { thinking = { type = "disabled" } }
+usd_per_mtok_input = 0.10
+usd_per_mtok_output = 0.50
+max_cost_usd = 2.0
