@@ -37,6 +37,11 @@ export type StoredAnswer = {
   thoughtMs?: number;
   /** What the question was asked with; empty is «none». See `Message.filter`. */
   filter?: FilterSelection;
+  /**
+   * The agent asked back rather than answered. Absent is an answer. The backend stores the
+   * question back as an ordinary message, with no status.
+   */
+  outcome?: 'needs-clarification';
 };
 
 /** What the client hands over when an answer is done. */
@@ -46,6 +51,7 @@ export type AnswerRecord = {
   retrieval?: RetrievalDetails;
   thoughtMs?: number;
   filter?: FilterSelection;
+  outcome?: 'needs-clarification';
 };
 
 type StoredThread = {
@@ -152,6 +158,7 @@ function answerFrom(value: unknown): StoredAnswer | undefined {
   if (retrieval) answer.retrieval = retrieval;
   if (thoughtMs !== undefined) answer.thoughtMs = thoughtMs;
   if (filter) answer.filter = filter;
+  if (value.outcome === 'needs-clarification') answer.outcome = value.outcome;
   return answer;
 }
 
@@ -205,7 +212,8 @@ function write(store: Store): void {
 
 /**
  * Stores what one answer was built from, through the same checks as reading, so what is written
- * can be read back. Nothing is stored for an answer with neither chunks, steps nor a filter.
+ * can be read back. Nothing is stored for an answer with neither chunks, steps, a filter nor an
+ * outcome.
  */
 export function rememberAnswer(
   threadId: string,
@@ -215,7 +223,7 @@ export function rememberAnswer(
 ): void {
   const steps = record.thinkingSteps ?? [];
   if (!threadId || answerText.trim() === '') return;
-  if (record.chunks.length === 0 && steps.length === 0 && !record.filter) return;
+  if (record.chunks.length === 0 && steps.length === 0 && !record.filter && !record.outcome) return;
 
   const answer = answerFrom({
     ...record,

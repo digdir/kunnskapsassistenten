@@ -36,6 +36,8 @@ type Backend = {
   storedAnswer: { text: string; chunks: unknown[] };
   /** The create call's `filter-value`, given back on a message of its own when set. */
   createdWith?: Record<string, unknown>;
+  /** `_meta.status` in the final frame. */
+  status: string;
 };
 
 let backend: Backend;
@@ -58,6 +60,7 @@ beforeEach(() => {
     },
     storedAnswer: { text: ANSWER, chunks: [] },
     progress: [],
+    status: 'complete',
   };
   fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
     const path = String(url);
@@ -69,7 +72,7 @@ beforeEach(() => {
         result: {
           content: [{ type: 'text', text: ANSWER }],
           structuredContent: { chunks: CHUNKS, conversation_id: 'conv-1' },
-          _meta: { conversation_id: 'conv-1', status: 'complete' },
+          _meta: { conversation_id: 'conv-1', status: backend.status },
         },
       };
       const progress = backend.progress.map((meta) => ({
@@ -334,5 +337,41 @@ describe('filteret over svaret etter ny innlasting', () => {
     backend.createdWith = ARSRAPPORT;
 
     expect((await answerOf()).answer?.filter?.documentType).toEqual(['Årsrapport']);
+  });
+});
+
+/**
+ * A question back after a reload. The backend stores it as an ordinary
+ * message with no status (measured on the test site 15.10), so this browser
+ * writes down that it was one, next to the filter.
+ */
+describe('a clarifying question after a reload', () => {
+  const answerOf = async () =>
+    (await client().getThread('conv-1'))?.messages.find((message) => message.role === 'assistant');
+
+  it('is a clarifying question again, with the filter it was asked with', async () => {
+    backend.status = 'needs-clarification';
+    backend.createdWith = { 'document-type': ['Årsrapport'], organisation: [], year: [] };
+    const evaluering = { ...emptyFilterSelection, documentType: ['Evaluering'] };
+    await ask(evaluering);
+
+    const answer = await answerOf();
+
+    expect(answer?.status).toBe('needs-clarification');
+    expect(answer?.filter).toEqual(evaluering);
+  });
+
+  it('does not turn an ordinary answer into a clarifying question', async () => {
+    await ask();
+
+    expect((await answerOf())?.status).toBe('complete');
+  });
+
+  it('is an ordinary answer when this browser recorded nothing', async () => {
+    // Another device, or a cleared browser: the backend keeps no status. See
+    // `messagesFromApi`.
+    backend.status = 'needs-clarification';
+
+    expect((await answerOf())?.status).toBe('complete');
   });
 });

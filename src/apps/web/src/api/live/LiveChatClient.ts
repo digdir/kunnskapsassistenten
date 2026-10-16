@@ -261,7 +261,7 @@ export class LiveChatClient implements ChatClient {
         for (const frame of frames) {
           const events = readFrame(frame.data, state, conversationId, askedOf, {
             withTexts: (documents) => this.#withTexts(documents, askedOf.corpusKey, params.signal),
-            remember: (id, answerText, chunks, retrieval) =>
+            remember: (id, answerText, chunks, retrieval, outcome) =>
               rememberAnswer(id, answerText, {
                 chunks,
                 retrieval,
@@ -269,6 +269,7 @@ export class LiveChatClient implements ChatClient {
                 thoughtMs: turn.thoughtMs,
                 // Kept also when empty: «none» must not read back as the thread's first filter.
                 filter: params.filters ?? emptyFilterSelection,
+                ...(outcome ? { outcome } : {}),
               }),
           });
           // Through the recorder on their way out, so what was shown can be written down with the
@@ -357,6 +358,10 @@ export class LiveChatClient implements ChatClient {
         // Over the thread's first filter (`threadDetailFrom`): this is what the question was
         // asked with.
         if (answer.filter) restored.filter = answer.filter;
+        // The question back, drawn as one again. The backend stores it as an ordinary message,
+        // so on another device, or after the browser was cleared, it reads back as an answer
+        // (headless-rag #41).
+        if (answer.outcome === 'needs-clarification') restored.status = answer.outcome;
         if (!message.sources?.length && answer.chunks.length > 0) {
           const documents = await this.#withTexts(
             toSourceDocuments(answer.chunks, detail.corpusKey),
@@ -401,6 +406,7 @@ type FrameHooks = {
     answerText: string,
     chunks: McpChunk[],
     retrieval: RetrievalDetails,
+    outcome?: 'needs-clarification',
   ) => void;
 };
 
@@ -491,10 +497,20 @@ async function* readFrame(
   // Only the document count is read here, and the lookup below does not change the grouping, so
   // this is the same «Fremgangsmåte» before and after it.
   const retrieval = state.retrieval(listed, chunks.length);
+  // Only `needs-clarification` is read: a failed turn already arrived as `isError`, so a status
+  // of `error` alone is dropped rather than given a second route to the same state.
+  const outcome =
+    result._meta?.status === 'needs-clarification' ? ('needs-clarification' as const) : undefined;
 
   // Stored under the final frame's text, which is what the backend keeps, and before the lookup,
   // so a reload while the excerpts load (up to 5 s) does not lose it. See sourceStore.ts.
-  hooks?.remember(conversationId, finalAnswerText(result.content) || finalText, chunks, retrieval);
+  hooks?.remember(
+    conversationId,
+    finalAnswerText(result.content) || finalText,
+    chunks,
+    retrieval,
+    outcome,
+  );
 
   // After the answer's text, so the reader is reading while the excerpts' text is looked up
   // (src/decisions/0008).
@@ -511,11 +527,7 @@ async function* readFrame(
     type: 'done',
     messageId: `msg-${Date.now()}`,
     conversationId,
-    // Only `needs-clarification` is read: a failed turn already arrived as `isError`, so a status
-    // of `error` alone is dropped rather than given a second route to the same state.
-    ...(result._meta?.status === 'needs-clarification'
-      ? { outcome: 'needs-clarification' as const }
-      : {}),
+    ...(outcome ? { outcome } : {}),
     ...askedOf,
   };
 }

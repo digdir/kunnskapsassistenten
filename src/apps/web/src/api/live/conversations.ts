@@ -193,6 +193,9 @@ export function messagesFromApi(
         // On the answer only: the corpus is where the answer was retrieved from.
         ...(role === 'assistant' && corpusKey ? { corpusKey } : {}),
         ...(sources && !failed ? { sources } : {}),
+        // A question back is stored as an ordinary message, with no status, so it reads back as an
+        // answer. This browser's record puts it back (`#withRemembered` in LiveChatClient.ts); on
+        // another device, or after the browser was cleared, it stays an answer (headless-rag #41).
         status: failed ? ('error' as const) : ('complete' as const),
       };
     });

@@ -99,9 +99,21 @@ export function MessageList({
         // sekunder» does apply, because the agent searched before it asked.
         if (message.status === 'needs-clarification') {
           const clarificationSteps = thinkingWithoutAnswer(message.thinkingSteps, message.content);
+          const narrowedTo = filterSummary?.(message.id);
           return (
             <li className="ka-message ka-message--assistant" key={message.id}>
               <span className="ds-sr-only">Kunnskapsassistenten spurte:</span>
+              {/* The same line as over an answer (AnswerMessage): the agent
+                  searched with the filter before it asked, so the question
+                  back was narrowed by it too. The hidden words are about the
+                  documents and not the question, because the line can also
+                  be «Hentet fra Kudos», and the question was not fetched. */}
+              {narrowedTo ? (
+                <p className="ka-filter-summary">
+                  <span className="ds-sr-only">Spørsmålet bygger på dokumenter </span>
+                  {narrowedTo}
+                </p>
+              ) : null}
               {/* Less the step that is the question back over again; see
                   `thinkingWithoutAnswer`. The agent can write it as its own
                   reasoning just as it can write an answer there. */}
