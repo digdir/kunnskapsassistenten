@@ -20,6 +20,7 @@ import {
   DISCLAIMER,
   NEW_THREAD_TITLE,
   READING_THREAD,
+  SLOW_ANSWER_NOTICE,
   kickstartersFor,
 } from './text';
 import { threadHeading, threadPageTitle } from './threadHeading';
@@ -80,6 +81,7 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
     status,
     error,
     announcement,
+    slowAnswer,
     appliedFilters,
     attachmentsByMessage,
     noHitsAnswers,
@@ -409,6 +411,16 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
         }
         title={errorText?.title}
       />
+
+      {/* The turn has gone a while without a step or a word, and is still
+          running. A line and not an alert: nothing has gone wrong yet, and
+          «Avbryt» in the field below is still the way out. The polite region
+          at the foot says it once; see SLOW_ANSWER_MS in useChat. */}
+      {slowAnswer ? (
+        <Paragraph className="ka-slow-notice" data-size="sm" variant="long">
+          {SLOW_ANSWER_NOTICE}
+        </Paragraph>
+      ) : null}
 
       <Composer
         above={

@@ -15,7 +15,24 @@ import {
   NO_HITS_FILTERED,
   NO_HITS_WHOLE_CORPUS,
   NO_SOURCES_WARNING,
+  SLOW_ANSWER_NOTICE,
 } from './text';
+
+/* How long a turn may go without progress. Progress is a new step or new
+  text in the stream; `: ping` from the backend is a comment line the decoder
+  drops (api/live/sse.ts), so a quiet backend stays quiet here. `sources`
+  deliberately does not count: where a client sends one at all, it arrives
+  with the frames that close the stream, so it could not hold a stalled turn
+  open anyway. */
+
+/** Without progress for this long, the reader is told the wait is unusual.
+    The turn keeps running. */
+export const SLOW_ANSWER_MS = 30_000;
+
+/** Without progress for this long, the client stops the turn itself, the same
+    move as «Avbryt»: this page stops waiting and closes the connection, while
+    the backend finishes and stores the run, so a reload can show the answer. */
+export const STALLED_ANSWER_MS = 300_000;
 
 /** The documents one question is asked with: ids for the wire, names for the
     thread. Both, because a name looked up later goes missing when the reader
@@ -61,6 +78,9 @@ export type UseChat = {
   /** What the polite live region should say now. Here and not in the view,
       because only this loop knows when a paragraph finished. */
   announcement: string;
+  /** The turn in flight has gone SLOW_ANSWER_MS without progress. False
+      again the moment something arrives: the clock is what it reports. */
+  slowAnswer: boolean;
   /** The filter each answer was asked under, by message id: what the reader
       chose then, not what is selected now. */
   appliedFilters: Record<string, FilterSelection>;
@@ -123,6 +143,7 @@ export function useChat(
   const [error, setError] = useState<ChatError | null>(null);
   const [noHitsAnswers, setNoHitsAnswers] = useState<ReadonlySet<string>>(() => new Set());
   const [announcement, setAnnouncement] = useState('');
+  const [slowAnswer, setSlowAnswer] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const turnRef = useRef(0);
@@ -149,6 +170,7 @@ export function useChat(
     setAttachmentsByMessage({});
     setNoHitsAnswers(new Set());
     setAnnouncement('');
+    setSlowAnswer(false);
     setError(null);
     setStatus('idle');
   }
@@ -223,10 +245,59 @@ export function useChat(
       setStatus('pending');
       setError(null);
       setAnnouncement('Henter svar.');
+      setSlowAnswer(false);
 
       // The running text, so a finished paragraph can be spotted without
       // reading it back out of state.
       let content = '';
+
+      // Set when the limit stopped the turn, so the abort that follows is
+      // told apart from the reader pressing «Avbryt».
+      let gaveUp = false;
+
+      // Read out once per turn: a region that spoke on every quiet half
+      // minute would be the loudest thing in a view that is waiting.
+      let saidSlow = false;
+
+      let slowTimer: ReturnType<typeof setTimeout> | undefined;
+      let limitTimer: ReturnType<typeof setTimeout> | undefined;
+      const stopWaiting = () => {
+        clearTimeout(slowTimer);
+        clearTimeout(limitTimer);
+      };
+
+      // Both clocks start over here: on the way out with the question, and
+      // on every step and every word after it.
+      const waitForProgress = () => {
+        stopWaiting();
+        if (isCurrentTurn()) setSlowAnswer(false);
+        slowTimer = setTimeout(() => {
+          if (!isCurrentTurn()) return;
+          setSlowAnswer(true);
+          if (saidSlow) return;
+          saidSlow = true;
+          setAnnouncement(SLOW_ANSWER_NOTICE);
+        }, SLOW_ANSWER_MS);
+        limitTimer = setTimeout(() => {
+          gaveUp = true;
+          // Through the controller, so the abort reaches the backend and the
+          // answer cannot turn up after the turn has been given up on.
+          controller.abort();
+        }, STALLED_ANSWER_MS);
+      };
+
+      // The turn the limit ends, with the wording for a wait that ran out.
+      // `aborted` would say the reader stopped it, which they did not.
+      const settleAsTimedOut = (settled?: { createdAt?: string; corpusKey?: string }) => {
+        settleAnswer(answerId, 'error', settled);
+        if (!isCurrentTurn()) return;
+        setError({ code: 'timeout' });
+        // The Alert has role="alert" and announces itself.
+        setAnnouncement('');
+        setStatus('error');
+      };
+
+      waitForProgress();
 
       // Which «fant ingenting» answer fits, read from the filter the
       // question was asked under: telling a reader to loosen a filter they
@@ -270,6 +341,7 @@ export function useChat(
         })) {
           switch (event.type) {
             case 'token': {
+              waitForProgress();
               setStatus('streaming');
               const thoughtMs =
                 thinkingStartedAt === undefined ? undefined : Date.now() - thinkingStartedAt;
@@ -293,6 +365,7 @@ export function useChat(
             }
 
             case 'thinking-step':
+              waitForProgress();
               thinkingStartedAt ??= Date.now();
               patchAnswer(answerId, (message) => ({
                 ...message,
@@ -329,6 +402,13 @@ export function useChat(
 
             case 'error':
               if (event.error.code === 'aborted') {
+                // The client's own limit, not the reader: the abort came
+                // from here, and the turn ran out of time rather than being
+                // stopped.
+                if (gaveUp) {
+                  settleAsTimedOut(event);
+                  return;
+                }
                 settleAnswer(answerId, 'aborted', event);
                 if (isCurrentTurn()) {
                   setAnnouncement('Genereringen ble avbrutt.');
@@ -369,8 +449,23 @@ export function useChat(
               return;
           }
         }
-        // The stream ended without a `done` frame. Nothing is in flight any
-        // more, so the answer is as finished as it is going to get.
+        // The stream ended without a `done` frame. With nothing written,
+        // there is no answer to call finished, and «Svaret er ferdig.» is
+        // the one thing that is certainly not true — so the turn ends as the
+        // failure it is. With text in it, what arrived stands.
+        if (content.trim() === '') {
+          settleAnswer(answerId, 'error');
+          if (isCurrentTurn()) {
+            // Nothing came back to say what went wrong, which is what
+            // `unknown` means: «Svaret kom ikke fram».
+            setError({ code: 'unknown' });
+            setAnnouncement('');
+            setStatus('error');
+          }
+          return;
+        }
+        // Nothing is in flight any more, so the answer is as finished as it
+        // is going to get.
         settleAnswer(answerId, 'complete');
         if (isCurrentTurn()) {
           setAnnouncement(doneAnnouncement());
@@ -378,6 +473,10 @@ export function useChat(
         }
       } catch {
         if (controller.signal.aborted) {
+          if (gaveUp) {
+            settleAsTimedOut();
+            return;
+          }
           settleAnswer(answerId, 'aborted');
           if (isCurrentTurn()) {
             setAnnouncement('Genereringen ble avbrutt.');
@@ -394,6 +493,8 @@ export function useChat(
           setStatus('error');
         }
       } finally {
+        stopWaiting();
+        if (isCurrentTurn()) setSlowAnswer(false);
         if (abortRef.current === controller) abortRef.current = null;
       }
     },
@@ -473,6 +574,7 @@ export function useChat(
     status,
     error,
     announcement,
+    slowAnswer,
     appliedFilters,
     attachmentsByMessage,
     noHitsAnswers,

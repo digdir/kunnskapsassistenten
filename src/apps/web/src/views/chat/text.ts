@@ -69,6 +69,11 @@ export const FAILED_NOTE = 'Dette spørsmålet fikk ikke noe svar. Noe gikk galt
 /** The only action on a stopped answer: ask the same question again. */
 export const REGENERATE = 'Generer på nytt';
 
+/** By the compose field once a turn has gone a while without a step or a
+    word. It names the wait and nothing else: the turn is still running, and
+    «Avbryt» beside it is still the way out. See SLOW_ANSWER_MS. */
+export const SLOW_ANSWER_NOTICE = 'Dette tar lengre tid enn vanlig.';
+
 // Backend status `needs-clarification`
 // (design/eksisterende/api-for-frontend.md l.208). The wording frames the
 // card as a question and not a failure, because nothing went wrong.

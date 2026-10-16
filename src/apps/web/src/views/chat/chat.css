@@ -139,6 +139,13 @@
   color: var(--ds-color-neutral-text-subtle);
 }
 
+/* A turn that has gone quiet, said in passing while it keeps running. Subtle
+   and left-aligned with the conversation: it is a remark about the wait, not
+   a result. */
+.ka-slow-notice {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
 .ka-answer-card {
   /* Chat is not a link target: nothing in the card should feel clickable. */
   cursor: auto;
