@@ -375,14 +375,20 @@ knappene ennå.
 
 ## Dokumentasjon
 
-[`decisions/`](decisions/) er på engelsk, som resten av koden og som
-`digdir-headless-rag`: hvorfor Preact, hvorfor en BFF, hvorfor `/api/mcp`
-framfor `/v1`. 0004–0008 kom med klienten i `apps/web`: hvor kunnskapen om et
-korpus skal bo, klienten bak BFF-en, filterfelt og korpusnavn fra BFF-en,
-visningsnivået, og teksten i utdragene og kildene etter ny innlasting. 0009 er
-API-et i to versjoner: `/api/*` i formatet fra main for klienten i
-`apps/web-preact`, og `/api/v2/*` for klienten i `apps/web`. 0010 er genki som
-backend, og 0011 innlogging med Ansattporten i BFF-en.
+From 2026-10-16, new and changed text in the repo is written in English:
+code, comments, test names, commit messages, branch names, PRs, issues,
+reviews and docs. What users see or hear stays Norwegian bokmål with æøå.
+Older Norwegian text, such as most of this README, is translated when a PR
+touches it.
+
+[`decisions/`](decisions/) are the ADRs, in English like `digdir-headless-rag`:
+why Preact, why a BFF, why `/api/mcp` rather than `/v1`. 0004–0008 came with
+the client in `apps/web`: where the knowledge about a corpus should live, the
+client behind the BFF, filter fields and corpus names from the BFF, the display
+level, and the text in the excerpts and the sources after a reload. 0009 is the
+API in two versions: `/api/*` in the format from main for the client in
+`apps/web-preact`, and `/api/v2/*` for the client in `apps/web`. 0010 is genki
+as the backend, and 0011 sign-in with Ansattporten in the BFF.
 
 [`deploy/README.md`](deploy/README.md) dekker utrulling til Azure og
 innlogging.

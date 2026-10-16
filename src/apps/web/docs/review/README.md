@@ -247,11 +247,12 @@ avslutningskoden.
 
 ### Navn og norsk
 
-- [ ] Engelsk: kode, filnavn, mapper, CSS-klasser, CSS-variabler, typer,
-      ruter og kommentarer. KA-begrepene siteres på norsk i kommentarer der
-      det trengs («tråd», «kilde»).
-- [ ] Norsk bokmål med ekte æøå: all UI-tekst, `aria-label`, `title`,
-      feilmeldinger.
+- [ ] English: code, file names, folders, CSS classes, CSS variables, types,
+      routes, comments, test names, commit messages, the branch name, the PR
+      and docs. KA terms may be quoted in Norwegian in comments where needed
+      («tråd», «kilde»).
+- [ ] Norwegian bokmål with real æøå: all UI text, `aria-label`, `title`,
+      error messages. Quoted UI text stays Norwegian, in a test name too.
 - [ ] Plasser heter etter posisjon, views etter innhold.
 - [ ] `grep -rinE 'venstre|høyre|\bleft\b|\bright\b' src index.html` gir
       ingen treff utenom CSS-logiske egenskaper som `padding-inline`.

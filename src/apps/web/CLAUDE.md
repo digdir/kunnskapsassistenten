@@ -1,84 +1,90 @@
 # Kunnskapsassistenten, frontend
 
-Klienten til Kunnskapsassistenten (KA) i Digdir. Vite, React, TypeScript,
-React Router 8.3.1 i klientmodus, Designsystemet 1.21.0. Node 24 eller nyere, som i CI og bildet.
-Mer i `README.md`, kortversjonen av reglene i `CONTRIBUTING.md`. Stier og
-kommandoer under gjelder fra mappa denne fila ligger i.
+The client for Kunnskapsassistenten (KA) at Digdir. Vite, React, TypeScript,
+React Router 8.3.1 in client mode, Designsystemet 1.21.0. Node 24 or newer, as in CI and the image.
+More in `README.md`, the short version of the rules in `CONTRIBUTING.md`. Paths
+and commands below apply from the folder this file is in.
 
-## Kommandoer
+## Commands
 
-| Kommando                | Hva                                                                          |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| `npm ci`                | Avhengighetene, akkurat som i `package-lock.json`.                           |
-| `npm run dev`           | Utviklingsserver på http://localhost:5173, mot backenden (live).             |
-| `npm run build`         | `tsc -b` og produksjonsbygg til `dist/`, for BFF-en uten `VITE_API_MODE`.    |
-| `npm run lint`          | oxlint med `jsx-a11y`, og stylelint på CSS-en. Den verste exit-koden vinner. |
-| `npm run format:check`  | Prettier. `npm run format` skriver.                                          |
-| `npm test`              | vitest, klient og server.                                                    |
-| `npm run test:e2e`      | Playwright mot bygget app. Se under om porten.                               |
-| `npm run tokens:verify` | At temaet i `design-tokens-build/` er det som er sjekket inn.                |
-| `npm start`             | Serveren i `server/` mot `dist/`, slik containeren kjører.                   |
+| Command                 | What                                                                             |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| `npm ci`                | The dependencies, exactly as in `package-lock.json`.                             |
+| `npm run dev`           | Development server on http://localhost:5173, against the backend (live).         |
+| `npm run build`         | `tsc -b` and a production build to `dist/`, for the BFF without `VITE_API_MODE`. |
+| `npm run lint`          | oxlint with `jsx-a11y`, and stylelint on the CSS. The worst exit code wins.      |
+| `npm run format:check`  | Prettier. `npm run format` writes.                                               |
+| `npm test`              | vitest, client and server.                                                       |
+| `npm run test:e2e`      | Playwright against the built app. See below about the port.                      |
+| `npm run tokens:verify` | That the theme in `design-tokens-build/` is the one checked in.                  |
+| `npm start`             | The server in `server/` against `dist/`, as the container runs it.               |
 
-Før push: `lint`, `format:check`, `npm test` og `build` grønne. Les exit-koden,
-ikke bare summeringslinja: vitest kan avslutte med 1 selv når alle tester står
-som bestått.
+Before you push: `lint`, `format:check`, `npm test` and `build` green. Read the
+exit code, not just the summary line: vitest can exit with 1 even when every
+test is listed as passed.
 
-## Hvor ting ligger
+## Where things are
 
-- `src/api/`: grensesnittet mot backenden. `mock/` er fixturene, `live/` den
-  ekte klienten.
-- `src/model/`: delte typer.
-- `src/layout/`: skallet og de tre plassene.
-- `src/views/`: innholdet i plassene (`threads`, `filters`, `chat`, `sources`).
-- `src/routes/`, `src/App.tsx`: rutene.
-- `src/components/`: delte komponenter, og `icons.ts`.
-- `server/`: serveren i containeren. Proxy med nøkkel, statiske filer, `/healthz`.
-- `deploy/`, `Dockerfile`, `.github/workflows/deploy.yml`: testmiljøet. Se
-  `docs/deploy.md`.
+- `src/api/`: the interface to the backend. `mock/` is the fixtures, `live/`
+  the real client.
+- `src/model/`: shared types.
+- `src/layout/`: the shell and the three slots.
+- `src/views/`: the content of the slots (`threads`, `filters`, `chat`, `sources`).
+- `src/routes/`, `src/App.tsx`: the routes.
+- `src/components/`: shared components, and `icons.ts`.
+- `server/`: the server in the container. Proxy with the key, static files, `/healthz`.
+- `deploy/`, `Dockerfile`, `.github/workflows/deploy.yml`: the test environment.
+  See `docs/deploy.md`.
 - `tests/e2e/`: Playwright.
 
-## Konvensjoner
+## Conventions
 
-- **Engelsk** i kode, filnavn, CSS-klasser, typer, ruter og kommentarer.
-- **Norsk bokmål med ekte æøå** i alt brukeren ser eller hører: UI-tekst,
-  `aria-label`, `title`, feilmeldinger. Også i README og docs.
-- **Plasser heter etter posisjon, views etter innhold.** Plassene er
-  `primary-sidebar`, `main` og `secondary-sidebar`. Ikke `left`/`right`,
-  «venstre»/«høyre» i egne navn eller kommentarer; CSS-logiske egenskaper
-  (`padding-inline-start`) og leverandørers egne navn er unntatt.
-- **Ikoner** fra `@navikt/aksel-icons`. De med side i navnet (`ArrowLeft`,
-  `SidebarRight`) går via `src/components/icons.ts` under rollenavn.
-- **Designsystemet først** (`@digdir/designsystemet-react`). Egen markup bare
-  der det ikke har noe, og da med semantikk og tastatur fra start. WCAG 2.x AA
-  er et krav.
-- **Ingen faste farger, størrelser eller fonter.** Bruk `var(--ds-*)` fra
-  temaet.
+- **English** in code, file names, CSS classes, types, routes, comments and
+  test names, and in commit messages, branch names, PRs, issues, reviews and
+  docs, this file included. Norwegian docs are translated when a PR touches
+  them.
+- **Norwegian bokmål with real æøå** in everything users see or hear: UI text,
+  `aria-label`, `title`, error messages, `lang="nb"`. Quoted UI text stays
+  Norwegian wherever it is quoted, in a test name too. KA terms may be quoted
+  in Norwegian in code comments where needed («tråd», «kilde»).
+- **Slots are named for position, views for content.** The slots are
+  `primary-sidebar`, `main` and `secondary-sidebar`. No `left`/`right` or
+  «venstre»/«høyre» in our own names or comments; CSS logical properties
+  (`padding-inline-start`) and vendors' own names are exempt.
+- **Icons** from `@navikt/aksel-icons`. The ones with a side in the name
+  (`ArrowLeft`, `SidebarRight`) go through `src/components/icons.ts` under role
+  names.
+- **Designsystemet first** (`@digdir/designsystemet-react`). Our own markup
+  only where it has nothing, and then with semantics and keyboard support from
+  the start. WCAG 2.x AA is a requirement.
+- **No fixed colours, sizes or fonts.** Use `var(--ds-*)` from the theme.
 
-## Live, bff og mock
+## Live, bff and mock
 
-Standard i utvikling er live, som i testmiljøet: Vite-proxyen sender `/api` til
-`KA_API_URL` med `KA_API_KEY`, og `/api/facets` og `/api/excerpts` svares fra
-Typesense med en søkenøkkel. Verdiene står i `.env.local` (se `.env.example`),
-og dev-serveren sier fra ved oppstart om noe mangler. `VITE_API_MODE=bff` går
-mot BFF-en i digdir/kunnskapsassistenten i stedet; se `docs/bff-modus.md`.
-`mock` er testenes modus, og Playwright og vitest setter den selv. En verdi
-som ikke er `live`, `bff` eller `mock`, stopper dev-serveren og bygget.
+The default in development is live, as in the test environment: the Vite proxy
+sends `/api` to `KA_API_URL` with `KA_API_KEY`, and `/api/facets` and
+`/api/excerpts` are answered from Typesense with a search key. The values are in
+`.env.local` (see `.env.example`), and the dev server says at startup if
+anything is missing. `VITE_API_MODE=bff` goes to the BFF in
+digdir/kunnskapsassistenten instead; see `docs/bff-modus.md`. `mock` is the
+tests' mode, and Playwright and vitest set it themselves. A value that is not
+`live`, `bff` or `mock` stops the dev server and the build.
 
-## Utrulling
+## Deployment
 
-Testmiljøet i Azure Container Apps rulles ut for hånd. Workflowene i
-`.github/` her kjører ikke, fordi GitHub bare leser `.github/workflows/` i
-repo-rota. Bildet bygges med `src/` som kontekst og `--file apps/web/Dockerfile`,
-fordi lockfila ligger i `src/`. Kommandoer, tilbakerulling og logger:
-`docs/deploy.md`.
+The test environment in Azure Container Apps is deployed by hand. The
+workflows in `.github/` here do not run, because GitHub reads only
+`.github/workflows/` at the repo root. The image is built with `src/` as the
+context and `--file apps/web/Dockerfile`, because the lockfile is in `src/`.
+Commands, rollback and logs: `docs/deploy.md`.
 
-## Ikke gjør
+## Don't
 
-- **Aldri hemmeligheter i repoet.** Ingen nøkler i kode, commits eller
-  `VITE_`-variabler; `.env.local` er gitignored og blir der.
-- **E2E på egen port** når noe annet kan kjøre på maskinen:
-  `KA_E2E_PORT=<ledig port> CI=true npm run test:e2e`. Serveren starter med
-  `--strictPort`, så en annen kjøring på samme port får e2e til å feile på
-  porten før en eneste test har kjørt.
-- Ikke overstyr taket på vitest- og Playwright-arbeidere lokalt.
-- Legg til filer eksplisitt i commits, ikke `git add -A`.
+- **Never secrets in the repo.** No keys in code, commits or `VITE_`
+  variables; `.env.local` is gitignored and stays that way.
+- **E2E on a port of your own** when something else may be running on the
+  machine: `KA_E2E_PORT=<free port> CI=true npm run test:e2e`. The server
+  starts with `--strictPort`, so another run on the same port makes e2e fail on
+  the port before a single test has run.
+- Don't override the cap on vitest and Playwright workers locally.
+- Add files to commits explicitly, not with `git add -A`.

@@ -100,16 +100,19 @@ undermappe eies av én arbeider, se `CONTRIBUTING.md`.
 
 ## Naming
 
-Regelen ble satt 2026-09-11:
+The rule was set on 2026-09-11, and the language part was widened on
+2026-10-16:
 
-- **Kode, filnavn, mapper, CSS-klasser, CSS-variabler, typer og ruter:
-  engelsk.**
-- **Alt brukeren ser eller hører: norsk bokmål med ekte æøå.** UI-tekst,
-  `aria-label`, `title`, feilmeldinger, `lang="nb"`.
-- **Plasser heter etter posisjon, innhold heter etter innhold**, som i VS Code.
+- **Code, file names, folders, CSS classes, CSS variables, types, routes,
+  comments and test names: English.** So are commit messages, branch names,
+  PRs, issues, reviews and docs.
+- **Everything users see or hear: Norwegian bokmål with real æøå.** UI text,
+  `aria-label`, `title`, error messages, `lang="nb"`.
+- **Slots are named for position, content is named for content**, as in VS
+  Code.
 
-Denne fila og `CONTRIBUTING.md` er på norsk. Kommentarer i koden er på engelsk,
-siden de er kode.
+`CONTRIBUTING.md` is in English. Most of this file is still in Norwegian from
+before 2026-10-16, and it is translated as PRs touch it.
 
 ### Plasser og views
 
@@ -708,24 +711,25 @@ av begge står i PR-en som la det inn. Koden ligger i
 `src/layout/footerMode.ts`, `Shell.tsx` og `.sidebar-content > .sidebar-footer`
 i `src/styles/global.css`.
 
-## Mock-modus: spørsmål som gjør noe spesielt
+## Mock mode: questions that do something special
 
-| Spørsmål                | Hva mocken gjør                                              |
-| ----------------------- | ------------------------------------------------------------ |
-| `simuler feil`          | Feiler etter første tenkesteg, generisk feil (`unknown`)     |
-| `simuler feil modell`   | Språkmodellen svarer ikke (`model-unavailable`)              |
-| `simuler feil korpus`   | Søket i dokumentene er nede (`retrieval-unavailable`)        |
-| `simuler tidsavbrudd`   | Svaret tok for lang tid (`timeout`)                          |
-| `simuler ingen treff`   | Søket fant ingen utdrag (`no-hits`), tegnes som et svar      |
-| `simuler avvist nøkkel` | Nøkkelen ble avvist (`unauthorized`), ingen «Prøv igjen»     |
-| `simuler avklaring`     | Svarer med et spørsmål tilbake, status `needs-clarification` |
+| Question                 | What the mock does                                                          |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `simuler feil`           | Fails after the first thinking step, a generic error (`unknown`)            |
+| `simuler feil modell`    | The language model does not answer (`model-unavailable`)                    |
+| `simuler feil korpus`    | The search in the documents is down (`retrieval-unavailable`)               |
+| `simuler tidsavbrudd`    | The answer took too long (`timeout`)                                        |
+| `simuler ingen treff`    | The search found no excerpts (`no-hits`), drawn as an answer                |
+| `simuler avvist nøkkel`  | The key was refused (`unauthorized`), no «Prøv igjen»                       |
+| `simuler låst testmiljø` | The test environment is locked for this sign-in (`locked`), no «Prøv igjen» |
+| `simuler avklaring`      | Answers with a question back, status `needs-clarification`                  |
 
-Alle er eksakte treff på hele spørsmålet, ikke ord inni det: «hva er feil i
-rapporten» er et ekte spørsmål og skal få et ekte svar, og `simuler feil
-modell` er sitt eget spørsmål og ikke et prefiks-treff på `simuler feil`. De
-finnes fordi ingen av tilstandene ellers kan nås fra et bygget bygg, verken av
-en e2e-test eller av en designer, uten en backend som er nede eller en agent
-som spør tilbake.
+All of them are exact matches on the whole question, not words inside it:
+«hva er feil i rapporten» is a real question and should get a real answer, and
+`simuler feil modell` is a question of its own and not a prefix match on
+`simuler feil`. They exist because none of the states can otherwise be reached
+from a built bundle, neither by an e2e test nor by a designer, without a
+backend that is down or an agent that asks back.
 
 **Feilkoden bestemmer teksten.** `ChatError` bærer en kode, og
 `src/views/chat/errorText.ts` slår opp overskrift, to setninger — hva som

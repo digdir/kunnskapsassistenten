@@ -1,31 +1,35 @@
-# Rapporter og beslutningslogg
+# Reports and decision log
 
-Her står det som skal kunne leses senere, av folk og agenter som ikke var med
-da noe ble bestemt.
+This is what should be readable later, by people and agents who were not there
+when something was decided.
 
-- **[`beslutningslogg.md`](beslutningslogg.md)**: ett punkt per beslutning
-  eller milepæl, med hva som ble valgt, hvorfor og lenke til PR, ADR eller
-  måling. Nyeste øverst.
-- **Rapporter** som HTML, med datoen først i filnavnet. De åpnes rett i
-  nettleseren og henter ingenting utenfra.
+- **[`beslutningslogg.md`](beslutningslogg.md)**: one entry per decision or
+  milestone, with what was chosen, why, and a link to the PR, ADR or
+  measurement. Newest first.
+- **Reports** as HTML, with the date first in the file name. They open
+  straight in the browser and fetch nothing from outside.
 
-Større arkitekturvalg står som ADR i [`src/decisions/`](../../../../decisions/).
-Loggen peker dit i stedet for å gjenta dem.
+Larger architecture choices are ADRs in [`src/decisions/`](../../../../decisions/).
+The log points there instead of repeating them.
 
-## Rapportene
+## The reports
 
-| dato       | rapport                                                                                               |
-| ---------- | ----------------------------------------------------------------------------------------------------- |
-| 2026-10-06 | [Det som gjenstår før sammenslåingen](2026-10-06-gjenstaar-foer-sammenslaaing.html)                   |
-| 2026-10-07 | [Avgjørelser og det som gjenstår før sammenslåingen](2026-10-07-avgjoerelser-foer-sammenslaaing.html) |
+| date       | report                                                                                          |
+| ---------- | ----------------------------------------------------------------------------------------------- |
+| 2026-10-06 | [What remains before the merge](2026-10-06-gjenstaar-foer-sammenslaaing.html)                   |
+| 2026-10-07 | [Decisions, and what remains before the merge](2026-10-07-avgjoerelser-foer-sammenslaaing.html) |
 
-## Slik føres loggen
+The two reports are in Norwegian, as they were written before 2026-10-16.
 
-- Et punkt skrives når noe er besluttet eller en milepæl er nådd. Det kan være
-  en PR som endrer retning, et valg mellom alternativer, eller en utrulling som
-  endrer hva testmiljøet kjører. Små valg står i koden og PR-beskrivelsene.
-- Hvert punkt har hva, hvorfor og lenker. Tall og tidspunkter er målt, ikke
-  anslått.
-- Teksten er nøytral og uten personnavn, for repoet er offentlig.
-- Arbeidsloggen med klokkeslett og alle små valg føres et annet sted. Det som
-  står her, er utvalget fra den.
+## How the log is kept
+
+- An entry is written when something is decided or a milestone is reached. It
+  can be a PR that changes direction, a choice between alternatives, or a
+  deployment that changes what the test environment runs. Small choices are in
+  the code and the PR descriptions.
+- Each entry has what, why and links. Numbers and times are measured, not
+  estimated.
+- The text is in English, neutral and without personal names, because the repo
+  is public.
+- The work log with times and all the small choices is kept elsewhere. What is
+  here is the selection from it.

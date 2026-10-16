@@ -1,55 +1,62 @@
-# Bidra til kunnskapsassistenten-frontend
+# Contributing to kunnskapsassistenten-frontend
 
-Kortversjonen av byggereglene. Fullversjonen er `design/_briefs/bygg/regler.md`
-i den lokale `design/`-mappa, og den er fasit der de er uenige.
+The short version of the build rules. The full version is
+`design/_briefs/bygg/regler.md` in the local `design/` folder, and it is the
+answer where the two disagree.
 
-## Navn
+## Names and language
 
-Dette er den regelen det er lettest å bryte og dyrest å rette.
+This is the rule that is easiest to break and most expensive to fix.
 
-- **Engelsk:** kode, filnavn, mapper, CSS-klasser, CSS-variabler, typer, ruter,
-  kommentarer.
-- **Norsk bokmål med ekte æøå:** alt brukeren ser eller hører. UI-tekst,
-  `aria-label`, `title`, feilmeldinger, `lang="nb"`. Også `README.md` og denne
-  fila.
-- **Plasser heter etter posisjon, views etter innhold**, som i VS Code.
-  Plassene er `primary-sidebar`, `main` og `secondary-sidebar`. Viewene er
+- **English:** code, file names, folders, CSS classes, CSS variables, types,
+  routes, comments, test names, commit messages, branch names, PRs, issues,
+  reviews and docs. That includes `README.md` and this file. Norwegian docs are
+  translated when a PR touches them.
+- **Norwegian bokmål with real æøå:** everything users see or hear. UI text,
+  `aria-label`, `title`, error messages, `lang="nb"`. Quoted UI text stays
+  Norwegian wherever it is quoted, in a test name too.
+- **Slots are named for position, views for content**, as in VS Code. The
+  slots are `primary-sidebar`, `main` and `secondary-sidebar`. The views are
   `threads`, `filters`, `chat`, `sources`.
-- **En plass har aldri en fast `aria-label`.** Navnet kommer fra viewet som
-  står der, via `slotLabel()` i `src/layout/viewModel.ts`.
-- **Ingen «venstre», «høyre», `left` eller `right` noe sted**, heller ikke i
-  kommentarer. Kjør `grep -rin 'venstre\|høyre\|left\|right' src` før du
-  pusher; det skal ikke gi treff utenom CSS-logiske egenskaper som
-  `padding-inline` og **`src/components/icons.ts`**, som er den ene tillatte
-  grensa mot leverandørens egne ikonnavn og døper dem om til våre.
-- **Importer ikoner fra `src/components/icons.ts`**, aldri fra
-  `@navikt/aksel-icons` direkte.
+- **A slot never has a fixed `aria-label`.** The name comes from the view that
+  is in it, through `slotLabel()` in `src/layout/viewModel.ts`.
+- **No «venstre», «høyre», `left` or `right` anywhere**, not in comments
+  either. Run `grep -rin 'venstre\|høyre\|left\|right' src` before you push; it
+  should find nothing except CSS logical properties such as `padding-inline`
+  and **`src/components/icons.ts`**, which is the one allowed border with the
+  vendor's own icon names and renames them to ours.
+- **Import icons from `src/components/icons.ts`**, never from
+  `@navikt/aksel-icons` directly.
 
-Se [README, Naming](README.md#naming) for begrunnelsen.
+See [README, Naming](README.md#naming) for the reasoning.
 
-## Eierskap etter mappe
+## Ownership by folder
 
-Rør aldri en mappe du ikke eier. Trenger du noe der, meld behovet til
-dirigenten, som gir det til eieren.
+Never touch a folder you do not own. If you need something there, report the
+need to the conductor, who gives it to the owner.
 
-| Mappe                                                                                        | Eier              |
-| -------------------------------------------------------------------------------------------- | ----------------- |
-| `src/api/`, `src/model/`, `src/layout/`, `src/components/`, `vite.config.ts`, `package.json` | grunnmur          |
-| `src/routes/`, `src/App.tsx`, `src/main.tsx`                                                 | grunnmur (#5)     |
-| `src/views/threads/`, `src/views/filters/`                                                   | primary sidebar   |
-| `src/views/chat/`                                                                            | main              |
-| `src/views/sources/`                                                                         | secondary sidebar |
-| `docs/review/`                                                                               | anmelder          |
+| Role                                     | Owns                                                                                                                                       |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Reviewer, design system guard, e2e tests | `tests/`, `playwright.config.ts`, `docs/review/`; no feature code                                                                          |
+| Foundation                               | `src/api/`, `src/model/`, `src/layout/`, `src/routes/`, `src/components/`, `src/App.tsx`, `src/main.tsx`, `vite.config.ts`, `package.json` |
+| Primary sidebar                          | `src/views/threads/`, `src/views/filters/`                                                                                                 |
+| Main                                     | `src/views/chat/`                                                                                                                          |
+| Secondary sidebar                        | `src/views/sources/`                                                                                                                       |
 
-- **Bare grunnmuren legger til avhengigheter.** Andre melder behov.
-- Delte typer bor i `src/model/`. Kod mot dem, be om endringer.
-- Før grunnmuren er merget: bruk mock-data fra `src/api/mock/`, eller egne
-  fixtures i din egen mappe.
+- **Only the foundation adds dependencies.** Others report a need. The
+  exception: the reviewer adds test dependencies in a small PR of its own.
+- Route pages (`src/routes/`) and the route setup (`App.tsx`) are the
+  foundation's; a view exports a component that the foundation mounts in the
+  right slot and route.
+- Shared types live in `src/model/` (the foundation). Code against them, ask
+  for changes.
+- Before the foundation is merged: use mock data from `src/api/mock/`, or
+  fixtures of your own in your own folder.
 
-## View-hodet: det som står stille mens resten ruller
+## The view head: what stands still while the rest scrolls
 
-Hver plass har én **view-hode-plass**, øverst i den rullende regionen, eid av
-skallet (`src/layout/ViewHead.tsx`). Et view fyller den:
+Each slot has one **view head slot**, at the top of the scrolling region,
+owned by the shell (`src/layout/ViewHead.tsx`). A view fills it:
 
 ```tsx
 <ViewHead>
@@ -58,54 +65,58 @@ skallet (`src/layout/ViewHead.tsx`). Et view fyller den:
 </ViewHead>
 ```
 
-**Ikke lag ditt eget `position: sticky` i toppen av et panel.** Et klebrig
-hode dekker alt som ligger over det i samme rullende boks, og «over» gjelder
-tab-rekkefølgen også: nettleseren ruller en kontroll som får fokus til toppen
-av regionen, som er nøyaktig der hodet står. Kontrollen lander under hodet,
-klikkene havner på hodet og fokusringen er usynlig (WCAG 2.4.11). Målt i
-PR #55, der «Tråder»-knappen ble uklikkbar av et view-lokalt hode.
+**Don't make your own `position: sticky` at the top of a panel.** A sticky
+head covers everything above it in the same scrolling box, and «above» applies
+to the tab order too: the browser scrolls a control that gets focus to the top
+of the region, which is exactly where the head is. The control lands under the
+head, clicks land on the head and the focus ring is invisible (WCAG 2.4.11).
+Measured in
+[PR #55](https://github.com/larsekhansen/kunnskapsassistenten-frontend/pull/55)
+in the earlier repo, where the «Tråder» button became unclickable because of a
+view-local head.
 
-Derfor plasserer skallet boksen først i regionen, og et view som vil ha en
-knapp stående legger **knappen i hodet** i stedet for over det. Skriv
-`ViewHead` først i viewet, så er DOM-rekkefølgen og tab-rekkefølgen den samme.
-Skallet setter også `scroll-padding-block-start` lik hodets høyde, så
-`scrollIntoView` og fokus stopper under det.
+That is why the shell puts the box first in the region, and a view that wants a
+button to stay put puts **the button in the head** instead of above it. Write
+`ViewHead` first in the view, and the DOM order and the tab order are the same.
+The shell also sets `scroll-padding-block-start` to the height of the head, so
+`scrollIntoView` and focus stop below it.
 
-Ett hode per plass. To views i samme plass er moduser av ett panel, og bare
-ett av dem er montert om gangen. Et tomt hode tegner ingen strek
-(`.view-head:empty`). Utenfor skallet — preview-sidene, de fleste unit-testene
-— tegnes hodet der det står.
+One head per slot. Two views in the same slot are modes of one panel, and only
+one of them is mounted at a time. An empty head draws no line
+(`.view-head:empty`). Outside the shell — the preview pages, most of the unit
+tests — the head is drawn where it is.
 
-## Designsystemet først, alltid
+## Designsystemet first, always
 
-Bygg aldri en komponent Designsystemet allerede har. Det koster dyrt å rette
-senere.
+Never build a component Designsystemet already has. It is expensive to fix
+later.
 
-1. Slå opp behovet i `design/designsystemet/behov-til-komponent.md`.
-2. Les komponenten i `design/designsystemet/komponenter/<navn>.md`.
-3. Først da, hvis Designsystemet ikke har noe: egen konstruksjon, med
-   semantikk og tastaturstøtte fra dag én.
+1. Look up the need in `design/designsystemet/behov-til-komponent.md`.
+2. Read the component in `design/designsystemet/komponenter/<name>.md`.
+3. Only then, if Designsystemet has nothing: a construction of your own, with
+   semantics and keyboard support from day one.
 
-- **Ingen hardkodede farger, størrelser eller fonter.** `var(--ds-*)`.
-  Tallverdier fra `design/tokens/`, aldri fra Figma Dev Mode. Én hardkodet
-  farge er nok til å ødelegge mørk modus, se README.
-- Egen CSS skrives **utenfor alle layers**, se README.
-- **Setter du `display` på noe som kan skjules med `hidden`, må du skrive
-  `[hidden] { display: none }` selv.** Egen CSS ligger utenfor layers og slår
-  nettleserens egen `[hidden]`-regel, så elementet blir stående synlig mens
-  knappen sier at det er skjult. Målt i skallet.
-- Hover, fokus og tastaturfokus **arves** fra Designsystemet og tegnes ikke
-  selv. Trenger et eget element fokusring, bruk klassen `ds-focus--visible`.
+- **No hard-coded colours, sizes or fonts.** `var(--ds-*)`. Numbers from
+  `design/tokens/`, never from Figma Dev Mode. One hard-coded colour is enough
+  to break dark mode, see the README.
+- Our own CSS is written **outside all layers**, see the README.
+- **If you set `display` on something that can be hidden with `hidden`, you
+  must write `[hidden] { display: none }` yourself.** Our own CSS is outside
+  the layers and beats the browser's own `[hidden]` rule, so the element stays
+  visible while the button says it is hidden. Measured in the shell.
+- Hover, focus and keyboard focus are **inherited** from Designsystemet and not
+  drawn by us. If an element of our own needs a focus ring, use the class
+  `ds-focus--visible`.
 
-### Color-mode: accent på rot, neutral på kromet
+### Color mode: accent at the root, neutral on the chrome
 
-`data-color="accent"` står på `<body>`. Det gjelder de **interaktive** rollene
-— knapper, rammer som skal trekke blikket, aktive chips, lenketekst — og de
-skrives med rolletokens uten familie: `var(--ds-color-base-default)`,
-`var(--ds-color-text-subtle)`.
+`data-color="accent"` is on `<body>`. It applies to the **interactive** roles
+— buttons, borders that should draw the eye, active chips, link text — and
+they are written with role tokens without a family:
+`var(--ds-color-base-default)`, `var(--ds-color-text-subtle)`.
 
-**Kromet skrives med eksplisitt neutral-familie.** Brødtekst, skjemarammer,
-flater og bakgrunner:
+**The chrome is written with an explicit neutral family.** Body text, form
+borders, surfaces and backgrounds:
 
 ```css
 color: var(--ds-color-neutral-text-default);
@@ -113,51 +124,60 @@ border-color: var(--ds-color-neutral-border-subtle);
 background: var(--ds-color-neutral-surface-default);
 ```
 
-Grunnen står i `design/tokens/figma-til-tokens.md` punkt 8.2: med accent på
-rot og bare rolletokens blir brødteksten mørk marine (#002c54) og
-skjemarammene blå (#2a7cc5). Det har ingen tegnet, og det er ikke det
-designet viser.
+The reason is in `design/tokens/figma-til-tokens.md`, point 8.2: with accent at
+the root and only role tokens, the body text turns dark navy (#002c54) and the
+form borders blue (#2a7cc5). Nobody drew that, and it is not what the design
+shows.
 
-## WCAG 2.x AA er et krav
+## WCAG 2.x AA is a requirement
 
-Ikke et mål. Offentlig sektor og uu-kravene. Enhver snarvei som gir utseende
-uten tilgjengelighet er utelukket.
+Not a goal. The public sector and the accessibility requirements. Any shortcut
+that gives the look without the accessibility is ruled out.
 
-- `npm run lint` kjører `jsx-a11y`-reglene som feil, ikke advarsler. Skal en
-  regel fravikes, skriv `// oxlint-disable-next-line <regel>` med én linje om
-  hvorfor fraviket er det tilgjengelige valget. Det finnes ett i dag.
-- Ikonknapper må ha `aria-label`.
-- **En kontroll som forsvinner av handlingen sin må si hvor fokus skal.**
-  «Prøv igjen», «Lukk», «Slett», «Vis mer» som avmonterer seg selv: fokus
-  faller til `<body>`, og neste Tab starter på nytt på hopp-lenka, en hel side
-  unna det brukeren holdt på med. WCAG 2.4.3. Flytt fokus til det handlingen
-  lagde, ikke til toppen av sida. `ErrorState` tar det som `focusAfterRetry`,
-  en ref til lista eller svaret som kom; uten den lander fokus på
-  varselregionen, som holder tab-rekkefølgen men ikke sier noe.
-- Landemerker og overskriftsnivåer skal henge sammen.
-- Kjør appen headless og ta et accessibility-snapshot av det du bygde før du
-  melder ferdig. Skjermbilde til
+- `npm run lint` runs the `jsx-a11y` rules as errors, not warnings. If a rule
+  is to be waived, write `// oxlint-disable-next-line <rule>` with one line on
+  why the waiver is the accessible choice. There is one today.
+- Icon buttons must have an `aria-label`.
+- **A control that disappears through its own action must say where focus
+  goes.** «Prøv igjen», «Lukk», «Slett», «Vis mer» that unmount themselves:
+  focus falls to `<body>`, and the next Tab starts over at the skip link, a
+  whole page away from what the user was doing. WCAG 2.4.3. Move focus to what
+  the action made, not to the top of the page. `ErrorState` takes it as
+  `focusAfterRetry`, a ref to the list or the answer that came; without it
+  focus lands on the alert region, which keeps the tab order but says nothing.
+- Landmarks and heading levels must fit together.
+- Run the app headless and take an accessibility snapshot of what you built
+  before you report done. Screenshot to
   `design/skjermbilder-frontend/<branch>-<slug>.png`.
 
 ## TypeScript
 
-`strict: true` står i begge tsconfig-ene. Ikke slå den av, og ikke legg inn
-`any` for å komme rundt den.
+`strict: true` is in both tsconfigs. Don't turn it off, and don't add `any` to
+get around it.
 
-## Git og PR
+## Git and PRs
 
-- Branch `feat/<område>` fra `main`. Små commits.
-- Commit-melding på **norsk** med ekte æøå, trailer
-  `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`.
-- Push til origin, **åpne PR som draft tidlig**, og oppdater den.
-- **Aldri merge.** Dirigenten merger. Rebase på `main` når dirigenten sier det.
-- PR-beskrivelsen dekker **kun** det som er i PR-en. Kort. Ingen
-  AI-attribusjon, ingen «oppfølging» eller «test-plan» — sånt sier du til
-  dirigenten.
-- Kommentarer i egen PR er greit. Ingen andre GitHub-poster uten ja via
-  dirigenten.
+- Branch `feat/<area>` from `main`, with an English name, and the PR has base
+  `main`. Never rename the branch of an open PR: that closes the PR, and a PR
+  cannot change its branch. Small commits.
+- Commit messages in **English**, with the trailer
+  `Co-Authored-By: Claude <the model you actually run> <noreply@anthropic.com>`,
+  for example `Claude Opus 5.5 (1M context)`. Look at the model name in your
+  status line; not everyone runs the same model.
+- Push your own branch, **open the PR against `main` as a draft early**, and
+  keep it updated. CI runs only on PRs. When every check-run is green, CodeQL
+  included, report to the conductor, and the reviewer reviews. After the
+  approval you mark the PR as ready.
+- **Never merge.** The repo's maintainer merges, not the conductor and not
+  you. Never push to `main` or to someone else's branch. Rebase on `main` when
+  the conductor says so.
+- The PR description covers **only** what is in the PR, in English. Short. No
+  AI attribution, no «follow-up» or «test plan» — tell the conductor that
+  instead.
+- Comments in your own PR are fine. No other GitHub posts (issues, reviews on
+  someone else's PR) without a yes from the maintainer via the conductor.
 
-## Grønt før push
+## Green before you push
 
 ```sh
 npm run build
@@ -167,71 +187,80 @@ npm run test
 npm run tokens:verify
 ```
 
-Alle fem, hver gang.
+All five, every time.
 
-## Hooks: det maskinen sjekker for deg
+## Hooks: what the machine checks for you
 
-`npm install` setter opp to git-hooks (`simple-git-hooks`, via `prepare`).
-De erstatter ikke lista over — de fanger det billigste av den før du rekker
-å glemme det.
+`npm install` sets up two git hooks (`simple-git-hooks`, through `prepare`).
+They do not replace the list above — they catch the cheapest part of it before
+you have time to forget it.
 
-| når          | hva                                                                                                    | målt                              |
-| ------------ | ------------------------------------------------------------------------------------------------------ | --------------------------------- |
-| `git commit` | bare de **stagede** filene: `stylelint` på `.css`, `oxlint` på `.ts`/`.tsx`, `prettier --check` på alt | 0,9 s for to filer, 1,8 s for sju |
-| `git push`   | `tsc -b`                                                                                               | 3 s varm, 8,6 s første gang       |
+| when         | what                                                                                                  | measured                             |
+| ------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `git commit` | only the **staged** files: `stylelint` on `.css`, `oxlint` on `.ts`/`.tsx`, `prettier --check` on all | 0.9 s for two files, 1.8 s for seven |
+| `git push`   | `tsc -b`                                                                                              | 3 s warm, 8.6 s the first time       |
 
-`stylelint` her er kompatibilitetsregelen: den stopper en commit med en
-CSS-egenskap nettleserne i `.browserslistrc` ikke støtter. Det var det den
-ble installert for — en uprefikset `line-clamp` stoppes på 1,9 sekunder, med
-nettleser og versjon i meldinga.
+`stylelint` here is the compatibility rule: it stops a commit with a CSS
+property the browsers in `.browserslistrc` do not support. That is what it was
+installed for — an unprefixed `line-clamp` is stopped in 1.9 seconds, with the
+browser and version in the message.
 
-**Vitest er ikke i hookene**, og det er et valg med et tall bak: suiten tar
-47,9 sekunder, fjorten ganger `tsc`. En hook som legger et minutt på hver
-push er en hook folk slår av, og da mister vi `tsc` også. Suiten kjøres av
-deg før push (lista over) og av CI på hver PR.
+**Vitest is not in the hooks**, and that is a choice with a number behind it:
+the suite takes 47.9 seconds, fourteen times `tsc`. A hook that adds a minute
+to every push is a hook people turn off, and then we lose `tsc` too. The suite
+is run by you before you push (the list above) and by CI on every PR.
 
-**Hookene er delte mellom arbeidstrærne.** Vi har hver vår `.git`-fil, men de
-peker på den samme `commondir`, og det er den git leter i etter hooks — så en
-`npm install` i ett arbeidstre setter dem opp for alle. Det gjelder også
-arbeidstrær som står på en gren fra før verktøyet fantes, og det var en ekte
-smell: den første utgaven kjørte `lint-staged` rett fra hooken, og de andre
-kunne ikke committe i det hele tatt (23.09).
+**The hooks are shared between the worktrees.** We each have our own `.git`
+file, but they point to the same `commondir`, and that is where git looks for
+hooks — so an `npm install` in one worktree sets them up for everyone. That
+also applies to worktrees on a branch from before the tool existed, and it was
+a real crash: the first version ran `lint-staged` straight from the hook, and
+the others could not commit at all (23.09).
 
-Derfor sjekker hookene at verktøyet finnes før de bruker det:
+That is why the hooks check that the tool is there before they use it:
 
-| situasjon                                              | hva hooken gjør                      |
-| ------------------------------------------------------ | ------------------------------------ |
-| verktøyet er der                                       | kjører, som i tabellen over          |
-| `package.json` kjenner det, men `node_modules` mangler | stopper og sier «kjør `npm install`» |
-| grenen kjenner det ikke                                | går videre, uten en lyd              |
+| situation                                              | what the hook does                 |
+| ------------------------------------------------------ | ---------------------------------- |
+| the tool is there                                      | runs, as in the table above        |
+| `package.json` knows it, but `node_modules` is missing | stops and says «run `npm install`» |
+| the branch does not know it                            | carries on, without a sound        |
 
-Den siste raden er poenget: en gren som ikke har bedt om hooken skal ikke
-stoppes av den.
+The last row is the point: a branch that has not asked for the hook should not
+be stopped by it.
 
-Hopp over i nød:
+To skip in an emergency:
 
 ```sh
 git commit --no-verify
 git push --no-verify
 ```
 
-Det er en nødutgang og ikke en snarvei: CI kjører alt likevel, så det du
-hopper over her møter deg der.
+It is an emergency exit and not a shortcut: CI runs everything anyway, so what
+you skip here meets you there.
 
-## Delte ressurser
+## Shared resources
 
-- Dev-server: 5173 er grunnmurens. Primary sidebar bruker 5174, main 5175,
-  secondary sidebar 5176 (`--port`). Sjekk
-  `lsof -nP -iTCP -sTCP:LISTEN | grep 517` før du starter, og **stopp etter
-  deg**.
-- Ingen nettleservinduer på skjermen. Headless.
-- Ikke rør RAG-stacken (8080 og 3030). Les, ikke restart.
+- Dev server: 5173 is the foundation's. The primary sidebar uses 5174, main
+  5175, the secondary sidebar 5176 (`--port`).
+- E2E: the reviewer 4173, the primary sidebar 4174, main 4175, the secondary
+  sidebar 4176, the foundation 4177. Run
+  `KA_E2E_PORT=<yours> CI=true npm run test:e2e`. Without it everyone ends up
+  on 4173, and then startup fails with the port named, because
+  `playwright.config.ts` has `reuseExistingServer: false` and `--strictPort`.
+- **Your own port and your own PID only.** Check that the port is free
+  (`lsof -ti tcp:<port> -sTCP:LISTEN`) before you start, start with
+  `--strictPort`, and stop only the PID that listens on your port. Never
+  `pkill -f`, and never a loop over ports: a command line such as
+  `npm run dev` is the same in every worktree, and either one stops someone
+  else's server. **Stop after yourself.**
+- No browser windows on the screen. Headless.
+- Don't touch the RAG stack (8080 and 3030). Read, don't restart.
 
-## Spesifikasjonene
+## The specifications
 
-- `design/omraader/september-2026/` er **fasit**.
-- `design/omraader/molecules/` og `organisms/` for komponentdetaljer.
-- `design/svar-skjema.md` og `design/visjon-og-beslutninger.md` for
-  beslutninger.
-- `design/skal-dette-implementeres.md` for hva som er ja, senere og nei, og
-  for bygg-rekkefølgen.
+- `design/omraader/september-2026/` is **the answer**.
+- `design/omraader/molecules/` and `organisms/` for component details.
+- `design/svar-skjema.md` and `design/visjon-og-beslutninger.md` for
+  decisions.
+- `design/skal-dette-implementeres.md` for what is yes, later and no, and for
+  the build order.
