@@ -150,7 +150,11 @@ test.describe('feilmeldinger skiller tilfellene', () => {
   });
 
   test('0 axe i lys og mørk, både på feil og på ingen treff', MOCK, async ({ page }) => {
-    for (const query of ['simuler feil korpus', 'simuler ingen treff'] as const) {
+    for (const query of [
+      'simuler feil korpus',
+      'simuler låst testmiljø',
+      'simuler ingen treff',
+    ] as const) {
       await askFor(page, query);
       // Wait for the turn to settle before measuring: a skeleton mid-fade is
       // not the state under test.

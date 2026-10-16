@@ -94,23 +94,24 @@ slik de ble anmeldt.
 | Åpner kildepanelet fra skinna med tastaturet, uten rulling | `layout.spec.ts`            |
 | Ser spørsmålet i en boks mot slutten av linja              | `chat.spec.ts`              |
 
-## Merget, men ikke dekket
+## Merged, but not covered
 
-| Sak                                           | Hvorfor ikke                                                                                                                                                                |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Live-modus mot den ekte backenden             | Testene kjører i mock-modus med vilje. Se raden under                                                                                                                       |
-| Den ekte klienten                             | Testene kjører i mock-modus med vilje. Live krever nøkkel, en kjørende backend, og koster en agentkjøring per spørsmål. Proxyen er målt for hånd i `main-2026-09-11-pr8.md` |
-| Lastetilstanden i kildepanelet                | Vises bare mens `documents` er `undefined`, og monteringen gir dem med én gang. Trenger enten en treg mock eller en egen rute                                               |
-| Opplasting, «Vis flere dokumenter», topplinje | Ikke bygget. Se `skal-dette-implementeres.md`                                                                                                                               |
+| Case                                    | Why not                                                                                                                                                                        |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Live mode against the real backend      | The tests run in mock mode on purpose. See the row below                                                                                                                       |
+| The real client                         | The tests run in mock mode on purpose. Live needs a key and a running backend, and costs an agent run per question. The proxy was measured by hand in `main-2026-09-11-pr8.md` |
+| The loading state in the sources panel  | Shown only while `documents` is `undefined`, and the mount passes them at once. Needs either a slow mock or a route of its own                                                 |
+| Upload, «Vis flere dokumenter», top bar | Not built. See `skal-dette-implementeres.md`                                                                                                                                   |
 
-Feiltilstandene står ikke lenger her. Det er nå **seks** nøkkelord i det
-bygde appet — `simuler feil`, `simuler feil modell`, `simuler feil korpus`,
-`simuler tidsavbrudd`, `simuler ingen treff` og `simuler avvist nøkkel` — pluss
-`simuler avklaring`, og `feilmeldinger.spec.ts` dekker dem.
+The error states are no longer listed here. The built app now has **seven**
+keywords — `simuler feil`, `simuler feil modell`, `simuler feil korpus`,
+`simuler tidsavbrudd`, `simuler ingen treff`, `simuler avvist nøkkel` and
+`simuler låst testmiljø` — plus `simuler avklaring`, and
+`feilmeldinger.spec.ts` covers them.
 
-Verdt å merke seg for den som skriver flere: et utløserord er et **eksakt**
-treff på hele spørsmålet, så `simuler feil modell` er sitt eget spørsmål og
-ikke et prefiks på det korte.
+Worth knowing for anyone who adds more: a trigger is an **exact** match on the
+whole question, so `simuler feil modell` is a question of its own and not a
+prefix of the short one.
 
 ## Skjermbilder
 
