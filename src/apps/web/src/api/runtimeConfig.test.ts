@@ -46,6 +46,17 @@ describe('kaEnv', () => {
     expect(env.VITE_MOCK_SPEED).toBe('fast');
   });
 
+  it('gets no VITE_KA_ from outside, neither from a file nor from the command line', () => {
+    // The tests measure the code, not the machine. Anyone who runs live
+    // locally has a corpus, a tool and document links in .env.local, and
+    // Vitest reads no .env files (vite.config.ts). A VITE_KA_ set on the
+    // command line still reaches the tests, and then this is the one that
+    // fails. CI has neither.
+    const fromFiles = Object.keys(kaEnv()).filter((name) => name.startsWith('VITE_KA_'));
+
+    expect(fromFiles).toEqual([]);
+  });
+
   it('tar med korpusvariablene serveren sender', () => {
     window.__KA_CONFIG__ = {
       VITE_KA_TENANT: 'digdir',

@@ -127,6 +127,23 @@ function answerWithoutBackend(): Plugin {
 }
 
 /**
+ * Whether this run reads `.env` files. Not under Vitest, and not in mock
+ * mode, built or served: the e2e suite builds it (playwright.config.ts), and
+ * `VITE_API_MODE=mock npm run dev` reads no files either.
+ *
+ * Anyone who runs live locally has an `.env.local` full of live values
+ * (.env.example), and Vite reads it in every mode. A unit test then got that
+ * machine's document links and tool name, and the e2e bundle its corpus and
+ * tenant: the suite measured the setup, not the code. CI has no such file,
+ * so the tests are written for none. Variables set on the command line still
+ * count, since `process.env` is read either way. From `process.env` and not
+ * from the files, which are the thing being decided about.
+ */
+function readsEnvFiles(): boolean {
+  return !process.env.VITEST && process.env.VITE_API_MODE !== 'mock';
+}
+
+/**
  * The dev server is also the proxy that holds the API key.
  *
  * The key never reaches the browser, and that is not a preference: the
@@ -149,7 +166,8 @@ function answerWithoutBackend(): Plugin {
  * along, so a 401 from the BFF itself can lead to its sign-in.
  */
 export default defineConfig(({ command, mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const envDir = readsEnvFiles() ? process.cwd() : false;
+  const env = loadEnv(mode, envDir, '');
   // Throws on a mode it does not know, so a misspelt one is refused here.
   const apiMode = resolveApiMode(env.VITE_API_MODE, command === 'build');
   const bff = apiMode === 'bff';
@@ -159,6 +177,7 @@ export default defineConfig(({ command, mode }) => {
   const live = apiMode === 'live' && !process.env.VITEST;
 
   return {
+    envDir,
     plugins: [
       react(),
       colorSchemeScript(),
