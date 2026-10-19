@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat · Components</title>
+    <meta
+      name="description"
+      content="Where the user asks questions and reads answers. The chat starts a new thread, takes the question and shows the answer."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <nav aria-label="Breadcrumbs">
+        <p class="crumbs">
+          <a href="index.html">Components</a> / <span aria-current="page">Chat</span>
+        </p>
+      </nav>
+
+      <article
+        class="component"
+        id="chat"
+        data-component="chat"
+        data-phase="draft"
+        data-optional="unknown"
+        aria-labelledby="chat-title"
+      >
+        <div class="component-head">
+          <div>
+            <h1 id="chat-title">Chat</h1>
+            <div class="badges">
+              <span class="badge phase">Draft</span><span class="badge">Always included?</span
+              ><span class="badge">Main area</span>
+            </div>
+            <p class="summary">
+              Where the user asks questions and reads answers. The chat starts a new thread, takes
+              the question and shows the answer.
+            </p>
+            <dl class="facts">
+              <dt>UI name</dt>
+              <dd>«Chat»</dd>
+              <dt>Sits in</dt>
+              <dd>Main area</dd>
+              <dt>Issue</dt>
+              <dd><a href="https://github.com/digdir/kunnskapsassistenten/issues/174">#174</a></dd>
+              <dt>Canvas</dt>
+              <dd>00-Chat (FM-0, FM-0b, FM-0c, FM-0d, FM-2b)</dd>
+            </dl>
+          </div>
+          <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+            <rect class="s-panel" x="16" y="12" width="128" height="100" rx="10" />
+            <rect class="s-accent-soft" x="80" y="22" width="52" height="12" rx="6" />
+            <rect class="s-accent" x="28" y="42" width="18" height="6" rx="3" />
+            <rect class="s-bar" x="28" y="54" width="96" height="6" rx="3" />
+            <rect class="s-bar" x="28" y="64" width="72" height="6" rx="3" />
+            <rect class="s-soft" x="28" y="78" width="104" height="16" rx="8" />
+            <circle class="s-accent" cx="124" cy="86" r="4" />
+          </svg>
+        </div>
+        <div class="component-body">
+          <div>
+            <h2>Use it when</h2>
+            <ul>
+              <li>
+                Hypothesis: always, as the core of every assistant. To be tested: some assistants
+                may not need a chat at all.
+              </li>
+            </ul>
+            <h2>Variants</h2>
+            <ul>
+              <li>
+                <strong>New thread:</strong> an empty state, with «Endre» for what the thread reads
+                from right in the question field.
+              </li>
+              <li>
+                <strong>With and without side panels:</strong> the side panels can be hidden, and
+                the conversation then stays centred at a fixed width.
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>Related</h2>
+            <ul>
+              <li><a href="threads.html">Threads</a>: the selected thread is shown in the chat</li>
+              <li><a href="approach.html">Approach</a>: the plan before and during an answer</li>
+              <li>
+                <a href="footnotes.html">Footnotes</a> and <a href="sources.html">Sources</a>: the
+                answer's references
+              </li>
+              <li><a href="filter.html">Filter</a>: «Endre» in the question field</li>
+            </ul>
+          </div>
+          <div class="wide">
+            <h2>What we have learned</h2>
+            <ul>
+              <li>
+                The conversation reads in order: the question you asked with its document selection,
+                the answer, the sources used in the answer, and «Spør videre». The input field sits
+                below.
+              </li>
+              <li>
+                Your question has a subtle accent surface and your avatar. The answer has the
+                sparkle icon and no bubble around it.
+              </li>
+              <li>Typical answers are long, about one A4 page. Test the layout with that.</li>
+              <li>
+                What the sources don't say is a finding in itself. It gets its own section after the
+                answer,
+                <span class="sample gap" lang="nb">Ikke funnet i kildene</span>, with actions such
+                as «Let i hele Kudos» and «Bruk i teksten». It must not look like a weak claim.
+              </li>
+            </ul>
+          </div>
+          <div class="wide open-questions">
+            <h2>Open questions</h2>
+            <ul>
+              <li>Does every assistant need a chat? To be tested.</li>
+              <li>
+                How do we tell “not found” from “not read”, when the assistant reads only a
+                selection closely?
+              </li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <nav class="pager" aria-label="Other components">
+        <a class="next" href="approach.html" rel="next"><small>Next</small>Approach</a>
+      </nav>
+    </main>
+  </body>
+</html>

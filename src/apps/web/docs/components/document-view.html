@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Document view · Components</title>
+    <meta
+      name="description"
+      content="Shows the whole document from a source, with the excerpt marked, and lets the user ask questions about the document."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <nav aria-label="Breadcrumbs">
+        <p class="crumbs">
+          <a href="index.html">Components</a> / <span aria-current="page">Document view</span>
+        </p>
+      </nav>
+
+      <article
+        class="component"
+        id="document-view"
+        data-component="document-view"
+        data-phase="draft"
+        data-optional="true"
+        aria-labelledby="document-view-title"
+      >
+        <div class="component-head">
+          <div>
+            <h1 id="document-view-title">Document view</h1>
+            <div class="badges">
+              <span class="badge phase">Draft</span><span class="badge">Optional</span
+              ><span class="badge">Tools</span>
+            </div>
+            <p class="summary">
+              Shows the whole document from a source, with the excerpt marked, and lets the user ask
+              questions about the document.
+            </p>
+            <dl class="facts">
+              <dt>UI name</dt>
+              <dd>«Dokumentvisning»</dd>
+              <dt>Sits in</dt>
+              <dd>The tools panel</dd>
+              <dt>Issue</dt>
+              <dd><a href="https://github.com/digdir/kunnskapsassistenten/issues/182">#182</a></dd>
+              <dt>Canvas</dt>
+              <dd>00-Dokumentvisning (FN-1b, FN-1c, FN-1d), KA-3b</dd>
+            </dl>
+          </div>
+          <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+            <rect class="s-panel" x="-20" y="12" width="50" height="100" rx="10" opacity="0.55" />
+            <rect class="s-panel" x="40" y="12" width="110" height="100" rx="10" />
+            <path class="s-soft" d="M48 23a3 3 0 0 1 3-3h77l14 14v78H48z" />
+            <path class="s-bar" d="M128 20v11a3 3 0 0 0 3 3h11z" />
+            <rect class="s-bar" x="56" y="29" width="44" height="6" rx="3" />
+            <rect class="s-bar" x="56" y="42" width="66" height="5" rx="2.5" />
+            <rect class="s-accent-soft" x="52" y="52" width="82" height="22" rx="5" />
+            <rect class="s-accent" x="58" y="57" width="64" height="5" rx="2.5" />
+            <rect class="s-accent" x="58" y="65" width="42" height="5" rx="2.5" />
+            <rect class="s-bar" x="56" y="81" width="70" height="5" rx="2.5" />
+            <rect class="s-bar" x="56" y="91" width="52" height="5" rx="2.5" />
+          </svg>
+        </div>
+        <div class="component-body">
+          <div>
+            <h2>Use it when</h2>
+            <ul>
+              <li>Users need to read a source in context, not just the excerpt.</li>
+            </ul>
+            <h2>Variants</h2>
+            <ul>
+              <li>The source opened at the PDF page, with the passage highlighted.</li>
+              <li>Ask in the document, and send the question back to the thread.</li>
+            </ul>
+          </div>
+          <div>
+            <h2>Related</h2>
+            <ul>
+              <li>
+                <a href="sources.html">Sources</a> and <a href="footnotes.html">Footnotes</a>: open
+                the document
+              </li>
+              <li>
+                <a href="chat.html">Chat</a>: a question asked in the document goes back to the
+                thread
+              </li>
+            </ul>
+          </div>
+          <div class="wide">
+            <h2>What we have learned</h2>
+            <ul>
+              <li>
+                Users need to see the passage and the sources behind a claim, and make their own
+                judgement.
+              </li>
+              <li>Users should be able to move between the excerpts in a document.</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <nav class="pager" aria-label="Other components">
+        <a class="prev" href="sources.html" rel="prev"><small>Previous</small>Sources</a>
+        <a class="next" href="notes.html" rel="next"><small>Next</small>Notes</a>
+      </nav>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sources · Components</title>
+    <meta
+      name="description"
+      content="Shows the documents and excerpts behind an answer, with how relevant each source is."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <nav aria-label="Breadcrumbs">
+        <p class="crumbs">
+          <a href="index.html">Components</a> / <span aria-current="page">Sources</span>
+        </p>
+      </nav>
+
+      <article
+        class="component"
+        id="sources"
+        data-component="sources"
+        data-phase="draft"
+        data-optional="true"
+        aria-labelledby="sources-title"
+      >
+        <div class="component-head">
+          <div>
+            <h1 id="sources-title">Sources</h1>
+            <div class="badges">
+              <span class="badge phase">Draft</span><span class="badge">Optional</span
+              ><span class="badge">Tools</span>
+            </div>
+            <p class="summary">
+              Shows the documents and excerpts behind an answer, with how relevant each source is.
+            </p>
+            <dl class="facts">
+              <dt>UI name</dt>
+              <dd>«Kilder»</dd>
+              <dt>Sits in</dt>
+              <dd>The tools panel, and as a section after the answer</dd>
+              <dt>Issue</dt>
+              <dd><a href="https://github.com/digdir/kunnskapsassistenten/issues/177">#177</a></dd>
+              <dt>Canvas</dt>
+              <dd>00-Kilder (KI-A1 to KI-C1)</dd>
+            </dl>
+          </div>
+          <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+            <rect class="s-panel" x="-20" y="12" width="50" height="100" rx="10" opacity="0.55" />
+            <rect class="s-panel" x="40" y="12" width="110" height="100" rx="10" />
+            <rect class="s-soft" x="46" y="20" width="98" height="36" rx="8" />
+            <path
+              class="s-accent"
+              d="M52 27a1 1 0 0 1 1-1h4.5l3.5 3.5v6.5a1 1 0 0 1-1 1H53a1 1 0 0 1-1-1z"
+            />
+            <rect class="s-bar" x="65" y="27.5" width="40" height="5" rx="2.5" />
+            <circle class="s-accent" cx="126" cy="30" r="2.5" />
+            <circle class="s-accent" cx="132" cy="30" r="2.5" />
+            <circle class="s-accent" cx="138" cy="30" r="2.5" />
+            <rect class="s-bar" x="52" y="41" width="80" height="4" rx="2" />
+            <rect class="s-bar" x="52" y="48" width="58" height="4" rx="2" />
+            <rect class="s-soft" x="46" y="62" width="98" height="36" rx="8" />
+            <path
+              class="s-accent"
+              d="M52 69a1 1 0 0 1 1-1h4.5l3.5 3.5v6.5a1 1 0 0 1-1 1H53a1 1 0 0 1-1-1z"
+            />
+            <rect class="s-bar" x="65" y="69.5" width="32" height="5" rx="2.5" />
+            <circle class="s-accent" cx="126" cy="72" r="2.5" />
+            <circle class="s-accent" cx="132" cy="72" r="2.5" />
+            <circle class="s-bar" cx="138" cy="72" r="2.5" />
+            <rect class="s-bar" x="52" y="83" width="74" height="4" rx="2" />
+            <rect class="s-bar" x="52" y="90" width="50" height="4" rx="2" />
+          </svg>
+        </div>
+        <div class="component-body">
+          <div>
+            <h2>Use it when</h2>
+            <ul>
+              <li>Users should be able to see and judge what the answer is based on.</li>
+            </ul>
+            <h2>Variants</h2>
+            <ul>
+              <li>
+                <strong>A, three panels:</strong> sources in the tools panel next to the answer.
+              </li>
+              <li>
+                <strong>B, order and source colour:</strong> the order of the sources, and a colour
+                per source.
+              </li>
+              <li><strong>C, own sources</strong> (KI-C1): sources the user has kept.</li>
+              <li>
+                <strong>Sources used in the answer:</strong> a section after the answer, a neutral
+                surface with white cards.
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>Related</h2>
+            <ul>
+              <li><a href="footnotes.html">Footnotes</a>: a footnote opens the matching source</li>
+              <li><a href="document-view.html">Document view</a>: a source opens the document</li>
+              <li><a href="notes.html">Notes</a>: excerpts can be brought into notes</li>
+              <li><a href="filter.html">Filter</a>: decides which documents can become sources</li>
+            </ul>
+          </div>
+          <div class="wide">
+            <h2>What we have learned</h2>
+            <p class="placeholder">
+              Nothing here yet. Add what we learn as we build and test Sources.
+            </p>
+          </div>
+          <div class="wide open-questions">
+            <h2>Open questions</h2>
+            <ul>
+              <li>Should less relevant sources be hidden by default?</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <nav class="pager" aria-label="Other components">
+        <a class="prev" href="projects.html" rel="prev"><small>Previous</small>Projects</a>
+        <a class="next" href="document-view.html" rel="next"><small>Next</small>Document view</a>
+      </nav>
+    </main>
+  </body>
+</html>

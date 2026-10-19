@@ -58,6 +58,12 @@ test is listed as passed.
   only where it has nothing, and then with semantics and keyboard support from
   the start. WCAG 2.x AA is a requirement.
 - **No fixed colours, sizes or fonts.** Use `var(--ds-*)` from the theme.
+- **Component docs.** A PR that changes a component listed in #167 also
+  updates its page in `docs/components/` (phase, variants, what we learned),
+  its badges in `docs/components/index.html`, and the change log there. Only
+  components from #167 get a page; the design canvas is a source of learnings,
+  not the list. The pages are an internal working document and use their own
+  colours, so they open from disk without the theme.
 
 ## Live, bff and mock
 
