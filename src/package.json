@@ -4,17 +4,19 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "v2/components",
+    "v2/playground"
   ],
   "scripts": {
     "dev": "npm run dev --workspace apps/server & npm run dev --workspace apps/web",
     "dev:server": "npm run dev --workspace apps/server",
     "web": "VITE_API_MODE=live npm run dev --workspace apps/web --",
     "doctor": "npm run doctor --workspace apps/server",
-    "build": "npm run build --workspace apps/web && npm run build --workspace apps/web-preact",
+    "build": "npm run build --workspace apps/web && npm run build --workspace apps/web-preact && npm run build --workspace v2/components && npm run build --workspace v2/playground",
     "start": "npm run start --workspace apps/server",
-    "test": "npm run test --workspace apps/server && npm run test --workspace apps/web && npm run test --workspace apps/web-preact",
-    "typecheck": "tsc -p packages/contract && tsc -p apps/server && tsc -p apps/web-preact && npm run typecheck --workspace apps/web",
+    "test": "npm run test --workspace apps/server && npm run test --workspace apps/web && npm run test --workspace apps/web-preact && npm run test --workspace v2/components && npm run test --workspace v2/playground",
+    "typecheck": "tsc -p packages/contract && tsc -p apps/server && tsc -p apps/web-preact && npm run typecheck --workspace apps/web && tsc -p v2/components && tsc -p v2/playground",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
