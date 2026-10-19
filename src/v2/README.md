@@ -13,12 +13,13 @@ contract with genki, are in [CLAUDE.md](CLAUDE.md).
 
 ## What is here
 
-| Path          | What                                                                                                                                                                                       |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `CLAUDE.md`   | The contract with genki and the conventions for V2                                                                                                                                         |
-| `kits/`       | One JSON file per kit: layout, core, optional components with defaults, and what each needs from the service. **A draft**: a first proposal, to check with the team and the service owners |
-| `components/` | The component library, an npm workspace package. Empty for now                                                                                                                             |
-| `playground/` | Every component alone and together (#169), a Vite app. Empty for now                                                                                                                       |
+| Path               | What                                                                                                                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CLAUDE.md`        | The contract with genki and the conventions for V2                                                                                                                                         |
+| `kits/`            | One JSON file per kit: layout, core, optional components with defaults, and what each needs from the service. **A draft**: a first proposal, to check with the team and the service owners |
+| `components/`      | The component library, an npm workspace package. Empty for now                                                                                                                             |
+| `playground/`      | Every component alone and together (#169), a Vite app. Empty for now                                                                                                                       |
+| `docs/components/` | One page per component (#171), with `index.html` as the landing page. They open from disk                                                                                                  |
 
 ## Commands
 
