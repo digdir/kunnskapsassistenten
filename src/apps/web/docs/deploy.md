@@ -1,32 +1,34 @@
-# Utrulling av testmiljøet
+# Deploying the test environment
 
-Én container: serveren holder API-nøkkelen, snakker med `digdir-headless-rag`
-og serverer den bygde klienten fra samme origin. Samme origin er ikke
-kosmetikk — backenden svarer på en CORS-preflight med 401 og sender ingen
-CORS-hoder, så en nettleser kan ikke kalle den direkte uansett, og nøkkelen
-skal uansett aldri dit.
+One container: the server holds the API key, talks to the backend and serves
+the built client from the same origin. The backend is genki-test; until
+2026-10-19 it was `digdir-headless-rag`, and [Rolling back](#rolling-back) goes
+back to it. The same origin is not cosmetic: headless-rag answers a CORS
+preflight with 401 and sends no CORS headers, and genki-test refuses the key on
+any call that carries an `Origin`. A browser cannot call either of them
+directly, and the key must never go there anyway.
 
-**Rulles ut for hånd.** Workflowene i `src/apps/web/.github/` kjører ikke i
-digdir/kunnskapsassistenten, fordi GitHub bare leser `.github/workflows/` i
-repo-rota. Bildet bygges og rulles ut med kommandoene i
-[Ny versjon](#ny-versjon). Bakgrunn og avgjørelser:
+**Deployed by hand.** The workflows in `src/apps/web/.github/` do not run in
+digdir/kunnskapsassistenten, because GitHub reads only `.github/workflows/` at
+the repo root. The image is built and deployed with the commands in
+[Ny versjon](#ny-versjon). Background and decisions:
 `design/plan-testmiljo-2026-09-22.md`.
 
-Klienten i bildet er bygget for **live** (`VITE_API_MODE=live` i `Dockerfile`).
-Hvilken backend klienten bruker, avgjøres når bildet bygges. `KA_MODE` avgjør
-bare om serveren sender kallene videre. Se
-[Bytte mellom mock og live](#bytte-mellom-mock-og-live).
+The client in the image is built for **live** (`VITE_API_MODE=live` in the
+`Dockerfile`). Which backend the client uses is decided when the image is
+built. `KA_MODE` decides only whether the server forwards the calls. See
+[Switching between mock and live](#switching-between-mock-and-live).
 
 ## Hva som finnes
 
-| Fil                            | Hva                                                                                |
-| ------------------------------ | ---------------------------------------------------------------------------------- |
-| `server/`                      | Serveren. Node uten rammeverk og uten avhengigheter.                               |
-| `Dockerfile`                   | To steg: bygg med devDependencies, kjøretid uten node_modules. Kontekst `src/`.    |
-| `deploy/main.bicep`            | Register, Container App, miljø, logganalyse, to identiteter og innloggingen        |
-| `deploy/test.bicepparam`       | Live-oppsettet for [Live for én person](#live-for-én-person). Ingen hemmeligheter. |
-| `.github/workflows/deploy.yml` | Bygger, pusher og ruller ut ved hver push til `main`. Kjører ikke her.             |
-| `.github/workflows/ci.yml`     | Bygger og starter bildet på hver PR, uten å pushe. Kjører ikke her.                |
+| Fil                            | Hva                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------ |
+| `server/`                      | Serveren. Node uten rammeverk og uten avhengigheter.                                 |
+| `Dockerfile`                   | To steg: bygg med devDependencies, kjøretid uten node_modules. Kontekst `src/`.      |
+| `deploy/main.bicep`            | Register, Container App, miljø, logganalyse, to identiteter og innloggingen          |
+| `deploy/test.bicepparam`       | Live-oppsettet for [Live for one person](#live-for-one-person). Ingen hemmeligheter. |
+| `.github/workflows/deploy.yml` | Bygger, pusher og ruller ut ved hver push til `main`. Kjører ikke her.               |
+| `.github/workflows/ci.yml`     | Bygger og starter bildet på hver PR, uten å pushe. Kjører ikke her.                  |
 
 Serveren gjør fire ting: proxyer klientens kall under `/api/` til backenden med
 `X-API-Key` påsatt (bare i live; i mock svarer `/api/*` 404). Det er
@@ -66,28 +68,36 @@ For hånd, uten ny commit: **Actions → Deploy → Run workflow**, eller
 Før engangsoppsettet er gjort, hopper workflowen over med meldingen «Ingen
 utrulling» og står grønn, så `main` ikke blir rød av et miljø som ikke finnes.
 
-## Live for én person
+## Live for one person
 
-Hele appen i live, før Entra: bak [den delte hemmeligheten](#delt-hemmelighet)
-eller en adresseliste, uten roller og uten GitHub. Contributor på `rg-ka-test`
-holder. Appen henter bildet med registerets eget passord i stedet for AcrPull,
-og nøkkelen står bak hemmeligheten eller lista. Oppsettet står i `deploy/test.bicepparam`: `KA_MODE=live`,
-backenden på `http://ka-rag-test` (den interne fra `docs/deploy-backend.md`),
-tenant `kudos`, datasett `kudos-full` og feltnavna for det. Nøkkelen, bildet
-og adressene leses fra miljøvariabler når malen kjøres, så fila har ingen
-hemmeligheter, og en ny kjøring setter ikke appen tilbake til mock.
+The whole app in live, before Entra: behind [the shared secret](#delt-hemmelighet)
+or an address list, without roles and without GitHub. Contributor on
+`rg-ka-test` is enough. The app pulls the image with the registry's own password
+instead of AcrPull, and the key sits behind the secret or the list. The setup is
+in `deploy/test.bicepparam`: `KA_MODE=live`, the backend genki-test
+(`https://api.genki-test.digdir.cloud`) with the tool
+`kunnskapsassistenten__default`, tenant `digdir`, dataset `kudos` and its field
+names, and the Typesense collections for the facets and the excerpts. The keys,
+the image and the addresses are read from environment variables when the
+template runs, so the file has no secrets, and a new run does not put the app
+back into mock.
 
-Kommandoene her har abonnement og ressursgruppe skrevet ut, i denne
-rekkefølgen, så de kan kjøres som de står, fra `src/apps/web`.
+The commands here have the subscription and the resource group written out, in
+that order, so they can be run as they stand, from `src/apps/web`.
 
-**Rullet ut av dirigenten 28.09**, bak adresselista: bildet hentet med
-registerets passord, innloggingen av, og 403 fra andre adresser (se steg 4).
-Den delte hemmeligheten er ikke prøvd i Azure ennå.
+**Deployed by the conductor on 28.09**, behind the address list: the image
+pulled with the registry's password, the sign-in off, and 403 from other
+addresses (see step 4). It has run behind the shared secret since.
+**Switched to genki-test by hand on 19.10** as the revision
+`ka-frontend-test--genki20c9965`, with the values above and the genki key in the
+secret `genki-api-key`. `digdir-api-key` still holds the headless-rag key, for
+[Rolling back](#rolling-back).
 
-**Bygg ikke parameterfila selv mens nøkkelen står i miljøet.**
-`az bicep build-params` uten `--stdout` skriver `deploy/test.json`, med
-nøkkelen i klartekst. `deploy/*.json` er i `.gitignore`, men fila blir
-liggende på disken. `az deployment group create` bygger den i minnet.
+**Do not build the parameter file yourself while the keys are in the
+environment.** `az bicep build-params` without `--stdout` writes
+`deploy/test.json`, with the keys in plain text. `deploy/*.json` is in
+`.gitignore`, but the file stays on the disk. `az deployment group create`
+builds it in memory.
 
 ### 1. Grunnmuren
 
@@ -100,10 +110,14 @@ az deployment group create --subscription Altinn-AI-Assistant -g rg-ka-test -n k
 ACR=$(az deployment group show --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-frontend-grunnmur --query properties.outputs.registryName.value -o tsv)
 ```
 
-### 2. Backenden
+### 2. The backend
 
-Etter `docs/deploy-backend.md`, i miljøet steg 1 laget. Frontenden når den på
-`http://ka-rag-test`.
+genki-test, run by the platform and not by us. The key is a service key for the
+service `kunnskapsassistenten`, made in genki-test's portal by someone who signs
+in with Entra ID; step 3 of [Run locally](run-locally.md) shows where. Until
+19.10 the backend was headless-rag, deployed in this environment after
+`docs/deploy-backend.md` and reached at `http://ka-rag-test`. It still runs, for
+[Rolling back](#rolling-back).
 
 ### 3. Bildet
 
@@ -132,56 +146,63 @@ build_image
 `--file` er relativ til mappa kommandoen kjøres fra, ikke til konteksten.
 Derfor kjøres den inne i `src/`.
 
-### 4. Appen, i live
+### 4. The app, in live
 
-`read -rs` leser nøkkelen uten å vise den.
+`read -rs` reads the keys without showing them. The first is the genki key. The
+second is the headless-rag key that the revisions before genki read, kept as
+`digdir-api-key` for [Rolling back](#rolling-back). Press Enter to leave it out,
+and the run then removes that secret: the app keeps only the secrets a run gives
+it.
 
-Finnes hemmelighetsfila fra [Delt hemmelighet](#delt-hemmelighet), står appen
-bak den og virker fra hvor som helst; da settes ingen adresseliste. Ellers
-slipper bare adressen maskinen går ut på inn. Bak en VPN eller en exit-node er
-det dens adresse.
+If the secret file from [Delt hemmelighet](#delt-hemmelighet) exists, the app
+sits behind it and works from anywhere; then no address list is set. Otherwise
+only the address the machine goes out on gets in. Behind a VPN or an exit node,
+that is its address.
 
-Funksjonen stopper hvis taggen fra steg 3 mangler, som den gjør i et nytt
-skall; uten den ville malen bare laget grunnmuren. Lista settes bare når
-`curl` virker. Feiler den, blir lista tom, og da stopper malen i stedet for å
-slippe nøkkelen gjennom bak en liste med bare `/32` (KA CC på #169). Er
-verken lista, hemmeligheten eller Entra satt, stopper funksjonen selv før den
-ber om nøkkelen. Malen stopper også på et element uten adresse og på et nett
-bredere enn /8.
+The function stops if the tag from step 3 is missing, as it is in a new shell;
+without it the template would only make the foundation. The list is set only
+when `curl` works. If it fails, the list is empty, and then the template stops
+instead of letting the key through behind a list with only `/32` (KA CC on
+#169). If neither the list, the secret nor Entra is set, the function stops
+itself before it asks for the keys. The template also stops on an entry without
+an address and on a network wider than /8.
 
 ```sh
 deploy_live() {
-  [ -n "$KA_IMAGE_TAG" ] || { echo "KA_IMAGE_TAG er tom. Kjør steg 3, eller sett den til taggen som kjører."; return 1; }
+  [ -n "$KA_IMAGE_TAG" ] || { echo "KA_IMAGE_TAG is empty. Run step 3, or set it to the tag that runs."; return 1; }
   KA_ALLOWED_IPS=""
   KA_ACCESS_SECRET=""
   if [ -r ~/.config/ka-rag-test/access-secret ]; then
     KA_ACCESS_SECRET=$(cat ~/.config/ka-rag-test/access-secret)
-    echo "Delt hemmelighet: ${#KA_ACCESS_SECRET} tegn, ingen adresseliste"
+    echo "Shared secret: ${#KA_ACCESS_SECRET} characters, no address list"
   else
     IP=$(curl -fsS https://api.ipify.org) && KA_ALLOWED_IPS="$IP/32"
-    echo "Adresseliste: ${KA_ALLOWED_IPS:-tom}"
+    echo "Address list: ${KA_ALLOWED_IPS:-empty}"
   fi
-  [ -n "$KA_ALLOWED_IPS" ] || [ -n "${KA_ACCESS_SECRET//[[:space:]]/}" ] || [ -n "$KA_ENTRA_CLIENT_ID" ] || { echo "Verken adresseliste, hemmelighet eller Entra er satt. Ingenting er rullet ut."; return 1; }
+  [ -n "$KA_ALLOWED_IPS" ] || [ -n "${KA_ACCESS_SECRET//[[:space:]]/}" ] || [ -n "$KA_ENTRA_CLIENT_ID" ] || { echo "Neither an address list, a secret nor Entra is set. Nothing is deployed."; return 1; }
+  echo "The genki key:"
   read -rs DIGDIR_API_KEY
-  export KA_IMAGE_TAG DIGDIR_API_KEY KA_ALLOWED_IPS KA_ACCESS_SECRET
+  echo "The headless-rag key for a rollback, or Enter to leave it out:"
+  read -rs KA_ROLLBACK_API_KEY
+  export KA_IMAGE_TAG DIGDIR_API_KEY KA_ROLLBACK_API_KEY KA_ALLOWED_IPS KA_ACCESS_SECRET
   az deployment group create --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-frontend-app --parameters deploy/test.bicepparam --query properties.outputs.fqdn.value -o tsv
-  unset DIGDIR_API_KEY KA_ACCESS_SECRET TYPESENSE_API_KEY
+  unset DIGDIR_API_KEY KA_ROLLBACK_API_KEY KA_ACCESS_SECRET TYPESENSE_API_KEY
 }
 deploy_live
 ```
 
-Siste linje fra `az` er adressen. Sjekk den:
+The last line from `az` is the address. Check it:
 
 ```sh
 FQDN=$(az containerapp show --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-frontend-test --query properties.configuration.ingress.fqdn -o tsv)
 curl -fsS "https://$FQDN/healthz"
 ```
 
-Den skal svare `{"ok":true,"mode":"live"}`.
+It should answer `{"ok":true,"mode":"live"}`.
 
-Med adresseliste, fra en annen adresse, for eksempel en mobil delt tilkobling,
-skal ingen av disse gi `200`. De tre siste prøver om ingressen stoler på et
-hode klienten har satt selv, med `IP` fra steg 4.
+With an address list, from another address, for example a phone's shared
+connection, none of these should give `200`. The last three try whether the
+ingress trusts a header the client set itself, with `IP` from step 4.
 
 ```sh
 curl -sS -o /dev/null -w '%{http_code}\n' "https://$FQDN/healthz"
@@ -190,32 +211,31 @@ curl -sS -o /dev/null -w '%{http_code}\n' -H "X-Real-IP: $IP" "https://$FQDN/hea
 curl -sS -o /dev/null -w '%{http_code}\n' -H "Forwarded: for=$IP" "https://$FQDN/healthz"
 ```
 
-Målt av dirigenten i Azure 28.09, med lista satt til en annen adresse enn
-maskinens: `403` med «RBAC: access denied» for alle fire, også med begge
-adressene i `X-Forwarded-For`. Med maskinens egen adresse i lista svarte
-`/healthz` `{"ok":true,"mode":"live"}`. Ingressen stoler altså ikke på hoder
-klienten har satt, og en liste med bare `Allow` stenger alle andre.
+Measured by the conductor in Azure on 28.09, with the list set to another
+address than the machine's: `403` with «RBAC: access denied» for all four, also
+with both addresses in `X-Forwarded-For`. With the machine's own address in the
+list, `/healthz` answered `{"ok":true,"mode":"live"}`. So the ingress does not
+trust headers the client set, and a list of only `Allow` shuts everyone else
+out.
 
-Ny adresse, for eksempel hjemmefra: kjør steg 4 på nytt med den nye. Kjøres
-steg 4 uten nøkkel, står appen i live uten nøkkel, og backenden svarer 401.
+A new address, for example from home: run step 4 again with the new one. Run
+without the genki key, step 4 leaves the app in live without a key, and the
+backend answers 401.
 
-### Fasettene i filterpanelet
+### Facets in the filter panel
 
-Uten Typesense-variablene sier panelet at filtrering ikke er tilgjengelig, og
-utdragene at teksten ikke kunne hentes; se
-[Fasettene i filterpanelet](#fasettene-i-filterpanelet) og
-[Teksten i utdragene](#teksten-i-utdragene). Med dem: sett de fire under og
-kjør steg 4 igjen. Nøkkelen leses med `read -rs`, og `deploy_live` fjerner den
-fra skallet etterpå. Det skal være en nøkkel som bare kan søke i dokument- og
-bitsamlingen, **ikke adminnøkkelen**; se
-[Fasettene i filterpanelet](#fasettene-i-filterpanelet).
+`deploy/test.bicepparam` has the Typesense address and the Kudos collections, so
+only the search key is left. Without it the panel says filtering is not
+available, and the excerpts that their text could not be fetched; see
+[Fasettene i filterpanelet](#fasettene-i-filterpanelet) and
+[Teksten i utdragene](#teksten-i-utdragene). With it: read it as below and run
+step 4 again, and `deploy_live` removes it from the shell afterwards. It must be
+a key that can only search the document and chunk collections, **not the admin
+key**.
 
 ```sh
 read -rs TYPESENSE_API_KEY
-TYPESENSE_URL="lim-inn-typesense-adressen-her"
-KA_FACET_COLLECTIONS="kudos-full=lim-inn-dokumentsamlingen-her"
-KA_CHUNK_COLLECTIONS="kudos-full=lim-inn-bitsamlingen-her"
-export TYPESENSE_URL TYPESENSE_API_KEY KA_FACET_COLLECTIONS KA_CHUNK_COLLECTIONS
+export TYPESENSE_API_KEY
 ```
 
 ### Ny versjon
@@ -285,7 +305,7 @@ wc -c < ~/.config/ka-rag-test/access-secret
 
 ### Rulle den ut
 
-Steg 4 i [Live for én person](#live-for-én-person). `deploy_live` finner fila
+Steg 4 i [Live for one person](#live-for-one-person). `deploy_live` finner fila
 selv.
 
 ### Dele lenken
@@ -329,7 +349,7 @@ verdiene i steg 0 hvis det blir andre.
 
 Ingen rettigheter i `altinnaicontainers` eller andre steder utenfor
 ressursgruppa. Steg 2 og 6 er de eneste som krever rett til å gi roller. Uten
-den og uten GitHub: [Live for én person](#live-for-én-person). Har du
+den og uten GitHub: [Live for one person](#live-for-one-person). Har du
 den ikke, kan noen som har den kjøre akkurat de to stegene; kommandoene står
 ferdige. Er Contributor bak PIM, aktiver den før du begynner.
 
@@ -467,7 +487,7 @@ az deployment group create --subscription "$SUB" -g $RG -n ka-frontend-app \
 ```
 
 Siste linje er adressen. Appen står i live, men uten nøkkel, så spørsmål får
-401 til nøkkelen er satt (se [Bytte mellom mock og live](#bytte-mellom-mock-og-live)).
+401 til nøkkelen er satt (se [Switching between mock and live](#switching-between-mock-and-live)).
 
 ### Steg 6: roller på appen (krever rett til å gi roller)
 
@@ -563,7 +583,7 @@ logget inn til Microsofts innloggingsside. Malen slår den på når den får
 `entraClientId`. Uten er appen åpen, eller bare åpen for adresselista.
 
 Entra venter til etter lanseringen. Til da er det
-[Live for én person](#live-for-én-person) som gjelder.
+[Live for one person](#live-for-one-person) som gjelder.
 
 **Ikke prøvd mot Azure.** Malen bygger uten advarsler, og serveren er testet
 med plattformens hode satt for hånd. Selve innloggingen kan ikke prøves før
@@ -629,7 +649,7 @@ bruker**; alle i tenanten kan invitere.
 ### Slå den på
 
 Malen kjøres med registreringens klient-ID og secret, og med taggen som kjører
-nå (se [Bytte mellom mock og live](#bytte-mellom-mock-og-live) om hvorfor).
+nå (se [Switching between mock and live](#switching-between-mock-and-live) om hvorfor).
 `read -rs` leser secreten uten å vise den. Tenanten er abonnementets; ligger
 registreringen et annet sted, gi også `entraTenantId`.
 
@@ -643,7 +663,7 @@ az deployment group create --subscription "$SUB" -g $RG -n ka-frontend-innloggin
   --query properties.outputs.loginRedirectUri.value -o tsv
 ```
 
-Kom appen fra [Live for én person](#live-for-én-person), kjøres ikke blokka
+Kom appen fra [Live for one person](#live-for-one-person), kjøres ikke blokka
 over. Der settes `KA_ENTRA_CLIENT_ID` og `KA_ENTRA_CLIENT_SECRET` (den siste
 med `read -rs`), eksporteres sammen med de andre, og steg 4 kjøres på nytt.
 Ellers ville frontenden gått tilbake til AcrPull, som ingen har gitt.
@@ -701,23 +721,73 @@ az containerapp auth update --subscription "$SUB" -n $APP -g $RG --enabled false
 Da er adressen åpen, og serveren sender ingenting til backenden. Klienten i
 bildet er bygget for live, så spørsmål får en feil og ikke et svar.
 
-## Rulle tilbake
+## Rolling back
 
-Fra kommandolinja, siden ingenting rulles ut av seg selv her: et eldre bilde,
-med en ny revisjon. Den første linja viser de nyeste taggene i registeret.
-Bytt ut verdien av `COMMIT` med en av dem. Bilder fra før klienten flyttet
-hit, har commiten fra det gamle repoet som tagg.
+From the command line, since nothing deploys itself here.
+
+### To an older image
+
+An older image, in a new revision. The first line shows the newest tags in the
+registry. Replace the value of `COMMIT` with one of them. Images from before the
+client moved here have the commit from the old repo as their tag.
 
 ```sh
 az acr repository show-tags --subscription "$SUB" -n "$ACR" --repository $APP --orderby time_desc --top 5 -o tsv
-COMMIT="lim-inn-taggen-her"
+COMMIT="paste-the-tag-here"
 az containerapp update --subscription "$SUB" -n $APP -g $RG \
   --image "$ACR.azurecr.io/$APP:$COMMIT" --revision-suffix rollback$(date +%H%M%S)
 ```
 
-Ikke tilbake forbi #169 med innloggingen på: et eldre bilde leser ikke
-`KA_USER_ID_FROM`, og da gjelder nettleserens `X-User-Id` igjen bak
-innloggingen. Det sender heller ikke `/api/*` bort i mock.
+Not back past #169 with the sign-in on: an older image does not read
+`KA_USER_ID_FROM`, and then the browser's `X-User-Id` applies again behind the
+sign-in. Nor does it keep `/api/*` from the backend in mock.
+
+### Back to headless-rag
+
+The revision before genki, `ka-frontend-test--hand7076241`, runs the image
+`7076241` against `http://ka-rag-test`, with tenant `kudos`, dataset
+`kudos-full`, headless-rag's tool and the key from `digdir-api-key`.
+`revision copy` makes a new revision from it with all of that, and with one
+active revision the traffic moves to the new one:
+
+```sh
+az containerapp revision copy --subscription "$SUB" -n $APP -g $RG \
+  --from-revision ka-frontend-test--hand7076241 --revision-suffix rag$(date +%H%M%S)
+```
+
+It works only while the secret `digdir-api-key` is there, which a run of step 4
+without the headless-rag key removes. Check first:
+
+```sh
+az containerapp secret list --subscription "$SUB" -n $APP -g $RG --query '[].name' -o tsv
+```
+
+If it is missing, put it back before the copy, from the file
+`docs/deploy-backend.md` keeps it in:
+
+```sh
+az containerapp secret set --subscription "$SUB" -n $APP -g $RG --secrets digdir-api-key="$(jq -r .parameters.apiKey.value "$HOME/.config/ka-rag-test/parameters.json")" -o none
+```
+
+Back to genki is the same copy from `ka-frontend-test--genki20c9965`, or step 4.
+
+## Swapping the backend key
+
+The genki key is the secret `genki-api-key`. A new key goes into the secret, and
+a new revision picks it up: `secret set` alone changes nothing that runs. Make
+the new key in genki-test's portal first (step 3 of [Run locally](run-locally.md)
+shows where), and revoke the old one there once the new revision answers.
+
+```sh
+read -rs KEY
+az containerapp secret set --subscription "$SUB" -n $APP -g $RG --secrets genki-api-key="$KEY"
+unset KEY
+az containerapp update --subscription "$SUB" -n $APP -g $RG --revision-suffix key$(date +%H%M%S)
+```
+
+Then ask a real question in the app, not just `/healthz`, which answers without
+the backend. The headless-rag key is swapped the same way in `digdir-api-key`;
+see `docs/deploy-backend.md`.
 
 ## Logger
 
@@ -843,32 +913,34 @@ Koden er `server/excerpts.ts`.
   ruta. Hvilke biter hvert svar bygger på, ligger i nettleseren
   (`ka.sources.v1`), for backenden lagrer dem ikke (headless-rag #21).
 
-## Bytte mellom mock og live
+## Switching between mock and live
 
-**Ikke slå på live uten noe foran** ([Innlogging](#innlogging), eller
-adresselista i [Live for én person](#live-for-én-person)). I live setter
-serveren nøkkelen på hvert kall, for hvem som helst som kommer til adressen.
-I mock sender serveren ingenting til backenden, heller ikke med nøkkelen satt.
+**Do not turn on live without something in front** ([Innlogging](#innlogging),
+or the address list in [Live for one person](#live-for-one-person)). In live the
+server sets the key on every call, for anyone who reaches the address. In mock
+the server sends nothing to the backend, not even with the key set.
 
-Modusen har to deler. `KA_MODE` er serverens, og byttes med en ny revisjon som
-under. Klientens modus er bygget inn i bildet (`src/api/apiMode.ts`), og
-`/config.js` kan ikke endre den. Bildet i testmiljøet er bygget for live. Et
-miljø der klienten svarer fra mocken, trenger et bilde bygget med
-`docker build --build-arg VITE_API_MODE=mock` i tillegg til `KA_MODE=mock`.
+The mode has two parts. `KA_MODE` is the server's, and is switched with a new
+revision as below. The client's mode is built into the image
+(`src/api/apiMode.ts`), and `/config.js` cannot change it. The image in the test
+environment is built for live. An environment where the client answers from the
+mock needs an image built with `docker build --build-arg VITE_API_MODE=mock` as
+well as `KA_MODE=mock`.
 
-Nøkkelen legges inn som secret. Første gang lager dette
-secreten. `read -rs` leser den uten å vise den og uten å legge den i
-historikken. Deretter settes modus og nøkkel inn i en ny revisjon:
+The key goes in as a secret: `genki-api-key` for genki, and `digdir-api-key`
+after a rollback to headless-rag. The first time, this makes the secret.
+`read -rs` reads the key without showing it and without putting it in the
+history. Then the mode and the key are set in a new revision:
 
 ```sh
 read -rs KEY
-az containerapp secret set --subscription "$SUB" -n $APP -g $RG --secrets digdir-api-key="$KEY"
+az containerapp secret set --subscription "$SUB" -n $APP -g $RG --secrets genki-api-key="$KEY"
 az containerapp update --subscription "$SUB" -n $APP -g $RG \
-  --set-env-vars KA_MODE=live DIGDIR_API_KEY=secretref:digdir-api-key \
+  --set-env-vars KA_MODE=live DIGDIR_API_KEY=secretref:genki-api-key \
   --revision-suffix live$(date +%H%M%S)
 ```
 
-Tilbake til mock:
+Back to mock:
 
 ```sh
 az containerapp update --subscription "$SUB" -n $APP -g $RG \
@@ -876,25 +948,27 @@ az containerapp update --subscription "$SUB" -n $APP -g $RG \
   --revision-suffix mock$(date +%H%M%S)
 ```
 
-Nøkkelen tas bort også, selv om serveren ikke bruker den i mock: en variabel
-som står, blir med til neste gang noen setter modusen til live.
+The key goes too, even though the server does not use it in mock: a variable
+that stays comes along the next time someone sets the mode to live.
 
-`secret set` alene endrer ingenting som kjører: verdien plukkes opp av en ny
-revisjon, som `update` tvinger fram. `KA_MODE` trenger ingen ny bygging, men
-klientens modus gjør det (se over).
+`secret set` alone changes nothing that runs: the value is picked up by a new
+revision, which `update` forces. `KA_MODE` needs no new build, but the client's
+mode does (see above).
 
-**Kjør ikke malen på nytt med en gammel `imageTag` for å bytte modus.** Den
-setter bildet til den taggen, og da ruller du tilbake til den versjonen. Må den
-kjøres igjen, gi den taggen som kjører nå:
+**Do not run the template again with an old `imageTag` to switch modes.** It sets
+the image to that tag, and then you roll back to that version. If it must run
+again, give it the tag that runs now:
 
 ```sh
 TAG=$(az containerapp show --subscription "$SUB" -n $APP -g $RG --query 'properties.template.containers[0].image' -o tsv | cut -d: -f2)
 ```
 
-Uten `imageTag` rører malen ikke appen i det hele tatt, bare grunnmuren.
+Without `imageTag` the template does not touch the app at all, only the
+foundation.
 
-Uten `digdirApiKey` utelater malen både secreten og variabelen. Det er ikke
-målt om Container Apps godtar en secret med tom verdi; utelatt virker uansett.
+Without `digdirApiKey` the template leaves out both the secret and the variable.
+Whether Container Apps accepts a secret with an empty value is not measured;
+left out works either way.
 
 ## Bygge og rulle ut for hånd
 
@@ -951,8 +1025,8 @@ innloggingsoppsett med bare `enabled: false` godtas, slik at appen svarer uten
 innlogging.
 
 **Med adresseliste når ikke GitHub fram.** Helsesjekken i `deploy.yml` kommer
-fra GitHubs maskiner, og de står ikke i lista. [Live for én
-person](#live-for-én-person) bruker ikke GitHub, og uten repo-variablene hopper
+fra GitHubs maskiner, og de står ikke i lista. [Live for one
+person](#live-for-one-person) bruker ikke GitHub, og uten repo-variablene hopper
 workflowen over.
 
 **Ikke målt: en økt som går ut midt i bruk.** Plattformen sender da API-kallet

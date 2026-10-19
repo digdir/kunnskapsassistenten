@@ -65,6 +65,13 @@ param documentUrls string = 'kudos=https://kudos.dfo.no/documents/{doc_num}|http
 @secure()
 param digdirApiKey string = ''
 
+@description('The Container Apps secret `DIGDIR_API_KEY` reads. A new backend gets a new name, so the revisions before it keep their own key for a rollback: test.bicepparam names `genki-api-key`, and the headless-rag revisions read `digdir-api-key`.')
+param apiKeySecretName string = 'digdir-api-key'
+
+@description('The key the headless-rag revisions read, kept as the secret `digdir-api-key` beside `apiKeySecretName`, so a rollback can copy one of them. Empty = left out, and since a run sets the app\'s secrets to the ones it is given, `digdir-api-key` is then gone. See «Rolling back» in docs/deploy.md.')
+@secure()
+param rollbackApiKey string = ''
+
 @description('Klient-ID-en til app-registreringen innloggingen bruker. Tom = ingen innlogging.')
 param entraClientId string = ''
 
@@ -106,6 +113,14 @@ param chunkCollections string = ''
 // Container Apps godtar en secret med tom verdi, og en app i mock har ingen
 // bruk for en; utelatt er riktig uansett hva svaret er.
 var hasKey = !empty(digdirApiKey)
+
+// The headless-rag key, kept beside the backend's own for a rollback, under the
+// name those revisions read. Never under the same name as `apiKeySecretName`: one
+// of the two keys would be lost.
+var rollbackSecretName = 'digdir-api-key'
+var hasRollbackKey = !empty(rollbackApiKey) && apiKeySecretName == rollbackSecretName
+  ? fail('rollbackApiKey is set while apiKeySecretName is digdir-api-key, the name the rollback key is kept under. See «Rolling back» in docs/deploy.md.')
+  : !empty(rollbackApiKey)
 
 // Innloggingen er på når klient-ID-en er gitt, og da må secreten også være
 // det. Uten secret bruker plattformen implisitt flyt, som Microsoft fraråder,
@@ -151,7 +166,7 @@ var checkedAccessSecret = hasAccessSecret && length(trimmedAccessSecret) < 24
 // som helst med adressen (KA CC på #169). En glemt parameter blir da en stopp,
 // og ikke en åpen app i live.
 var apiKey = hasKey && !hasLogin && empty(checkedRanges) && !hasAccessSecret
-  ? fail('digdirApiKey er gitt uten entraClientId, allowedIps og accessSecret. Se «Live for én person» i docs/deploy.md.')
+  ? fail('digdirApiKey is given without entraClientId, allowedIps or accessSecret. See «Live for one person» in docs/deploy.md.')
   : digdirApiKey
 
 // Registerets passord, lest av malen selv og lagt som secret. Det skrives
@@ -199,12 +214,13 @@ var plainEnv = filter(
 )
 var hasTypesenseKey = !empty(typesenseApiKey)
 var secretEnv = concat(
-  hasKey ? [{ name: 'DIGDIR_API_KEY', secretRef: 'digdir-api-key' }] : [],
+  hasKey ? [{ name: 'DIGDIR_API_KEY', secretRef: apiKeySecretName }] : [],
   hasAccessSecret ? [{ name: 'KA_ACCESS_SECRET', secretRef: 'ka-access-secret' }] : [],
   hasTypesenseKey ? [{ name: 'TYPESENSE_API_KEY', secretRef: 'typesense-api-key' }] : []
 )
 var secrets = concat(
-  hasKey ? [{ name: 'digdir-api-key', value: apiKey }] : [],
+  hasKey ? [{ name: apiKeySecretName, value: apiKey }] : [],
+  hasRollbackKey ? [{ name: rollbackSecretName, value: rollbackApiKey }] : [],
   hasLogin ? [{ name: loginSecretName, value: loginSecret }] : [],
   hasAccessSecret ? [{ name: 'ka-access-secret', value: checkedAccessSecret }] : [],
   hasTypesenseKey ? [{ name: 'typesense-api-key', value: typesenseApiKey }] : [],
