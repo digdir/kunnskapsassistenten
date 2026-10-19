@@ -148,8 +148,10 @@ Derfor kjøres den inne i `src/`.
 
 ### 4. The app, in live
 
-`read -rs` reads the keys without showing them. The first is the genki key. The
-second is the headless-rag key that the revisions before genki read, kept as
+`read -rs` reads the keys without showing them. The Typesense search key comes
+first, from its file if it is there (see
+[Facets in the filter panel](#facets-in-the-filter-panel)). Then the genki key.
+The last is the headless-rag key that the revisions before genki read, kept as
 `digdir-api-key` for [Rolling back](#rolling-back). Press Enter to leave it out.
 The template then sends the app's secrets without it, and a full deployment
 keeps only the secrets it sends, so the secret is gone afterwards (how Container
@@ -165,8 +167,10 @@ without it the template would only make the foundation. The list is set only
 when `curl` works. If it fails, the list is empty, and then the template stops
 instead of letting the key through behind a list with only `/32` (KA CC on
 #169). If neither the list, the secret nor Entra is set, the function stops
-itself before it asks for the keys. The template also stops on an entry without
-an address and on a network wider than /8.
+itself before it asks for the keys. It also stops without a Typesense search
+key, since the test page would then lose its filters and the excerpts' text.
+The template also stops on an entry without an address and on a network wider
+than /8.
 
 ```sh
 deploy_live() {
@@ -181,11 +185,19 @@ deploy_live() {
     echo "Address list: ${KA_ALLOWED_IPS:-empty}"
   fi
   [ -n "$KA_ALLOWED_IPS" ] || [ -n "${KA_ACCESS_SECRET//[[:space:]]/}" ] || [ -n "$KA_ENTRA_CLIENT_ID" ] || { echo "Neither an address list, a secret nor Entra is set. Nothing is deployed."; return 1; }
+  if [ -r ~/.config/ka-rag-test/typesense-search-key ]; then
+    TYPESENSE_API_KEY=$(tr -d '[:space:]' < ~/.config/ka-rag-test/typesense-search-key)
+    echo "Typesense search key: from ~/.config/ka-rag-test/typesense-search-key"
+  else
+    echo "The Typesense search key:"
+    read -rs TYPESENSE_API_KEY
+  fi
+  [ -n "$TYPESENSE_API_KEY" ] || { echo "No Typesense search key. Without it the test page loses its filters and the excerpts' text. Nothing is deployed."; return 1; }
   echo "The genki key:"
   read -rs DIGDIR_API_KEY
   echo "The headless-rag key for a rollback, or Enter to leave it out:"
   read -rs KA_ROLLBACK_API_KEY
-  export KA_IMAGE_TAG DIGDIR_API_KEY KA_ROLLBACK_API_KEY KA_ALLOWED_IPS KA_ACCESS_SECRET
+  export KA_IMAGE_TAG DIGDIR_API_KEY KA_ROLLBACK_API_KEY KA_ALLOWED_IPS KA_ACCESS_SECRET TYPESENSE_API_KEY
   az deployment group create --subscription Altinn-AI-Assistant -g rg-ka-test -n ka-frontend-app --parameters deploy/test.bicepparam --query properties.outputs.fqdn.value -o tsv
   unset DIGDIR_API_KEY KA_ROLLBACK_API_KEY KA_ACCESS_SECRET TYPESENSE_API_KEY
 }
@@ -226,17 +238,18 @@ backend answers 401.
 ### Facets in the filter panel
 
 `deploy/test.bicepparam` has the Typesense address and the Kudos collections, so
-only the search key is left. Without it the panel says filtering is not
-available, and the excerpts that their text could not be fetched; see
-[Fasettene i filterpanelet](#fasettene-i-filterpanelet) and
-[Teksten i utdragene](#teksten-i-utdragene). With it: read it as below and run
-step 4 again, and `deploy_live` removes it from the shell afterwards. It must be
-a key that can only search the document and chunk collections, **not the admin
-key**.
+only the search key is left, and `deploy_live` stops without it. Without it the
+panel says filtering is not available, and the excerpts that their text could
+not be fetched; see [Fasettene i filterpanelet](#fasettene-i-filterpanelet) and
+[Teksten i utdragene](#teksten-i-utdragene). `deploy_live` reads the key from
+`~/.config/ka-rag-test/typesense-search-key` when the file is there, and asks
+for it otherwise. It must be a key that can only search the document and chunk
+collections, **not the admin key**. To keep it in the file, once:
 
 ```sh
-read -rs TYPESENSE_API_KEY
-export TYPESENSE_API_KEY
+mkdir -p ~/.config/ka-rag-test
+chmod 700 ~/.config/ka-rag-test
+(umask 077; read -rs KEY && printf '%s' "$KEY" > ~/.config/ka-rag-test/typesense-search-key)
 ```
 
 ### Ny versjon
@@ -724,7 +737,9 @@ bildet er bygget for live, så spørsmål får en feil og ikke et svar.
 
 ## Rolling back
 
-From the command line, since nothing deploys itself here.
+From the command line, since nothing deploys itself here. The commands here use
+`$SUB`, `$APP`, `$RG` and `$ACR`; in a new shell, set them first as in
+[Verdiene i et nytt skall](#verdiene-i-et-nytt-skall).
 
 ### To an older image
 
@@ -773,6 +788,10 @@ az containerapp secret set --subscription "$SUB" -n $APP -g $RG --secrets digdir
 Back to genki is the same copy from `ka-frontend-test--genki20c9965`, or step 4.
 
 ## Swapping the backend key
+
+With `$SUB`, `$APP` and `$RG` from
+[Verdiene i et nytt skall](#verdiene-i-et-nytt-skall), as in
+[Rolling back](#rolling-back).
 
 The genki key is the secret `genki-api-key`. A new key goes into the secret, and
 a new revision picks it up: `secret set` alone changes nothing that runs. Make
