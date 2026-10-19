@@ -1,0 +1,59 @@
+{
+  "run_id": "20261013-153604",
+  "date": "2026-10-13",
+  "fasit_sha256": "59aa6c6bb324fa90980b823cec1cc3588de7ad5963990c5e97e6ce26326732ea",
+  "fasit_pairs": 200,
+  "instruction": "Oversett denne teksten fra bokmål til nynorsk. Svar bare med oversettelsen, uten forklaringer.",
+  "metric": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.6.0",
+  "run": {
+    "repetitions": 3,
+    "temperature": 0.3,
+    "base_seed": 1,
+    "max_tokens": 128,
+    "request_timeout_seconds": 120.0,
+    "max_consecutive_errors": 3
+  },
+  "baseline": {
+    "kopi-av-bokmaal": {
+      "corpus_chrf": 77.31486427024593,
+      "mean_sentence_chrf": 76.69021315414857,
+      "exact_match_rate": 0.0,
+      "empty_outputs": 0
+    }
+  },
+  "models": {
+    "claude-haiku-5-5": {
+      "provider": "openai",
+      "model": "claude-haiku-5-5",
+      "note": "API-modell som referanse, kjørt uten tenking. API-et avviser temperatur og seed, så modellen kjører med leverandørens standard.",
+      "summary": {
+        "repetitions": 3,
+        "corpus_chrf_per_repetition": [
+          91.19302578818487,
+          90.84462759863958,
+          91.81448175719773
+        ],
+        "corpus_chrf_mean": 91.28404504800739,
+        "corpus_chrf_std": 0.4912918190465966,
+        "mean_sentence_chrf": 91.87189562156227,
+        "exact_match_rate_per_repetition": [
+          0.27,
+          0.23,
+          0.225
+        ],
+        "exact_match_rate_mean": 0.2416666666666667,
+        "empty_outputs": 0
+      },
+      "status": {
+        "completed_repetitions": 3,
+        "skipped_reason": null,
+        "errors": 0,
+        "input_tokens": 61257,
+        "output_tokens": 33422,
+        "cost_usd": 0.0228367,
+        "seconds": 781.9897733340003
+      }
+    }
+  },
+  "not_completed": {}
+}
