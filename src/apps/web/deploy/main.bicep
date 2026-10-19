@@ -68,7 +68,7 @@ param digdirApiKey string = ''
 @description('The Container Apps secret `DIGDIR_API_KEY` reads. A new backend gets a new name, so the revisions before it keep their own key for a rollback: test.bicepparam names `genki-api-key`, and the headless-rag revisions read `digdir-api-key`.')
 param apiKeySecretName string = 'digdir-api-key'
 
-@description('The key the headless-rag revisions read, kept as the secret `digdir-api-key` beside `apiKeySecretName`, so a rollback can copy one of them. Empty = left out, and since a run sets the app\'s secrets to the ones it is given, `digdir-api-key` is then gone. See «Rolling back» in docs/deploy.md.')
+@description('The key the headless-rag revisions read, kept as the secret `digdir-api-key` beside `apiKeySecretName`, so a rollback can copy one of them. Empty = left out, and since a full deployment keeps only the secrets it sends, `digdir-api-key` is then gone (not measured here). See «Rolling back» in docs/deploy.md.')
 @secure()
 param rollbackApiKey string = ''
 

@@ -150,9 +150,10 @@ Derfor kjøres den inne i `src/`.
 
 `read -rs` reads the keys without showing them. The first is the genki key. The
 second is the headless-rag key that the revisions before genki read, kept as
-`digdir-api-key` for [Rolling back](#rolling-back). Press Enter to leave it out,
-and the run then removes that secret: the app keeps only the secrets a run gives
-it.
+`digdir-api-key` for [Rolling back](#rolling-back). Press Enter to leave it out.
+The template then sends the app's secrets without it, and a full deployment
+keeps only the secrets it sends, so the secret is gone afterwards (how Container
+Apps treats a deployment; not measured here).
 
 If the secret file from [Delt hemmelighet](#delt-hemmelighet) exists, the app
 sits behind it and works from anywhere; then no address list is set. Otherwise
