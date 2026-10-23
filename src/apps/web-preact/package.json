@@ -13,7 +13,7 @@
     "@digdir/designsystemet-css": "^1.21.1",
     "@digdir/designsystemet-web": "^1.21.1",
     "@ka/contract": "*",
-    "dompurify": "^3.2.7",
+    "dompurify": "^3.4.17",
     "marked": "^16.4.1",
     "preact": "^10.27.2"
   },
