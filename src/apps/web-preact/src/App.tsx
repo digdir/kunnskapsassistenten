@@ -187,219 +187,225 @@ export function App() {
     : location.href;
 
   return (
-    <div class="shell">
-      <Sidebar
-        conversations={convos.list}
-        activeId={convos.activeId}
-        open={threadsOpen}
-        onToggle={() => setThreadsOpen((v) => !v)}
-        onOpen={(id) => {
-          settled.current = null;
-          reset();
-          setComposing(false);
-          setFilters({});
-          void convos.open(id).then(setFilters);
-        }}
-        onNew={() => {
-          settled.current = null;
-          reset();
-          setFilters({});
-          setComposing(true);
-          convos.startNew();
-        }}
-        onRename={convos.rename}
-        onDelete={convos.remove}
-        user={user}
-      />
+    <>
+      {/* Before the shell, as in apps/web (WCAG 2.4.1). */}
+      <a class="ds-skip-link" href="#main-content">
+        Hopp til hovedinnhold
+      </a>
+      <div class="shell">
+        <Sidebar
+          conversations={convos.list}
+          activeId={convos.activeId}
+          open={threadsOpen}
+          onToggle={() => setThreadsOpen((v) => !v)}
+          onOpen={(id) => {
+            settled.current = null;
+            reset();
+            setComposing(false);
+            setFilters({});
+            void convos.open(id).then(setFilters);
+          }}
+          onNew={() => {
+            settled.current = null;
+            reset();
+            setFilters({});
+            setComposing(true);
+            convos.startNew();
+          }}
+          onRename={convos.rename}
+          onDelete={convos.remove}
+          user={user}
+        />
 
-      <main class="main">
-        <div class="column">
-          {inThread && (
-            <Filters
-              selection={filters}
-              locked={convos.messages.length > 0}
-              onChange={setFilters}
-            />
-          )}
-
-          <div class="thread" role="log" aria-label="Samtale">
-            {!inThread && <Home />}
-            {convos.loading && <span class="ds-spinner" aria-label="Laster samtale" />}
-
-            {convos.messages.map((m) =>
-              m.role === 'assistant' ? (
-                <AnswerBlock key={m.id} text={m.text} threadUrl={threadUrl} />
-              ) : (
-                <p key={m.id} class="question">
-                  {m.text}
-                </p>
-              ),
+        <main class="main" id="main-content">
+          <div class="column">
+            {inThread && (
+              <Filters
+                selection={filters}
+                locked={convos.messages.length > 0}
+                onChange={setFilters}
+              />
             )}
 
-            {showLive && turn && (
-              <>
-                <p class="question">{turn.question}</p>
-                <div class="msg-assistant">
-                  {turn.running && !turn.answer && turn.stage && (
-                    <LoadingState
-                      stage={turn.stage}
-                      iteration={turn.iteration}
-                      maxIterations={turn.maxIterations}
-                    />
-                  )}
-                  {turn.answer && turn.running && (
-                    <div class="answer-card">
-                      <Answer text={turn.answer} />
-                    </div>
-                  )}
-                  {turn.error && (
-                    <div class="ds-alert" data-color="danger">
-                      {turn.error}
-                    </div>
-                  )}
-                  {turn.answer && !turn.running && !turn.error && (
-                    <>
-                      {turn.sources.length === 0 && (
-                        <div class="ds-alert" data-color="warning">
-                          Svaret har ingen kilder fra dokumentgrunnlaget. Kontroller det mot
-                          originaldokumentene før du bruker det.
-                        </div>
-                      )}
-                      <AnswerBlock
-                        text={turn.answer}
-                        queries={turn.queries}
-                        threadUrl={threadUrl}
-                      />
-                    </>
-                  )}
-                </div>
-              </>
-            )}
-            <div ref={bottom} />
-          </div>
+            <div class="thread" role="log" aria-label="Samtale">
+              {!inThread && <Home />}
+              {convos.loading && <span class="ds-spinner" aria-label="Laster samtale" />}
 
-          {inThread && (
-            <div class="composer">
-              {agents.length > 0 && (
-                <div class="model-row">
-                  <label class="ds-label" data-size="sm" for="agent">
-                    Agent:
-                  </label>
-                  <select
-                    id="agent"
-                    class="ds-input"
-                    data-size="sm"
-                    value={agentId}
-                    onChange={(e) => {
-                      const next = agents.find(
-                        (a) => a.id === (e.target as HTMLSelectElement).value,
-                      );
-                      if (!next) return;
-                      setAgentId(next.id);
-                      setModel(
-                        (next.modes.find((m) => m.isDefault) ?? next.modes[0])?.id ?? '',
-                      );
-                    }}
-                  >
-                    {agents.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.label}
-                      </option>
-                    ))}
-                  </select>
-                  {(agents.find((a) => a.id === agentId)?.modes.length ?? 0) > 1 &&
-                    (showMode ? (
-                      <select
-                        id="mode"
-                        class="ds-input"
-                        data-size="sm"
-                        value={model}
-                        onChange={(e) => setModel((e.target as HTMLSelectElement).value)}
-                      >
-                        {agents
-                          .find((a) => a.id === agentId)
-                          ?.modes.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.label}
-                            </option>
-                          ))}
-                      </select>
-                    ) : (
-                      <button
-                        type="button"
-                        class="ds-button mode-toggle"
-                        data-variant="tertiary"
-                        data-size="sm"
-                        onClick={() => setShowMode(true)}
-                      >
-                        Avansert
-                      </button>
-                    ))}
-                  {agents.find((a) => a.id === agentId)?.description && (
-                    <p class="ds-paragraph agent-description" data-size="sm">
-                      {agents.find((a) => a.id === agentId)?.description}
-                    </p>
-                  )}
-                </div>
+              {convos.messages.map((m) =>
+                m.role === 'assistant' ? (
+                  <AnswerBlock key={m.id} text={m.text} threadUrl={threadUrl} />
+                ) : (
+                  <p key={m.id} class="question">
+                    {m.text}
+                  </p>
+                ),
               )}
 
-              <div class="ds-field composer-field">
-                <label class="ds-label sr-only" for="prompt">
-                  Hva kan jeg hjelpe deg med?
-                </label>
-                <textarea
-                  id="prompt"
-                  class="ds-input"
-                  rows={3}
-                  placeholder="Hva kan jeg hjelpe deg med?"
-                  value={input}
-                  disabled={turn?.running}
-                  onInput={(e) => setInput((e.target as HTMLTextAreaElement).value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      submit();
-                    }
-                  }}
-                />
-                {turn?.running ? (
-                  <button type="button" class="send-button" aria-label="Stopp" onClick={stop}>
-                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                      <rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" />
-                    </svg>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    class="send-button"
-                    aria-label="Send"
-                    disabled={!input.trim()}
-                    onClick={submit}
-                  >
-                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                      <path d="M3 20.5 21 12 3 3.5l4 8.5-4 8.5Z" fill="currentColor" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-
-              <p class="ds-paragraph disclaimer" data-size="sm">
-                Kunnskapsassistenten kan gjøre feil. Husk å sjekke viktig informasjon.
-              </p>
+              {showLive && turn && (
+                <>
+                  <p class="question">{turn.question}</p>
+                  <div class="msg-assistant">
+                    {turn.running && !turn.answer && turn.stage && (
+                      <LoadingState
+                        stage={turn.stage}
+                        iteration={turn.iteration}
+                        maxIterations={turn.maxIterations}
+                      />
+                    )}
+                    {turn.answer && turn.running && (
+                      <div class="answer-card">
+                        <Answer text={turn.answer} />
+                      </div>
+                    )}
+                    {turn.error && (
+                      <div class="ds-alert" data-color="danger">
+                        {turn.error}
+                      </div>
+                    )}
+                    {turn.answer && !turn.running && !turn.error && (
+                      <>
+                        {turn.sources.length === 0 && (
+                          <div class="ds-alert" data-color="warning">
+                            Svaret har ingen kilder fra dokumentgrunnlaget. Kontroller det mot
+                            originaldokumentene før du bruker det.
+                          </div>
+                        )}
+                        <AnswerBlock
+                          text={turn.answer}
+                          queries={turn.queries}
+                          threadUrl={threadUrl}
+                        />
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+              <div ref={bottom} />
             </div>
-          )}
-        </div>
-      </main>
 
-      <SourcesPanel
-        sources={
-          turn?.sources?.length
-            ? turn.sources
-            : ((convos.activeId ? convos.sourcesByThread[convos.activeId] : undefined) ?? [])
-        }
-        open={sourcesOpen}
-        onToggle={() => setSourcesOpen((v) => !v)}
-      />
-    </div>
+            {inThread && (
+              <div class="composer">
+                {agents.length > 0 && (
+                  <div class="model-row">
+                    <label class="ds-label" data-size="sm" for="agent">
+                      Agent:
+                    </label>
+                    <select
+                      id="agent"
+                      class="ds-input"
+                      data-size="sm"
+                      value={agentId}
+                      onChange={(e) => {
+                        const next = agents.find(
+                          (a) => a.id === (e.target as HTMLSelectElement).value,
+                        );
+                        if (!next) return;
+                        setAgentId(next.id);
+                        setModel(
+                          (next.modes.find((m) => m.isDefault) ?? next.modes[0])?.id ?? '',
+                        );
+                      }}
+                    >
+                      {agents.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.label}
+                        </option>
+                      ))}
+                    </select>
+                    {(agents.find((a) => a.id === agentId)?.modes.length ?? 0) > 1 &&
+                      (showMode ? (
+                        <select
+                          id="mode"
+                          class="ds-input"
+                          data-size="sm"
+                          value={model}
+                          onChange={(e) => setModel((e.target as HTMLSelectElement).value)}
+                        >
+                          {agents
+                            .find((a) => a.id === agentId)
+                            ?.modes.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.label}
+                              </option>
+                            ))}
+                        </select>
+                      ) : (
+                        <button
+                          type="button"
+                          class="ds-button mode-toggle"
+                          data-variant="tertiary"
+                          data-size="sm"
+                          onClick={() => setShowMode(true)}
+                        >
+                          Avansert
+                        </button>
+                      ))}
+                    {agents.find((a) => a.id === agentId)?.description && (
+                      <p class="ds-paragraph agent-description" data-size="sm">
+                        {agents.find((a) => a.id === agentId)?.description}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div class="ds-field composer-field">
+                  <label class="ds-label sr-only" for="prompt">
+                    Hva kan jeg hjelpe deg med?
+                  </label>
+                  <textarea
+                    id="prompt"
+                    class="ds-input"
+                    rows={3}
+                    placeholder="Hva kan jeg hjelpe deg med?"
+                    value={input}
+                    disabled={turn?.running}
+                    onInput={(e) => setInput((e.target as HTMLTextAreaElement).value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        submit();
+                      }
+                    }}
+                  />
+                  {turn?.running ? (
+                    <button type="button" class="send-button" aria-label="Stopp" onClick={stop}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                        <rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      class="send-button"
+                      aria-label="Send"
+                      disabled={!input.trim()}
+                      onClick={submit}
+                    >
+                      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path d="M3 20.5 21 12 3 3.5l4 8.5-4 8.5Z" fill="currentColor" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                <p class="ds-paragraph disclaimer" data-size="sm">
+                  Kunnskapsassistenten kan gjøre feil. Husk å sjekke viktig informasjon.
+                </p>
+              </div>
+            )}
+          </div>
+        </main>
+
+        <SourcesPanel
+          sources={
+            turn?.sources?.length
+              ? turn.sources
+              : ((convos.activeId ? convos.sourcesByThread[convos.activeId] : undefined) ?? [])
+          }
+          open={sourcesOpen}
+          onToggle={() => setSourcesOpen((v) => !v)}
+        />
+      </div>
+    </>
   );
 }
