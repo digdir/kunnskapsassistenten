@@ -5,10 +5,11 @@ One container: the Hono server holds the API key, talks to
 origin is not cosmetic, it is what keeps the session cookie first-party.
 
 **Deployed and in use:** `https://qa.kunnskap.digdir.cloud`
-Resource group `rg-ka-app`, Norway East, subscription `Altinn-AI-Assistant`,
-images in `altinnaicontainers`. Every `az` command below names the
+Resource group `rg-ka-prod-weu`, West Europe, subscription `Altinn-AI-Assistant`,
+images in `sharedregistryswc`. Every `az` command below names the
 subscription, because the one a machine has as its default may be another. The
-DNS records for the domain live with `digdir.cloud` at Porkbun; the certificate
+DNS records for the domain live in the Azure DNS zone `kunnskap.digdir.cloud` in
+`rg-ka-prod-weu`, delegated from `digdir.cloud` at Porkbun; the certificate
 is managed by Container Apps.
 
 ## What is already set up
@@ -64,10 +65,10 @@ prints nothing when there is nothing uncommitted.
 git status --short
 SHA=$(git rev-parse --short HEAD)
 
-az acr build --subscription Altinn-AI-Assistant --registry altinnaicontainers --image ka-app:$SHA \
+az acr build --subscription Altinn-AI-Assistant --registry sharedregistryswc --image ka-app:$SHA \
   --file src/Dockerfile src
-az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app \
-  --image altinnaicontainers.azurecr.io/ka-app:$SHA \
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-prod-weu \
+  --image sharedregistryswc.azurecr.io/ka-app:$SHA \
   --revision-suffix sha$SHA
 ```
 
@@ -82,10 +83,10 @@ the template's defaults under the dataset key `kudos`:
 git status --short
 SHA=$(git rev-parse --short HEAD)
 
-az acr build --subscription Altinn-AI-Assistant --registry altinnaicontainers --image ka-app:$SHA \
+az acr build --subscription Altinn-AI-Assistant --registry sharedregistryswc --image ka-app:$SHA \
   --file src/Dockerfile src
-az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app \
-  --image altinnaicontainers.azurecr.io/ka-app:$SHA \
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-prod-weu \
+  --image sharedregistryswc.azurecr.io/ka-app:$SHA \
   --set-env-vars 'KA_FILTER_FIELDS=kudos=documentType:type|organisation:orgs_long|year:concerned_years:integer' 'KA_DATASETS=kudos=Kudos' \
   --revision-suffix sha$SHA
 ```
@@ -102,8 +103,8 @@ value without showing it or keeping it in the shell history:
 
 ```sh
 read -rs KEY
-az containerapp secret set --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app --secrets digdir-api-key="$KEY"
-az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app --revision-suffix key$(date +%H%M%S)
+az containerapp secret set --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-prod-weu --secrets digdir-api-key="$KEY"
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-prod-weu --revision-suffix key$(date +%H%M%S)
 ```
 
 `secret set` alone changes nothing that is running: the value is only picked up
@@ -115,10 +116,10 @@ take the site down. Roll back by deploying an older tag. The first command
 lists the five newest; type the one to go back to:
 
 ```sh
-az acr repository show-tags --subscription Altinn-AI-Assistant --name altinnaicontainers --repository ka-app --orderby time_desc --top 5 -o tsv
+az acr repository show-tags --subscription Altinn-AI-Assistant --name sharedregistryswc --repository ka-app --orderby time_desc --top 5 -o tsv
 read -r OLDER
-az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app \
-  --image altinnaicontainers.azurecr.io/ka-app:$OLDER \
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-prod-weu \
+  --image sharedregistryswc.azurecr.io/ka-app:$OLDER \
   --revision-suffix rollback$(date +%H%M%S)
 ```
 
@@ -127,9 +128,9 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-app
 Only needed if the resource group is gone.
 
 ```sh
-az group create --subscription Altinn-AI-Assistant -n rg-ka-app -l norwayeast
-az acr build --subscription Altinn-AI-Assistant --registry altinnaicontainers --image ka-app:$(git rev-parse --short HEAD) --file src/Dockerfile src
-az deployment group create --subscription Altinn-AI-Assistant -g rg-ka-app --template-file src/deploy/main.bicep --parameters ...
+az group create --subscription Altinn-AI-Assistant -n rg-ka-prod-weu -l westeurope
+az acr build --subscription Altinn-AI-Assistant --registry sharedregistryswc --image ka-app:$(git rev-parse --short HEAD) --file src/Dockerfile src
+az deployment group create --subscription Altinn-AI-Assistant -g rg-ka-prod-weu --template-file src/deploy/main.bicep --parameters ...
 ```
 
 The first `az deployment group create` **fails** on the image pull. That is
@@ -138,9 +139,9 @@ and it has no rights to the registry until granted. Grant, then deploy again:
 
 ```sh
 az role assignment create --subscription Altinn-AI-Assistant --role AcrPull \
-  --assignee-object-id "$(az identity show --subscription Altinn-AI-Assistant -n ka-app-id -g rg-ka-app --query principalId -o tsv)" \
+  --assignee-object-id "$(az identity show --subscription Altinn-AI-Assistant -n ka-app-id -g rg-ka-prod-weu --query principalId -o tsv)" \
   --assignee-principal-type ServicePrincipal \
-  --scope "$(az acr show --subscription Altinn-AI-Assistant -n altinnaicontainers --query id -o tsv)"
+  --scope "$(az acr show --subscription Altinn-AI-Assistant -n sharedregistryswc --query id -o tsv)"
 ```
 
 Parameters the template needs are declared with `@description` in
