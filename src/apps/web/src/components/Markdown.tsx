@@ -94,8 +94,12 @@ function withCitations(
 
       if (match.index > consumed) parts.push(child.slice(consumed, match.index));
       parts.push(
-        <sup className="markdown__citation" key={`${childIndex}-${match.index}`}>
+        <sup
+          className="markdown__citation markdown__citation--linked"
+          key={`${childIndex}-${match.index}`}
+        >
           <Link
+            className="markdown__citation-mark"
             href={`#${target.targetId}`}
             aria-label={target.label}
             title={target.label}
@@ -106,7 +110,12 @@ function withCitations(
               onActivate?.(number);
             }}
           >
-            {match[0]}
+            {/* The number in a circle, as the design canvas has it (D1). The brackets stay in
+                the text, out of sight, so a copied answer reads «[1][2]» and not «12». The link is named by
+                `aria-label`, so they are never read out. */}
+            <span className="ds-sr-only">[</span>
+            {number}
+            <span className="ds-sr-only">]</span>
           </Link>
         </sup>,
       );

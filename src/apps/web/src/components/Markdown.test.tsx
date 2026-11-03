@@ -163,6 +163,22 @@ describe('Markdown citations', () => {
     expect(seen).toEqual([2]);
   });
 
+  // The design canvas (D1) draws a footnote as a number in a small circle. The brackets stay in
+  // the text, out of sight, for whoever copies the answer; the link's name is its `aria-label`.
+  it('shows the number alone, with the brackets kept out of sight', () => {
+    render(<Markdown citations={targets}>{'Ett [1][2] og slutt.'}</Markdown>);
+
+    const [first, second] = screen.getAllByRole('link');
+    expect(first.classList.contains('markdown__citation-mark')).toBe(true);
+    const visible = (link: HTMLElement) =>
+      [...link.childNodes]
+        .filter((node) => !(node instanceof HTMLElement && node.classList.contains('ds-sr-only')))
+        .map((node) => node.textContent)
+        .join('');
+    expect([visible(first), visible(second)]).toEqual(['1', '2']);
+    expect(first.querySelectorAll('.ds-sr-only')).toHaveLength(2);
+  });
+
   it('renders markers inside list items and table cells too', () => {
     render(<Markdown citations={targets}>{'- punkt [1]'}</Markdown>);
     expect(screen.getByRole('listitem').textContent).toBe('punkt [1]');
@@ -170,10 +186,10 @@ describe('Markdown citations', () => {
   });
 });
 
-describe('markør uten kilde', () => {
-  it('blir tekst med en forklaring, ikke en lenke', () => {
-    // Et avbrutt svar har skrevet [3], men kildene kom aldri. En lenke til
-    // ingenting er verre enn ingen lenke.
+describe('a marker with no source', () => {
+  it('becomes text with an explanation, not a link', () => {
+    // A stopped answer has written [3], but the sources never came. A link to
+    // nothing is worse than no link.
     const { container } = render(
       <Markdown citations={[]} sourcesLost>
         {'Et svar med [3] i seg.'}
@@ -185,11 +201,11 @@ describe('markør uten kilde', () => {
     const marker = container.querySelector('sup[title]');
     expect(marker?.getAttribute('title')).toBe('Kilden kom ikke fram');
     expect(marker?.textContent).toContain('[3]');
-    // `title` alene er bare for mus. Dette er for den som lytter.
+    // `title` alone is for the mouse only. This is for whoever listens.
     expect(marker?.textContent?.toLowerCase()).toContain('kilden kom ikke fram');
   });
 
-  it('lar teksten rundt stå urørt', () => {
+  it('leaves the text around it untouched', () => {
     const { container } = render(
       <Markdown citations={[]} sourcesLost>
         {'Før [3] etter.'}
@@ -200,7 +216,7 @@ describe('markør uten kilde', () => {
   });
 });
 
-describe('Markdown og søk i teksten', () => {
+describe('Markdown and search in the text', () => {
   const marks = (container: HTMLElement) => [...container.querySelectorAll('mark')];
 
   it('marks every match, in every kind of block', () => {
