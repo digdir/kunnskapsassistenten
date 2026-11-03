@@ -204,6 +204,9 @@
 
 .source-excerpt__title > :first-child {
   margin-block: 0;
+  /* «Utdrag 12» on one line; the back-link is what gives way. */
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* The head lets clicks through to the summary under it; the back-link is the one control on it. */
