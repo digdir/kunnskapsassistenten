@@ -575,6 +575,13 @@ body {
   vertical-align: baseline;
 }
 
+/* The word before a run of footnotes and the footnotes, on one line: a circle
+   alone at the start of a line reads as belonging to nothing (390 px,
+   measured 2026-11-03). */
+.markdown__citation-run {
+  white-space: nowrap;
+}
+
 .markdown__citation-mark {
   position: relative;
   display: inline-flex;

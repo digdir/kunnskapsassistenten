@@ -52,13 +52,25 @@ const CITATION_MARKER = /\[(\d+)\]/g;
 /** What a `[n]` says when the excerpt behind it never arrived. */
 export const MISSING_SOURCE = 'Kilden kom ikke fram';
 
-// Replaces `[n]` with a superscript link to the excerpt, named by document and page: a bare
-// «[3]» tells a screen reader user nothing.
+/** A piece of one text child: prose, a marker with no source, or a linked marker. */
+type CitationPiece =
+  | { kind: 'text'; text: string }
+  | { kind: 'lost'; node: ReactNode }
+  | { kind: 'mark'; key: string; number: number; target: CitationTarget; space: string };
+
+// Replaces `[n]` with a link to the excerpt, named by document and page: a bare «[3]» tells a
+// screen reader user nothing. It is drawn as the number in a small circle (the design canvas, D1),
+// 3 px from the word before it, and kept on that word's line: a circle alone at the start of a
+// line reads as belonging to nothing. The model's space before `[n]` and the brackets stay in the
+// text, out of sight, so a copied answer still reads «ord [1][2]».
 function withCitations(
   children: ReactNode,
   targets: Map<number, CitationTarget>,
   onActivate?: (citationNumber: number) => void,
   sourcesLost?: boolean,
+  // What the rest of the text gets (the search's marks), for the word moved into a run, which the
+  // caller no longer sees as text of its own.
+  decorateWord: (word: string) => ReactNode = (word) => word,
 ): ReactNode {
   // No early return when `targets` is empty: a stopped answer has markers and
   // no sources, which is exactly the case the unlinked marker below is for.
@@ -66,64 +78,106 @@ function withCitations(
   return Children.map(children, (child, childIndex) => {
     if (typeof child !== 'string') return child;
 
-    const parts: ReactNode[] = [];
+    const pieces: CitationPiece[] = [];
     let consumed = 0;
 
     for (const match of child.matchAll(CITATION_MARKER)) {
       const number = Number(match[1]);
       const target = targets.get(number);
+      const key = `${childIndex}-${match.index}`;
 
       // No excerpt behind the marker (answer stopped before the sources arrived): plain text that
       // says why, with sr-only text because `title` alone is mouse-only.
       if (!target) {
         if (!sourcesLost) continue;
-        if (match.index > consumed) parts.push(child.slice(consumed, match.index));
-        parts.push(
-          <sup
-            className="markdown__citation"
-            title={MISSING_SOURCE}
-            key={`${childIndex}-${match.index}`}
-          >
-            {match[0]}
-            <span className="ds-sr-only"> ({MISSING_SOURCE.toLocaleLowerCase('nb-NO')})</span>
-          </sup>,
-        );
+        if (match.index > consumed)
+          pieces.push({ kind: 'text', text: child.slice(consumed, match.index) });
+        pieces.push({
+          kind: 'lost',
+          node: (
+            <sup className="markdown__citation" title={MISSING_SOURCE} key={key}>
+              {match[0]}
+              <span className="ds-sr-only"> ({MISSING_SOURCE.toLocaleLowerCase('nb-NO')})</span>
+            </sup>
+          ),
+        });
         consumed = match.index + match[0].length;
         continue;
       }
 
-      if (match.index > consumed) parts.push(child.slice(consumed, match.index));
-      parts.push(
-        <sup
-          className="markdown__citation markdown__citation--linked"
-          key={`${childIndex}-${match.index}`}
-        >
-          <Link
-            className="markdown__citation-mark"
-            href={`#${target.targetId}`}
-            aria-label={target.label}
-            title={target.label}
-            // `preventDefault`: following the href would navigate to `/threads/:id#excerpt-n`
-            // and remount the chat slot. The href stays for screen readers, new tabs and copying.
-            onClick={(event) => {
-              event.preventDefault();
-              onActivate?.(number);
-            }}
-          >
-            {/* The number in a circle, as the design canvas has it (D1). The brackets stay in
-                the text, out of sight, so a copied answer reads «[1][2]» and not «12». The link is named by
-                `aria-label`, so they are never read out. */}
-            <span className="ds-sr-only">[</span>
-            {number}
-            <span className="ds-sr-only">]</span>
-          </Link>
-        </sup>,
-      );
+      // The whitespace just before the marker goes with it, out of sight: the circle keeps its
+      // own 3 px from the word instead of a space and 3 px.
+      const before = child.slice(consumed, match.index);
+      const text = before.trimEnd();
+      if (text) pieces.push({ kind: 'text', text });
+      pieces.push({ kind: 'mark', key, number, target, space: before.slice(text.length) });
       consumed = match.index + match[0].length;
     }
 
-    if (parts.length === 0) return child;
-    if (consumed < child.length) parts.push(child.slice(consumed));
+    if (pieces.length === 0) return child;
+    if (consumed < child.length) pieces.push({ kind: 'text', text: child.slice(consumed) });
+
+    const mark = (piece: Extract<CitationPiece, { kind: 'mark' }>) => [
+      piece.space ? (
+        <span className="ds-sr-only" key={`${piece.key}-space`}>
+          {piece.space}
+        </span>
+      ) : null,
+      <sup className="markdown__citation markdown__citation--linked" key={piece.key}>
+        <Link
+          className="markdown__citation-mark"
+          href={`#${piece.target.targetId}`}
+          aria-label={piece.target.label}
+          title={piece.target.label}
+          // `preventDefault`: following the href would navigate to `/threads/:id#excerpt-n`
+          // and remount the chat slot. The href stays for screen readers, new tabs and copying.
+          onClick={(event) => {
+            event.preventDefault();
+            onActivate?.(piece.number);
+          }}
+        >
+          {/* The link is named by `aria-label`, so the brackets are never read out. */}
+          <span className="ds-sr-only">[</span>
+          {piece.number}
+          <span className="ds-sr-only">]</span>
+        </Link>
+      </sup>,
+    ];
+
+    // Each run of markers is held on one line with the word before it.
+    const parts: ReactNode[] = [];
+    let index = 0;
+    const run = (word: string) => {
+      const held: ReactNode[] = word ? [decorateWord(word)] : [];
+      for (let piece = pieces[index]; piece?.kind === 'mark'; piece = pieces[index]) {
+        held.push(...mark(piece));
+        index += 1;
+      }
+      return (
+        <span className="markdown__citation-run" key={`${childIndex}-run-${index}`}>
+          {held}
+        </span>
+      );
+    };
+
+    while (index < pieces.length) {
+      const piece = pieces[index];
+      if (piece.kind === 'mark') {
+        parts.push(run(''));
+        continue;
+      }
+      index += 1;
+      if (piece.kind === 'lost') {
+        parts.push(piece.node);
+      } else if (pieces[index]?.kind !== 'mark') {
+        parts.push(piece.text);
+      } else {
+        const word = piece.text.match(/\S+$/u)?.[0] ?? '';
+        const head = piece.text.slice(0, piece.text.length - word.length);
+        if (head) parts.push(head);
+        parts.push(run(word));
+      }
+    }
     return parts;
   });
 }
@@ -238,12 +292,9 @@ export function Markdown({
   );
 
   const components = useMemo<Components>(() => {
+    const highlight = (content: ReactNode) => withHighlights(content, searchQuery, markClassName);
     const decorate = (content: ReactNode) =>
-      withHighlights(
-        withCitations(content, targets, onCitationActivate, sourcesLost),
-        searchQuery,
-        markClassName,
-      );
+      highlight(withCitations(content, targets, onCitationActivate, sourcesLost, highlight));
 
     return {
       ...headingComponents(startLevel, (content) =>

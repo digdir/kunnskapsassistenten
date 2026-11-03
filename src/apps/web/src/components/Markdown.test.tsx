@@ -179,6 +179,32 @@ describe('Markdown citations', () => {
     expect(first.querySelectorAll('.ds-sr-only')).toHaveLength(2);
   });
 
+  // At 390 px a circle wrapped alone to the start of a line, away from the word it belongs to.
+  // The model's space before `[n]` is kept out of sight, so the circle is 3 px from the word.
+  it('holds a run of footnotes on one line with the word before it', () => {
+    const { container } = render(
+      <Markdown citations={targets}>{'Avvik rapporteres kvartalsvis [1][2] i året.'}</Markdown>,
+    );
+
+    const runs = container.querySelectorAll('.markdown__citation-run');
+    expect(runs).toHaveLength(1);
+    expect(runs[0].firstChild?.textContent).toBe('kvartalsvis');
+    expect(runs[0].querySelectorAll('a')).toHaveLength(2);
+    // The space before the first marker is in the run, hidden, and nothing is lost from the text.
+    expect(runs[0].children[0].classList.contains('ds-sr-only')).toBe(true);
+    expect(runs[0].children[0].textContent).toBe(' ');
+    expect(container.textContent).toBe('Avvik rapporteres kvartalsvis [1][2] i året.');
+  });
+
+  it('starts a run at the marker when no word comes right before it', () => {
+    const { container } = render(<Markdown citations={targets}>{'**Fet** [1] og [2].'}</Markdown>);
+
+    const runs = [...container.querySelectorAll('.markdown__citation-run')];
+    expect(runs.map((run) => run.querySelectorAll('a').length)).toEqual([1, 1]);
+    expect(runs[1].firstChild?.textContent).toBe('og');
+    expect(container.textContent).toBe('Fet [1] og [2].');
+  });
+
   it('renders markers inside list items and table cells too', () => {
     render(<Markdown citations={targets}>{'- punkt [1]'}</Markdown>);
     expect(screen.getByRole('listitem').textContent).toBe('punkt [1]');
@@ -253,6 +279,22 @@ describe('Markdown and search in the text', () => {
 
     expect(marks(container)).toHaveLength(1);
     expect(screen.getByRole('link', { name: 'Årsrapport, side 4' })).toBeTruthy();
+  });
+
+  // The word before a footnote is held on the footnote's line, in a span of its own; the search
+  // must still find it there.
+  it('marks the word held on a footnote’s line', () => {
+    const { container } = render(
+      <Markdown
+        citations={[{ number: 1, targetId: 'excerpt-1', label: 'Årsrapport, side 4' }]}
+        searchQuery="dette"
+      >
+        {'Nkom måler dette [1] hvert år.'}
+      </Markdown>,
+    );
+
+    expect(marks(container).map((mark) => mark.textContent)).toEqual(['dette']);
+    expect(marks(container)[0].closest('.markdown__citation-run')).not.toBeNull();
   });
 
   it('does not mark markdown syntax the reader never sees', () => {
