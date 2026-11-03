@@ -13,7 +13,7 @@
     "@digdir/designsystemet-css": "^1.21.1",
     "@digdir/designsystemet-web": "^1.21.1",
     "@ka/contract": "*",
-    "dompurify": "^3.2.7",
+    "dompurify": "^3.4.17",
     "marked": "^16.4.1",
     "preact": "^10.27.2"
   },
@@ -22,7 +22,7 @@
     "@testing-library/preact": "^3.2.4",
     "jsdom": "^30.0.1",
     "typescript": "^5.9.3",
-    "vite": "^7.1.9",
+    "vite": "^7.3.6",
     "vitest": "^5.0.1"
   }
 }
