@@ -19,6 +19,28 @@ export interface RetrievalDetails {
  */
 export type ThinkingStepKind = 'reasoning' | 'search' | 'read' | 'finalizing';
 
+/**
+ * What one tool call found, read out of the backend's own report of it
+ * (`result-summary`). Each field is there only when the report said it, so
+ * «Fremgangsmåte» never draws a number the backend did not send.
+ */
+export interface StepFindings {
+  /** The question as the agent restated it before it searched (`plan_queries`). */
+  restatedQuestion?: string;
+  /** Hits this search had not seen before in the turn. Summed, they are all the turn found. */
+  newHits?: number;
+  /** The values the backend narrowed this search to on its own, not the reader («Auto-filtered by»). */
+  autoFilter?: string[];
+  /** Excerpts this call read. */
+  excerptsRead?: number;
+  /** The documents this call read, by title, as far as the report names them. */
+  documentsRead?: string[];
+  /** The report names fewer excerpts than were read: it is cut off, so other documents may be missing. */
+  documentsPartial?: boolean;
+  /** The read was refused because the turn's read budget was spent. */
+  readRefused?: boolean;
+}
+
 export interface ThinkingStep {
   id: string;
   kind: ThinkingStepKind;
@@ -29,4 +51,8 @@ export interface ThinkingStep {
   /** Search strings the agent actually ran, for `search` steps. */
   queries?: string[];
   durationMs?: number;
+  /** The backend's name for the tool, for steps that are tool calls (`search`, `read_chunks`). */
+  tool?: string;
+  /** What the call found. Absent on steps stored before the field existed. */
+  findings?: StepFindings;
 }
