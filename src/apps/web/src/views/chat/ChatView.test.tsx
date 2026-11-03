@@ -1303,7 +1303,7 @@ describe('ChatView', () => {
     );
 
     ask('Hva sier rapporten?');
-    const marker = await screen.findByRole('link', { name: /^Kilde 1:/u });
+    const marker = await screen.findByRole('link', { name: /^Utdrag 1:/u });
     fireEvent.click(marker);
 
     expect(activated).toHaveLength(1);
