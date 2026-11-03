@@ -76,7 +76,27 @@ export type AnswerSources = {
   sourcesNotStored?: boolean;
   /** The corpus the ANSWER came from, not the one selected now. See `Message.corpusKey`. */
   corpusKey?: string;
+  /**
+   * How many places in the answer cite each excerpt, by its number: the back-link from an
+   * excerpt steps through them. Absent: not counted.
+   */
+  uses?: Record<number, number>;
 };
+
+/** How many times the answer writes each `[n]`, by number. */
+export function citationUses(content: string): Record<number, number> {
+  const uses: Record<number, number> = {};
+  for (const match of content.matchAll(/\[(\d{1,3})\]/g)) {
+    const number = Number(match[1]);
+    uses[number] = (uses[number] ?? 0) + 1;
+  }
+  return uses;
+}
+
+/** The DOM id of one answer in the conversation, where its `[n]` markers are. */
+export function answerDomId(messageId: string): string {
+  return `svar-${messageId}`;
+}
 
 /**
  * The DOM id of an excerpt in the sources panel. The answer's `[n]` marker

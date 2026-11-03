@@ -12,4 +12,9 @@ export {
 } from '@navikt/aksel-icons';
 
 // No side in these names, but they go through here so changing a glyph is a one-line change.
-export { FunnelIcon as FilterIcon, PencilWritingIcon as NewThreadIcon } from '@navikt/aksel-icons';
+export {
+  // From an excerpt back to where the answer uses it, the corner-up-left arrow the design draws.
+  ArrowUndoIcon as ShowUseIcon,
+  FunnelIcon as FilterIcon,
+  PencilWritingIcon as NewThreadIcon,
+} from '@navikt/aksel-icons';

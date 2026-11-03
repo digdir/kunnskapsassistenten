@@ -195,6 +195,26 @@
   margin-block: 0;
 }
 
+/* «Utdrag N» and the back-link to its uses, side by side. */
+.source-excerpt__title {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-size-1);
+}
+
+.source-excerpt__title > :first-child {
+  margin-block: 0;
+}
+
+/* The head lets clicks through to the summary under it; the back-link is the one control on it. */
+.source-excerpt__uses {
+  pointer-events: auto;
+}
+
+.source-excerpt__use-count {
+  font-variant-numeric: tabular-nums;
+}
+
 .source-excerpt__details {
   grid-area: 1 / 1;
   min-inline-size: 0;

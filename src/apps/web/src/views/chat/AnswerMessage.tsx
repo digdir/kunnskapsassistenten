@@ -2,7 +2,7 @@ import { Button, Card, Paragraph, Skeleton, Spinner } from '@digdir/designsystem
 import { ArrowsCirclepathIcon, InformationSquareIcon } from '@navikt/aksel-icons';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Markdown } from '../../components';
-import { citationTargets, type Message } from '../../model';
+import { answerDomId, citationTargets, type Message } from '../../model';
 import { AnswerActions } from './AnswerActions';
 import { AnswerTime } from './AnswerTime';
 import { ProcedurePanel } from './ProcedurePanel';
@@ -112,7 +112,8 @@ export function AnswerMessage({
   );
 
   return (
-    <li className="ka-message ka-message--assistant">
+    // The id is where the sources panel finds this answer's markers, for the back-link.
+    <li className="ka-message ka-message--assistant" id={answerDomId(message.id)}>
       <span className="ds-sr-only">Kunnskapsassistenten svarte:</span>
 
       {/* Which documents the question was asked against. Over the card, as a

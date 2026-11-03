@@ -16,7 +16,14 @@ export type {
   RelevanceLevel,
   SourceDocument,
 } from './source';
-export { citationAccessibleName, citationTargets, excerptDomId, relevanceLabels } from './source';
+export {
+  answerDomId,
+  citationAccessibleName,
+  citationTargets,
+  citationUses,
+  excerptDomId,
+  relevanceLabels,
+} from './source';
 export { chatErrorCode } from './stream';
 export type { ChatError, ChatErrorCode, StreamEvent } from './stream';
 export { threadFromQuestion } from './thread';

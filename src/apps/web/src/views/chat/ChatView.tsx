@@ -9,7 +9,7 @@ import { useCorpus } from '../../layout/useCorpus';
 import { useFilterSelection } from '../../layout/useFilterSelection';
 import { useMainScroll } from '../../layout/useMainScroll';
 import { useThread } from '../../layout/useThread';
-import { emptyFilterSelection, type ThreadDetail } from '../../model';
+import { citationUses, emptyFilterSelection, type ThreadDetail } from '../../model';
 import { Composer } from './Composer';
 import { MessageList } from './MessageList';
 import { ScrollToBottom } from './ScrollToBottom';
@@ -250,6 +250,8 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
         // on. It arrives with the frame ending the stream, so it is part of
         // the signature or the panel never hears about it.
         ...(message.corpusKey === undefined ? {} : { corpusKey: message.corpusKey }),
+        // Where the answer cites each excerpt, for the back-link from the panel.
+        uses: citationUses(message.content),
       });
     }
   }, [messages, reported, setAnswerSources, clearAnswerSources, setDocuments]);

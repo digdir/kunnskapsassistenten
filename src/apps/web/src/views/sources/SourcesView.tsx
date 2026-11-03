@@ -3,7 +3,13 @@ import { corpusDisplayNameFor, corpusOption } from '../../api';
 import { EmptyState, findHits, PanelHeader, stepHit, type SearchHit } from '../../components';
 import { useActiveCorpus } from '../../layout/useActiveCorpus';
 import { ViewHead } from '../../layout/ViewHead';
-import { excerptDomId, type AnswerSources, type Excerpt, type SourceDocument } from '../../model';
+import {
+  answerDomId,
+  excerptDomId,
+  type AnswerSources,
+  type Excerpt,
+  type SourceDocument,
+} from '../../model';
 import { AnswerSwitcher } from './AnswerSwitcher';
 import { ExcerptSearch } from './ExcerptSearch';
 import { CorpusDisclaimer } from './CorpusDisclaimer';
@@ -329,8 +335,44 @@ export function SourcesView({
     const marker = place === null ? null : markerAt(place);
     if (marker === null) return;
 
-    scrollElementIntoView(marker);
-    marker.focus({ preventScroll: true });
+    goToMarker(marker);
+  }
+
+  // The view's own box, to tell whether it sits in the narrow layout's modal drawer.
+  const viewRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Focus a marker in the answer. In the modal drawer the rest of the page is inert, so focus
+   * could not move there: the drawer closes first, and focus moves once it has.
+   */
+  function goToMarker(marker: HTMLElement) {
+    const go = () => {
+      scrollElementIntoView(marker);
+      marker.focus({ preventScroll: true });
+    };
+    if (viewRef.current?.closest('dialog[open]')) {
+      onCollapsedChange?.(true);
+      afterRender(() => afterRender(go));
+    } else {
+      go();
+    }
+  }
+
+  /**
+   * The back-link: use `use` of excerpt `citationNumber`, in the answer on screen. The answer is
+   * the chat's, so the panel only moves focus to its marker.
+   */
+  function showUse(citationNumber: number, use: number) {
+    const messageId = activeAnswer?.messageId;
+    const scope =
+      (messageId === undefined || messageId === LEGACY_ANSWER_ID
+        ? null
+        : document.getElementById(answerDomId(messageId))) ?? document.querySelector('main');
+    const markers = scope
+      ? [...scope.querySelectorAll<HTMLElement>(`a[href="#${excerptDomId(citationNumber)}"]`)]
+      : [];
+    const marker = markers[use - 1];
+    if (marker !== undefined) goToMarker(marker);
   }
 
   function setExcerptOpen(excerptId: string, open: boolean) {
@@ -407,7 +449,7 @@ export function SourcesView({
   const askedDocumentHere = citationIsOnScreen ? activeDocumentId : undefined;
 
   return (
-    <div className="sources-view">
+    <div className="sources-view" ref={viewRef}>
       {/* Mounted from the first render: a live region has to exist before its
           content changes. The visible counter is `aria-hidden`. */}
       <output className="ds-sr-only">{answerLabel}</output>
@@ -468,6 +510,8 @@ export function SourcesView({
                 currentHit={currentHit}
                 activeCitationNumber={activeNumberHere}
                 onReturnToAnswer={returnToAnswer}
+                uses={activeAnswer?.uses}
+                onShowUse={showUse}
                 // The card a title in «Kilder brukt i svaret» sent the reader
                 // to: Escape on it goes back, and nothing on it is marked.
                 asked={askedDocumentHere === source.id}
