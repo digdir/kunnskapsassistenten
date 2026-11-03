@@ -86,8 +86,8 @@ test.describe('hovedkolonnen', () => {
       expect(await markers.count()).toBeGreaterThan(0);
       await expect(markers.first()).toHaveAttribute('aria-label', /^Utdrag \d+: /);
 
-      // «Fremgangsmåte» arrives with the answer, open, with the steps and the
-      // words the search ran on. The hit count is on the detailed level since
+      // «Fremgangsmåte» arrives with the answer, open, with the phases of what
+      // the assistant did. The hit count is on the detailed level since
       // Issue 88; there is a test of its own for that below.
       await expect(page.getByText('Fremgangsmåte')).toBeVisible();
       await expect(page.getByText('Lette etter steder som handler om spørsmålet')).toBeVisible();
