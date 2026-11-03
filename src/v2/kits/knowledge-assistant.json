@@ -1,0 +1,73 @@
+{
+  "id": "knowledge-assistant",
+  "name": {
+    "nb": "Kunnskapsassistent",
+    "en": "Knowledge assistant"
+  },
+  "purpose": "Ask a body of documents and get answers with sources.",
+  "fits": "Services that search datasets.",
+  "fitsNeeds": ["service:datasets|documents"],
+  "layout": {
+    "primary": ["threads", "filter"],
+    "main": ["chat", "approach", "footnotes"],
+    "secondary": ["sources", "document-view", "notes"]
+  },
+  "components": {
+    "chat": {
+      "core": true
+    },
+    "sources": {
+      "core": true
+    },
+    "footnotes": {
+      "core": true
+    },
+    "approach": {
+      "core": false,
+      "default": "on",
+      "needs": ["service:steps"]
+    },
+    "filter": {
+      "core": false,
+      "default": "on",
+      "needs": ["service:filter-fields", "channel:facets"]
+    },
+    "threads": {
+      "core": false,
+      "default": "on",
+      "needs": ["channel:conversations"]
+    },
+    "feedback": {
+      "core": false,
+      "default": "on",
+      "needs": ["channel:feedback"]
+    },
+    "variant-picker": {
+      "core": false,
+      "default": "auto",
+      "needs": ["service:variants"]
+    },
+    "document-view": {
+      "core": false,
+      "default": "off",
+      "needs": ["component:sources"]
+    },
+    "notes": {
+      "core": false,
+      "default": "off",
+      "needs": []
+    },
+    "attachments": {
+      "core": false,
+      "default": "off",
+      "needs": ["service:documents"]
+    },
+    "projects": {
+      "core": false,
+      "default": "off",
+      "needs": ["genki:projects"]
+    }
+  },
+  "blocks": ["intro", "example-questions"],
+  "brand": ["colour", "name", "logo", "intro", "example-questions"]
+}

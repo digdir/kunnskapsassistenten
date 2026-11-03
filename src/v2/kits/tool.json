@@ -1,0 +1,45 @@
+{
+  "id": "tool",
+  "name": {
+    "nb": "Verktøy",
+    "en": "Tool"
+  },
+  "purpose": "Fill in a form or paste a text, and get a result to use.",
+  "fits": "Services with a form (input_fields), or with the output kinds document, fields or table.",
+  "fitsNeeds": [],
+  "layout": {
+    "primary": [],
+    "main": ["form", "result"],
+    "secondary": []
+  },
+  "components": {
+    "form": {
+      "core": true
+    },
+    "result": {
+      "core": true
+    },
+    "attachments": {
+      "core": false,
+      "default": "auto",
+      "needs": ["service:documents"]
+    },
+    "feedback": {
+      "core": false,
+      "default": "on",
+      "needs": ["channel:feedback"]
+    },
+    "sources": {
+      "core": false,
+      "default": "auto",
+      "needs": ["service:datasets|documents"]
+    },
+    "threads": {
+      "core": false,
+      "default": "off",
+      "needs": ["channel:conversations"]
+    }
+  },
+  "blocks": ["intro", "notice"],
+  "brand": ["colour", "name", "logo", "intro", "example-questions"]
+}
