@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { nkomSources } from '../api/mock/fixtures';
-import { citationAccessibleName, citationTargets, excerptDomId } from './source';
+import { citationAccessibleName, citationTargets, citationUses, excerptDomId } from './source';
 
 describe('citation convention', () => {
   it('builds the same DOM id from both sides', () => {
@@ -30,5 +30,15 @@ describe('citation convention', () => {
     ];
 
     expect(citationTargets(withUncited)).toHaveLength(0);
+  });
+});
+
+describe('citationUses', () => {
+  it('counts how many times the answer writes each marker', () => {
+    expect(citationUses('Mål [1] og midler [2], og mål igjen [1]. Igjen [1].')).toEqual({
+      1: 3,
+      2: 1,
+    });
+    expect(citationUses('Ingen markører, og et år [2023].')).toEqual({});
   });
 });

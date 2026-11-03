@@ -1,7 +1,8 @@
 import { Button, Details, Heading, Link, Paragraph } from '@digdir/designsystemet-react';
 import { ExternalLinkIcon } from '@navikt/aksel-icons';
 import { HighlightedText, type SearchHit } from '../../components';
-import { BackIcon } from '../../components/icons';
+import { useState } from 'react';
+import { BackIcon, ShowUseIcon } from '../../components/icons';
 import { excerptDomId, type Excerpt } from '../../model';
 import { kudosLinkLabel, reachesPage } from './kudosLink';
 import { excerptName } from './excerptName';
@@ -25,6 +26,10 @@ type SourceExcerptProps = {
   active: boolean;
   /** Back to the marker the reader came from; absent when they opened it themselves. */
   onReturnToAnswer?: () => void;
+  /** How many places in the answer cite this excerpt. */
+  uses?: number;
+  /** Shows the reader use `use` (1-based) of this excerpt in the answer; absent draws no back-link. */
+  onShowUse?: (use: number) => void;
 };
 
 /**
@@ -50,12 +55,27 @@ export function SourceExcerpt({
   currentHit,
   active,
   onReturnToAnswer,
+  uses = 0,
+  onShowUse,
 }: SourceExcerptProps) {
   const { citationNumber, heading, text, page, kudosUrl, textUnavailable } = excerpt;
   const cited = citationNumber !== undefined;
 
   // So a list of controls does not hold five buttons called «Åpne».
   const name = excerptName(citationNumber, position, total);
+
+  // The use the back-link last went to, 0 before the first press. Each press goes to the next and
+  // the last wraps to the first: one control, which says in its name where the reader is.
+  const [use, setUse] = useState(0);
+  const showsUses = cited && uses > 0 && onShowUse !== undefined;
+  const at = use === 0 ? 1 : use;
+  // «2/3», and the only place that shape is written: the name is built from the visible text
+  // (WCAG 2.5.3, label in name).
+  const useCount = `${at}/${uses}`;
+  const showUseName =
+    uses > 1
+      ? `Vis hvor svaret bruker utdrag ${citationNumber} (${useCount})`
+      : `Vis hvor svaret bruker utdrag ${citationNumber}`;
 
   // Only when it opens the page, since the document's own link is at the end.
   // See `kudosLink.ts`.
@@ -89,9 +109,30 @@ export function SourceExcerpt({
       }
     >
       <div className="source-excerpt__head">
-        <Heading level={4} data-size="2xs" className="source-excerpt__number">
-          {cited ? `Utdrag ${citationNumber}` : 'Utdrag'}
-        </Heading>
+        <div className="source-excerpt__title">
+          <Heading level={4} data-size="2xs" className="source-excerpt__number">
+            {cited ? `Utdrag ${citationNumber}` : 'Utdrag'}
+          </Heading>
+          {/* Back to where the answer uses this excerpt, beside the number so it works on a
+              closed row. An event to the host, never a link. */}
+          {showsUses && (
+            <Button
+              type="button"
+              variant="tertiary"
+              data-size="sm"
+              className="source-excerpt__uses"
+              aria-label={showUseName}
+              onClick={() => {
+                const next = (use % uses) + 1;
+                setUse(next);
+                onShowUse?.(next);
+              }}
+            >
+              <ShowUseIcon aria-hidden />
+              {uses > 1 && <span className="source-excerpt__use-count">{useCount}</span>}
+            </Button>
+          )}
+        </div>
         {!cited && (
           <Paragraph data-size="xs" className="source-excerpt__uncited">
             Ikke vist til i svaret

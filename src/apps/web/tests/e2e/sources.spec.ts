@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import { covers, expectNoAxeViolations, setColorScheme } from './a11y';
 import {
   ANSWER_TIMEOUT,
@@ -11,6 +11,26 @@ import {
   MOCK,
   REAL_ANSWER,
 } from './helpers';
+
+/**
+ * Where an excerpt's toggle draws its visible word, «Åpne» or «Lukk», inside the summary. The
+ * summary's centre is no longer the toggle's: the back-link to the answer shares the row. The word
+ * and the hidden «utdrag N» share one element, so the word is found as the text drawn.
+ */
+async function toggleWord(summary: Locator): Promise<{ x: number; y: number }> {
+  return summary.evaluate((element) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+      if (!/^(Åpne|Lukk)$/u.test(node.textContent?.trim() ?? '')) continue;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const word = range.getBoundingClientRect();
+      const box = element.getBoundingClientRect();
+      return { x: word.left - box.left + word.width / 2, y: word.top - box.top + word.height / 2 };
+    }
+    throw new Error('the toggle draws neither «Åpne» nor «Lukk»');
+  });
+}
 
 /**
  * The sources panel: the excerpts the answer rests on, and the link from a
@@ -139,7 +159,9 @@ test.describe('kildepanelet', () => {
       // Et utdrag ingen ble sendt til, har ingen vei tilbake: en kontroll som
       // fører til et sted du aldri kom fra gjør ingenting.
       const other = page.locator('#excerpt-1');
-      await other.locator('summary').click();
+      await other
+        .locator('summary')
+        .click({ position: await toggleWord(other.locator('summary')) });
       await expect(other.getByRole('button', { name: 'Tilbake til svaret' })).toHaveCount(0);
 
       await expectNoAxeViolations(page, 'et åpnet utdrag med vei tilbake');
@@ -274,7 +296,9 @@ test.describe('kildepanelet', () => {
     // over åpnet allerede sitt eget, og et klikk til ville lukket det igjen.
     for (const details of await page.locator('.source-excerpt details').all()) {
       if (await details.evaluate((element: HTMLDetailsElement) => element.open)) continue;
-      await details.locator('summary').click();
+      await details
+        .locator('summary')
+        .click({ position: await toggleWord(details.locator('summary')) });
     }
 
     // Alle lenkene ut til Kudos viser de samme fire ordene, så en skjermleser
@@ -362,7 +386,7 @@ test.describe('kildepanelet', () => {
           };
 
           await expect(details).toHaveAttribute('open', '');
-          await summary.click();
+          await summary.click({ position: await toggleWord(summary) });
           await expect(details).not.toHaveAttribute('open');
           await summary.scrollIntoViewIfNeeded();
 
