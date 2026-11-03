@@ -16,6 +16,7 @@ import type { DatasetFilterFields } from '../filterFields';
 import { messagesFromApi, threadFromConversation } from '../live/conversations';
 import { relevanceFromRank, toCitations } from '../live/mcp';
 import { publicUrl } from '../publicUrl';
+import { stepFindings } from '../stepFindings';
 import type {
   BffAgentOption,
   BffConversationDetail,
@@ -309,6 +310,8 @@ export class BffTurnState {
     chunkCount?: number;
   }): ThinkingStep {
     const isRead = event.tool.includes('read') || Boolean(event.chunkCount);
+    // The same reading of the same report as live, so «Fremgangsmåte» is the same either way.
+    const findings = stepFindings(event.tool, event.queries, event.detail);
 
     this.#rememberQueries(event.queries);
     this.#steps += 1;
@@ -319,6 +322,8 @@ export class BffTurnState {
       ...(event.detail ? { detail: event.detail } : {}),
       ...(event.queries?.length ? { queries: event.queries } : {}),
       ...(event.durationMs !== undefined ? { durationMs: event.durationMs } : {}),
+      tool: event.tool,
+      ...(findings ? { findings } : {}),
     };
   }
 }

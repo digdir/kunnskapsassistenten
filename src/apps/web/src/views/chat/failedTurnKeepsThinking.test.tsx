@@ -10,15 +10,15 @@ import { FAILED_NOTE, REGENERATE } from './text';
 import { useChat } from './useChat';
 
 /**
- * Tenkepanelet på feilstien (brukerblikk 4, funn 3).
+ * The thinking panel on the failure path (user review 4, finding 3).
  *
- * Mens spørsmålet går, står «Tenker …» med steget for dette spørsmålet. I det
- * feilkortet kom, var panelet borte: leseren satt igjen med spørsmålet, feilen,
- * og ingenting om hva som ble forsøkt — på den ene stien der det er mest verdt
- * å se. Et vellykket svar beholder sitt panel.
+ * While the question runs, the panel stands with this question's step. The
+ * moment the failure card came, the panel was gone: the reader was left with
+ * the question, the error, and nothing about what was tried, on the one path
+ * where it is most worth seeing. A successful answer keeps its panel.
  *
- * Årsaken var at en feilet tur med tom tekst ble tatt ut av samtalen, og
- * stegene fulgte med ut.
+ * The cause was that a failed turn with no text was taken out of the
+ * conversation, and the steps went with it.
  */
 
 const client = new MockChatClient({
@@ -30,7 +30,7 @@ const client = new MockChatClient({
 });
 
 const nkom = threads.find((thread) => thread.id === 'nkom-maaloppnaaelse')!;
-const FEILSPOERSMAAL = 'simuler feil';
+const FAILING_QUESTION = 'simuler feil';
 
 const answers = (messages: Message[]) => messages.filter((m) => m.role === 'assistant');
 
@@ -38,49 +38,48 @@ beforeEach(() => {
   resetMockThreads();
 });
 
-describe('en feilet tur beholder tenkepanelet', () => {
-  it('lar turen stå med stegene sine når feilen lander', async () => {
+describe('a failed turn keeps its thinking panel', () => {
+  it('keeps the turn with its steps when the error lands', async () => {
     client.openThread(nkom);
     const { result } = renderHook(() => useChat(client));
 
-    act(() => result.current.send(FEILSPOERSMAAL));
+    act(() => result.current.send(FAILING_QUESTION));
     await waitFor(() => expect(result.current.status).toBe('error'), { timeout: 5000 });
 
     /*
-     * Turen ble tatt ut her før. Nå står den, med stegene som var sendt, så
-     * panelet tegnes over feilen slik det tegnes over et svar.
+     * The turn used to be taken out here. Now it stays, with the steps that
+     * were sent, so the panel is drawn over the error as it is over an answer.
      */
-    const feilet = answers(result.current.messages).at(-1);
-    expect(feilet?.status).toBe('error');
-    expect(feilet?.thinkingSteps?.length).toBeGreaterThan(0);
-    expect(feilet?.content).toBe('');
+    const failed = answers(result.current.messages).at(-1);
+    expect(failed?.status).toBe('error');
+    expect(failed?.thinkingSteps?.length).toBeGreaterThan(0);
+    expect(failed?.content).toBe('');
   });
 
-  it('viser stegene fra dette spørsmålet, ikke fra et annet', async () => {
-    // #81 ga feilstien sitt eget tenkesteg. Panelet som blir stående skal
-    // vise det, ikke NKOM-fixturens første steg.
+  it("shows this question's steps, not another's", async () => {
+    // #81 gave the failure path a thinking step of its own. The panel that
+    // stays must show it, not the first step of the NKOM fixture.
     client.openThread(nkom);
     const { result } = renderHook(() => useChat(client));
 
-    act(() => result.current.send(FEILSPOERSMAAL));
+    act(() => result.current.send(FAILING_QUESTION));
     await waitFor(() => expect(result.current.status).toBe('error'), { timeout: 5000 });
 
-    const steg = answers(result.current.messages).at(-1)?.thinkingSteps ?? [];
-    expect(steg).toHaveLength(1);
-    expect(steg[0]?.label).not.toBe('Jeg deler spørsmålet i to.');
+    const steps = answers(result.current.messages).at(-1)?.thinkingSteps ?? [];
+    expect(steps).toHaveLength(1);
+    expect(steps[0]?.label).not.toBe('Jeg deler spørsmålet i to.');
   });
 
-  it('tar turen ut når det ikke finnes noe å vise', async () => {
+  it('takes the turn out when there is nothing to show', async () => {
     /*
-     * Grensen som står igjen fra før, og grunnen til at den står: en tur uten
-     * tekst OG uten steg har ingenting i seg, og en <li> som bare inneholder
-     * den skjulte «Kunnskapsassistenten svarte:» forteller en skjermleser at
-     * assistenten svarte noe.
+     * The line that still stands, and why: a turn with no text AND no steps
+     * holds nothing, and an <li> holding only the hidden «Kunnskapsassistenten
+     * svarte:» tells a screen reader the assistant answered something.
      *
-     * Mocken sender alltid et steg først, så tilfellet må lages her: en
-     * klient som feiler før noe har skjedd.
+     * The mock always sends a step first, so the case is made here: a client
+     * that fails before anything has happened.
      */
-    const stumClient: ChatClient = {
+    const silentClient: ChatClient = {
       // oxlint-disable-next-line require-yield
       async *ask() {
         throw new Error('nede');
@@ -90,7 +89,7 @@ describe('en feilet tur beholder tenkepanelet', () => {
       listFacets: async () => [],
     };
 
-    const { result } = renderHook(() => useChat(stumClient));
+    const { result } = renderHook(() => useChat(silentClient));
 
     act(() => result.current.send('Hva sier rapporten?'));
     await waitFor(() => expect(result.current.status).toBe('error'), { timeout: 5000 });
@@ -98,27 +97,27 @@ describe('en feilet tur beholder tenkepanelet', () => {
     expect(answers(result.current.messages)).toHaveLength(0);
   });
 
-  it('overlever en oppfriskning, med stegene og et kort som sier hva som skjedde', async () => {
+  it('survives a reload, with the steps and a card that says what happened', async () => {
     /*
-     * Feil ble ikke lagret i det hele tatt før: ingen av de to feilstiene i
-     * mocken kalte recordMockTurn, så en oppfriskning ga en tråd uten
-     * spørsmålet engang. Nå skrives turen ned som de stoppede gjør.
+     * Errors were not stored at all before: neither failure path in the mock
+     * called recordMockTurn, so a reload gave a thread without even the
+     * question. Now the turn is written down as the stopped ones are.
      */
     client.openThread(nkom);
     const { result } = renderHook(() => useChat(client));
 
-    act(() => result.current.send(FEILSPOERSMAAL));
+    act(() => result.current.send(FAILING_QUESTION));
     await waitFor(() => expect(result.current.status).toBe('error'), { timeout: 5000 });
 
-    const lagret = (await client.getThread(nkom.id))!.messages.slice(-2);
-    expect(lagret.map((m) => m.role)).toEqual(['user', 'assistant']);
-    expect(lagret[0].content).toBe(FEILSPOERSMAAL);
-    expect(lagret[1].status).toBe('error');
-    expect(lagret[1].thinkingSteps?.length).toBeGreaterThan(0);
+    const stored = (await client.getThread(nkom.id))!.messages.slice(-2);
+    expect(stored.map((m) => m.role)).toEqual(['user', 'assistant']);
+    expect(stored[0].content).toBe(FAILING_QUESTION);
+    expect(stored[1].status).toBe('error');
+    expect(stored[1].thinkingSteps?.length).toBeGreaterThan(0);
   });
 });
 
-describe('kortet på en feilet tur', () => {
+describe('the card on a failed turn', () => {
   const failed: Message = {
     id: 'a1',
     role: 'assistant',
@@ -131,6 +130,9 @@ describe('kortet på en feilet tur', () => {
     status: 'error',
   };
 
+  /** What «Fremgangsmåte» says a search step was. */
+  const SEARCHED = 'Lette etter steder som handler om spørsmålet';
+
   function show(liveErrorId?: string) {
     return render(
       <MessageList
@@ -142,56 +144,56 @@ describe('kortet på en feilet tur', () => {
     );
   }
 
-  it('tier mens varselet under samtalen er om denne turen', () => {
-    // Varselet sier hva som gikk galt og gir veien videre. To utsagn om det
-    // samme er ett for mye.
+  it('stays quiet while the alert under the conversation is about this turn', () => {
+    // The alert says what went wrong and gives the way on. Two statements
+    // about the same thing is one too many.
     show('a1');
 
     expect(screen.queryByText(FAILED_NOTE)).toBeNull();
-    expect(screen.getByText('Jeg søker i dokumentene.')).toBeTruthy();
+    expect(screen.getByText(SEARCHED)).toBeTruthy();
   });
 
-  it('sier fra når varselet ikke lenger gjelder den', () => {
-    // Etter en oppfriskning, eller når leseren har spurt om noe siden. Da er
-    // kortet det eneste som kan si hvorfor det ikke står et svar under
-    // spørsmålet, og «Tenkte i 1 sekund» over ingenting er en gåte uten det.
+  it('speaks up when the alert no longer applies to it', () => {
+    // After a reload, or when the reader has asked something since. The card
+    // is then the only thing that can say why there is no answer under the
+    // question, and «Tok 1 sekund» over nothing is a riddle without it.
     show(undefined);
 
     expect(screen.getByText(FAILED_NOTE)).toBeTruthy();
-    expect(screen.getByText('Jeg søker i dokumentene.')).toBeTruthy();
+    expect(screen.getByText(SEARCHED)).toBeTruthy();
   });
 
-  it('gir veien videre når varselet er borte, slik den stoppede turen har', () => {
+  it('gives the way on once the alert is gone, as the stopped turn has', () => {
     /*
-     * Varselet bar «Prøv igjen» mens det sto. Uten knappen her ville en
-     * gjenopprettet feil vært den ene turen i tråden uten noen vei videre i
-     * det hele tatt. `retry` finner spørsmålet i samtalen når økta som stilte
-     * det er borte (#76), så den virker i en oppfrisket fane.
+     * The alert carried «Prøv igjen» while it stood. Without the button here,
+     * a restored failure would be the one turn in the thread with no way on at
+     * all. `retry` finds the question in the conversation when the session
+     * that asked it is gone (#76), so it works in a reloaded tab.
      */
     show(undefined);
 
     expect(screen.getByRole('button', { name: REGENERATE })).toBeTruthy();
   });
 
-  it('lar varselet beholde veien videre mens det står', () => {
-    // To «prøv igjen» om det samme, ett i varselet og ett i kortet, er ett
-    // for mye.
+  it('leaves the way on to the alert while it stands', () => {
+    // Two «prøv igjen» about the same thing, one in the alert and one in the
+    // card, is one too many.
     show('a1');
 
     expect(screen.queryByRole('button', { name: REGENERATE })).toBeNull();
   });
 
-  it('kaller onRegenerate når knappen trykkes', () => {
-    const kall: number[] = [];
+  it('calls onRegenerate when the button is pressed', () => {
+    const calls: number[] = [];
     render(
       <MessageList
         messages={[failed]}
-        onRegenerate={() => kall.push(1)}
+        onRegenerate={() => calls.push(1)}
         onSelectSource={() => {}}
       />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: REGENERATE }));
-    expect(kall).toHaveLength(1);
+    expect(calls).toHaveLength(1);
   });
 });

@@ -2,6 +2,7 @@ import {
   filterDimensions,
   type FilterSelection,
   type RetrievalDetails,
+  type StepFindings,
   type ThinkingStep,
   type ThinkingStepKind,
 } from '../../model';
@@ -116,6 +117,25 @@ const strings = (value: unknown): string[] | undefined =>
 const count = (value: unknown): number | undefined =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
 
+/** What a stored step found, each field checked, or nothing. */
+function findingsFrom(value: unknown): StepFindings | undefined {
+  if (!isRecord(value)) return undefined;
+  const findings: StepFindings = {};
+  const restatedQuestion = optionalString(value.restatedQuestion);
+  const newHits = count(value.newHits);
+  const autoFilter = optionalString(value.autoFilter);
+  const excerptsRead = count(value.excerptsRead);
+  const documentsRead = strings(value.documentsRead);
+  if (restatedQuestion) findings.restatedQuestion = restatedQuestion;
+  if (newHits !== undefined) findings.newHits = newHits;
+  if (autoFilter) findings.autoFilter = autoFilter;
+  if (excerptsRead !== undefined) findings.excerptsRead = excerptsRead;
+  if (documentsRead?.length) findings.documentsRead = documentsRead;
+  if (value.documentsPartial === true) findings.documentsPartial = true;
+  if (value.readRefused === true) findings.readRefused = true;
+  return Object.keys(findings).length > 0 ? findings : undefined;
+}
+
 /** One stored step, or nothing. A step with no id, kind or label draws as nothing. */
 function stepFrom(value: unknown): ThinkingStep | undefined {
   if (!isRecord(value)) return undefined;
@@ -131,6 +151,11 @@ function stepFrom(value: unknown): ThinkingStep | undefined {
   if (detail) step.detail = detail;
   if (queries) step.queries = queries;
   if (durationMs !== undefined) step.durationMs = durationMs;
+  // Without these, a turn read back draws «Fremgangsmåte» with the phases but not what they found.
+  const tool = optionalString(value.tool);
+  const findings = findingsFrom(value.findings);
+  if (tool) step.tool = tool;
+  if (findings) step.findings = findings;
   return step;
 }
 

@@ -7,8 +7,8 @@ import { resetDisplayLevel, setDisplayLevel } from './displayLevel';
 import { resetViewport, setViewportWidth } from '../../test/matchMedia';
 
 /*
- * Designsystemets Skeleton spør etter document.getAnimations, som jsdom ikke
- * har. Det tomme svarkortet tegner en mens det første tegnet er på vei.
+ * Designsystemet's Skeleton asks for document.getAnimations, which jsdom
+ * lacks. The empty answer card draws one while the first character is on its way.
  */
 if (typeof document.getAnimations !== 'function') {
   document.getAnimations = () => [];
@@ -36,8 +36,8 @@ const answer: Message = {
   status: 'complete',
 };
 
-/** Søket eies av `MessageList`; disse testene handler om noe annet. */
-const utenSok = {
+/** The search is `MessageList`'s; these tests are about something else. */
+const noSearch = {
   searchOpen: false,
   searchQuery: '',
   onSearchQueryChange: () => {},
@@ -50,56 +50,66 @@ function showAnswer() {
   return render(
     <ol>
       <AnswerMessage
-        {...utenSok}
+        {...noSearch}
         message={answer}
         onRegenerate={() => {}}
         onSelectSource={() => {}}
+        scope="Alle dokumentene i Kudos."
       />
     </ol>,
   );
 }
 
-describe('visningsnivået i svaret', () => {
+describe('the display level in the answer', () => {
   beforeEach(() => {
     localStorage.clear();
     resetDisplayLevel();
   });
 
-  it('viser «Fremgangsmåte», stegene og nøkkelordene, uten det tekniske, på standard', () => {
+  it('shows «Fremgangsmåte» as phases, with what was searched for and how long it took, at standard', () => {
     /*
-     * Issue 88, tegnet i issue 113: ett panel over svarkortet, med
-     * stegene under «Tenkte» og søkeordene under «Nøkkelord som ble brukt i
-     * søket». Stegene sier hva assistenten prøver å gjøre, og nøkkelordene er
-     * det svaret kan etterprøves mot. Tiden, treffene og det hvert steg målte
-     * er maskineri — en «bit» er ikke noe en leser har sett.
+     * The design canvas, board A1c: a numbered list of phases, each with what
+     * the assistant actually did, and under the title what it did in all.
+     * What each step measured on the wire stays at the detailed level.
      */
-    showAnswer();
+    const { container } = showAnswer();
 
     expect(screen.getByText('Fremgangsmåte')).toBeTruthy();
-    expect(screen.getByText('Jeg søker i årsrapportene.')).toBeTruthy();
-    expect(screen.getByText('Nøkkelord som ble brukt i søket')).toBeTruthy();
-    expect(screen.getByText('måloppnåelse')).toBeTruthy();
+    expect(screen.getByText('Tok 4 sekunder')).toBeTruthy();
 
-    expect(screen.queryByText('Tenkte i 4 sekunder')).toBeNull();
-    expect(screen.queryByText('10 treff i 3 dokumenter')).toBeNull();
-    expect(screen.queryByText('Nkom måloppnåelse 2025')).toBeNull();
+    const titles = container.querySelectorAll(
+      '.ka-procedure__phases > li > .ka-procedure__phase-title',
+    );
+    expect([...titles].map((title) => title.textContent)).toEqual([
+      'Forsto spørsmålet',
+      'Så på hvilke kilder tråden leser fra',
+      'Lette etter steder som handler om spørsmålet',
+    ]);
+    expect(screen.getByText('Jeg deler spørsmålet i to.')).toBeTruthy();
+    expect(screen.getByText('Alle dokumentene i Kudos.')).toBeTruthy();
+    expect(
+      screen.getByRole('list', { name: 'Jeg lette etter omtale av disse temaene:' }).textContent,
+    ).toBe('Nkom måloppnåelse 2025');
+
+    expect(screen.queryByText('Jeg søker i årsrapportene.')).toBeNull();
     expect(screen.queryByText('Fant 10 biter i 3 dokumenter.')).toBeNull();
+    expect(screen.queryByText('10 treff i 3 dokumenter')).toBeNull();
   });
 
-  it('står åpent der det er plass, fordi det svaret etterprøves mot ikke skal ligge bak et klikk', () => {
+  it('stands open where there is room, because what the answer is checked against should not be behind a click', () => {
     const { container } = showAnswer();
 
     const panel = container.querySelector('.ka-procedure');
     expect((panel as HTMLDetailsElement).open).toBe(true);
   });
 
-  it('står lukket der kolonnen er hele vinduet', () => {
+  it('stands shut where the column is the whole window', () => {
     /*
-     * Åpent med fire steg og fem nøkkelord er 450 px av 900 på 1440, men 965
-     * av 844 på 390 — da ER fremgangsmåten skjermen, og den som spurte om noe
-     * må rulle forbi alt sammen for å komme til svaret. 774 px er der
-     * kolonnen slutter å være en lesebredde mellom to skinner og blir hele
-     * vinduet.
+     * Open with four steps and five keywords it was 450 px of 900 at 1440,
+     * but 965 of 844 at 390: the procedure IS the screen then, and whoever
+     * asked must scroll past all of it to reach the answer. 774 px is where
+     * the column stops being a reading width between two rails and becomes
+     * the whole window.
      */
     setViewportWidth(390);
     try {
@@ -107,25 +117,25 @@ describe('visningsnivået i svaret', () => {
 
       const panel = container.querySelector('.ka-procedure');
       expect((panel as HTMLDetailsElement).open).toBe(false);
-      // Men den er der, med navnet sitt, ett klikk unna.
+      // But it is there, with its name and what it did, one click away.
       expect(screen.getByText('Fremgangsmåte')).toBeTruthy();
+      expect(screen.getByText('Tok 4 sekunder')).toBeTruthy();
     } finally {
       resetViewport();
     }
   });
 
-  it('tar bort et nøkkelord som bare er spørsmålet om igjen', () => {
+  it('leaves out a search that is only the question over again', () => {
     /*
-     * Agenten planlegger søkene sine ut fra spørsmålet, og det første den
-     * planlegger er ofte spørsmålet selv: mot hele Kudos kom leserens egen
-     * setning tilbake som ett av ordene den «søkte på» (#4 på #208). Det er
-     * sant, og det sier ingenting — leseren skrev det, og det står to linjer
-     * lenger opp.
+     * The agent plans its searches from the question, and the first one is
+     * often the question itself: against the whole of Kudos the reader's own
+     * sentence came back as one of the words it «searched for» (#4 on #208).
+     * True, and it says nothing: the reader wrote it, two lines further up.
      *
-     * Gjennom `MessageList`, fordi det er den som vet hva spørsmålet var: et
-     * svar bærer det ikke selv.
+     * Through `MessageList`, because it is the one that knows the question:
+     * an answer does not carry it.
      */
-    const spoersmaal = 'Hva sier årsrapportene om måloppnåelse?';
+    const question = 'Hva sier årsrapportene om måloppnåelse?';
     render(
       <ol>
         <MessageList
@@ -133,19 +143,22 @@ describe('visningsnivået i svaret', () => {
             {
               id: 'q1',
               role: 'user',
-              content: spoersmaal,
+              content: question,
               createdAt: '2026-09-15T08:59:00Z',
               citations: [],
               status: 'complete',
             },
             {
               ...answer,
-              retrieval: {
-                hitCount: 10,
-                documentCount: 3,
-                // Ordrett, og med annen store bokstav og uten spørsmålstegn.
-                keywords: ['hva sier årsrapportene om måloppnåelse', 'måloppnåelse'],
-              },
+              thinkingSteps: [
+                {
+                  id: 's1',
+                  kind: 'search',
+                  label: 'Jeg søker i dokumentene.',
+                  // Word for word, with another capital and no question mark.
+                  queries: ['hva sier årsrapportene om måloppnåelse', 'måloppnåelse'],
+                },
+              ],
             },
           ]}
           onRegenerate={() => {}}
@@ -154,12 +167,12 @@ describe('visningsnivået i svaret', () => {
       </ol>,
     );
 
-    expect(screen.getByText('Nøkkelord som ble brukt i søket')).toBeTruthy();
-    expect(screen.getByText('måloppnåelse')).toBeTruthy();
-    expect(screen.queryByText('hva sier årsrapportene om måloppnåelse')).toBeNull();
+    expect(
+      screen.getByRole('list', { name: 'Jeg lette etter omtale av disse temaene:' }).textContent,
+    ).toBe('måloppnåelse');
   });
 
-  it('viser tenkepanelet og treffene på detaljert', () => {
+  it('shows the thinking panel and the hits at detailed', () => {
     setDisplayLevel('detaljert');
     showAnswer();
 

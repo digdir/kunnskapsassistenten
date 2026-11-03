@@ -1,7 +1,9 @@
-import { Card, Details, Paragraph, Spinner, Tag } from '@digdir/designsystemet-react';
+import { Card, Details, List, Paragraph, Spinner } from '@digdir/designsystemet-react';
 import { useId, useState, useSyncExternalStore } from 'react';
 import { RobotSmileIcon } from '@navikt/aksel-icons';
-import type { RetrievalDetails, ThinkingStep } from '../../model';
+import type { SourceDocument, ThinkingStep } from '../../model';
+import { procedureFrom, procedureStatus, type ProcedurePhase } from './procedure';
+import { reportedDurationMs } from './thinkingTime';
 
 /** Where the procedure has room to stand open. Written here and not imported
     from the shell, because it answers a different question: «is there room to
@@ -19,53 +21,89 @@ function hasRoom(): boolean {
 }
 
 type ProcedurePanelProps = {
-  /** The steps as they arrived. Rendered in that order, never reordered. */
+  /** The steps as they arrived. Sorted into phases, see procedure.ts. */
   steps: ThinkingStep[];
   /** `thinking` until the first token of the answer lands. */
   status: 'thinking' | 'done';
-  /** What the answer was built from. Absent until the turn is finished. */
-  retrieval?: RetrievalDetails;
-  /** The question this answer is an answer to. See `worthShowing`. */
+  /** The question this answer is an answer to: a search that only repeats it is not a topic. */
   question?: string;
+  /** Which documents the thread reads from, as a sentence. */
+  scope?: string;
+  /** The documents the answer cites. Absent until the answer has arrived. */
+  documents?: SourceDocument[];
+  /** How long the thinking took, measured while it happened. See `useChat`. */
+  thoughtMs?: number;
 };
 
-/** Same string, allowing for case, spacing and a closing mark. */
-function sameWords(a: string, b: string): boolean {
-  const plain = (text: string) =>
-    text
-      .toLowerCase()
-      .replace(/[?.!\s]+$/u, '')
-      .replace(/\s+/gu, ' ')
-      .trim();
-  return plain(a) === plain(b);
+/** One phase: its title, «pågår» while the assistant is in it, and what it found. A list carries
+    the sentence before it as its accessible name, so a screen reader jumping by list hears what
+    the list is. */
+function Phase({ phase, idBase }: { phase: ProcedurePhase; idBase: string }) {
+  return (
+    <List.Item
+      aria-current={phase.ongoing ? 'step' : undefined}
+      className="ka-procedure__phase"
+      data-ongoing={phase.ongoing ? 'true' : undefined}
+    >
+      <span className="ka-procedure__phase-title">{phase.title}</span>
+      {phase.ongoing ? <span className="ka-procedure__state"> · pågår</span> : null}
+      {phase.body.map((block, index) => {
+        const id = `${idBase}-${phase.id}-${index}`;
+        if (typeof block === 'string') {
+          return (
+            <Paragraph className="ka-procedure__text" data-size="sm" id={id} key={id}>
+              {block}
+            </Paragraph>
+          );
+        }
+        return (
+          <List.Unordered
+            aria-labelledby={`${idBase}-${phase.id}-${index - 1}`}
+            className="ka-procedure__items"
+            data-size="sm"
+            key={id}
+          >
+            {block.map((item, position) => (
+              <List.Item key={`${position}-${item}`}>{item}</List.Item>
+            ))}
+          </List.Unordered>
+        );
+      })}
+    </List.Item>
+  );
 }
 
-/** The search words, less the one that is only the question over again,
-    which is true and says nothing. Only at this level; the detailed panel
-    shows the list the backend actually sent. */
-function worthShowing(keywords: readonly string[], question?: string): string[] {
-  if (!question) return [...keywords];
-  return keywords.filter((keyword) => !sameWords(keyword, question));
-}
-
-/** «Fremgangsmåte» (issue 88): the same steps as the detailed panel and
-    nothing else from them, since what a step SAYS is the agent's plan and
-    what it measured is machinery. The keywords are why it opens itself. */
-export function ProcedurePanel({ steps, status, retrieval, question }: ProcedurePanelProps) {
+/** «Fremgangsmåte» (design canvas, page «00-Fremgangsmåte», board A1c): what the assistant did,
+    as up to seven phases in a numbered list, each filled in from what the backend reported. The
+    line under the title says where it is while it works, and what it read and used once done. */
+export function ProcedurePanel({
+  steps,
+  status,
+  question,
+  scope,
+  documents,
+  thoughtMs,
+}: ProcedurePanelProps) {
   const thinking = status === 'thinking';
   // The reader's own choice outranks the automatic state for the rest of the
   // turn, in either direction. Same rule as the detailed panel.
   const [chosen, setChosen] = useState<boolean | undefined>(undefined);
   // One per panel, and `aria-labelledby` points at an id: two answers on
   // screen with the same id would label both lists with the first one's text.
-  const keywordLabelId = useId();
+  const idBase = useId();
   const room = useSyncExternalStore(subscribeToWidth, hasRoom);
 
   if (steps.length === 0) return null;
 
   const open = chosen ?? room;
-  const keywords = worthShowing(retrieval?.keywords ?? [], question);
-  const lastIndex = steps.length - 1;
+  const procedure = procedureFrom({ steps, thinking, question, scope, documents });
+  // The measured wait when there is one; a turn read back has only what the steps reported.
+  const line = procedureStatus(
+    procedure,
+    thinking,
+    documents?.length ?? 0,
+    thoughtMs ?? reportedDurationMs(steps),
+  );
 
   // Details in a Card, as Designsystemet shows it («Du kan bruke details i eit
   // kort for å få ramme rundt innhaldet»): the card gives the frame and the
@@ -80,66 +118,27 @@ export function ProcedurePanel({ steps, status, retrieval, question }: Procedure
         <Details.Summary>
           <span className="ka-procedure__summary">
             <RobotSmileIcon aria-hidden className="ka-procedure__icon" />
-            Fremgangsmåte
+            <span className="ka-procedure__title">
+              <span>Fremgangsmåte</span>
+              {line ? (
+                <span className="ka-procedure__status">
+                  {thinking ? <Spinner aria-hidden="true" data-size="xs" /> : null}
+                  {line}
+                </span>
+              ) : null}
+            </span>
           </span>
         </Details.Summary>
 
         <Details.Content>
-          <div className="ka-procedure__block">
-            <Paragraph className="ka-procedure__label" data-size="sm">
-              {thinking ? (
-                <>
-                  <Spinner aria-hidden="true" data-size="xs" />
-                  Tenker …
-                </>
-              ) : (
-                'Tenkte'
-              )}
-            </Paragraph>
-            <ol className="ka-procedure__steps">
-              {steps.map((step, index) => {
-                // The step being worked on right now. `aria-current` says so
-                // without a live region, so a reader who goes looking is told
-                // where the agent is and nobody is interrupted who is not.
-                const ongoing = thinking && index === lastIndex;
-                return (
-                  <li
-                    aria-current={ongoing ? 'step' : undefined}
-                    className="ka-procedure__step"
-                    data-ongoing={ongoing ? 'true' : undefined}
-                    key={step.id}
-                  >
-                    <Paragraph variant="long">{step.label}</Paragraph>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-
-          {/* The words the search actually ran on. Plain Tags, since they are
-            not clickable, and the list carries the lead-in as its accessible
-            name, so jumping by list hears what the list is. */}
-          {keywords.length ? (
-            <div className="ka-procedure__block ka-procedure__block--ruled">
-              <Paragraph className="ka-procedure__label" data-size="sm" id={keywordLabelId}>
-                Nøkkelord som ble brukt i søket
-              </Paragraph>
-              <ul aria-labelledby={keywordLabelId} className="ka-procedure__keywords">
-                {keywords.map((keyword) => (
-                  <li key={keyword}>
-                    <Tag
-                      className="ka-tag--wrapping"
-                      data-color="info"
-                      data-size="sm"
-                      variant="outline"
-                    >
-                      {keyword}
-                    </Tag>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+          {/* Silent on purpose: the view's polite region says once that the
+              assistant is working (useChat). `aria-current` tells a reader who
+              goes looking which phase it is in, without interrupting anyone. */}
+          <List.Ordered className="ka-procedure__phases">
+            {procedure.phases.map((phase) => (
+              <Phase idBase={idBase} key={phase.id} phase={phase} />
+            ))}
+          </List.Ordered>
         </Details.Content>
       </Details>
     </Card>

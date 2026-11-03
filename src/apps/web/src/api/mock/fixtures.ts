@@ -185,6 +185,9 @@ export const nkomThinkingSteps: ThinkingStep[] = [
     ],
     detail: '60 utdrag funnet, 10 beholdt etter rangering.',
     durationMs: 2410,
+    // What genki's report of the same call says, as stepFindings reads it.
+    tool: 'search',
+    findings: { newHits: 60 },
   },
   {
     id: 'step-3',
@@ -192,6 +195,8 @@ export const nkomThinkingSteps: ThinkingStep[] = [
     label: 'Jeg leser de mest relevante utdragene.',
     detail: '5 utdrag fra 3 dokumenter.',
     durationMs: 980,
+    tool: 'read_chunks',
+    findings: { excerptsRead: 5, documentsRead: nkomSources.map((document) => document.title) },
   },
   {
     id: 'step-4',
