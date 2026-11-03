@@ -37,14 +37,7 @@ const answer: Message = {
 };
 
 /** Søket eies av `MessageList`; disse testene handler om noe annet. */
-const utenSok = {
-  searchOpen: false,
-  searchQuery: '',
-  onSearchQueryChange: () => {},
-  onToggleSearch: () => {},
-  onCloseSearch: () => {},
-  searchLabel: 'Søk i svaret',
-};
+const utenSok = {};
 
 function showAnswer() {
   return render(

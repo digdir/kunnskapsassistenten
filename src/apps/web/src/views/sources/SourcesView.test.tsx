@@ -959,3 +959,80 @@ describe('SourcesView, utdrag fra korpuset som lesbar tekst', () => {
     expect(screen.getByText('1 av 1 treff')).toBeTruthy();
   });
 });
+
+describe('SourcesView and a document from «Kilder brukt i svaret»', () => {
+  const first: AnswerSources = {
+    messageId: 'svar-1',
+    status: 'complete',
+    documents: [
+      documentWith('doc-a', 'Årsrapport Nkom 2025', [1, 2]),
+      documentWith('doc-b', 'Tildelingsbrev Nkom 2026', [3]),
+    ],
+  };
+  const second: AnswerSources = {
+    messageId: 'svar-2',
+    status: 'complete',
+    documents: [documentWith('doc-c', 'Instruks for Nkom', [1])],
+  };
+
+  function Asked({ documentId, nonce }: { documentId?: string; nonce?: number }) {
+    return (
+      <SourcesView
+        answers={[first, second]}
+        activeDocumentId={documentId}
+        activeCitationNonce={nonce}
+        activeCitationMessageId={documentId === undefined ? undefined : 'svar-1'}
+      />
+    );
+  }
+
+  it('goes to the card of that answer, focuses its heading, and marks and opens nothing', async () => {
+    const { container, rerender } = render(<Asked />);
+    expect(screen.getByRole('heading', { name: 'Instruks for Nkom' })).toBeTruthy();
+
+    rerender(<Asked documentId="doc-b" nonce={1} />);
+
+    const heading = await screen.findByRole('heading', { name: 'Tildelingsbrev Nkom 2026' });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+    expect(container.querySelector('[data-active="true"]')).toBeNull();
+    expect(container.querySelectorAll('details[open]')).toHaveLength(0);
+  });
+
+  it('goes back to the title with Escape, as an excerpt goes back to its marker', async () => {
+    const { rerender } = render(
+      <>
+        <a href="#kilde-dokument-doc-b-tittel">Tildelingsbrev Nkom 2026</a>
+        <Asked />
+      </>,
+    );
+    const title = screen.getByRole('link', { name: 'Tildelingsbrev Nkom 2026' });
+    title.focus();
+    fireEvent.click(title);
+    rerender(
+      <>
+        <a href="#kilde-dokument-doc-b-tittel">Tildelingsbrev Nkom 2026</a>
+        <Asked documentId="doc-b" nonce={1} />
+      </>,
+    );
+    const heading = await screen.findByRole('heading', { name: 'Tildelingsbrev Nkom 2026' });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+
+    fireEvent.keyDown(heading, { key: 'Escape' });
+
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Tildelingsbrev Nkom 2026' }),
+    );
+  });
+
+  it('moves focus again when the same document is asked for twice', async () => {
+    const { rerender } = render(<Asked />);
+    rerender(<Asked documentId="doc-a" nonce={1} />);
+    const heading = await screen.findByRole('heading', { name: 'Årsrapport Nkom 2025' });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+
+    (document.activeElement as HTMLElement).blur();
+    rerender(<Asked documentId="doc-a" nonce={2} />);
+
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+  });
+});

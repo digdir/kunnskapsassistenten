@@ -3,8 +3,6 @@ import { Children, useMemo, type ReactNode } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { CitationTarget } from '../model';
-import { HighlightedText } from './HighlightedText';
-import { MIN_QUERY_LENGTH, findHits } from './textSearch';
 
 /**
  * Renders an answer's markdown onto Designsystemet components. Block spacing, `pre`/`code`,
@@ -23,12 +21,6 @@ export type MarkdownProps = {
   sourcesLost?: boolean;
   /** Called when the reader activates a marker, with its number. */
   onCitationActivate?: (citationNumber: number) => void;
-  /**
-   * Wraps matches in `<mark>` per block; the caller counts and steps through them in the DOM.
-   */
-  searchQuery?: string;
-  /** Class on each `<mark>`; without it the browser's default yellow stands in. */
-  markClassName?: string;
 };
 
 // Only `http(s)` to another origin and `mailto:` become links: answers repeat untrusted corpus
@@ -68,9 +60,6 @@ function withCitations(
   targets: Map<number, CitationTarget>,
   onActivate?: (citationNumber: number) => void,
   sourcesLost?: boolean,
-  // What the rest of the text gets (the search's marks), for the word moved into a run, which the
-  // caller no longer sees as text of its own.
-  decorateWord: (word: string) => ReactNode = (word) => word,
 ): ReactNode {
   // No early return when `targets` is empty: a stopped answer has markers and
   // no sources, which is exactly the case the unlinked marker below is for.
@@ -148,7 +137,7 @@ function withCitations(
     const parts: ReactNode[] = [];
     let index = 0;
     const run = (word: string) => {
-      const held: ReactNode[] = word ? [decorateWord(word)] : [];
+      const held: ReactNode[] = word ? [word] : [];
       for (let piece = pieces[index]; piece?.kind === 'mark'; piece = pieces[index]) {
         held.push(...mark(piece));
         index += 1;
@@ -182,32 +171,14 @@ function withCitations(
   });
 }
 
-// Wraps search matches in `<mark>`, after `withCitations` so a `[n]` link is left alone, with the
-// same `findHits` as the sources panel. Per block, as react-markdown hands them over.
-function withHighlights(children: ReactNode, query: string, markClassName?: string): ReactNode {
-  if (query.trim().length < MIN_QUERY_LENGTH) return children;
-
-  return Children.map(children, (child) => {
-    if (typeof child !== 'string') return child;
-
-    const hits = findHits([{ id: 'block', kind: 'answer', text: child }], query);
-    if (hits.length === 0) return child;
-
-    return <HighlightedText text={child} hits={hits} markClassName={markClassName} />;
-  });
-}
-
 const sizeByDepth = ['md', 'sm', 'xs', '2xs', '2xs', '2xs'] as const;
 
-function headingComponents(
-  startLevel: number,
-  decorateHeading: (children: ReactNode) => ReactNode,
-): Partial<Components> {
+function headingComponents(startLevel: number): Partial<Components> {
   const entries = ([1, 2, 3, 4, 5, 6] as const).map((depth) => {
     const level = Math.min(startLevel + depth - 1, 6) as 1 | 2 | 3 | 4 | 5 | 6;
     const render = ({ children }: { children?: React.ReactNode }) => (
       <Heading level={level} data-size={sizeByDepth[depth - 1]}>
-        {decorateHeading(children)}
+        {children}
       </Heading>
     );
     return [`h${depth}`, render] as const;
@@ -283,8 +254,6 @@ export function Markdown({
   citations,
   onCitationActivate,
   sourcesLost,
-  searchQuery = '',
-  markClassName,
 }: MarkdownProps) {
   const targets = useMemo(
     () => new Map((citations ?? []).map((target) => [target.number, target])),
@@ -292,14 +261,11 @@ export function Markdown({
   );
 
   const components = useMemo<Components>(() => {
-    const highlight = (content: ReactNode) => withHighlights(content, searchQuery, markClassName);
     const decorate = (content: ReactNode) =>
-      highlight(withCitations(content, targets, onCitationActivate, sourcesLost, highlight));
+      withCitations(content, targets, onCitationActivate, sourcesLost);
 
     return {
-      ...headingComponents(startLevel, (content) =>
-        withHighlights(content, searchQuery, markClassName),
-      ),
+      ...headingComponents(startLevel),
       p: ({ children: content }) => <Paragraph variant="long">{decorate(content)}</Paragraph>,
       ul: ({ children: content }) => <List.Unordered>{content}</List.Unordered>,
       ol: ({ children: content }) => <List.Ordered>{content}</List.Ordered>,
@@ -352,7 +318,7 @@ export function Markdown({
         <blockquote className="markdown__quote">{content}</blockquote>
       ),
     };
-  }, [startLevel, targets, onCitationActivate, sourcesLost, searchQuery, markClassName]);
+  }, [startLevel, targets, onCitationActivate, sourcesLost]);
 
   return (
     <div className="markdown">
