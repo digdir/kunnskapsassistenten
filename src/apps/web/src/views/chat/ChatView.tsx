@@ -14,7 +14,7 @@ import { Composer } from './Composer';
 import { MessageList } from './MessageList';
 import { ScrollToBottom } from './ScrollToBottom';
 import { chatErrorText } from './errorText';
-import { answerScopeText } from './filterSummary';
+import { answerScopeText, procedureScopeText } from './filterSummary';
 import {
   CLARIFICATION_PLACEHOLDER,
   DISCLAIMER,
@@ -114,6 +114,23 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
           ? corpusDisplayNameFor(from)
           : undefined;
       return answerScopeText(applied, elsewhere);
+    },
+    [appliedFilters, corpusKey, messages, thread?.filter],
+  );
+
+  // «Så på hvilke kilder tråden leser fra» in «Fremgangsmåte»: the same filter, with the corpus
+  // always named. From the answer's key, or the chooser's for one still on its way, which was
+  // asked of the corpus chosen now.
+  const procedureScope = useCallback(
+    (messageId: string) => {
+      const answer = messages.find((message) => message.id === messageId);
+      const applied =
+        appliedFilters[messageId] ?? answer?.filter ?? thread?.filter ?? emptyFilterSelection;
+      const key = answer?.corpusKey ?? corpusKey;
+      return procedureScopeText(
+        applied,
+        corpusOption(key) === undefined ? undefined : corpusDisplayNameFor(key),
+      );
     },
     [appliedFilters, corpusKey, messages, thread?.filter],
   );
@@ -378,6 +395,7 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
       {messages.length > 0 ? (
         <MessageList
           filterSummary={filterSummary}
+          procedureScope={procedureScope}
           attachmentsFor={(messageId) => attachmentsByMessage[messageId]}
           foundNothing={(messageId) => noHitsAnswers.has(messageId)}
           /* Which turn the alert below is speaking for. A failed turn keeps

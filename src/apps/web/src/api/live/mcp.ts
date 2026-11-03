@@ -14,6 +14,7 @@ import { documentUrl } from '../documentUrls';
 import type { MarkerRef } from '../excerptCitations';
 import type { DatasetFilterFields } from '../filterFields';
 import { publicUrl } from '../publicUrl';
+import { stepFindings } from '../stepFindings';
 
 // The MCP wire format, translated into our own events. Where the protocol documentation and the
 // server disagree, this follows the server.
@@ -286,13 +287,20 @@ function toolVoice(tool: string, isRead: boolean): { kind: ThinkingStepKind; lab
 function toolCallStep(call: ToolCall, index: number): ThinkingStep {
   const tool = call.tool ?? 'ukjent';
   const isRead = tool.includes('read') || Boolean(call.args?.chunk_ids?.length);
+  const summary = tool === ANSWER_TOOL ? undefined : call['result-summary'];
+  const queries = queriesOf(call);
+  // From the arguments when the call starts, from the report when it is done. The step is sent
+  // again under the same id, so «Fremgangsmåte» fills in rather than adding a line.
+  const findings = stepFindings(tool, queries, summary);
 
   return {
     id: `tool-${index}-${tool}`,
     ...toolVoice(tool, isRead),
-    detail: tool === ANSWER_TOOL ? undefined : call['result-summary'],
-    queries: queriesOf(call),
+    detail: summary,
+    queries,
     durationMs: call['duration-ms'],
+    tool,
+    ...(findings ? { findings } : {}),
   };
 }
 

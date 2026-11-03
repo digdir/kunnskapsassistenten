@@ -39,6 +39,8 @@ type AnswerMessageProps = {
   /** The reader's own question, for «Fremgangsmåte» to recognise a search
       word that is only the question over again. See ProcedurePanel. */
   question?: string;
+  /** Which documents the thread read from, for «Fremgangsmåte». */
+  scope?: string;
   /** The search behind this answer came back empty, so the answer is the
       notice saying so and what a finished answer offers onward does not
       apply. */
@@ -73,6 +75,7 @@ export function AnswerMessage({
   liveErrorId,
   narrowedTo,
   question,
+  scope,
   foundNothing,
 }: AnswerMessageProps) {
   const streaming = message.status === 'streaming';
@@ -140,10 +143,12 @@ export function AnswerMessage({
           />
         ) : (
           <ProcedurePanel
+            documents={message.sources}
             question={question}
-            retrieval={message.retrieval}
+            scope={scope}
             status={streaming && empty ? 'thinking' : 'done'}
             steps={steps}
+            thoughtMs={message.thoughtMs}
           />
         )
       ) : null}
