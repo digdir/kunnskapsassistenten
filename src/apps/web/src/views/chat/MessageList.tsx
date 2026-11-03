@@ -19,6 +19,8 @@ type MessageListProps = {
   /** «Avgrenset til …» over an answer, by message id. Absent means the
      question was asked against the whole corpus. */
   filterSummary?: (messageId: string) => string | undefined;
+  /** Which documents an answer's thread read from, as «Fremgangsmåte» says it, by message id. */
+  procedureScope?: (messageId: string) => string | undefined;
   /** Whether the search behind an answer came back empty, by message id and
       not «the last one»: it is a fact about that answer, however many turns
       come after it. */
@@ -40,6 +42,7 @@ export function MessageList({
   onSelectDocument,
   onRegenerate,
   filterSummary,
+  procedureScope,
   foundNothing,
   liveErrorId,
   attachmentsFor,
@@ -112,6 +115,7 @@ export function MessageList({
             liveErrorId={liveErrorId}
             message={message}
             narrowedTo={filterSummary?.(message.id)}
+            scope={procedureScope?.(message.id)}
             /* What this answer is an answer to, for «Fremgangsmåte». The
                list is the one place that knows: an answer carries no
                question, and the turn before it is right here. */

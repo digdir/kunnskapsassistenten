@@ -225,9 +225,9 @@
 
 /* --------------------------------------------------------------- procedure */
 
-/* «Fremgangsmåte» at the standard display level (issue 88). Same steps as
-   the detailed panel — the rules below name both — so switching level changes
-   what a step SAYS and never where it sits. */
+/* «Fremgangsmåte» at the standard display level (issue 88): the steps sorted
+   into the design's phases (procedure.ts). The detailed level keeps one line
+   per step, in the thinking panel. */
 .ka-procedure-card,
 .ka-procedure {
   inline-size: 100%;
@@ -238,47 +238,61 @@
    the bar line up. */
 .ka-procedure__icon,
 .ka-sources-summary__icon {
+  flex-shrink: 0;
   font-size: var(--ds-icon-size);
 }
 
-.ka-procedure__block {
+/* «Fremgangsmåte» and, under it, where the assistant is or what it did
+   (design canvas, board A1c). The line is in the summary, so a folded card
+   still says it. */
+.ka-procedure__title {
   display: flex;
   flex-direction: column;
-  gap: var(--ds-size-2);
 }
 
-/* The rule between the steps and the keywords. A border and not an `<hr>`,
-   which would be one more thing for a screen reader to walk past. */
-.ka-procedure__block--ruled {
-  margin-block-start: var(--ds-size-4);
-  padding-block-start: var(--ds-size-4);
-  border-block-start: var(--ds-border-width-default) solid var(--ds-color-neutral-border-subtle);
+/* «Fremgangsmåte» needs 138 px beside the robot and gets 126 at 390: it
+   breaks as «Fremgangs-måte» rather than at any letter. The name only, since
+   the line under it and the phases would be hyphenated word by word there. */
+.ka-procedure__name {
+  /* stylelint-disable-next-line plugin/browser-compat -- unprefixed from
+     Safari 17. Before that the word breaks at any letter, as it did before
+     this rule. Cosmetic only. */
+  hyphens: auto;
 }
 
-/* «Tenker …», «Nøkkelord som ble brukt i søket». Subtle, because each one
-   names what is under it rather than saying something of its own. */
-.ka-procedure__label {
+.ka-procedure__status {
   display: flex;
   align-items: center;
   gap: var(--ds-size-2);
-  margin: 0;
+  font-size: var(--ds-font-size-minus-1);
+  font-weight: var(--ds-font-weight-regular);
   color: var(--ds-color-neutral-text-subtle);
 }
 
-.ka-procedure__keywords {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ds-size-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* The phases, numbered by Designsystemet's own list. */
+.ka-procedure__phases {
+  --dsc-list-margin-top: var(--ds-size-4);
 }
 
-/* The ring is what makes a keyword a tag now that it is not filled, and
-   `subtle` is too faint to read as a shape against the tinted card. `default`
-   is the lightest step on the same scale that clears 3:1 in both themes. */
-.ka-procedure__keywords .ds-tag {
-  --dsc-tag-border-color: var(--ds-color-border-default);
+.ka-procedure__phase-title {
+  font-weight: var(--ds-font-weight-medium);
+}
+
+/* What a phase found, and «pågår». Subtle, so the titles carry the list. */
+.ka-procedure__state,
+.ka-procedure__text,
+.ka-procedure__items {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+.ka-procedure__text {
+  margin-block: var(--ds-size-1) 0;
+}
+
+.ka-procedure__items {
+  --dsc-list-margin-top: var(--ds-size-1);
+
+  margin-block-start: var(--ds-size-1);
 }
 
 /* ------------------------------------------------- sources in the answer */
@@ -348,7 +362,6 @@
   gap: var(--ds-size-2);
 }
 
-.ka-procedure__steps,
 .ka-thinking__steps {
   display: flex;
   flex-direction: column;
@@ -361,14 +374,12 @@
 /* One step, with a dot in the margin: hollow when over, filled for the one
    being worked on. A shape and not only a colour, because the marker is the
    only thing saying which step is current (WCAG 1.4.1). */
-.ka-procedure__step,
 .ka-thinking__step {
   position: relative;
   padding-inline-start: var(--ds-size-5);
   color: var(--ds-color-neutral-text-subtle);
 }
 
-.ka-procedure__step::before,
 .ka-thinking__step::before {
   content: '';
   position: absolute;
@@ -384,12 +395,10 @@
   border-radius: var(--ds-border-radius-full);
 }
 
-.ka-procedure__step[data-ongoing],
 .ka-thinking__step[data-ongoing] {
   color: var(--ds-color-neutral-text-default);
 }
 
-.ka-procedure__step[data-ongoing]::before,
 .ka-thinking__step[data-ongoing]::before {
   background: var(--ds-color-neutral-base-default);
   border-color: var(--ds-color-neutral-base-default);
@@ -904,11 +913,11 @@
 .ka-procedure__summary[hidden],
 .ka-sources-card[hidden],
 .ka-sources-summary__title[hidden],
-.ka-procedure__block[hidden],
-.ka-procedure__keywords[hidden],
-.ka-procedure__label[hidden],
-.ka-procedure__steps[hidden],
-.ka-procedure__step[hidden],
+.ka-procedure__phases[hidden],
+.ka-procedure__phase[hidden],
+.ka-procedure__title[hidden],
+.ka-procedure__name[hidden],
+.ka-procedure__status[hidden],
 .ka-thinking[hidden],
 .ka-thinking__summary[hidden],
 .ka-thinking__steps[hidden],
