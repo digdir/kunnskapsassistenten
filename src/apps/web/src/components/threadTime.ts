@@ -7,8 +7,9 @@ const MS_PER_DAY = 86_400_000;
 // `nb`, not the browser's locale, so an English machine does not get «Sep 3» in a Norwegian panel.
 const clock = new Intl.DateTimeFormat('nb', { hour: '2-digit', minute: '2-digit' });
 const weekday = new Intl.DateTimeFormat('nb', { weekday: 'long' });
+// The short month from seven days on, in every older group too: «30. september» is 13
+// characters, «30. sep.» is 8, and the whole date is in `title`.
 const dayShortMonth = new Intl.DateTimeFormat('nb', { day: 'numeric', month: 'short' });
-const dayMonth = new Intl.DateTimeFormat('nb', { day: 'numeric', month: 'long' });
 const full = new Intl.DateTimeFormat('nb', { dateStyle: 'long', timeStyle: 'short' });
 
 /** Midnight local time, so «i dag» means the calendar day, not 24 hours. */
@@ -48,7 +49,6 @@ export function threadTime(updatedAt: string, now: Date = new Date()): ThreadTim
   if (days <= 0) return { ...common, text: clock.format(date) };
   if (days === 1) return { ...common, text: 'i går' };
   if (days < 7) return { ...common, text: weekday.format(date) };
-  if (days < 30) return { ...common, text: dayShortMonth.format(date) };
 
-  return { ...common, text: dayMonth.format(date) };
+  return { ...common, text: dayShortMonth.format(date) };
 }
