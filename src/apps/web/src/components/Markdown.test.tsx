@@ -200,54 +200,6 @@ describe('markør uten kilde', () => {
   });
 });
 
-describe('Markdown og søk i teksten', () => {
-  const marks = (container: HTMLElement) => [...container.querySelectorAll('mark')];
-
-  it('marks every match, in every kind of block', () => {
-    const { container } = render(
-      <Markdown markClassName="treff" searchQuery="mål">
-        {'# Måloppnåelse\n\nNkom måler mål mot mål.\n\n- ett mål\n- to'}
-      </Markdown>,
-    );
-
-    // Case-insensitive, so «Mål» in the heading counts too: five in all.
-    expect(marks(container)).toHaveLength(5);
-    expect(marks(container).every((mark) => mark.className === 'treff')).toBe(true);
-    // The text itself is untouched; only the wrapping changed.
-    expect(container.textContent).toContain('Nkom måler mål mot mål.');
-  });
-
-  it('marks nothing on a query too short to be one', () => {
-    const { container } = render(<Markdown searchQuery="m">{'Nkom måler mål.'}</Markdown>);
-
-    // `MIN_QUERY_LENGTH` is the sources panel's rule, and there is one search
-    // mechanism, not two.
-    expect(marks(container)).toHaveLength(0);
-  });
-
-  it('leaves a citation marker a link when the prose around it is marked', () => {
-    const { container } = render(
-      <Markdown
-        citations={[{ number: 1, targetId: 'excerpt-1', label: 'Årsrapport, side 4' }]}
-        searchQuery="måler"
-      >
-        {'Nkom måler dette [1] hvert år.'}
-      </Markdown>,
-    );
-
-    expect(marks(container)).toHaveLength(1);
-    expect(screen.getByRole('link', { name: 'Årsrapport, side 4' })).toBeTruthy();
-  });
-
-  it('does not mark markdown syntax the reader never sees', () => {
-    // The `#` is gone by the time the answer is on screen, so a search for it
-    // must not report a hit the highlight cannot show.
-    const { container } = render(<Markdown searchQuery="# ">{'# Overskrift'}</Markdown>);
-
-    expect(marks(container)).toHaveLength(0);
-  });
-});
-
 /**
  * The answer text comes from a language model, and the model can be steered
  * by what it reads in the sources. Nothing in it may run.

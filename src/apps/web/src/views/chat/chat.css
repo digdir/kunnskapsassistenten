@@ -490,61 +490,6 @@
   font-size: var(--ds-font-size-minus-1);
 }
 
-/* Search inside one answer, pinned to the top of the column by the shell's
-   view-head, which brings the surface, the rule and the padding — a margin
-   here would push the strip off the line the head draws. */
-.ka-answer-search {
-  display: block;
-}
-
-/* «Søk i svar 2 av 3». Visible, because the strip is not inside the answer
-   it searches, and on the row rather than a line of its own: everything
-   pinned here is off the reading area for as long as the reader scrolls. */
-.ka-answer-search__label {
-  flex: 0 0 auto;
-  color: var(--ds-color-neutral-text-subtle);
-}
-
-.ka-answer-search__form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ds-size-2);
-}
-
-/* Wide enough for a word or two and no wider: it shares the row with the
-   counter and the step buttons. */
-.ka-answer-search__field {
-  flex: 1 1 14rem;
-  min-width: 0;
-  max-width: 22rem;
-}
-
-.ka-answer-search__count {
-  margin: 0;
-  color: var(--ds-color-neutral-text-subtle);
-  font-size: var(--ds-font-size-minus-1);
-}
-
-.ka-answer-search__steps {
-  display: flex;
-  gap: var(--ds-size-1);
-}
-
-/* The same two surfaces the sources panel marks with. Warning and not
-   accent: the answer spends accent on the `[n]` markers, and a highlight in
-   that colour would read as one more of them. */
-.ka-answer-mark {
-  background: var(--ds-color-warning-surface-tinted);
-  color: var(--ds-color-warning-text-default);
-  border-radius: var(--ds-border-radius-sm);
-}
-
-.ka-answer-mark[data-current='true'] {
-  background: var(--ds-color-warning-base-default);
-  color: var(--ds-color-warning-base-contrast-default);
-}
-
 /* --------------------------------------------------------------- composer */
 
 /* The compose field stays put while the conversation scrolls behind it, or
