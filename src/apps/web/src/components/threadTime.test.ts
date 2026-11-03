@@ -27,10 +27,19 @@ describe('threadTime', () => {
     expect(threadTime(at(2026, 7, 28, 9, 5), now)?.text).toBe('28. aug.');
   });
 
-  it('writes day and month in the month and year groups', () => {
+  it('writes day and short month in the month and year groups', () => {
     expect(threadTime(at(2026, 6, 12, 9, 5), now)?.text).toBe('12. juli');
+    expect(threadTime(at(2026, 7, 1, 9, 5), now)?.text).toBe('1. aug.');
     // The year belongs to the group heading, which is «2025».
     expect(threadTime(at(2025, 4, 12, 9, 5), now)?.text).toBe('12. mai');
+  });
+
+  it('keeps the row short for the longest month name, as the heading already says when', () => {
+    // «30. september» is 13 characters; the row allows 12 (primary-sidebar.spec.ts).
+    const when = threadTime(at(2025, 8, 30, 9, 5), now);
+
+    expect(when?.text).toBe('30. sep.');
+    expect(when?.title).toBe('30. september 2025 kl. 09:05');
   });
 
   it('carries the machine date and the whole date, whatever the short text says', () => {
