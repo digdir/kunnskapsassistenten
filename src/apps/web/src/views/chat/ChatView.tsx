@@ -199,7 +199,7 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
 
   // Activating a `[n]` marker is the shell's business: it opens the sources
   // panel and tells it which excerpt to show. Neither view knows the other.
-  const { showCitation } = useCitation();
+  const { showCitation, showDocument } = useCitation();
 
   // The shell gives the conversation an address on the first question, so
   // «Kopier lenke til tråden» has something to copy (C16). A no-op after it.
@@ -406,6 +406,7 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
             focusField();
           }}
           onSelectSource={showCitation}
+          onSelectDocument={showDocument}
         />
       ) : loading ? (
         <ThreadLoading />

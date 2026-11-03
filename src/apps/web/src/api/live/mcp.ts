@@ -11,6 +11,7 @@ import type {
   ThinkingStepKind,
 } from '../../model';
 import { documentUrl } from '../documentUrls';
+import type { MarkerRef } from '../excerptCitations';
 import type { DatasetFilterFields } from '../filterFields';
 import { publicUrl } from '../publicUrl';
 import { stepFindings } from '../stepFindings';
@@ -220,6 +221,31 @@ export function toSourceDocuments(chunks: McpChunk[], dataset?: string): SourceD
   });
 
   return [...documents.values()];
+}
+
+/**
+ * Which excerpt each marker in the answer means, when the service cites by excerpt
+ * (digdir/genki#273, strategy config `citeBy: excerpt`): `structuredContent.markers`, one
+ * `{ marker, chunk_id, document }` per marker, `marker` as written without its brackets. Undefined
+ * when genki sends none, which is the service citing by document, as before: then `[n]` keeps
+ * today's meaning. An entry that is not of that shape is skipped.
+ */
+export function markerRefs(structured: { markers?: unknown } | undefined): MarkerRef[] | undefined {
+  const list = structured?.markers;
+  if (!Array.isArray(list)) return undefined;
+  return list.flatMap((item: unknown) => {
+    if (typeof item !== 'object' || item === null) return [];
+    const { marker, chunk_id: chunkId, document } = item as Record<string, unknown>;
+    if (typeof chunkId !== 'string' || chunkId === '') return [];
+    if (typeof marker !== 'string' && typeof marker !== 'number') return [];
+    return [
+      {
+        marker: String(marker),
+        chunkId,
+        ...(typeof document === 'string' && document !== '' ? { documentId: document } : {}),
+      },
+    ];
+  });
 }
 
 export function toCitations(documents: SourceDocument[]): Citation[] {

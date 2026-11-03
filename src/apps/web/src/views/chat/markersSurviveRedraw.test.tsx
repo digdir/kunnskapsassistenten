@@ -65,7 +65,7 @@ function Skall() {
   );
 }
 
-const markers = () => screen.getAllByRole('link', { name: /^Kilde \d/u });
+const markers = () => screen.getAllByRole('link', { name: /^Utdrag \d/u });
 
 describe('markørene overlever at svaret tegnes på nytt', () => {
   it('lar den samme noden stå etter et klikk', () => {

@@ -1,24 +1,16 @@
 import type { Citation, Message, ThreadDetail } from '../../../model';
 import { MOCK_CORPUS } from '../../corpus';
 import { daysAgo } from '../clock';
+import { citedMockAnswer } from '../excerptContract';
 import { scriptedConversations } from './scripts';
 import type { ScriptedConversation } from './types';
 
 /**
- * The `[n]` markers in a conversation's answer, derived from the excerpts so
- * a renumbered excerpt cannot point at the wrong one. Uncited excerpts are
- * skipped.
+ * The `[n]` markers in a conversation's answer, one per cited excerpt, as the mock shows them:
+ * through the same mapping as live (`citedMockAnswer`).
  */
 export function citationsFor(conversation: ScriptedConversation): Citation[] {
-  return conversation.documents
-    .flatMap((document) => document.excerpts.map((excerpt) => ({ document, excerpt })))
-    .filter(({ excerpt }) => excerpt.citationNumber !== undefined)
-    .map(({ document, excerpt }) => ({
-      number: excerpt.citationNumber!,
-      excerptId: excerpt.id,
-      documentId: document.id,
-    }))
-    .sort((a, b) => a.number - b.number);
+  return citedMockAnswer(conversation.answer, conversation.documents).citations;
 }
 
 // A scripted conversation as a thread with everything a live turn has, so opening it from the
@@ -36,14 +28,17 @@ function threadFor(conversation: ScriptedConversation): ThreadDetail {
     status: 'complete',
   };
 
+  // As the mock streams it: the cited excerpts numbered by first citation, and only those.
+  const shown = citedMockAnswer(conversation.answer, conversation.documents);
+
   // A finished turn where the agent asked back: nothing was retrieved, so no `documents` is right.
   const answer: Message = {
     id: `${conversation.id}-answer`,
     role: 'assistant',
-    content: conversation.answer,
+    content: shown.content,
     createdAt: answered,
-    citations: citationsFor(conversation),
-    sources: conversation.documents,
+    citations: shown.citations,
+    sources: shown.documents,
     retrieval: conversation.retrieval,
     thinkingSteps: conversation.thinkingSteps,
     // Kudos, the corpus these were written against, not whatever the chooser stands on later.

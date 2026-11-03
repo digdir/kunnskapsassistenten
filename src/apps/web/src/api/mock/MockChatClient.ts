@@ -18,7 +18,8 @@ import {
   wikipediaMockSources,
 } from './corpus/wikipedia';
 import { activeCorpusKey } from '../corpus';
-import { citationsFor, scriptedFor } from './conversations';
+import { scriptedFor } from './conversations';
+import { citedMockAnswer } from './excerptContract';
 import {
   mockThreadDetail,
   mockThreadList,
@@ -37,7 +38,6 @@ import {
 import {
   findThread,
   mockAnswerMarkdown,
-  nkomCitations,
   nkomRetrieval,
   nkomSources,
   nkomThinkingSteps,
@@ -446,7 +446,12 @@ export class MockChatClient implements ChatClient {
         cited,
       );
 
-      for (const text of tokenize(answer)) {
+      // Shaped as genki is asked to send it (digdir/genki#273) and through the same mapping as
+      // live: the cited excerpts numbered 1, 2, 3 in the order the answer first cites them, and
+      // only those shown.
+      const shown = citedMockAnswer(answer, documents);
+
+      for (const text of tokenize(shown.content)) {
         await wait(this.#delays.tokenMs, signal);
         written += text;
         yield { type: 'token', text };
@@ -482,13 +487,12 @@ export class MockChatClient implements ChatClient {
         return;
       }
 
-      const citations = (scripted ? citationsFor(scripted) : nkomCitations).filter((citation) =>
-        cited.has(citation.number),
-      );
+      const citations = shown.citations;
+      // What the search found, cited or not.
       const retrieval = retrievalFor(documents, scripted?.retrieval ?? nkomRetrieval);
 
       await wait(this.#delays.sourcesMs, signal);
-      yield { type: 'sources', documents, citations, retrieval };
+      yield { type: 'sources', documents: shown.documents, citations, retrieval };
 
       // Stored as streamed, from these locals, or a reload shows default or unfiltered sources.
       const messageId = nextMessageId();
@@ -500,7 +504,7 @@ export class MockChatClient implements ChatClient {
           content: written,
           citations,
           createdAt: answeredAt,
-          sources: documents,
+          sources: shown.documents,
           retrieval,
           thinkingSteps: steps,
           ...thought,

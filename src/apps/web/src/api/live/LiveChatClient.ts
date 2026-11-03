@@ -22,10 +22,12 @@ import {
   McpStreamState,
   datasetArguments,
   filterArguments,
+  markerRefs,
   toCitations,
   toSourceDocuments,
   type McpChunk,
 } from './mcp';
+import { citeExcerpts, type MarkerRef } from '../excerptCitations';
 import { excerptIds, fetchExcerptTexts, withExcerptTexts } from './excerpts';
 import { answerFingerprint, recallThread, rememberAnswer } from './sourceStore';
 import { TurnRecorder } from './turnRecorder';
@@ -267,9 +269,10 @@ export class LiveChatClient implements ChatClient {
         for (const frame of frames) {
           const events = readFrame(frame.data, state, conversationId, askedOf, {
             withTexts: (documents) => this.#withTexts(documents, askedOf.corpusKey, params.signal),
-            remember: (id, answerText, chunks, retrieval, outcome) =>
+            remember: (id, answerText, chunks, retrieval, outcome, markers) =>
               rememberAnswer(id, answerText, {
                 chunks,
+                ...(markers ? { markers } : {}),
                 retrieval,
                 thinkingSteps: turn.thinkingSteps,
                 thoughtMs: turn.thoughtMs,
@@ -368,7 +371,19 @@ export class LiveChatClient implements ChatClient {
         // so on another device, or after the browser was cleared, it reads back as an answer
         // (headless-rag #41).
         if (answer.outcome === 'needs-clarification') restored.status = answer.outcome;
-        if (!message.sources?.length && answer.chunks.length > 0) {
+        if (answer.markers?.length) {
+          // Cited by excerpt: the stored markers pair footnotes and excerpts again, over the
+          // backend's chunks when it kept them and this browser's otherwise.
+          const kept = message.sources?.length ? message.sources : undefined;
+          const listed = kept ?? toSourceDocuments(answer.chunks, detail.corpusKey);
+          const cited = citeExcerpts(message.content, listed, answer.markers);
+          restored.content = cited.content;
+          restored.sources = kept
+            ? cited.documents
+            : await this.#withTexts(cited.documents, detail.corpusKey);
+          restored.citations = cited.citations;
+          restored.citationCount = cited.citations.length;
+        } else if (!message.sources?.length && answer.chunks.length > 0) {
           const documents = await this.#withTexts(
             toSourceDocuments(answer.chunks, detail.corpusKey),
             detail.corpusKey,
@@ -413,6 +428,7 @@ type FrameHooks = {
     chunks: McpChunk[],
     retrieval: RetrievalDetails,
     outcome?: 'needs-clarification',
+    markers?: MarkerRef[],
   ) => void;
 };
 
@@ -431,7 +447,7 @@ async function* readFrame(
     result?: {
       isError?: boolean;
       content?: { type?: string; text?: string }[];
-      structuredContent?: { chunks?: unknown[]; conversation_id?: string };
+      structuredContent?: { chunks?: unknown[]; conversation_id?: string; markers?: unknown };
       _meta?: { conversation_id?: string; status?: string; error_code?: string; code?: string };
     };
     /** The backend's own snake_case codes or the requested set; `errorFromBackend` reads both. */
@@ -477,6 +493,9 @@ async function* readFrame(
 
   const chunks = (result.structuredContent?.chunks ?? []) as McpChunk[];
   const listed = toSourceDocuments(chunks, askedOf.corpusKey);
+  // Set when the service cites by excerpt (digdir/genki#273); otherwise `[n]` keeps today's
+  // meaning.
+  const markers = markerRefs(result.structuredContent);
 
   // Anything still held back was answer text after all: nothing followed it to prove it was the
   // agent's plan.
@@ -491,8 +510,13 @@ async function* readFrame(
     return;
   }
 
-  if (state.answerText === '' && finalText !== '') {
-    yield { type: 'token', text: finalText };
+  // One excerpt per footnote, numbered as KA shows them: the answer's markers renumbered 1, 2, 3
+  // in the order they first cite an excerpt, and only the cited excerpts.
+  const byExcerpt = markers === undefined ? undefined : citeExcerpts(finalText, listed, markers);
+  const shownText = byExcerpt?.content ?? finalText;
+
+  if (state.answerText === '' && shownText !== '') {
+    yield { type: 'token', text: shownText };
   }
 
   const conversationId =
@@ -516,17 +540,23 @@ async function* readFrame(
     chunks,
     retrieval,
     outcome,
+    markers,
   );
 
   // After the answer's text, so the reader is reading while the excerpts' text is looked up
   // (src/decisions/0008).
-  const documents = hooks ? await hooks.withTexts(listed) : listed;
+  const shown = byExcerpt?.documents ?? listed;
+  const documents = hooks ? await hooks.withTexts(shown) : shown;
 
   yield {
     type: 'sources',
     documents,
-    citations: toCitations(documents),
+    citations: byExcerpt?.citations ?? toCitations(documents),
     retrieval,
+    // The streamed text had genki's markers; the answer is shown with KA's.
+    ...(byExcerpt && state.answerText !== '' && byExcerpt.content !== state.answerText
+      ? { content: byExcerpt.content }
+      : {}),
   };
 
   yield {

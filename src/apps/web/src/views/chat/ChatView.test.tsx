@@ -92,7 +92,11 @@ function Shell({ children, startThread, selection, onAnswerSources, onCitation }
     <MemoryRouter>
       <MainScrollContext value={scrollRef}>
         <CitationContext
-          value={{ activeCitation: undefined, showCitation: onCitation ?? (() => {}) }}
+          value={{
+            activeCitation: undefined,
+            showCitation: onCitation ?? (() => {}),
+            showDocument: () => {},
+          }}
         >
           <AnswerSourcesContext
             value={{ ...inertAnswerSources, setAnswerSources: onAnswerSources ?? (() => {}) }}
@@ -1299,7 +1303,7 @@ describe('ChatView', () => {
     );
 
     ask('Hva sier rapporten?');
-    const marker = await screen.findByRole('link', { name: /^Kilde 1:/u });
+    const marker = await screen.findByRole('link', { name: /^Utdrag 1:/u });
     fireEvent.click(marker);
 
     expect(activated).toHaveLength(1);

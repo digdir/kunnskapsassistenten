@@ -38,6 +38,10 @@ type Backend = {
   createdWith?: Record<string, unknown>;
   /** `_meta.status` in the final frame. */
   status: string;
+  /** The answer in the final frame, when not `ANSWER`. */
+  answer?: string;
+  /** `structuredContent.markers`, sent when the service cites by excerpt (digdir/genki#273). */
+  markers?: unknown[];
 };
 
 let backend: Backend;
@@ -70,8 +74,12 @@ beforeEach(() => {
     if (path.endsWith('/api/mcp')) {
       const frame = {
         result: {
-          content: [{ type: 'text', text: ANSWER }],
-          structuredContent: { chunks: CHUNKS, conversation_id: 'conv-1' },
+          content: [{ type: 'text', text: backend.answer ?? ANSWER }],
+          structuredContent: {
+            chunks: CHUNKS,
+            conversation_id: 'conv-1',
+            ...(backend.markers ? { markers: backend.markers } : {}),
+          },
           _meta: { conversation_id: 'conv-1', status: backend.status },
         },
       };
@@ -373,5 +381,82 @@ describe('a clarifying question after a reload', () => {
     backend.status = 'needs-clarification';
 
     expect((await answerOf())?.status).toBe('complete');
+  });
+});
+
+/*
+ * An answer cited by excerpt, as digdir/genki#273 asks and #4's prototype sends it behind
+ * `citeBy: excerpt`: `structuredContent.markers`, one per marker. Shaped like that contract here;
+ * genki-test does not send it yet. c2 is read but cited by no marker.
+ */
+describe('an answer cited by excerpt', () => {
+  const RAW = 'Nkom rapporterer om måloppnåelse [3] og om ressursbruk [1], og igjen [3].';
+  const SHOWN = 'Nkom rapporterer om måloppnåelse [1] og om ressursbruk [2], og igjen [1].';
+  const MARKERS = [
+    { marker: '1', chunk_id: 'c3', document: '32062' },
+    { marker: '3', chunk_id: 'c1', document: '33189' },
+  ];
+
+  beforeEach(() => {
+    backend.answer = RAW;
+    backend.markers = MARKERS;
+  });
+
+  const textOf = (events: StreamEvent[]) =>
+    events.flatMap((event) => (event.type === 'token' ? [event.text] : [])).join('');
+  const shownExcerpts = (
+    documents: { id: string; excerpts: { id: string; citationNumber?: number }[] }[],
+  ) =>
+    documents.map((document) => [
+      document.id,
+      document.excerpts.map((excerpt) => [excerpt.id, excerpt.citationNumber]),
+    ]);
+
+  it('numbers the cited excerpts 1, 2 in the order of first citation, and shows only those', async () => {
+    const events = await ask();
+
+    expect(textOf(events)).toBe(SHOWN);
+    expect(shownExcerpts(sourcesOf(events))).toEqual([
+      ['33189', [['c1', 1]]],
+      ['32062', [['c3', 2]]],
+    ]);
+    // Only the cited excerpts' text is looked up.
+    expect(excerptCalls()).toEqual(['/api/excerpts?dataset=kudos-full&ids=c1%2Cc3']);
+  });
+
+  it('hands back the answer numbered as shown when the text streamed with genki’s markers', async () => {
+    backend.progress = [{ event: 'response/chunk', delta: RAW }];
+
+    const events = await ask();
+    const sources = events.find((event) => event.type === 'sources');
+
+    expect(textOf(events)).toBe(RAW);
+    expect(sources?.type === 'sources' ? sources.content : undefined).toBe(SHOWN);
+  });
+
+  it('keeps the same numbers after a reload, from the markers this browser kept', async () => {
+    await ask();
+    backend.storedAnswer = { text: RAW, chunks: [] };
+
+    const thread = await client().getThread('conv-1');
+    const answer = thread?.messages.find((message) => message.role === 'assistant');
+
+    expect(answer?.content).toBe(SHOWN);
+    expect(shownExcerpts(answer?.sources ?? [])).toEqual([
+      ['33189', [['c1', 1]]],
+      ['32062', [['c3', 2]]],
+    ]);
+  });
+
+  it('reads `[n]` as today when the service cites by document and sends no markers', async () => {
+    backend.markers = undefined;
+    backend.answer = ANSWER;
+
+    const events = await ask();
+
+    expect(textOf(events)).toBe(ANSWER);
+    expect(
+      sourcesOf(events).flatMap((document) => document.excerpts.map((excerpt) => excerpt.id)),
+    ).toEqual(['c1', 'c2', 'c3']);
   });
 });

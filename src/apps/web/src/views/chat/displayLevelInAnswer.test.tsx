@@ -36,21 +36,10 @@ const answer: Message = {
   status: 'complete',
 };
 
-/** The search is `MessageList`'s; these tests are about something else. */
-const noSearch = {
-  searchOpen: false,
-  searchQuery: '',
-  onSearchQueryChange: () => {},
-  onToggleSearch: () => {},
-  onCloseSearch: () => {},
-  searchLabel: 'Søk i svaret',
-};
-
 function showAnswer() {
   return render(
     <ol>
       <AnswerMessage
-        {...noSearch}
         message={answer}
         onRegenerate={() => {}}
         onSelectSource={() => {}}

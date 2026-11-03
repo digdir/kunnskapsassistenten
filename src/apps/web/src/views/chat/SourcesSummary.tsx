@@ -1,13 +1,19 @@
 import { Card, Details, Link, List, Paragraph } from '@digdir/designsystemet-react';
 import { FileTextIcon } from '@navikt/aksel-icons';
-import { excerptDomId, type SourceDocument } from '../../model';
-import { distinctTitles, excerptRange, isOwnDocument, OWN_DOCUMENT_LABEL } from '../sources';
+import type { SourceDocument } from '../../model';
+import {
+  distinctTitles,
+  documentHeadingDomId,
+  excerptRange,
+  isOwnDocument,
+  OWN_DOCUMENT_LABEL,
+} from '../sources';
 
 type SourcesSummaryProps = {
   /** The documents behind this answer, in the order the sources panel has. */
   documents: SourceDocument[];
-  /** Opens the sources panel on an excerpt of this answer, as a marker does. */
-  onSelectSource: (citationNumber: number) => void;
+  /** Opens the sources panel on this document's card, with nothing in it marked. */
+  onSelectDocument: (documentId: string) => void;
 };
 
 /**
@@ -15,7 +21,7 @@ type SourcesSummaryProps = {
  * `[n]` point into it. **The native list numbers stay, not Figma's circles**:
  * Designsystemet puts a zero-width character in `li::before` for VoiceOver.
  */
-export function SourcesSummary({ documents, onSelectSource }: SourcesSummaryProps) {
+export function SourcesSummary({ documents, onSelectDocument }: SourcesSummaryProps) {
   if (documents.length === 0) return null;
 
   // The same names as the cards in the sources panel: a document's number
@@ -58,13 +64,14 @@ export function SourcesSummary({ documents, onSelectSource }: SourcesSummaryProp
                       // Blue as links are, as Figma draws them. The box around
                       // it is neutral, and a link takes its colour from there.
                       data-color="accent"
-                      href={`#${excerptDomId(first)}`}
+                      href={`#${documentHeadingDomId(document.id)}`}
                       onClick={(event) => {
-                        // The panel does the moving, as for a marker. Following
-                        // the fragment would be a route change that remounts the
+                        // The panel does the moving, to the document and not to
+                        // its first excerpt (Lars, 2026-11-03). Following the
+                        // fragment would be a route change that remounts the
                         // chat slot (see the marker in Markdown.tsx).
                         event.preventDefault();
-                        onSelectSource(first);
+                        onSelectDocument(document.id);
                       }}
                     >
                       {names.get(document.id) ?? document.title}
