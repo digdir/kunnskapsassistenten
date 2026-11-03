@@ -99,6 +99,9 @@ describe('«Fremgangsmåte», sentence by sentence', () => {
     expect(JSON.stringify(procedureFrom({ steps, thinking: false }))).not.toContain(
       'Jeg har nok til å svare.',
     );
+    // Nor does it send «pågår» back to the first phase while the assistant works.
+    const working = procedureFrom({ steps, thinking: true }).phases;
+    expect(working.find((phase) => phase.ongoing)?.id).toBe('searched');
   });
 
   // Steps stored before the findings existed have a kind and nothing else.
