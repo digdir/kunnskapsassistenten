@@ -347,7 +347,8 @@ export function SourcesView({
    */
   function goToMarker(marker: HTMLElement) {
     const go = () => {
-      scrollElementIntoView(marker);
+      // Centred, so the sentence the marker ends is in view above it.
+      marker.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'center' });
       marker.focus({ preventScroll: true });
     };
     if (viewRef.current?.closest('dialog[open]')) {

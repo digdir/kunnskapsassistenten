@@ -40,6 +40,8 @@ test.describe('from an excerpt back to the answer', () => {
     await expect(backLink).toHaveText('1/2');
     // The control: before a press, focus is in the panel and on no footnote.
     await expect(footnotes(page, 1).first()).not.toBeFocused();
+    // The panel with its back-links, before a press scrolls the answer.
+    await expectNoAxeViolations(page, 'kildepanelet med veier tilbake til svaret');
 
     for (const [use, name] of [
       [0, '1/2'],
@@ -59,8 +61,6 @@ test.describe('from an excerpt back to the answer', () => {
     await expect(once).toHaveText('');
     await once.click();
     await expect(footnotes(page, 2)).toBeFocused();
-
-    await expectNoAxeViolations(page, 'kildepanelet med veier tilbake til svaret');
   });
 
   test('at 390 both ways back close the drawer before focus moves', MOCK, async ({ page }) => {
