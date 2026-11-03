@@ -50,11 +50,16 @@ function readFindings(summary: string): StepFindings | undefined {
 
 function searchFindings(summary: string): StepFindings | undefined {
   const newHits = whole(summary.match(NEW_HITS)?.[1]);
-  const autoFilter = summary.match(AUTO_FILTER)?.[1].trim();
-  if (newHits === undefined && !autoFilter) return undefined;
+  // genki joins the values with «, » (tools.ts).
+  const autoFilter = summary
+    .match(AUTO_FILTER)?.[1]
+    .split(', ')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (newHits === undefined && !autoFilter?.length) return undefined;
   return {
     ...(newHits === undefined ? {} : { newHits }),
-    ...(autoFilter ? { autoFilter } : {}),
+    ...(autoFilter?.length ? { autoFilter } : {}),
   };
 }
 

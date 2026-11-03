@@ -29,8 +29,8 @@ export interface StepFindings {
   restatedQuestion?: string;
   /** Hits this search had not seen before in the turn. Summed, they are all the turn found. */
   newHits?: number;
-  /** What the backend narrowed this search to on its own, not the reader («Auto-filtered by»). */
-  autoFilter?: string;
+  /** The values the backend narrowed this search to on its own, not the reader («Auto-filtered by»). */
+  autoFilter?: string[];
   /** Excerpts this call read. */
   excerptsRead?: number;
   /** The documents this call read, by title, as far as the report names them. */

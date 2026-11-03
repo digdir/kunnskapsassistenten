@@ -30,8 +30,8 @@ describe('stepFindings on a real genki run', () => {
   it('reads the new hits and the filter genki added on its own from each search', () => {
     const searches = calls.filter((call) => call.tool === 'search').map(findingsOf);
     expect(searches).toEqual([
-      { newHits: 43, autoFilter: 'Digitaliseringsdirektoratet' },
-      { newHits: 32, autoFilter: 'Digitaliseringsdirektoratet' },
+      { newHits: 43, autoFilter: ['Digitaliseringsdirektoratet'] },
+      { newHits: 32, autoFilter: ['Digitaliseringsdirektoratet'] },
     ]);
   });
 
@@ -72,7 +72,7 @@ describe('stepFindings on the other reports genki writes', () => {
       'Direktoratet for forvaltning og økonomistyring. Ranking: ColBERT semantic rerank (233ms).';
     expect(stepFindings('search', ['Digdir årsrapport 2024'], summary)).toEqual({
       newHits: 73,
-      autoFilter: 'Direktoratet for forvaltning og økonomistyring',
+      autoFilter: ['Direktoratet for forvaltning og økonomistyring'],
     });
   });
 

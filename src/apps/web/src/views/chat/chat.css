@@ -238,6 +238,7 @@
    the bar line up. */
 .ka-procedure__icon,
 .ka-sources-summary__icon {
+  flex-shrink: 0;
   font-size: var(--ds-icon-size);
 }
 

@@ -123,12 +123,12 @@ function findingsFrom(value: unknown): StepFindings | undefined {
   const findings: StepFindings = {};
   const restatedQuestion = optionalString(value.restatedQuestion);
   const newHits = count(value.newHits);
-  const autoFilter = optionalString(value.autoFilter);
+  const autoFilter = strings(value.autoFilter);
   const excerptsRead = count(value.excerptsRead);
   const documentsRead = strings(value.documentsRead);
   if (restatedQuestion) findings.restatedQuestion = restatedQuestion;
   if (newHits !== undefined) findings.newHits = newHits;
-  if (autoFilter) findings.autoFilter = autoFilter;
+  if (autoFilter?.length) findings.autoFilter = autoFilter;
   if (excerptsRead !== undefined) findings.excerptsRead = excerptsRead;
   if (documentsRead?.length) findings.documentsRead = documentsRead;
   if (value.documentsPartial === true) findings.documentsPartial = true;

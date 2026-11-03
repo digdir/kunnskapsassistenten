@@ -79,6 +79,12 @@ function phaseOf(step: ThinkingStep, worked: boolean): PhaseId | undefined {
   return undefined;
 }
 
+/** «A», «A og B», «A, B og C». */
+function listed(items: readonly string[]): string {
+  if (items.length <= 1) return items.join('');
+  return `${items.slice(0, -1).join(', ')} og ${items.at(-1)}`;
+}
+
 function count(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
@@ -134,8 +140,11 @@ export function procedureFrom({
           searches += 1;
           hits = (hits ?? 0) + found.newHits;
         }
-        if (found?.autoFilter && !autoFilters.includes(found.autoFilter)) {
-          autoFilters.push(found.autoFilter);
+        // One entry per filter, in the order the passes used it: a later pass that kept the same
+        // filter is not a change.
+        if (found?.autoFilter?.length) {
+          const values = listed(found.autoFilter);
+          if (autoFilters.at(-1) !== values) autoFilters.push(values);
         }
         break;
 

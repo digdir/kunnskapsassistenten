@@ -22,7 +22,7 @@ const steps: ThinkingStep[] = [
     label: 'Jeg søker i dokumentene.',
     queries: ['Digdir årsrapport 2024'],
     tool: 'search',
-    findings: { newHits: 43, autoFilter: 'Digitaliseringsdirektoratet' },
+    findings: { newHits: 43, autoFilter: ['Digitaliseringsdirektoratet'] },
   },
   {
     id: 'tool-3-read_chunks',
@@ -61,7 +61,7 @@ describe('stored steps keep what they found', () => {
       kind: 'search',
       label: 'Jeg søker i dokumentene.',
       tool: 'search',
-      findings: { newHits: '43', autoFilter: 'Digitaliseringsdirektoratet', readRefused: 'ja' },
+      findings: { newHits: '43', autoFilter: ['Digitaliseringsdirektoratet'], readRefused: 'ja' },
     } as unknown as ThinkingStep;
 
     rememberAnswer('conv-1', 'Svar.', { chunks: [], thinkingSteps: [odd] });
@@ -72,7 +72,7 @@ describe('stored steps keep what they found', () => {
         kind: 'search',
         label: 'Jeg søker i dokumentene.',
         tool: 'search',
-        findings: { autoFilter: 'Digitaliseringsdirektoratet' },
+        findings: { autoFilter: ['Digitaliseringsdirektoratet'] },
       },
     ]);
   });
