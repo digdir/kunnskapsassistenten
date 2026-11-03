@@ -13,15 +13,6 @@ import {
 } from './helpers';
 
 /**
- * The sources panel: the excerpts the answer rests on, and the link from a
- * `[n]` marker to the excerpt it points at.
- *
- * The panel starts collapsed, and it has nothing to show before the first
- * answer, so every test here asks a question first. That is also the only
- * honest way to test the coupling: the markers are built by one view and the
- * excerpts by another, and neither imports the other.
- */
-/**
  * Where an excerpt's toggle draws its visible word, «Åpne» or «Lukk», inside the summary. The
  * summary's centre is no longer the toggle's: the back-link to the answer shares the row. The word
  * and the hidden «utdrag N» share one element, so the word is found as the text drawn.
@@ -41,6 +32,15 @@ async function toggleWord(summary: Locator): Promise<{ x: number; y: number }> {
   });
 }
 
+/**
+ * The sources panel: the excerpts the answer rests on, and the link from a
+ * `[n]` marker to the excerpt it points at.
+ *
+ * The panel starts collapsed, and it has nothing to show before the first
+ * answer, so every test here asks a question first. That is also the only
+ * honest way to test the coupling: the markers are built by one view and the
+ * excerpts by another, and neither imports the other.
+ */
 test.describe('kildepanelet', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');

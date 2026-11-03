@@ -69,8 +69,8 @@ export function SourceExcerpt({
   const [use, setUse] = useState(0);
   const showsUses = cited && uses > 0 && onShowUse !== undefined;
   const at = use === 0 ? 1 : use;
-  // «2/3», as Lars approved it drawn, and the only place that shape is written: the name is built
-  // from the visible text (WCAG 2.5.3, label in name; #3's spec, change 03.11 r).
+  // «2/3», and the only place that shape is written: the name is built from the visible text
+  // (WCAG 2.5.3, label in name).
   const useCount = `${at}/${uses}`;
   const showUseName =
     uses > 1
@@ -114,7 +114,7 @@ export function SourceExcerpt({
             {cited ? `Utdrag ${citationNumber}` : 'Utdrag'}
           </Heading>
           {/* Back to where the answer uses this excerpt, beside the number so it works on a
-              closed row (#3's spec, change 03.11 q). An event to the host, never a link. */}
+              closed row. An event to the host, never a link. */}
           {showsUses && (
             <Button
               type="button"

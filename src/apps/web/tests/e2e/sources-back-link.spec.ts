@@ -3,11 +3,10 @@ import { covers, expectNoAxeViolations } from './a11y';
 import { ask, MOCK } from './helpers';
 
 /**
- * From an excerpt back to where the answer uses it (#3's spec, change 03.11 q, and its mock):
- * every cited excerpt has a button beside «Utdrag N» that takes focus to a footnote that cites it,
- * stepping through the uses when there are several and wrapping after the last. In the narrow
- * layout the sources panel is a modal drawer, so both ways back, this one and «Tilbake til
- * svaret», close it before focus moves.
+ * From an excerpt back to where the answer uses it: every cited excerpt has a button beside
+ * «Utdrag N» that takes focus to a footnote that cites it, stepping through the uses when there
+ * are several and wrapping after the last. In the narrow layout the sources panel is a modal
+ * drawer, so both ways back, this one and «Tilbake til svaret», close it before focus moves.
  *
  * Behaviour only. The scripted Bufdir answer cites excerpt 1 twice and excerpt 2 once.
  */
