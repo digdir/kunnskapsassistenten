@@ -180,7 +180,7 @@ describe('Markdown citations', () => {
   });
 
   // At 390 px a circle wrapped alone to the start of a line, away from the word it belongs to.
-  // The model's space before `[n]` is kept out of sight, so the circle is 3 px from the word.
+  // The model's space before `[n]` is kept out of sight, so the circle is 4 px from the word.
   it('holds a run of footnotes on one line with the word before it', () => {
     const { container } = render(
       <Markdown citations={targets}>{'Avvik rapporteres kvartalsvis [1][2] i året.'}</Markdown>,

@@ -51,7 +51,7 @@ type CitationPiece =
   | { kind: 'mark'; key: string; number: number; target: CitationTarget; space: string };
 
 // Replaces `[n]` with a link to the excerpt, named by its excerpt and the document it is in: a bare
-// «[3]» tells a screen reader user nothing. It is drawn as the number in a small circle, 3 px from
+// «[3]» tells a screen reader user nothing. It is drawn as the number in a small circle, 4 px from
 // the word before it, and kept on that word's line: a circle alone at the start of a line reads as
 // belonging to nothing. The model's space before `[n]` and the brackets stay in the
 // text, out of sight, so a copied answer still reads «ord [1][2]».
@@ -95,7 +95,7 @@ function withCitations(
       }
 
       // The whitespace just before the marker goes with it, out of sight: the circle keeps its
-      // own 3 px from the word instead of a space and 3 px.
+      // own 4 px from the word instead of a space and 4 px.
       const before = child.slice(consumed, match.index);
       const text = before.trimEnd();
       if (text) pieces.push({ kind: 'text', text });

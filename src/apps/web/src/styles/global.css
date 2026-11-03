@@ -566,11 +566,11 @@ body {
 }
 
 /* A footnote as a small round mark raised a little beside the word, its
-   number in the accent's darkest text, filled with the accent on hover. Each
-   mark keeps the same distance to what comes before it, so several in a row
-   stand apart. There is no 11 px or 3 px token:
-   the number takes the smallest font size (12 px), and the distance is three
-   quarters of the smallest size step, 3 px at the default size. */
+   number in the smallest font size and the accent's darkest text, filled with
+   the accent on hover. Each mark stands the smallest size step (4 px) from
+   what comes before it: two 20 px marks in a row are then 24 px apart centre
+   to centre, the spacing WCAG 2.5.8 asks of targets under 24 px. At 3 px
+   axe's target-size rule fails them (measured 2026-11-03). */
 .markdown__citation--linked {
   vertical-align: baseline;
 }
@@ -590,7 +590,7 @@ body {
   box-sizing: border-box;
   min-inline-size: var(--ds-size-5);
   block-size: var(--ds-size-5);
-  margin-inline-start: calc(var(--ds-size-1) * 0.75);
+  margin-inline-start: var(--ds-size-1);
   padding-inline: var(--ds-size-1);
   border-radius: var(--ds-border-radius-full);
   background: var(--ds-color-accent-surface-tinted);
