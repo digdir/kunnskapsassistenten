@@ -391,6 +391,8 @@ export function useChat(
               sourceCount = event.documents.length;
               patchAnswer(answerId, (message) => ({
                 ...message,
+                // The answer with its markers as the sources number them, when they differ.
+                ...(event.content === undefined ? {} : { content: event.content }),
                 sources: event.documents,
                 citations: event.citations,
                 retrieval: event.retrieval,

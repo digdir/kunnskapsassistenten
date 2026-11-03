@@ -54,6 +54,12 @@ export type StreamEvent =
       documents: SourceDocument[];
       citations: Citation[];
       retrieval: RetrievalDetails;
+      /**
+       * The answer again, with its markers numbered as shown, when that differs from the text
+       * that streamed: an answer cited by excerpt streams the backend's markers, and KA numbers
+       * the cited excerpts 1, 2, 3 in the order they are first cited.
+       */
+      content?: string;
     }
   | {
       type: 'done';
