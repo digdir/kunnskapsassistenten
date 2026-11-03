@@ -250,6 +250,16 @@
   flex-direction: column;
 }
 
+/* «Fremgangsmåte» needs 138 px beside the robot and gets 126 at 390: it
+   breaks as «Fremgangs-måte» rather than at any letter. The name only, since
+   the line under it and the phases would be hyphenated word by word there. */
+.ka-procedure__name {
+  /* stylelint-disable-next-line plugin/browser-compat -- unprefixed from
+     Safari 17. Before that the word breaks at any letter, as it did before
+     this rule. Cosmetic only. */
+  hyphens: auto;
+}
+
 .ka-procedure__status {
   display: flex;
   align-items: center;
@@ -961,6 +971,7 @@
 .ka-procedure__phases[hidden],
 .ka-procedure__phase[hidden],
 .ka-procedure__title[hidden],
+.ka-procedure__name[hidden],
 .ka-procedure__status[hidden],
 .ka-thinking[hidden],
 .ka-thinking__summary[hidden],

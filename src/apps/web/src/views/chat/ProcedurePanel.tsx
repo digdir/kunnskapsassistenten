@@ -119,7 +119,7 @@ export function ProcedurePanel({
           <span className="ka-procedure__summary">
             <RobotSmileIcon aria-hidden className="ka-procedure__icon" />
             <span className="ka-procedure__title">
-              <span>Fremgangsmåte</span>
+              <span className="ka-procedure__name">Fremgangsmåte</span>
               {line ? (
                 <span className="ka-procedure__status">
                   {thinking ? <Spinner aria-hidden="true" data-size="xs" /> : null}
