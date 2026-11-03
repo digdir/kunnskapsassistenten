@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Components for assistants</title>
+    <meta
+      name="description"
+      content="Working document: the components assistants in the shared solution are built from, with variants and what we have learned."
+    />
+    <!--
+      A working document for the team building the component library (digdir/kunnskapsassistenten#171,
+      part of #167). Maintained by Claude as part of the component work. This page is the landing
+      page; each component listed in #167 has a page of its own (chat.html, sources.html, ...),
+      all with the same sections in the same order, and an <article class="component"> with
+      data-component, data-phase and data-optional so people and agents read them the same way.
+      When a component changes: update its page and its badges here, and add a line to the change
+      log at the bottom of this page.
+    -->
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header>
+        <p class="eyebrow">Shared solution · Component library · Working document</p>
+        <h1>Components for assistants</h1>
+        <p class="lede">
+          A working document for the team building the component library that assistants in the
+          shared solution (fellesløsningen) are made from. It collects what each component does, its
+          variants, and what we learn as we build and test.
+        </p>
+        <p class="meta-line">
+          Last updated 19 October 2026 · Grows as we build · Not meant for service owners yet.
+        </p>
+      </header>
+
+      <!-- ============================================================ CHANGELOG -->
+      <section class="section" aria-labelledby="changelog">
+        <h2 id="changelog">Change log</h2>
+        <ul class="changelog">
+          <li>
+            <strong>19 October 2026:</strong> Each component has a page of its own. This page is the
+            landing page, and a working document for the team.
+          </li>
+          <li>
+            <strong>19 October 2026:</strong> First version. The nine components from #167, all in
+            the Draft phase, with what we have learned from the canvas and issues #174–#182.
+          </li>
+        </ul>
+      </section>
+
+      <!-- ============================================================ OVERVIEW -->
+      <section class="section" aria-labelledby="overview">
+        <h2 id="overview">Overview</h2>
+        <p class="section-lede">
+          The components are grouped by where they sit: the conversation in the main area, the
+          primary sidebar with threads, and the tools in the secondary sidebar.
+        </p>
+
+        <h3 class="group-title">Conversation <span>· main area</span></h3>
+        <ul class="stamps">
+          <li>
+            <a class="stamp-card" href="chat.html">
+              <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+                <rect class="s-panel" x="16" y="12" width="128" height="100" rx="10" />
+                <rect class="s-accent-soft" x="80" y="22" width="52" height="12" rx="6" />
+                <rect class="s-accent" x="28" y="42" width="18" height="6" rx="3" />
+                <rect class="s-bar" x="28" y="54" width="96" height="6" rx="3" />
+                <rect class="s-bar" x="28" y="64" width="72" height="6" rx="3" />
+                <rect class="s-soft" x="28" y="78" width="104" height="16" rx="8" />
+                <circle class="s-accent" cx="124" cy="86" r="4" />
+              </svg>
+              <span class="stamp-name">Chat</span>
+              <span class="stamp-desc">Question in, answer out, in one thread.</span>
+              <span class="badges"
+                ><span class="badge phase">Draft</span
+                ><span class="badge">Always included?</span></span
+              >
+            </a>
+          </li>
+          <li>
+            <a class="stamp-card" href="approach.html">
+              <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+                <rect class="s-panel" x="16" y="12" width="128" height="100" rx="10" />
+                <rect class="s-soft" x="26" y="20" width="108" height="72" rx="10" />
+                <rect class="s-bar" x="39" y="34" width="2" height="36" rx="1" />
+                <circle class="s-accent" cx="40" cy="34" r="5" />
+                <circle class="s-accent" cx="40" cy="52" r="5" />
+                <circle class="s-bar" cx="40" cy="70" r="5" />
+                <rect class="s-bar" x="52" y="31" width="64" height="6" rx="3" />
+                <rect class="s-bar" x="52" y="49" width="50" height="6" rx="3" />
+                <rect class="s-bar" x="52" y="67" width="58" height="6" rx="3" />
+              </svg>
+              <span class="stamp-name">Approach</span>
+              <span class="stamp-desc">The steps the assistant takes to answer.</span>
+              <span class="badges"
+                ><span class="badge phase">Draft</span><span class="badge">Optional</span></span
+              >
+            </a>
+          </li>
+          <li>
+            <a class="stamp-card" href="footnotes.html">
+              <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+                <rect class="s-panel" x="16" y="12" width="128" height="100" rx="10" />
+                <rect class="s-bar" x="28" y="24" width="78" height="6" rx="3" />
+                <rect class="s-accent" x="110" y="21" width="9" height="9" rx="3" />
+                <rect class="s-bar" x="28" y="36" width="96" height="6" rx="3" />
+                <rect class="s-bar" x="28" y="48" width="54" height="6" rx="3" />
+                <rect class="s-accent" x="86" y="45" width="9" height="9" rx="3" />
+                <rect class="s-soft" x="26" y="64" width="108" height="30" rx="8" />
+                <rect class="s-bar" x="34" y="71" width="7" height="6" rx="2" />
+                <rect class="s-bar" x="46" y="71" width="62" height="6" rx="3" />
+                <rect class="s-bar" x="34" y="82" width="7" height="6" rx="2" />
+                <rect class="s-bar" x="46" y="82" width="48" height="6" rx="3" />
+              </svg>
+              <span class="stamp-name">Footnotes</span>
+              <span class="stamp-desc">Numbers in the answer that point to the source.</span>
+              <span class="badges"
+                ><span class="badge phase">Draft</span><span class="badge">Optional</span></span
+              >
+            </a>
+          </li>
+        </ul>
+
+        <h3 class="group-title">Threads and filter <span>· primary sidebar</span></h3>
+        <ul class="stamps">
+          <li>
+            <a class="stamp-card" href="threads.html">
+              <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+                <rect
+                  class="s-panel"
+                  x="130"
+                  y="12"
+                  width="50"
+                  height="100"
+                  rx="10"
+                  opacity="0.55"
+                />
+                <rect class="s-panel" x="10" y="12" width="110" height="100" rx="10" />
+                <rect class="s-accent" x="18" y="20" width="50" height="12" rx="6" />
+                <rect class="s-check-fill" x="23" y="25" width="7" height="2" rx="1" />
+                <rect class="s-check-fill" x="25.5" y="22.5" width="2" height="7" rx="1" />
+                <rect class="s-check-fill" x="34" y="25" width="26" height="2" rx="1" />
+                <rect class="s-accent-soft" x="14" y="38" width="102" height="14" rx="6" />
+                <rect class="s-accent" x="19" y="41" width="9" height="7" rx="2" />
+                <path class="s-accent" d="M21 47l0 3.5 3.5-3.5z" />
+                <rect class="s-bar" x="33" y="42.5" width="66" height="5" rx="2.5" />
+                <rect class="s-bar" x="19" y="58" width="9" height="7" rx="2" />
+                <path class="s-bar" d="M21 64l0 3.5 3.5-3.5z" />
+                <rect class="s-bar" x="33" y="59.5" width="56" height="5" rx="2.5" />
+                <rect class="s-bar" x="19" y="73" width="9" height="7" rx="2" />
+                <path class="s-bar" d="M21 79l0 3.5 3.5-3.5z" />
+                <rect class="s-bar" x="33" y="74.5" width="62" height="5" rx="2.5" />
+                <rect class="s-bar" x="19" y="88" width="9" height="7" rx="2" />
+                <path class="s-bar" d="M21 94l0 3.5 3.5-3.5z" />
+                <rect class="s-bar" x="33" y="89.5" width="50" height="5" rx="2.5" />
+              </svg>
+              <span class="stamp-name">Threads</span>
+              <span class="stamp-desc">The conversations, and a new thread.</span>
+              <span class="badges"
+                ><span class="badge phase">Draft</span><span class="badge">Optional</span></span
+              >
+            </a>
+          </li>
+          <li>
+            <a class="stamp-card" href="filter.html">
+              <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+                <rect
+                  class="s-panel"
+                  x="130"
+                  y="12"
+                  width="50"
+                  height="100"
+                  rx="10"
+                  opacity="0.55"
+                />
+                <rect class="s-panel" x="10" y="12" width="110" height="100" rx="10" />
+                <rect class="s-soft" x="16" y="20" width="98" height="18" rx="7" />
+                <rect class="s-accent" x="24" y="26" width="44" height="6" rx="3" />
+                <rect class="s-accent" x="20" y="46" width="11" height="11" rx="3" />
+                <path class="s-check" d="M23 51.5l2.2 2.2 3.8-4.4" />
+                <rect class="s-bar" x="40" y="49" width="60" height="6" rx="3" />
+                <rect class="s-bar" x="20" y="63" width="11" height="11" rx="3" />
+                <rect class="s-bar" x="40" y="66" width="48" height="6" rx="3" />
+                <rect class="s-accent" x="20" y="80" width="11" height="11" rx="3" />
+                <path class="s-check" d="M23 85.5l2.2 2.2 3.8-4.4" />
+                <rect class="s-bar" x="40" y="83" width="66" height="6" rx="3" />
+              </svg>
+              <span class="stamp-name">Filter</span>
+              <span class="stamp-desc">Choose which documents a thread reads from.</span>
+              <span class="badges"
+                ><span class="badge phase">Draft</span><span class="badge">Optional</span></span
+              >
+            </a>
+          </li>
+          <li>
+            <a class="stamp-card" href="projects.html">
+              <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+                <rect
+                  class="s-panel"
+                  x="130"
+                  y="12"
+                  width="50"
+                  height="100"
+                  rx="10"
+                  opacity="0.55"
+                />
+                <rect class="s-panel" x="10" y="12" width="110" height="100" rx="10" />
+                <path
+                  class="s-accent"
+                  d="M18 22a2 2 0 0 1 2-2h7l3 3h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H20a2 2 0 0 1-2-2z"
+                />
+                <rect class="s-bar" x="50" y="25" width="48" height="6" rx="3" />
+                <rect class="s-soft" x="16" y="44" width="46" height="14" rx="6" />
+                <path
+                  class="s-bar"
+                  d="M21 47a1 1 0 0 1 1-1h4.5l3.5 3.5v6.5a1 1 0 0 1-1 1H22a1 1 0 0 1-1-1z"
+                />
+                <rect class="s-bar" x="34" y="48.5" width="22" height="5" rx="2.5" />
+                <rect class="s-soft" x="66" y="44" width="46" height="14" rx="6" />
+                <path
+                  class="s-bar"
+                  d="M71 47a1 1 0 0 1 1-1h4.5l3.5 3.5v6.5a1 1 0 0 1-1 1H72a1 1 0 0 1-1-1z"
+                />
+                <rect class="s-bar" x="84" y="48.5" width="22" height="5" rx="2.5" />
+                <rect class="s-bar" x="22" y="68" width="9" height="7" rx="2" />
+                <path class="s-bar" d="M24 74l0 3.5 3.5-3.5z" />
+                <rect class="s-bar" x="36" y="69.5" width="58" height="5" rx="2.5" />
+                <rect class="s-bar" x="22" y="84" width="9" height="7" rx="2" />
+                <path class="s-bar" d="M24 90l0 3.5 3.5-3.5z" />
+                <rect class="s-bar" x="36" y="85.5" width="48" height="5" rx="2.5" />
+              </svg>
+              <span class="stamp-name">Projects</span>
+              <span class="stamp-desc">Groups threads, documents and instructions.</span>
+              <span class="badges"
+                ><span class="badge phase">Draft</span><span class="badge">Optional</span></span
+              >
+            </a>
+          </li>
+        </ul>
+
+        <h3 class="group-title">Tools <span>· secondary sidebar</span></h3>
+        <ul class="stamps">
+          <li>
+            <a class="stamp-card" href="sources.html">
+              <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+                <rect
+                  class="s-panel"
+                  x="-20"
+                  y="12"
+                  width="50"
+                  height="100"
+                  rx="10"
+                  opacity="0.55"
+                />
+                <rect class="s-panel" x="40" y="12" width="110" height="100" rx="10" />
+                <rect class="s-soft" x="46" y="20" width="98" height="36" rx="8" />
+                <path
+                  class="s-accent"
+                  d="M52 27a1 1 0 0 1 1-1h4.5l3.5 3.5v6.5a1 1 0 0 1-1 1H53a1 1 0 0 1-1-1z"
+                />
+                <rect class="s-bar" x="65" y="27.5" width="40" height="5" rx="2.5" />
+                <circle class="s-accent" cx="126" cy="30" r="2.5" />
+                <circle class="s-accent" cx="132" cy="30" r="2.5" />
+                <circle class="s-accent" cx="138" cy="30" r="2.5" />
+                <rect class="s-bar" x="52" y="41" width="80" height="4" rx="2" />
+                <rect class="s-bar" x="52" y="48" width="58" height="4" rx="2" />
+                <rect class="s-soft" x="46" y="62" width="98" height="36" rx="8" />
+                <path
+                  class="s-accent"
+                  d="M52 69a1 1 0 0 1 1-1h4.5l3.5 3.5v6.5a1 1 0 0 1-1 1H53a1 1 0 0 1-1-1z"
+                />
+                <rect class="s-bar" x="65" y="69.5" width="32" height="5" rx="2.5" />
+                <circle class="s-accent" cx="126" cy="72" r="2.5" />
+                <circle class="s-accent" cx="132" cy="72" r="2.5" />
+                <circle class="s-bar" cx="138" cy="72" r="2.5" />
+                <rect class="s-bar" x="52" y="83" width="74" height="4" rx="2" />
+                <rect class="s-bar" x="52" y="90" width="50" height="4" rx="2" />
+              </svg>
+              <span class="stamp-name">Sources</span>
+              <span class="stamp-desc">The documents and excerpts behind the answer.</span>
+              <span class="badges"
+                ><span class="badge phase">Draft</span><span class="badge">Optional</span></span
+              >
+            </a>
+          </li>
+          <li>
+            <a class="stamp-card" href="document-view.html">
+              <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+                <rect
+                  class="s-panel"
+                  x="-20"
+                  y="12"
+                  width="50"
+                  height="100"
+                  rx="10"
+                  opacity="0.55"
+                />
+                <rect class="s-panel" x="40" y="12" width="110" height="100" rx="10" />
+                <path class="s-soft" d="M48 23a3 3 0 0 1 3-3h77l14 14v78H48z" />
+                <path class="s-bar" d="M128 20v11a3 3 0 0 0 3 3h11z" />
+                <rect class="s-bar" x="56" y="29" width="44" height="6" rx="3" />
+                <rect class="s-bar" x="56" y="42" width="66" height="5" rx="2.5" />
+                <rect class="s-accent-soft" x="52" y="52" width="82" height="22" rx="5" />
+                <rect class="s-accent" x="58" y="57" width="64" height="5" rx="2.5" />
+                <rect class="s-accent" x="58" y="65" width="42" height="5" rx="2.5" />
+                <rect class="s-bar" x="56" y="81" width="70" height="5" rx="2.5" />
+                <rect class="s-bar" x="56" y="91" width="52" height="5" rx="2.5" />
+              </svg>
+              <span class="stamp-name">Document view</span>
+              <span class="stamp-desc">The whole document, with the excerpt marked.</span>
+              <span class="badges"
+                ><span class="badge phase">Draft</span><span class="badge">Optional</span></span
+              >
+            </a>
+          </li>
+          <li>
+            <a class="stamp-card" href="notes.html">
+              <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+                <rect
+                  class="s-panel"
+                  x="-20"
+                  y="12"
+                  width="50"
+                  height="100"
+                  rx="10"
+                  opacity="0.55"
+                />
+                <rect class="s-panel" x="40" y="12" width="110" height="100" rx="10" />
+                <rect class="s-bar" x="48" y="22" width="44" height="6" rx="3" />
+                <g transform="rotate(-45 136 25)">
+                  <rect class="s-accent" x="128" y="22.5" width="13" height="5" rx="1.5" />
+                  <path class="s-accent" d="M142.5 22.5l4 2.5-4 2.5z" />
+                </g>
+                <rect class="s-soft" x="46" y="36" width="98" height="30" rx="8" />
+                <path
+                  class="s-accent"
+                  d="M52 43.5a2.5 2.5 0 1 1 3.2 2.4l-1.2 3.6h-1.6l0.8-3.4a2.5 2.5 0 0 1-1.2-2.6z"
+                />
+                <path
+                  class="s-accent"
+                  d="M58 43.5a2.5 2.5 0 1 1 3.2 2.4l-1.2 3.6h-1.6l0.8-3.4a2.5 2.5 0 0 1-1.2-2.6z"
+                />
+                <rect class="s-bar" x="66" y="43" width="62" height="4" rx="2" />
+                <rect class="s-bar" x="66" y="51" width="40" height="4" rx="2" />
+                <rect class="s-accent" x="110" y="49" width="7" height="7" rx="2" />
+                <rect class="s-bar" x="48" y="76" width="80" height="5" rx="2.5" />
+                <rect class="s-bar" x="48" y="87" width="58" height="5" rx="2.5" />
+                <rect class="s-accent" x="110" y="85" width="1.5" height="9" rx="0.75" />
+              </svg>
+              <span class="stamp-name">Notes</span>
+              <span class="stamp-desc">Collect excerpts, and keep the sources.</span>
+              <span class="badges"
+                ><span class="badge phase">Draft</span><span class="badge">Optional</span></span
+              >
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section" aria-labelledby="about">
+        <h2 id="about">About these pages</h2>
+        <div class="intro-grid">
+          <section class="panel" aria-labelledby="how-to-read">
+            <h2 id="how-to-read">How the pages work</h2>
+            <p>
+              Select a component above to open its page. Every component page has the same parts, in
+              the same order:
+            </p>
+            <ol>
+              <li>What it does, and where it sits in the interface</li>
+              <li>Use it when, and don't use it when</li>
+              <li>Variants</li>
+              <li>Related components</li>
+              <li>What we have learned</li>
+              <li>Open questions</li>
+            </ol>
+            <p>Norwegian words in «quotes» are the text users see in the interface.</p>
+          </section>
+          <section class="panel" aria-labelledby="phases">
+            <h2 id="phases">Phases</h2>
+            <p>Each component is in one of four phases:</p>
+            <ul>
+              <li><strong>Draft:</strong> explored in the design canvas, not built yet.</li>
+              <li><strong>Building:</strong> work in progress in the code.</li>
+              <li><strong>Testing:</strong> built, and being tested with users.</li>
+              <li><strong>Ready:</strong> can be chosen when an assistant is set up.</li>
+            </ul>
+            <p>
+              All components are drafts for now. The list of components follows
+              <a href="https://github.com/digdir/kunnskapsassistenten/issues/167">#167</a>. What we
+              have learned comes from the canvas
+              <a href="https://claude.ai/artifact/WTXEnA5VYmCiJwzCMjpZNM">Fellesløsningen</a>.
+            </p>
+          </section>
+        </div>
+      </section>
+
+      <!-- ============================================================ COMPOSITION -->
+      <section class="section" aria-labelledby="composition">
+        <h2 id="composition">Putting an assistant together</h2>
+        <p class="section-lede">
+          Whoever sets up the assistant chooses which components it has. These rules hold for every
+          combination.
+        </p>
+        <div class="intro-grid">
+          <section class="panel" aria-labelledby="composition-rules">
+            <h2 id="composition-rules">Rules</h2>
+            <ol>
+              <li>
+                A component that is not included is <strong>not shown</strong>. No empty panels,
+                tabs or buttons that point to something that isn't there.
+              </li>
+              <li>
+                <strong>Without a filter</strong>, a thread reads from a fixed set of documents
+                chosen when the assistant is set up. There is no filter panel and no «Endre».
+              </li>
+              <li>
+                The tools panel follows the number of tools: <strong>one</strong> gives just a
+                heading, <strong>two</strong> give a tab selector, <strong>three or more</strong>
+                give a dropdown. See
+                <a href="https://github.com/digdir/kunnskapsassistenten/issues/168">#168</a>.
+              </li>
+            </ol>
+          </section>
+          <section class="panel" aria-labelledby="composition-ask">
+            <h2 id="composition-ask">Which component meets which need</h2>
+            <ul>
+              <li>“a way to choose documents” → <a href="filter.html">Filter</a></li>
+              <li>
+                “to see where the answer comes from” → <a href="footnotes.html">Footnotes</a> and
+                <a href="sources.html">Sources</a>
+              </li>
+              <li>“to see what the assistant did” → <a href="approach.html">Approach</a></li>
+              <li>“to read the whole document” → <a href="document-view.html">Document view</a></li>
+              <li>“to collect and reuse answers” → <a href="notes.html">Notes</a></li>
+              <li>“to work on a case over time” → <a href="projects.html">Projects</a></li>
+              <li>“to come back to earlier conversations” → <a href="threads.html">Threads</a></li>
+            </ul>
+          </section>
+        </div>
+      </section>
+
+      <!-- ============================================================ SHARED -->
+      <section class="section" aria-labelledby="shared">
+        <h2 id="shared">Shared across components</h2>
+        <p class="section-lede">What we have learned that applies to more than one component.</p>
+        <div class="intro-grid">
+          <section class="panel" aria-labelledby="shared-visual">
+            <h2 id="shared-visual">Visual language</h2>
+            <ul>
+              <li>
+                Floating white panels, round corners and plenty of space. Avoid sharp
+                white/grey/white stripes.
+              </li>
+              <li>Colours are chosen by their role in Designsystemet, not by how they look.</li>
+              <li>Tab selector: a grey rail with a white selected tab, not black and white.</li>
+              <li>
+                Designsystemet first. Flag deviations, and use the theme's levers before custom
+                styling.
+              </li>
+              <li>Use everyday words (<span lang="nb">klarspråk</span>).</li>
+            </ul>
+          </section>
+        </div>
+      </section>
+
+      <!-- ============================================================ UPKEEP -->
+      <section class="section" aria-labelledby="upkeep">
+        <h2 id="upkeep">Keeping the pages up to date</h2>
+        <div class="intro-grid">
+          <section class="panel" aria-labelledby="upkeep-change">
+            <h2 id="upkeep-change">When a component changes</h2>
+            <ul>
+              <li>
+                Update its page in the same PR that changes the component: phase, variants and what
+                we learned.
+              </li>
+              <li>Update its badges in the overview here, and add a line to the change log.</li>
+              <li>What is still a hypothesis is marked as one.</li>
+            </ul>
+          </section>
+          <section class="panel" aria-labelledby="upkeep-new">
+            <h2 id="upkeep-new">When a component is added</h2>
+            <ul>
+              <li>
+                Only components listed in
+                <a href="https://github.com/digdir/kunnskapsassistenten/issues/167">#167</a>. The
+                canvas is a source of learnings, not the list.
+              </li>
+              <li>
+                A sketch in the overview, a page of its own with the same parts, and a line in the
+                change log.
+              </li>
+              <li>
+                Issue for these pages:
+                <a href="https://github.com/digdir/kunnskapsassistenten/issues/171">#171</a>.
+              </li>
+            </ul>
+          </section>
+        </div>
+      </section>
+
+      <footer>
+        <p>
+          Canvas: <a href="https://claude.ai/artifact/WTXEnA5VYmCiJwzCMjpZNM">Fellesløsningen</a> ·
+          Inspiration:
+          <a href="https://designsystemet.no/no/components">designsystemet.no/no/components</a>
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

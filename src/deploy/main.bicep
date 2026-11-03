@@ -2,7 +2,7 @@
 param name string = 'ka-app'
 param location string = resourceGroup().location
 
-@description('Image in ACR, e.g. altinnaicontainers.azurecr.io/ka-app:sha-abc1234')
+@description('Image in ACR, e.g. sharedregistryswc.azurecr.io/ka-app:sha-abc1234')
 param image string
 param acrLoginServer string
 
@@ -108,6 +108,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
   properties: {
     managedEnvironmentId: containerEnv.id
     configuration: {
+      activeRevisionsMode: 'Single'
       ingress: {
         external: true
         targetPort: 8787

@@ -1,0 +1,47 @@
+{
+  "id": "simple-qa",
+  "name": {
+    "nb": "Spørsmål og svar",
+    "en": "Simple Q&A"
+  },
+  "purpose": "Quick questions and short answers, in one column.",
+  "fits": "Any chat service, with or without datasets.",
+  "fitsNeeds": [],
+  "layout": {
+    "primary": [],
+    "main": ["chat", "footnotes", "sources"],
+    "secondary": []
+  },
+  "components": {
+    "chat": {
+      "core": true
+    },
+    "footnotes": {
+      "core": false,
+      "default": "auto",
+      "needs": ["component:sources"]
+    },
+    "sources": {
+      "core": false,
+      "default": "auto",
+      "needs": ["service:datasets|documents"]
+    },
+    "feedback": {
+      "core": false,
+      "default": "on",
+      "needs": ["channel:feedback"]
+    },
+    "variant-picker": {
+      "core": false,
+      "default": "auto",
+      "needs": ["service:variants"]
+    },
+    "threads": {
+      "core": false,
+      "default": "off",
+      "needs": ["channel:conversations"]
+    }
+  },
+  "blocks": ["intro", "example-questions", "notice"],
+  "brand": ["colour", "name", "logo", "intro", "example-questions"]
+}

@@ -1,0 +1,535 @@
+/*
+  Shared styles for the component docs (index.html and one page per component).
+  Self-contained on purpose: no external fonts, scripts or styles, so the pages open from disk.
+  Colours mirror the Digdir theme (design-tokens-build/digdir.css), light and dark.
+*/
+
+:root {
+  color-scheme: light;
+  --bg: #f3f3f4;
+  --surface: #ffffff;
+  --surface-2: #f3f3f4;
+  --surface-3: #e8e8e9;
+  --text: #292c30;
+  --text-2: #484a4e;
+  --muted: #5b5d60;
+  --line: #e8e8e9;
+  --line-strong: #c9cacb;
+  --accent: #0062ba;
+  --accent-text: #005db1;
+  --accent-subtle: #ddeaf6;
+  --accent-on-subtle: #002c54;
+  --stamp-bg: #e8e8e9;
+  --stamp-panel: #ffffff;
+  --stamp-soft: #f1f1f2;
+  --stamp-bar: #d6d7d8;
+  --stamp-accent: #99c0e3;
+  --stamp-accent-soft: #ddeaf6;
+  --direct-bg: #dcece8;
+  --direct-text: #053227;
+  --summary-bg: #eae7f3;
+  --summary-text: #312256;
+  --gap-line: #a56d13;
+  --gap-text: #3c2807;
+  --open-bg: #fcf2e2;
+  --open-text: #3c2807;
+  --shadow: 0 1px 2px rgba(36, 39, 43, 0.06), 0 8px 24px rgba(36, 39, 43, 0.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #111417;
+    --surface: #1b1f24;
+    --surface-2: #22272d;
+    --surface-3: #2b3138;
+    --text: #e6e8eb;
+    --text-2: #c3c7cc;
+    --muted: #a3a8ae;
+    --line: #2f353c;
+    --line-strong: #444b53;
+    --accent: #7fb6f2;
+    --accent-text: #8cbdf2;
+    --accent-subtle: #1c2f45;
+    --accent-on-subtle: #cfe3f8;
+    --stamp-bg: #2b3138;
+    --stamp-panel: #1b1f24;
+    --stamp-soft: #22272d;
+    --stamp-bar: #3d444c;
+    --stamp-accent: #5b8fc4;
+    --stamp-accent-soft: #24384f;
+    --direct-bg: #163229;
+    --direct-text: #bfe5d8;
+    --summary-bg: #2a2440;
+    --summary-text: #d9d2f0;
+    --gap-line: #e0a64a;
+    --gap-text: #f3dcb4;
+    --open-bg: #33281a;
+    --open-text: #f3dcb4;
+    --shadow: none;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-padding-top: 24px;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+}
+a {
+  color: var(--accent-text);
+}
+a:focus-visible,
+.stamp-card:focus-visible {
+  /* stylelint-disable-next-line plugin/browser-compat -- before Safari 16.4
+     the ring does not follow `border-radius`. Visible either way, so the
+     focus requirement is met. Same as .ka-composer in src/views/chat/chat.css. */
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--surface-3);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 48px 16px 96px;
+}
+@media (min-width: 720px) {
+  .page {
+    padding-inline: 32px;
+  }
+}
+
+/* Header */
+.eyebrow {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent-text);
+  margin: 0 0 8px;
+}
+h1 {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+.lede {
+  font-size: 18px;
+  color: var(--text-2);
+  max-width: 70ch;
+  margin: 0 0 16px;
+}
+.meta-line {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+.intro-grid {
+  display: grid;
+  gap: 16px;
+  margin: 32px 0 0;
+}
+@media (min-width: 820px) {
+  .intro-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.panel {
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+}
+.panel h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+.panel p,
+.panel ul,
+.panel ol {
+  margin: 0 0 8px;
+  font-size: 15px;
+  color: var(--text-2);
+}
+.panel ul,
+.panel ol {
+  padding-inline-start: 20px;
+}
+.panel > :last-child {
+  margin-bottom: 0;
+}
+
+/* Sections */
+.section {
+  margin-top: 64px;
+}
+.section > h2 {
+  font-size: 26px;
+  font-weight: 500;
+  margin: 0 0 8px;
+}
+.section > .section-lede {
+  color: var(--text-2);
+  max-width: 70ch;
+  margin: 0 0 24px;
+}
+.group-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin: 32px 0 12px;
+}
+.group-title span {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Stamp grid, after designsystemet.no/no/components */
+.stamps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+.stamp-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+  padding: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s;
+}
+.stamp-card:hover {
+  border-color: var(--accent);
+}
+.stamp-card:hover .stamp-name {
+  text-decoration: underline;
+}
+.stamp {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  border-radius: 14px;
+  background: var(--stamp-bg);
+}
+.stamp-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--accent-text);
+  margin: 12px 4px 2px;
+}
+.stamp-desc {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 4px 8px;
+  line-height: 1.45;
+}
+.stamp-card .badges {
+  margin: auto 4px 2px;
+}
+
+/* Stamp drawing roles, after the sketches in the canvas */
+.s-panel {
+  fill: var(--stamp-panel);
+}
+.s-soft {
+  fill: var(--stamp-soft);
+}
+.s-bar {
+  fill: var(--stamp-bar);
+}
+.s-accent {
+  fill: var(--stamp-accent);
+}
+.s-accent-soft {
+  fill: var(--stamp-accent-soft);
+}
+.s-check-fill {
+  fill: var(--stamp-panel);
+}
+.s-check {
+  fill: none;
+  stroke: var(--stamp-panel);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Badges */
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.badge.phase {
+  background: var(--accent-subtle);
+  color: var(--accent-on-subtle);
+}
+
+/* Composition table */
+.table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 760px;
+  font-size: 14px;
+}
+caption {
+  text-align: start;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 12px 16px 0;
+}
+th,
+td {
+  text-align: start;
+  vertical-align: top;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+thead th {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+tbody th {
+  font-weight: 500;
+}
+tbody th small {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+}
+tbody tr:last-child > * {
+  border-bottom: 0;
+}
+td.yes {
+  color: var(--text);
+  font-weight: 500;
+}
+td.no {
+  color: var(--muted);
+}
+
+/* Component articles */
+.component {
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-top: 24px;
+}
+@media (min-width: 720px) {
+  .component {
+    padding: 32px;
+  }
+}
+.component-head {
+  display: grid;
+  gap: 20px;
+  align-items: start;
+}
+@media (min-width: 720px) {
+  .component-head {
+    grid-template-columns: 1fr 220px;
+  }
+}
+.component-head .stamp {
+  max-width: 220px;
+}
+.component h1 {
+  font-size: 26px;
+  font-weight: 500;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+}
+.component .summary {
+  font-size: 17px;
+  color: var(--text-2);
+  margin: 8px 0 12px;
+}
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 16px 0 0;
+  font-size: 14px;
+}
+.facts dt {
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+}
+.component-body {
+  display: grid;
+  gap: 8px 32px;
+  margin-top: 24px;
+}
+@media (min-width: 820px) {
+  .component-body {
+    grid-template-columns: 1fr 1fr;
+  }
+  .component-body .wide {
+    grid-column: 1 / -1;
+  }
+}
+.component h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+.component-body ul,
+.component-body ol {
+  margin: 0;
+  padding-inline-start: 20px;
+  font-size: 15px;
+}
+.component-body li + li {
+  margin-top: 4px;
+}
+.component-body p {
+  margin: 0;
+  font-size: 15px;
+}
+.ref {
+  color: var(--muted);
+  font-size: 13px;
+}
+.placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+.open-questions {
+  background: var(--open-bg);
+  color: var(--open-text);
+  border-radius: 12px;
+  padding: 12px 16px 14px;
+  margin-top: 16px;
+}
+.open-questions h2 {
+  margin-top: 0;
+}
+
+/* Small inline samples */
+.sample {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.sample.direct {
+  background: var(--direct-bg);
+  color: var(--direct-text);
+}
+.sample.summary {
+  background: var(--summary-bg);
+  color: var(--summary-text);
+}
+.sample.gap {
+  border: 2px dashed var(--gap-line);
+  color: var(--gap-text);
+}
+
+.changelog li + li {
+  margin-top: 6px;
+}
+footer {
+  margin-top: 64px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Subpages */
+.crumbs {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+.crumbs a {
+  color: var(--accent-text);
+}
+.pager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 32px;
+}
+.pager a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 14px 18px;
+  text-decoration: none;
+  font-weight: 500;
+}
+.pager a:hover {
+  border-color: var(--accent);
+}
+.pager a:focus-visible {
+  /* stylelint-disable-next-line plugin/browser-compat -- before Safari 16.4
+     the ring does not follow `border-radius`. Visible either way, so the
+     focus requirement is met. Same as .ka-composer in src/views/chat/chat.css. */
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.pager .next {
+  grid-column: 2;
+  text-align: end;
+}
+.pager small {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+}

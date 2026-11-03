@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Projects · Components</title>
+    <meta
+      name="description"
+      content="Groups threads, fixed documents and instructions for one task. Each thread in a project reads from the project's documents."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <nav aria-label="Breadcrumbs">
+        <p class="crumbs">
+          <a href="index.html">Components</a> / <span aria-current="page">Projects</span>
+        </p>
+      </nav>
+
+      <article
+        class="component"
+        id="projects"
+        data-component="projects"
+        data-phase="draft"
+        data-optional="true"
+        aria-labelledby="projects-title"
+      >
+        <div class="component-head">
+          <div>
+            <h1 id="projects-title">Projects</h1>
+            <div class="badges">
+              <span class="badge phase">Draft</span><span class="badge">Optional</span
+              ><span class="badge">Primary sidebar</span>
+            </div>
+            <p class="summary">
+              Groups threads, fixed documents and instructions for one task. Each thread in a
+              project reads from the project's documents.
+            </p>
+            <dl class="facts">
+              <dt>UI name</dt>
+              <dd>«Prosjekter»</dd>
+              <dt>Sits in</dt>
+              <dd>Primary sidebar, above the threads</dd>
+              <dt>Issue</dt>
+              <dd><a href="https://github.com/digdir/kunnskapsassistenten/issues/180">#180</a></dd>
+              <dt>Canvas</dt>
+              <dd>00-Prosjekter (PR-1 to PR-5)</dd>
+            </dl>
+          </div>
+          <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+            <rect class="s-panel" x="130" y="12" width="50" height="100" rx="10" opacity="0.55" />
+            <rect class="s-panel" x="10" y="12" width="110" height="100" rx="10" />
+            <path
+              class="s-accent"
+              d="M18 22a2 2 0 0 1 2-2h7l3 3h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H20a2 2 0 0 1-2-2z"
+            />
+            <rect class="s-bar" x="50" y="25" width="48" height="6" rx="3" />
+            <rect class="s-soft" x="16" y="44" width="46" height="14" rx="6" />
+            <path
+              class="s-bar"
+              d="M21 47a1 1 0 0 1 1-1h4.5l3.5 3.5v6.5a1 1 0 0 1-1 1H22a1 1 0 0 1-1-1z"
+            />
+            <rect class="s-bar" x="34" y="48.5" width="22" height="5" rx="2.5" />
+            <rect class="s-soft" x="66" y="44" width="46" height="14" rx="6" />
+            <path
+              class="s-bar"
+              d="M71 47a1 1 0 0 1 1-1h4.5l3.5 3.5v6.5a1 1 0 0 1-1 1H72a1 1 0 0 1-1-1z"
+            />
+            <rect class="s-bar" x="84" y="48.5" width="22" height="5" rx="2.5" />
+            <rect class="s-bar" x="22" y="68" width="9" height="7" rx="2" />
+            <path class="s-bar" d="M24 74l0 3.5 3.5-3.5z" />
+            <rect class="s-bar" x="36" y="69.5" width="58" height="5" rx="2.5" />
+            <rect class="s-bar" x="22" y="84" width="9" height="7" rx="2" />
+            <path class="s-bar" d="M24 90l0 3.5 3.5-3.5z" />
+            <rect class="s-bar" x="36" y="85.5" width="48" height="5" rx="2.5" />
+          </svg>
+        </div>
+        <div class="component-body">
+          <div>
+            <h2>Use it when</h2>
+            <ul>
+              <li>
+                Users work on a case over time, with the same documents and instructions across
+                several threads.
+              </li>
+            </ul>
+            <h2>Variants</h2>
+            <ul>
+              <li>
+                Overview, new project, the project, a thread in a project, and moving a thread (PR-1
+                to PR-5).
+              </li>
+              <li>
+                Adding sources: choose below the filter (PR-3c2) or search above it (PR-3c3). Both
+                are being considered.
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>Related</h2>
+            <ul>
+              <li><a href="threads.html">Threads</a>: grouped under a project</li>
+              <li>
+                <a href="filter.html">Filter</a>: a project's documents are added with the filter
+              </li>
+            </ul>
+          </div>
+          <div class="wide">
+            <h2>What we have learned</h2>
+            <ul>
+              <li>The project owns the instructions, the fixed documents and the threads.</li>
+              <li>
+                A thread owns its own document selection: the project's fixed documents, plus what
+                is added in the thread.
+              </li>
+              <li>The project's instructions win over «Om deg» when they disagree.</li>
+              <li>
+                A thread moved into a project gets the project's instructions and documents from the
+                next question. Earlier answers don't change.
+              </li>
+              <li>
+                Hypothesis: the filter is still needed when starting a thread in a project. Test: do
+                users change the selection when they start new threads, and what do they put at
+                project level?
+              </li>
+            </ul>
+          </div>
+          <div class="wide open-questions">
+            <h2>Open questions</h2>
+            <ul>
+              <li>
+                Does a project need its own starting point in Kudos, or are fixed documents enough?
+              </li>
+              <li>Can a fixed project document be removed from one thread?</li>
+              <li>Sharing and access in projects haven't been thought through yet.</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <nav class="pager" aria-label="Other components">
+        <a class="prev" href="filter.html" rel="prev"><small>Previous</small>Filter</a>
+        <a class="next" href="sources.html" rel="next"><small>Next</small>Sources</a>
+      </nav>
+    </main>
+  </body>
+</html>

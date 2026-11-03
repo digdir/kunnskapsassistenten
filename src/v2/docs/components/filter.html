@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Filter · Components</title>
+    <meta
+      name="description"
+      content="Lets the user narrow which documents the assistant reads from, for example by document type, organisation and year."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <nav aria-label="Breadcrumbs">
+        <p class="crumbs">
+          <a href="index.html">Components</a> / <span aria-current="page">Filter</span>
+        </p>
+      </nav>
+
+      <article
+        class="component"
+        id="filter"
+        data-component="filter"
+        data-phase="draft"
+        data-optional="true"
+        aria-labelledby="filter-title"
+      >
+        <div class="component-head">
+          <div>
+            <h1 id="filter-title">Filter</h1>
+            <div class="badges">
+              <span class="badge phase">Draft</span><span class="badge">Optional</span
+              ><span class="badge">Primary sidebar</span>
+            </div>
+            <p class="summary">
+              Lets the user narrow which documents the assistant reads from, for example by document
+              type, organisation and year.
+            </p>
+            <dl class="facts">
+              <dt>UI name</dt>
+              <dd>«Filter»</dd>
+              <dt>Sits in</dt>
+              <dd>Primary sidebar, with the threads</dd>
+              <dt>Issue</dt>
+              <dd><a href="https://github.com/digdir/kunnskapsassistenten/issues/178">#178</a></dd>
+              <dt>Canvas</dt>
+              <dd>00-Filter (FI-A2, FI-4c1 to FI-4c3, FI-P1, FI-P3, FI-P4)</dd>
+            </dl>
+          </div>
+          <svg class="stamp" viewBox="0 0 160 100" aria-hidden="true">
+            <rect class="s-panel" x="130" y="12" width="50" height="100" rx="10" opacity="0.55" />
+            <rect class="s-panel" x="10" y="12" width="110" height="100" rx="10" />
+            <rect class="s-soft" x="16" y="20" width="98" height="18" rx="7" />
+            <rect class="s-accent" x="24" y="26" width="44" height="6" rx="3" />
+            <rect class="s-accent" x="20" y="46" width="11" height="11" rx="3" />
+            <path class="s-check" d="M23 51.5l2.2 2.2 3.8-4.4" />
+            <rect class="s-bar" x="40" y="49" width="60" height="6" rx="3" />
+            <rect class="s-bar" x="20" y="63" width="11" height="11" rx="3" />
+            <rect class="s-bar" x="40" y="66" width="48" height="6" rx="3" />
+            <rect class="s-accent" x="20" y="80" width="11" height="11" rx="3" />
+            <path class="s-check" d="M23 85.5l2.2 2.2 3.8-4.4" />
+            <rect class="s-bar" x="40" y="83" width="66" height="6" rx="3" />
+          </svg>
+        </div>
+        <div class="component-body">
+          <div>
+            <h2>Use it when</h2>
+            <ul>
+              <li>
+                Users should be able to narrow what the assistant reads from, for example in a large
+                collection such as Kudos.
+              </li>
+            </ul>
+            <h2>Don't use it when</h2>
+            <ul>
+              <li>
+                The assistant should always read from a fixed set. Then the set is chosen at setup,
+                and the filter is left out.
+              </li>
+            </ul>
+            <h2>Variants</h2>
+            <ul>
+              <li>
+                <strong>A, the filter belongs to the thread</strong> (FI-P1): in the sidebar with
+                the threads. Preferred.
+              </li>
+              <li>
+                <strong>B, the filter in the answer:</strong> inside
+                <a href="approach.html">Approach</a> (FI-P3).
+              </li>
+              <li>
+                In the thread, at the top of the conversation, or as a tab next to «Kilder» (FI-4c1
+                to FI-4c3).
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>Related</h2>
+            <ul>
+              <li><a href="threads.html">Threads</a>: each thread has its own filter</li>
+              <li><a href="approach.html">Approach</a>: shows the filter for each answer</li>
+              <li><a href="sources.html">Sources</a>: the documents that match the filter</li>
+              <li>
+                <a href="projects.html">Projects</a>: a project's documents are added with the
+                filter
+              </li>
+            </ul>
+          </div>
+          <div class="wide">
+            <h2>What we have learned</h2>
+            <ul>
+              <li>The filter applies to the next question. Earlier answers don't change.</li>
+              <li>
+                When you go back to a thread, the filter shows the choices from the last question in
+                that thread.
+              </li>
+              <li>
+                Numbers are exact, never «ca.». The system knows how many documents there are.
+              </li>
+              <li>
+                Large selections are summarised instead of listed: «Alle 173», «12 av 173 valgt»,
+                «172 av 173 · 1 tatt ut». The filter must handle about 45,000 documents.
+              </li>
+              <li>
+                Beyond the filter, users don't choose what the assistant reads. It always reads
+                every source that is included, and the system decides how many it reads closely.
+              </li>
+              <li>
+                «Fjern alle filtre» sits above «Dokumenttype», and the summary has a neutral grey
+                background so it stands apart from the chat.
+              </li>
+              <li>Call it «Filter», not «Avgrensning».</li>
+            </ul>
+          </div>
+          <div class="wide open-questions">
+            <h2>Open questions</h2>
+            <ul>
+              <li>How is it shown when the selection changes in the middle of a thread?</li>
+              <li>
+                The canvas uses a technical label in the filter that must not appear in user-facing
+                text. It needs a replacement before the filter is built.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <nav class="pager" aria-label="Other components">
+        <a class="prev" href="threads.html" rel="prev"><small>Previous</small>Threads</a>
+        <a class="next" href="projects.html" rel="next"><small>Next</small>Projects</a>
+      </nav>
+    </main>
+  </body>
+</html>
