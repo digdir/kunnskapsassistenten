@@ -208,6 +208,7 @@ function MainSlot() {
       onCollapsedChange={(collapsed) => setCollapsed('main', collapsed)}
       activeCitationNumber={activeCitation?.number}
       activeCitationNonce={activeCitation?.nonce}
+      activeDocumentId={activeCitation?.documentId}
       siblingViews={state.views.filter((id) => id !== state.activeView)}
       onShowView={(view) => setActiveView('main', view)}
       switchedByUser={isSwitchedByUser('main')}
@@ -414,6 +415,7 @@ function Sidebar({
               onCollapsedChange={(collapsed) => setCollapsed(slot, collapsed)}
               activeCitationNumber={activeCitation?.number}
               activeCitationNonce={activeCitation?.nonce}
+              activeDocumentId={activeCitation?.documentId}
               siblingViews={[]}
               onShowView={(view) => setActiveView(slot, view)}
               switchedByUser={false}
@@ -432,6 +434,7 @@ function Sidebar({
                 onCollapsedChange={(collapsed) => setCollapsed(slot, collapsed)}
                 activeCitationNumber={activeCitation?.number}
                 activeCitationNonce={activeCitation?.nonce}
+                activeDocumentId={activeCitation?.documentId}
                 siblingViews={state.views.filter((id) => id !== state.activeView)}
                 onShowView={(view) => setActiveView(slot, view)}
                 switchedByUser={isSwitchedByUser(slot)}

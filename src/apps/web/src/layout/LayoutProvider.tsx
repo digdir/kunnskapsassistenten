@@ -191,10 +191,10 @@ export function LayoutProvider({
   // Asking to see a citation opens its panel; pointing at an excerpt behind a collapsed panel
   // gains nothing. Through `fitted` like every other opening, so a narrow window collapses the
   // navigation panel here too.
-  const showCitation = useCallback(
-    (number: number, messageId?: string) => {
+  const show = useCallback(
+    (target: { number: number } | { documentId: string }, messageId?: string) => {
       setActiveCitation((current) => ({
-        number,
+        ...target,
         nonce: (current?.nonce ?? 0) + 1,
         ...(messageId === undefined ? {} : { messageId }),
       }));
@@ -203,6 +203,14 @@ export function LayoutProvider({
       setLayout((current) => fitted(current, 'secondary-sidebar', false));
     },
     [fitted],
+  );
+  const showCitation = useCallback(
+    (number: number, messageId?: string) => show({ number }, messageId),
+    [show],
+  );
+  const showDocument = useCallback(
+    (documentId: string, messageId?: string) => show({ documentId }, messageId),
+    [show],
   );
 
   // Compared against the active view, not just read: `withActiveView` ignores
@@ -237,8 +245,8 @@ export function LayoutProvider({
   );
 
   const citation = useMemo(
-    () => ({ activeCitation, showCitation }),
-    [activeCitation, showCitation],
+    () => ({ activeCitation, showCitation, showDocument }),
+    [activeCitation, showCitation, showDocument],
   );
 
   // Asked with the lock if any, else the reader's choice minus fully ticked fields; the stored

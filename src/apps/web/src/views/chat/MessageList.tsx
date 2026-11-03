@@ -12,6 +12,8 @@ type MessageListProps = {
      answer numbers its excerpts from 1, so the number alone does not say
      which excerpt. */
   onSelectSource: (citationNumber: number, messageId: string) => void;
+  /** A document in «Kilder brukt i svaret» was chosen, with the answer it belongs to. */
+  onSelectDocument?: (documentId: string, messageId: string) => void;
   /** Ask the stopped question again, in place of the answer that was cut off. */
   onRegenerate: () => void;
   /** «Avgrenset til …» over an answer, by message id. Absent means the
@@ -35,6 +37,7 @@ type MessageListProps = {
 export function MessageList({
   messages,
   onSelectSource,
+  onSelectDocument,
   onRegenerate,
   filterSummary,
   foundNothing,
@@ -115,6 +118,7 @@ export function MessageList({
             question={questionBefore(messages, index)}
             onRegenerate={onRegenerate}
             onSelectSource={onSelectSource}
+            onSelectDocument={onSelectDocument}
           />
         );
       })}

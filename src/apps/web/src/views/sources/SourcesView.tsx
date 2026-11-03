@@ -10,6 +10,7 @@ import { CorpusDisclaimer } from './CorpusDisclaimer';
 import { corpusKeyFor, isOwnDocument } from './origin';
 import { SourceDocumentCard } from './SourceDocumentCard';
 import { distinctTitles } from './distinctTitles';
+import { documentHeadingDomId } from './ids';
 import { SourcesPlaceholder } from './SourcesPlaceholder';
 import { noAnswerYet, emptyStateFor, type SourcesEmptyState } from './emptyStates';
 import { readableDocuments } from './readableText';
@@ -145,6 +146,7 @@ export function SourcesView({
   activeCitationNumber,
   activeCitationNonce,
   activeCitationMessageId,
+  activeDocumentId,
 }: SourcesViewProps) {
   // The disclaimer is drawn outside the sticky head and the search field
   // inside it, so the id that ties them together is made here, where both are.
@@ -185,10 +187,18 @@ export function SourcesView({
   // a second click on the same marker count. `shownFor` is the answer it was
   // resolved against, so the highlight stays with that answer.
   const [handled, setHandled] = useState<
-    { number?: number; nonce?: number; messageId?: string; shownFor?: string } | undefined
+    | {
+        number?: number;
+        documentId?: string;
+        nonce?: number;
+        messageId?: string;
+        shownFor?: string;
+      }
+    | undefined
   >(undefined);
   if (
     handled?.number !== activeCitationNumber ||
+    handled?.documentId !== activeDocumentId ||
     handled?.nonce !== activeCitationNonce ||
     handled?.messageId !== activeCitationMessageId
   ) {
@@ -204,21 +214,34 @@ export function SourcesView({
 
     setHandled({
       number: activeCitationNumber,
+      documentId: activeDocumentId,
       nonce: activeCitationNonce,
       messageId: activeCitationMessageId,
       shownFor: activeCitationNumber === undefined ? undefined : citedAnswer?.messageId,
     });
 
-    const target = allExcerpts(citedAnswer?.documents ?? []).find(
-      (excerpt) => excerpt.citationNumber === activeCitationNumber,
-    );
+    const target =
+      activeCitationNumber === undefined
+        ? undefined
+        : allExcerpts(citedAnswer?.documents ?? []).find(
+            (excerpt) => excerpt.citationNumber === activeCitationNumber,
+          );
 
     if (target !== undefined && !openExcerptIds.has(target.id)) {
       setOpenExcerptIds(new Set(openExcerptIds).add(target.id));
     }
 
+    // A document from «Kilder brukt i svaret»: its card, with no excerpt opened
+    // and nothing marked.
+    const targetDocument =
+      activeDocumentId === undefined
+        ? undefined
+        : citedAnswer?.documents.find((source) => source.id === activeDocumentId);
+
     // The default layout starts collapsed, where a marker would do nothing.
-    if (target !== undefined && collapsed) onCollapsedChange?.(false);
+    if ((target !== undefined || targetDocument !== undefined) && collapsed) {
+      onCollapsedChange?.(false);
+    }
   }
 
   // Effects run on mount: a view mounted with a citation already set must not
@@ -270,6 +293,24 @@ export function SourcesView({
       afterRender(() => scrollToAndFocus(excerptDomId(activeCitationNumber))),
     );
   }, [activeCitationNumber, activeCitationNonce]);
+
+  // A document asked for by name goes to its card's heading, once per request, and is not marked.
+  const revealedDocument = useRef<{ documentId?: string; nonce?: number }>({
+    documentId: activeDocumentId,
+    nonce: activeCitationNonce,
+  });
+  useEffect(() => {
+    const previous = revealedDocument.current;
+    revealedDocument.current = { documentId: activeDocumentId, nonce: activeCitationNonce };
+
+    if (activeDocumentId === undefined) return;
+    if (previous.documentId === activeDocumentId && previous.nonce === activeCitationNonce) return;
+
+    // Two frames, as for a marker: in case the panel had to be un-collapsed.
+    return afterRender(() =>
+      afterRender(() => scrollToAndFocus(documentHeadingDomId(activeDocumentId))),
+    );
+  }, [activeDocumentId, activeCitationNonce]);
 
   /** A detached marker would drop focus to `<body>`, hence `markerAt`. */
   function returnToAnswer() {

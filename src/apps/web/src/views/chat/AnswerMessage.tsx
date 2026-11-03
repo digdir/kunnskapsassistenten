@@ -25,6 +25,8 @@ type AnswerMessageProps = {
   message: Message;
   /** A `[n]` marker was activated, with the answer it sits in. */
   onSelectSource: (citationNumber: number, messageId: string) => void;
+  /** A document in «Kilder brukt i svaret» was chosen, with the answer it belongs to. */
+  onSelectDocument?: (documentId: string, messageId: string) => void;
   /** Ask the stopped question again, in place of the answer that was cut off. */
   onRegenerate: () => void;
   /** The turn the error alert is about, if any. A failed turn outlives its
@@ -66,6 +68,7 @@ export function AnswerSkeleton() {
 export function AnswerMessage({
   message,
   onSelectSource,
+  onSelectDocument,
   onRegenerate,
   liveErrorId,
   narrowedTo,
@@ -211,7 +214,10 @@ export function AnswerMessage({
                 sources arrive in the last frame, and a list that grew while
                 the text was written would move under it. */}
             {complete && !empty && !foundNothing ? (
-              <SourcesSummary documents={message.sources ?? []} onSelectSource={activateCitation} />
+              <SourcesSummary
+                documents={message.sources ?? []}
+                onSelectDocument={(documentId) => onSelectDocument?.(documentId, message.id)}
+              />
             ) : null}
 
             {complete && !empty && !foundNothing ? (

@@ -92,7 +92,11 @@ function Shell({ children, startThread, selection, onAnswerSources, onCitation }
     <MemoryRouter>
       <MainScrollContext value={scrollRef}>
         <CitationContext
-          value={{ activeCitation: undefined, showCitation: onCitation ?? (() => {}) }}
+          value={{
+            activeCitation: undefined,
+            showCitation: onCitation ?? (() => {}),
+            showDocument: () => {},
+          }}
         >
           <AnswerSourcesContext
             value={{ ...inertAnswerSources, setAnswerSources: onAnswerSources ?? (() => {}) }}
