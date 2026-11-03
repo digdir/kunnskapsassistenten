@@ -23,6 +23,10 @@ type SourceDocumentCardProps = {
   activeCitationNumber?: number;
   /** Back to the marker; handed on only to the excerpt that marker points at. */
   onReturnToAnswer?: () => void;
+  /** How many places in the answer cite each excerpt, by number. */
+  uses?: Record<number, number>;
+  /** Shows the reader one use of an excerpt in the answer, by its number and the use. */
+  onShowUse?: (citationNumber: number, use: number) => void;
   /** This is the document a title in «Kilder brukt i svaret» asked for; Escape goes back to it. */
   asked?: boolean;
 };
@@ -42,6 +46,8 @@ export function SourceDocumentCard({
   activeCitationNumber,
   onReturnToAnswer,
   asked = false,
+  uses,
+  onShowUse,
 }: SourceDocumentCardProps) {
   const subtitle = documentSubtitle(source);
   const own = isOwnDocument(source);
@@ -110,6 +116,15 @@ export function SourceDocumentCard({
               // Only the excerpt the marker points at gets a way back, because
               // it is the only one the reader was sent to.
               onReturnToAnswer={active ? onReturnToAnswer : undefined}
+              // Every cited excerpt gets the back-link to its uses.
+              uses={
+                excerpt.citationNumber === undefined ? 0 : (uses?.[excerpt.citationNumber] ?? 0)
+              }
+              onShowUse={
+                onShowUse === undefined || excerpt.citationNumber === undefined
+                  ? undefined
+                  : (use) => onShowUse(excerpt.citationNumber as number, use)
+              }
             />
           );
         })}

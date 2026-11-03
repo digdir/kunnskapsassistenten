@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { userDocumentSource } from '../../api/mock/fixtures';
 import { documentDomId } from './ids';
-import { excerptDomId, type AnswerSources, type SourceDocument } from '../../model';
+import { answerDomId, excerptDomId, type AnswerSources, type SourceDocument } from '../../model';
 import { SourcesView } from './SourcesView';
 
 /**
@@ -1034,5 +1034,100 @@ describe('SourcesView and a document from «Kilder brukt i svaret»', () => {
     rerender(<Asked documentId="doc-a" nonce={2} />);
 
     await waitFor(() => expect(document.activeElement).toBe(heading));
+  });
+});
+
+describe('SourcesView, from an excerpt back to where the answer uses it', () => {
+  const answer: AnswerSources = {
+    messageId: 'svar-2',
+    status: 'complete',
+    documents: [
+      documentWith('doc-a', 'Årsrapport Nkom 2025', [1]),
+      documentWith('doc-b', 'Tildelingsbrev Nkom 2026', [2]),
+    ],
+    uses: { 1: 3, 2: 1 },
+  };
+
+  /** Two answers in the conversation, both citing excerpt 1; the panel shows the second. */
+  function Conversation({ uses = true }: { uses?: boolean }) {
+    return (
+      <>
+        <ol>
+          <li id={answerDomId('svar-1')}>
+            <a href={`#${excerptDomId(1)}`}>[1] i første svar</a>
+          </li>
+          <li id={answerDomId('svar-2')}>
+            <a href={`#${excerptDomId(1)}`}>[1] første bruk</a>
+            <a href={`#${excerptDomId(2)}`}>[2] eneste bruk</a>
+            <a href={`#${excerptDomId(1)}`}>[1] andre bruk</a>
+            <a href={`#${excerptDomId(1)}`}>[1] tredje bruk</a>
+          </li>
+        </ol>
+        <SourcesView
+          answers={[
+            { ...answer, messageId: 'svar-1' },
+            uses ? answer : { ...answer, uses: undefined },
+          ]}
+        />
+      </>
+    );
+  }
+
+  const backLink = (name: RegExp) => screen.getByRole('button', { name });
+
+  it('steps through the uses of an excerpt cited three times, and wraps', () => {
+    render(<Conversation />);
+    const link = backLink(/^Vis hvor svaret bruker utdrag 1/u);
+    expect(link.getAttribute('aria-label')).toBe('Vis hvor svaret bruker utdrag 1 (1/3)');
+    expect(link.textContent).toBe('1/3');
+
+    const uses = ['[1] første bruk', '[1] andre bruk', '[1] tredje bruk', '[1] første bruk'];
+    const names = ['1/3', '2/3', '3/3', '1/3'];
+    uses.forEach((use, index) => {
+      fireEvent.click(link);
+      expect(document.activeElement).toBe(screen.getByRole('link', { name: use }));
+      expect(link.getAttribute('aria-label')).toBe(
+        `Vis hvor svaret bruker utdrag 1 (${names[index]})`,
+      );
+    });
+  });
+
+  it('names an excerpt used once without a count, and goes to that one use', () => {
+    render(<Conversation />);
+    const link = backLink(/^Vis hvor svaret bruker utdrag 2/u);
+
+    expect(link.getAttribute('aria-label')).toBe('Vis hvor svaret bruker utdrag 2');
+    expect(link.textContent).toBe('');
+    fireEvent.click(link);
+    expect(document.activeElement).toBe(screen.getByRole('link', { name: '[2] eneste bruk' }));
+  });
+
+  it('draws no back-link when nothing says how the answer uses its excerpts', () => {
+    render(<Conversation uses={false} />);
+
+    expect(screen.queryByRole('button', { name: /^Vis hvor svaret bruker/u })).toBeNull();
+  });
+
+  it('closes the narrow layout’s drawer before it moves focus to the answer', async () => {
+    const onCollapsedChange = vi.fn();
+    render(
+      <>
+        <ol>
+          <li id={answerDomId('svar-2')}>
+            <a href={`#${excerptDomId(2)}`}>[2] eneste bruk</a>
+          </li>
+        </ol>
+        <dialog open>
+          <SourcesView answers={[answer]} onCollapsedChange={onCollapsedChange} />
+        </dialog>
+      </>,
+    );
+
+    fireEvent.click(backLink(/^Vis hvor svaret bruker utdrag 2/u));
+
+    expect(onCollapsedChange).toHaveBeenCalledWith(true);
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('link', { name: '[2] eneste bruk' })),
+    );
   });
 });
