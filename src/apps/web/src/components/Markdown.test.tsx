@@ -172,26 +172,32 @@ describe('Markdown citations', () => {
     expect(first.classList.contains('markdown__citation-mark')).toBe(true);
     const visible = (link: HTMLElement) =>
       [...link.childNodes]
-        .filter((node) => !(node instanceof HTMLElement && node.classList.contains('ds-sr-only')))
+        .filter(
+          (node) =>
+            !(node instanceof HTMLElement && node.classList.contains('markdown__citation-copy')),
+        )
         .map((node) => node.textContent)
         .join('');
     expect([visible(first), visible(second)]).toEqual(['1', '2']);
-    expect(first.querySelectorAll('.ds-sr-only')).toHaveLength(2);
+    expect(first.querySelectorAll('.markdown__citation-copy')).toHaveLength(2);
   });
 
   // At 390 px a circle wrapped alone to the start of a line, away from the word it belongs to.
   // The model's space before `[n]` is kept out of sight, so the circle is 4 px from the word.
-  it('holds a run of footnotes on one line with the word before it', () => {
+  // Only the word's last character is held, so the word itself can still break: at 320 px
+  // «rapporteringskrav» with two circles held whole did not fit the answer card.
+  it('holds a run of footnotes on one line with the end of the word before it', () => {
     const { container } = render(
       <Markdown citations={targets}>{'Avvik rapporteres kvartalsvis [1][2] i året.'}</Markdown>,
     );
 
     const runs = container.querySelectorAll('.markdown__citation-run');
     expect(runs).toHaveLength(1);
-    expect(runs[0].firstChild?.textContent).toBe('kvartalsvis');
+    expect(runs[0].firstChild?.textContent).toBe('s');
+    expect(runs[0].previousSibling?.textContent).toBe('Avvik rapporteres kvartalsvi');
     expect(runs[0].querySelectorAll('a')).toHaveLength(2);
     // The space before the first marker is in the run, hidden, and nothing is lost from the text.
-    expect(runs[0].children[0].classList.contains('ds-sr-only')).toBe(true);
+    expect(runs[0].children[0].classList.contains('markdown__citation-copy')).toBe(true);
     expect(runs[0].children[0].textContent).toBe(' ');
     expect(container.textContent).toBe('Avvik rapporteres kvartalsvis [1][2] i året.');
   });
@@ -201,7 +207,7 @@ describe('Markdown citations', () => {
 
     const runs = [...container.querySelectorAll('.markdown__citation-run')];
     expect(runs.map((run) => run.querySelectorAll('a').length)).toEqual([1, 1]);
-    expect(runs[1].firstChild?.textContent).toBe('og');
+    expect(runs[1].firstChild?.textContent).toBe('g');
     expect(container.textContent).toBe('Fet [1] og [2].');
   });
 

@@ -575,18 +575,15 @@ body {
   vertical-align: baseline;
 }
 
-/* The word before a run of footnotes and the footnotes, on one line: a circle
-   alone at the start of a line reads as belonging to nothing (390 px,
-   measured 2026-11-03). */
+/* The end of the word before a run of footnotes and the footnotes, on one
+   line: a circle alone at the start of a line reads as belonging to nothing
+   (390 px, measured 2026-11-03). */
 .markdown__citation-run {
   white-space: nowrap;
 }
 
 .markdown__citation-mark {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-block;
   box-sizing: border-box;
   min-inline-size: var(--ds-size-5);
   block-size: var(--ds-size-5);
@@ -597,9 +594,19 @@ body {
   color: var(--ds-color-accent-text-default);
   font-size: var(--ds-font-size-1);
   font-weight: var(--ds-font-weight-semibold);
-  line-height: 1;
+  line-height: var(--ds-size-5);
+  text-align: center;
   text-decoration: none;
   vertical-align: var(--ds-size-1);
+}
+
+/* The brackets and the model's space before `[n]`, kept in the text for
+   whoever copies the answer but not drawn. Inline and not `ds-sr-only`: an
+   absolutely positioned element is a block to `innerText` and to copying,
+   which then read «[ 1 ]». The link is named by `aria-label`, so none of it is
+   read out. */
+.markdown__citation-copy {
+  font-size: 0;
 }
 
 .markdown__citation-mark:hover {

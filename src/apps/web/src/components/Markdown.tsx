@@ -108,7 +108,7 @@ function withCitations(
 
     const mark = (piece: Extract<CitationPiece, { kind: 'mark' }>) => [
       piece.space ? (
-        <span className="ds-sr-only" key={`${piece.key}-space`}>
+        <span className="markdown__citation-copy" key={`${piece.key}-space`}>
           {piece.space}
         </span>
       ) : null,
@@ -126,18 +126,20 @@ function withCitations(
           }}
         >
           {/* The link is named by `aria-label`, so the brackets are never read out. */}
-          <span className="ds-sr-only">[</span>
+          <span className="markdown__citation-copy">[</span>
           {piece.number}
-          <span className="ds-sr-only">]</span>
+          <span className="markdown__citation-copy">]</span>
         </Link>
       </sup>,
     ];
 
-    // Each run of markers is held on one line with the word before it.
+    // Each run of markers is held on one line with the end of the word before it. Only the last
+    // character goes into the run, so a long word can still break where it has to: at 320 px a
+    // whole word held with two circles did not fit the answer card.
     const parts: ReactNode[] = [];
     let index = 0;
-    const run = (word: string) => {
-      const held: ReactNode[] = word ? [word] : [];
+    const run = (tail: string) => {
+      const held: ReactNode[] = tail ? [tail] : [];
       for (let piece = pieces[index]; piece?.kind === 'mark'; piece = pieces[index]) {
         held.push(...mark(piece));
         index += 1;
@@ -161,10 +163,10 @@ function withCitations(
       } else if (pieces[index]?.kind !== 'mark') {
         parts.push(piece.text);
       } else {
-        const word = piece.text.match(/\S+$/u)?.[0] ?? '';
-        const head = piece.text.slice(0, piece.text.length - word.length);
+        const tail = Array.from(piece.text).at(-1) ?? '';
+        const head = piece.text.slice(0, piece.text.length - tail.length);
         if (head) parts.push(head);
-        parts.push(run(word));
+        parts.push(run(tail));
       }
     }
     return parts;
