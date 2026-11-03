@@ -87,17 +87,13 @@ export function excerptDomId(citationNumber: number): string {
 }
 
 /**
- * The accessible name of a `[n]` marker: «Kilde 3: Årsrapport Nasjonal
- * kommunikasjonsmyndighet 2022, side 41». A bare «[3]» tells a screen reader
- * user nothing about where they are being sent.
+ * The accessible name of a `[n]` marker, and its tooltip: «Utdrag 3: Årsrapport Nasjonal
+ * kommunikasjonsmyndighet 2022» (Lars, 2026-11-03). Only the excerpt has a number, so the name
+ * says which excerpt and whose document; a bare «[3]» tells a screen reader user nothing about
+ * where they are being sent.
  */
-export function citationAccessibleName(
-  citationNumber: number,
-  documentTitle: string,
-  page?: number,
-): string {
-  const where = page === undefined ? '' : `, side ${page}`;
-  return `Kilde ${citationNumber}: ${documentTitle}${where}`;
+export function citationAccessibleName(citationNumber: number, documentTitle: string): string {
+  return `Utdrag ${citationNumber}: ${documentTitle}`;
 }
 
 /**
@@ -113,7 +109,7 @@ export function citationTargets(documents: SourceDocument[]): CitationTarget[] {
       return {
         number,
         targetId: excerptDomId(number),
-        label: citationAccessibleName(number, document.title, excerpt.page),
+        label: citationAccessibleName(number, document.title),
       };
     })
     .sort((a, b) => a.number - b.number);

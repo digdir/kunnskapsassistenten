@@ -156,6 +156,10 @@
   /* The row's height: the summary's, and so the heading's box over it. */
   --ka-excerpt-row: var(--ds-size-10);
 
+  /* The heading's z-index below lifts it over the summary only, inside the excerpt. Without a
+     context of its own it stacked level with the pinned view head and, coming later, painted over
+     the head's «Søk i kildene» when the panel scrolled. */
+  isolation: isolate;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   padding: var(--ka-excerpt-padding);

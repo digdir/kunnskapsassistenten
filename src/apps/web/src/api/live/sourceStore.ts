@@ -5,6 +5,7 @@ import {
   type ThinkingStep,
   type ThinkingStepKind,
 } from '../../model';
+import type { MarkerRef } from '../excerptCitations';
 import type { ChunkMetadata, McpChunk } from './mcp';
 
 // What each answer was built from and how, kept in this browser because the backend keeps only
@@ -29,6 +30,12 @@ export type StoredChunk = Pick<McpChunk, 'chunk_id' | 'doc_num' | 'title' | 'url
 export type StoredAnswer = {
   /** In the order the answer numbered them. */
   chunks: StoredChunk[];
+  /**
+   * Which excerpt each marker means, when the service cites by excerpt (digdir/genki#273). The
+   * backend keeps the chunks but not these, so without them a reload cannot pair footnotes and
+   * excerpts.
+   */
+  markers?: MarkerRef[];
   /** «Fremgangsmåte», in arrival order. */
   thinkingSteps?: ThinkingStep[];
   /** The hits, the documents and the search words, for the detailed view. */
@@ -47,6 +54,7 @@ export type StoredAnswer = {
 /** What the client hands over when an answer is done. */
 export type AnswerRecord = {
   chunks: McpChunk[];
+  markers?: MarkerRef[];
   thinkingSteps?: ThinkingStep[];
   retrieval?: RetrievalDetails;
   thoughtMs?: number;
@@ -151,6 +159,18 @@ function filterFrom(value: unknown): FilterSelection | undefined {
   return Object.fromEntries(entries) as FilterSelection;
 }
 
+/** One marker and the excerpt it means, or nothing. */
+function markerFrom(value: unknown): MarkerRef | undefined {
+  if (!isRecord(value) || typeof value.marker !== 'string' || typeof value.chunkId !== 'string') {
+    return undefined;
+  }
+  return {
+    marker: value.marker,
+    chunkId: value.chunkId,
+    ...(typeof value.documentId === 'string' ? { documentId: value.documentId } : {}),
+  };
+}
+
 /** One stored answer, or nothing, from whatever was in storage. */
 function answerFrom(value: unknown): StoredAnswer | undefined {
   if (!isRecord(value) || !Array.isArray(value.chunks)) return undefined;
@@ -162,6 +182,10 @@ function answerFrom(value: unknown): StoredAnswer | undefined {
   const retrieval = retrievalFrom(value.retrieval);
   const thoughtMs = count(value.thoughtMs);
   const filter = filterFrom(value.filter);
+  const markers = Array.isArray(value.markers)
+    ? value.markers.flatMap((marker) => markerFrom(marker) ?? [])
+    : [];
+  if (markers.length > 0) answer.markers = markers;
   if (steps.length > 0) answer.thinkingSteps = steps;
   if (retrieval) answer.retrieval = retrieval;
   if (thoughtMs !== undefined) answer.thoughtMs = thoughtMs;

@@ -55,6 +55,8 @@ export type SlotViewProps = {
   activeCitationNumber?: number;
   /** Counts up on every request, so asking twice for one citation still reacts. */
   activeCitationNonce?: number;
+  /** The document asked for from «Kilder brukt i svaret», instead of a `[n]` marker. */
+  activeDocumentId?: string;
   /** The other views in this slot, in declared order: what this view can switch to. */
   siblingViews: ViewId[];
   /** Switch the slot to another view it holds. */

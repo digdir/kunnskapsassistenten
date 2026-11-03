@@ -8,14 +8,7 @@ import { MessageList } from './MessageList';
 /** A Tuesday at 14:00, so «i går» and the weekday cases are not the same day. */
 const NOW = new Date(2026, 8, 15, 14, 0, 0);
 /** Søket eies av `MessageList`; disse testene handler om noe annet. */
-const utenSok = {
-  searchOpen: false,
-  searchQuery: '',
-  onSearchQueryChange: () => {},
-  onToggleSearch: () => {},
-  onCloseSearch: () => {},
-  searchLabel: 'Søk i svaret',
-};
+const utenSok = {};
 
 const at = (...args: [number, number, number, number?, number?]) => new Date(...args).toISOString();
 

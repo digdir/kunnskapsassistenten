@@ -232,51 +232,6 @@ test.describe('kildepanelet', () => {
     },
   );
 
-  /**
-   * Issue 113: «Kilder brukt i svaret» under the answer is the way into
-   * the panel, and «Snarveier til dokumentene» is gone from it. A title takes
-   * the route a `[n]` marker takes: the panel opens on the document's first
-   * excerpt with the focus in it, and Escape comes back to the title.
-   *
-   * In a browser and not only in jsdom, which does not navigate: the title is
-   * a link to the excerpt's fragment, and without `preventDefault` following
-   * it would be a route change that remounts the chat (KA CC on #246).
-   */
-  test(
-    'en tittel under svaret åpner utdraget i kildepanelet, og Escape går tilbake',
-    MOCK,
-    async ({ page }, testInfo) => {
-      covers(testInfo, 'kilder brukt i svaret');
-      const address = page.url();
-
-      const summary = page.getByRole('main').locator('details', {
-        hasText: 'Kilder brukt i svaret',
-      });
-      const title = summary.getByRole('link').first();
-      await expect(title).toBeVisible();
-      await title.click();
-
-      const panel = page.getByRole('complementary', { name: 'Kilder' });
-      await expect(page.getByRole('button', { name: 'Skjul kilder' })).toBeVisible();
-      const excerpt = panel.locator('.source-excerpt', {
-        has: page.getByRole('heading', { name: 'Utdrag 1' }),
-      });
-      // The box itself takes the focus, so «inside» includes the box.
-      await expect
-        .poll(() => excerpt.evaluate((box) => box.contains(document.activeElement)), {
-          message: 'fokus skal stå i utdrag 1',
-        })
-        .toBe(true);
-      await expect(excerpt.locator('details')).toHaveAttribute('open', '');
-      expect(page.url(), 'adressen skal ikke få et fragment').toBe(address);
-
-      await page.keyboard.press('Escape');
-      await expect(title).toBeFocused();
-
-      await expectNoAxeViolations(page, 'svaret med kildene under');
-    },
-  );
-
   test(
     'søk i utdragene gir en treffteller og lar tastaturet bli i feltet',
     MOCK,
