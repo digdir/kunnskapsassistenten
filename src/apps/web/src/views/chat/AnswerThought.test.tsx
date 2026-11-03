@@ -14,14 +14,7 @@ const steps: ThinkingStep[] = [
 ];
 
 /** Søket eies av `MessageList`; disse testene handler om noe annet. */
-const utenSok = {
-  searchOpen: false,
-  searchQuery: '',
-  onSearchQueryChange: () => {},
-  onToggleSearch: () => {},
-  onCloseSearch: () => {},
-  searchLabel: 'Søk i svaret',
-};
+const utenSok = {};
 
 function answerWith(thoughtMs?: number): Message {
   return {
