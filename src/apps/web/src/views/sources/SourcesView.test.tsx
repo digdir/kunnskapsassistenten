@@ -998,6 +998,32 @@ describe('SourcesView and a document from «Kilder brukt i svaret»', () => {
     expect(container.querySelectorAll('details[open]')).toHaveLength(0);
   });
 
+  it('goes back to the title with Escape, as an excerpt goes back to its marker', async () => {
+    const { rerender } = render(
+      <>
+        <a href="#kilde-dokument-doc-b-tittel">Tildelingsbrev Nkom 2026</a>
+        <Asked />
+      </>,
+    );
+    const title = screen.getByRole('link', { name: 'Tildelingsbrev Nkom 2026' });
+    title.focus();
+    fireEvent.click(title);
+    rerender(
+      <>
+        <a href="#kilde-dokument-doc-b-tittel">Tildelingsbrev Nkom 2026</a>
+        <Asked documentId="doc-b" nonce={1} />
+      </>,
+    );
+    const heading = await screen.findByRole('heading', { name: 'Tildelingsbrev Nkom 2026' });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+
+    fireEvent.keyDown(heading, { key: 'Escape' });
+
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Tildelingsbrev Nkom 2026' }),
+    );
+  });
+
   it('moves focus again when the same document is asked for twice', async () => {
     const { rerender } = render(<Asked />);
     rerender(<Asked documentId="doc-a" nonce={1} />);

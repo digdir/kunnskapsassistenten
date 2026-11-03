@@ -58,10 +58,10 @@ function excerptOfHit(sources: SourceDocument[], hit: SearchHit | undefined): Ex
 /** Stands in for a message id while the shell still holds one flat list. */
 const LEGACY_ANSWER_ID = 'siste-svar';
 
-// The `[n]` marker to return focus to: the focused one if it matches, since a
-// number can stand twice, or else any match, since Safari does not focus links.
-function markerFor(citationNumber: number): HTMLElement | null {
-  const href = `#${excerptDomId(citationNumber)}`;
+// The link to return focus to, a `[n]` marker or a title in «Kilder brukt i
+// svaret»: the focused one if it matches, since a number can stand twice, or
+// else any match, since Safari does not focus links.
+function markerFor(href: string): HTMLElement | null {
   const focused = document.activeElement;
 
   if (focused instanceof HTMLElement && focused.getAttribute('href') === href) return focused;
@@ -217,7 +217,10 @@ export function SourcesView({
       documentId: activeDocumentId,
       nonce: activeCitationNonce,
       messageId: activeCitationMessageId,
-      shownFor: activeCitationNumber === undefined ? undefined : citedAnswer?.messageId,
+      shownFor:
+        activeCitationNumber === undefined && activeDocumentId === undefined
+          ? undefined
+          : citedAnswer?.messageId,
     });
 
     const target =
@@ -261,7 +264,7 @@ export function SourcesView({
   useEffect(() => {
     function record(event: MouseEvent) {
       const target = event.target instanceof Element ? event.target : null;
-      const marker = target?.closest('a[href^="#excerpt-"]');
+      const marker = target?.closest('a[href^="#excerpt-"], a[href^="#kilde-dokument-"]');
       if (!(marker instanceof HTMLElement) || marker.closest('.sources-view') !== null) return;
       activatedMarker.current = placeOf(marker);
     }
@@ -279,7 +282,7 @@ export function SourcesView({
 
     const activated = activatedMarker.current;
     activatedMarker.current = null;
-    const focused = markerFor(activeCitationNumber);
+    const focused = markerFor(`#${excerptDomId(activeCitationNumber)}`);
     returnTarget.current =
       activated?.href === `#${excerptDomId(activeCitationNumber)}`
         ? activated
@@ -305,6 +308,14 @@ export function SourcesView({
 
     if (activeDocumentId === undefined) return;
     if (previous.documentId === activeDocumentId && previous.nonce === activeCitationNonce) return;
+
+    // Escape on the card comes back to the title the reader chose.
+    const href = `#${documentHeadingDomId(activeDocumentId)}`;
+    const activated = activatedMarker.current;
+    activatedMarker.current = null;
+    const focused = markerFor(href);
+    returnTarget.current =
+      activated?.href === href ? activated : focused === null ? null : placeOf(focused);
 
     // Two frames, as for a marker: in case the panel had to be un-collapsed.
     return afterRender(() =>
@@ -393,6 +404,7 @@ export function SourcesView({
   const citationIsOnScreen =
     handled?.shownFor !== undefined && handled.shownFor === activeAnswer?.messageId;
   const activeNumberHere = citationIsOnScreen ? activeCitationNumber : undefined;
+  const askedDocumentHere = citationIsOnScreen ? activeDocumentId : undefined;
 
   return (
     <div className="sources-view">
@@ -456,6 +468,9 @@ export function SourcesView({
                 currentHit={currentHit}
                 activeCitationNumber={activeNumberHere}
                 onReturnToAnswer={returnToAnswer}
+                // The card a title in «Kilder brukt i svaret» sent the reader
+                // to: Escape on it goes back, and nothing on it is marked.
+                asked={askedDocumentHere === source.id}
               />
             ))}
           </div>

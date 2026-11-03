@@ -23,6 +23,8 @@ type SourceDocumentCardProps = {
   activeCitationNumber?: number;
   /** Back to the marker; handed on only to the excerpt that marker points at. */
   onReturnToAnswer?: () => void;
+  /** This is the document a title in «Kilder brukt i svaret» asked for; Escape goes back to it. */
+  asked?: boolean;
 };
 
 /**
@@ -39,6 +41,7 @@ export function SourceDocumentCard({
   currentHit,
   activeCitationNumber,
   onReturnToAnswer,
+  asked = false,
 }: SourceDocumentCardProps) {
   const subtitle = documentSubtitle(source);
   const own = isOwnDocument(source);
@@ -50,6 +53,19 @@ export function SourceDocumentCard({
       data-color="neutral"
       className="source-document"
       id={documentDomId(source.id)}
+      // Escape on the card a title sent the reader to goes back to the title,
+      // as Escape in an excerpt goes back to its marker. Nothing is drawn for
+      // it, so the card stays unmarked. Scoped to the card, so the search
+      // field keeps its own Escape.
+      onKeyDown={
+        asked && onReturnToAnswer !== undefined
+          ? (event) => {
+              if (event.key !== 'Escape') return;
+              event.stopPropagation();
+              onReturnToAnswer();
+            }
+          : undefined
+      }
     >
       <Card.Block className="source-document__head">
         {/* Where «Kilder brukt i svaret» lands: focus, not only scroll, so a
