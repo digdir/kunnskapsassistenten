@@ -12,7 +12,7 @@ finn ut hva den nye backenden faktisk klarer.
 med `digdir-headless-rag` over det offentlige API-et, og gir svar med kilder
 mot Kudos-korpuset: tråder, strømmede svar med statusetiketter, kildepanel med
 utdrag, filtre og innlogging. Underveis ga det elleve dokumenterte hull i
-backendens offentlige kontrakt, og noe for [`../evals`](../evals) å kjøre mot.
+backendens offentlige kontrakt, og noe for evalueringene å kjøre mot.
 
 ## Utrullet
 
@@ -401,14 +401,14 @@ innlogging.
 
 ## Hvor ting ligger
 
-| Hvor                         | Hva                                                                                            |
-| ---------------------------- | ---------------------------------------------------------------------------------------------- |
-| `src/`                       | **Dette.** Applikasjonen: SPA, server og kontrakt.                                             |
-| [`../docs/`](../docs)        | Designarbeid, akseptansekriterier, innsikt.                                                    |
-| [`../evals/`](../evals)      | Evalueringene, som denne gir noe å kjøre mot.                                                  |
-| `digdir/digdir-headless-rag` | **Backenden.** Brukes kun over HTTP.                                                           |
-| `digdir/digdir-rag`          | **Arkivert.** Den opprinnelige Clojure-monolitten. Kilde til norsk tekst, ikke en avhengighet. |
-| `digdir/digdir-rag-frontend` | **Egen alfa-demo.** Uten sammenheng med dette, tross navnet.                                   |
+| Hvor                                              | Hva                                                                                            |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `src/`                                            | **Dette.** Applikasjonen: SPA, server og kontrakt.                                             |
+| [`../docs/`](../docs)                             | Designarbeid, akseptansekriterier, innsikt.                                                    |
+| [`../docs/archive/evals/`](../docs/archive/evals) | Evalueringene fra headless-rag-tida, arkivert som dokumentasjon. Kjøres ikke.                  |
+| `digdir/digdir-headless-rag`                      | **Backenden.** Brukes kun over HTTP.                                                           |
+| `digdir/digdir-rag`                               | **Arkivert.** Den opprinnelige Clojure-monolitten. Kilde til norsk tekst, ikke en avhengighet. |
+| `digdir/digdir-rag-frontend`                      | **Egen alfa-demo.** Uten sammenheng med dette, tross navnet.                                   |
 
 Arbeidsmateriale som hører til prosjektet men ikke til repoet, som den
 opprinnelige planen, presentasjonene og det fangede stilarket, ligger utenfor i

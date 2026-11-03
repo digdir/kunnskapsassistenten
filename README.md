@@ -1,45 +1,64 @@
 # Kunnskapsassistenten
 
-| Mappe | Innhold |
+| Folder | Contents |
 | --- | --- |
-| [`src/`](src/) | Applikasjonen: frontend, server og kontrakt, bygd på `digdir-headless-rag`. Se [`src/README.md`](src/README.md). |
-| [`docs/`](docs/) | Dokumentasjon av designarbeidet. |
-| [`evals/`](evals/) | Evalueringer og golden questions. |
+| [`src/`](src/) | The application: frontend, server and contract, built on `digdir-headless-rag`. See [`src/README.md`](src/README.md). |
+| [`docs/`](docs/) | Documentation of the design work. |
+| [`docs/archive/evals/`](docs/archive/evals/) | The evaluation code from the headless-rag period, kept as documentation. Not run and not maintained. |
 
-## Dokumentasjon av designarbeid
+## Documentation of the design work
 
-Her samler vi alt vi har undersøkt og lært i arbeidet med Kunnskapsassistenten.
+This is where we collect everything we have looked into and learned while working on
+Kunnskapsassistenten.
 
-Det er fordelt utover fire hovedmapper:
-1. Felles forståelse
-2. Innsikt
-3. Eksisterende funksjonalitet
-4. Ny funksjonalitet
+It is spread across four main folders:
+
+1. Felles forståelse (shared understanding)
+2. Innsikt (insight)
+3. Eksisterende funksjonalitet (existing functionality)
+4. Ny funksjonalitet (new functionality)
 
 ### Felles forståelse
 
-Hva er forskjellen mellom stagingmiljøet og testmiljøet? Svaret finner du her [utviklingsmiljøer](docs/felles%20forst%C3%A5else/utviklingsmilj%C3%B8er.md).
+What is the difference between the staging environment and the test environment? The answer is in
+[utviklingsmiljøer](docs/felles%20forst%C3%A5else/utviklingsmilj%C3%B8er.md).
 
-Med et lite team på 7 personer, fordelt på 3,5 årsverk er det desto viktigere å være samkjørt om hva som skal lages *nå*, og hva som vil være nyttig for brukeren *fram i tid*. Derfor har vi utforsket [versjonering av Kunnskapsassistenten](docs/felles%20forst%C3%A5else/versjonering%20av%20Kunnskapsassistenten.md), og hva det betyr i praksis for måten vi planlegger på tvers av fagdisipliner.
+With a small team of 7 people across 3.5 full-time equivalents, it matters all the more that we
+agree on what is to be built *now* and what will be useful to the user *later on*. So we have
+explored [versjonering av Kunnskapsassistenten](docs/felles%20forst%C3%A5else/versjonering%20av%20Kunnskapsassistenten.md),
+and what it means in practice for the way we plan across disciplines.
 
-Hvordan veit vi at vi tar de riktige valgene for brukerne? Utenom jevnlig testing og kommunikasjon har vi også definert noen [retningslinjer for bruk av Kunnskapsassistenten](docs/felles%20forst%C3%A5else/retningslinjer%20for%20bruk%20av%20Kunnskapsassistenten.md). Ut fra det igjen har vi lagd [akseptansekriterier](docs/felles%20forst%C3%A5else/akseptansekriterier.md) for testing av ny funksjonalitet.
+How do we know we are making the right choices for the users? Besides testing and talking to them
+regularly, we have also written down some
+[retningslinjer for bruk av Kunnskapsassistenten](docs/felles%20forst%C3%A5else/retningslinjer%20for%20bruk%20av%20Kunnskapsassistenten.md).
+From those in turn we have made [akseptansekriterier](docs/felles%20forst%C3%A5else/akseptansekriterier.md)
+for testing new functionality.
 
-Vi holder oss ikke slavisk til hverken retningslinjene eller akseptansekriterie, men det er noe å streve etter i en hverdag med høyt tempo.
+We do not follow either the guidelines or the acceptance criteria slavishly, but they are something
+to aim for in a working day with a high tempo.
 
-Med andre ord, i denne mappa finner du kunnskap som er nødvendig for prosjektet i sin helhet.
+In other words, this folder holds the knowledge the project as a whole needs.
 
 ### Innsikt
 
-[Hva tenker brukerne våre om dokumentvisningen](docs/ny%20funksjonalitet/dokumentvisning.md)? Svaret finner du i denne mappa.
+[What do our users think of the document view](docs/ny%20funksjonalitet/dokumentvisning.md)? The
+answer is in this folder.
 
-Hva veit vi egentlig om brukerne våre, hvis vi ser litt overordnet på det? Svaret finner du i [personas](docs/innsikt/personas.md).
+What do we actually know about our users, taking a broader view? The answer is in
+[personas](docs/innsikt/personas.md).
 
-Hva menes med en "ambisiøs bestilling", og hvorfor er det så kritisk? [Svaret finner du her](docs/innsikt/fullstendige%20oversikter.md).
+What is meant by an «ambitious request», and why does it matter so much?
+[The answer is here](docs/innsikt/fullstendige%20oversikter.md).
 
 ### Eksisterende funksjonalitet
 
-Med det lille teamet vårt har vi fått på plass mye på kort tid, men det er fremdeles masse rom for forbedring. Den type ting finner du i denne mappa.
+With our small team we have got a lot in place in a short time, but there is still plenty of room
+for improvement. That kind of thing is in this folder.
 
 ### Ny funksjonalitet
 
-Alt det vi har måtte sette på vent av ulike grunner finner du her. Noe av det er basert på forslag fra brukerne som har blitt nevnt i et intervjue. Andre ting kan være testa fra et designståsted, enten som en prototype (som f. eks [notater](docs/ny%20funksjonalitet/notater.md)) eller skisser som stillbilde (som [testing av dokumentvisning](docs/innsikt/testing%20av%20dokumentvisning.md)), men ikke prioritert i utviklingen med det første.
+Everything we have had to put on hold, for one reason or another, is here. Some of it comes from
+suggestions users mentioned in an interview. Other things have been tried from a design point of
+view, either as a prototype (such as [notater](docs/ny%20funksjonalitet/notater.md)) or as still
+sketches (such as [testing av dokumentvisning](docs/innsikt/testing%20av%20dokumentvisning.md)),
+but not prioritised for development just yet.
