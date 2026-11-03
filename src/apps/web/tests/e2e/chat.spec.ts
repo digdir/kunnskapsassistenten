@@ -90,7 +90,7 @@ test.describe('hovedkolonnen', () => {
       // words the search ran on. The hit count is on the detailed level since
       // Issue 88; there is a test of its own for that below.
       await expect(page.getByText('Fremgangsmåte')).toBeVisible();
-      await expect(page.getByText('Nøkkelord som ble brukt i søket')).toBeVisible();
+      await expect(page.getByText('Lette etter steder som handler om spørsmålet')).toBeVisible();
 
       // Og ingenting av maskineriet: ingen tenketid, ingen telling av biter.
       // Det er hele poenget med standardnivået (issue 88).
