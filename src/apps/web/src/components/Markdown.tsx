@@ -50,10 +50,10 @@ type CitationPiece =
   | { kind: 'lost'; node: ReactNode }
   | { kind: 'mark'; key: string; number: number; target: CitationTarget; space: string };
 
-// Replaces `[n]` with a link to the excerpt, named by document and page: a bare «[3]» tells a
-// screen reader user nothing. It is drawn as the number in a small circle (the design canvas, D1),
-// 3 px from the word before it, and kept on that word's line: a circle alone at the start of a
-// line reads as belonging to nothing. The model's space before `[n]` and the brackets stay in the
+// Replaces `[n]` with a link to the excerpt, named by its excerpt and the document it is in: a bare
+// «[3]» tells a screen reader user nothing. It is drawn as the number in a small circle, 3 px from
+// the word before it, and kept on that word's line: a circle alone at the start of a line reads as
+// belonging to nothing. The model's space before `[n]` and the brackets stay in the
 // text, out of sight, so a copied answer still reads «ord [1][2]».
 function withCitations(
   children: ReactNode,

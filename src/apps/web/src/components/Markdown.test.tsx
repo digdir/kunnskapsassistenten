@@ -163,8 +163,8 @@ describe('Markdown citations', () => {
     expect(seen).toEqual([2]);
   });
 
-  // The design canvas (D1) draws a footnote as a number in a small circle. The brackets stay in
-  // the text, out of sight, for whoever copies the answer; the link's name is its `aria-label`.
+  // A footnote is drawn as a number in a small circle. The brackets stay in the text, out of
+  // sight, for whoever copies the answer; the link's name is its `aria-label`.
   it('shows the number alone, with the brackets kept out of sight', () => {
     render(<Markdown citations={targets}>{'Ett [1][2] og slutt.'}</Markdown>);
 
