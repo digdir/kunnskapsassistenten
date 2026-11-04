@@ -560,6 +560,13 @@ body {
   color: var(--ds-color-neutral-text-subtle);
 }
 
+/* The answer's own width, for the footnote rule below. It never sizes itself
+   from its content, so the containment changes no width (measured in the
+   answer, the clarification and the info pages, 2026-11-04). */
+.markdown {
+  container-type: inline-size;
+}
+
 /* `line-height: 0` keeps a `[n]` superscript from pushing lines apart. */
 .markdown__citation {
   line-height: 0;
@@ -580,6 +587,17 @@ body {
    (390 px, measured 2026-11-03). */
 .markdown__citation-run {
   white-space: nowrap;
+}
+
+/* Where the column is narrower than a long word and its circle, WebKit lets the
+   held run hang past the paragraph instead of breaking the word, and the period
+   after it starts the next line alone (measured 2026-11-04: up to 22 px at 320
+   px, past the card's clipping edge with two circles). There a circle may start
+   a line, as before the hold. */
+@container (inline-size < 20rem) {
+  .markdown__citation-run {
+    white-space: normal;
+  }
 }
 
 .markdown__citation-mark {
@@ -609,9 +627,20 @@ body {
   font-size: 0;
 }
 
-.markdown__citation-mark:hover {
-  background: var(--ds-color-accent-base-default);
-  color: var(--ds-color-accent-base-contrast-default);
+/* Hover only where there is one, as Designsystemet does for links: after a tap
+   on a touch screen the fill would otherwise stay. */
+@media (hover: hover) and (pointer: fine) {
+  .markdown__citation-mark:hover {
+    background: var(--ds-color-accent-base-default);
+    color: var(--ds-color-accent-base-contrast-default);
+  }
+}
+
+/* Forced colours drop the fill, so the circle gets a ring in the link colour. */
+@media (forced-colors: active) {
+  .markdown__citation-mark {
+    border: var(--ds-border-width-default) solid;
+  }
 }
 
 /* After an error React could not recover from (src/layout/AppErrorBoundary.tsx). Nothing here
