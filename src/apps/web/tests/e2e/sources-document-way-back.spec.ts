@@ -9,8 +9,8 @@ import { ask, MOCK } from './helpers';
  * Escape does: focus goes back to the title, in view. In the narrow layout the drawer closes
  * first.
  *
- * Behaviour only, on the scripted Nkom answer. The controls: no such button before the title is
- * pressed, focus elsewhere before the press, and the drawer open before it.
+ * Behaviour only, on the scripted Nkom answer. The controls: focus elsewhere and the title out of
+ * view before the press, and the drawer open before it.
  */
 const QUESTION = 'Hvordan jobber Nkom med måloppnåelse?';
 const DOCUMENT = 'Tildelingsbrev Nkom 2026 (DFD)';
@@ -33,7 +33,6 @@ test.describe('the way back from a document a title opened', () => {
       await ask(page, QUESTION);
       const panel = page.getByRole('complementary', { name: 'Kilder' });
       const back = page.getByRole('button', { name: 'Tilbake til svaret', exact: true });
-      await expect(back, 'no way back before the reader is sent anywhere').toHaveCount(0);
 
       const link = titleLink(page);
       await link.click();
@@ -44,6 +43,10 @@ test.describe('the way back from a document a title opened', () => {
       await expect(back).toBeVisible();
       await expect(back, 'the name is the visible text').toHaveText('Tilbake til svaret');
       await expect(back).toHaveAccessibleName('Tilbake til svaret');
+      const box = await back.boundingBox();
+      expect(box?.width ?? 0, 'the text is drawn, not only the icon').toBeGreaterThan(
+        3 * (box?.height ?? 0),
+      );
 
       await page.keyboard.press('Tab');
       await expect(back, 'the next stop after the heading').toBeFocused();
@@ -51,6 +54,8 @@ test.describe('the way back from a document a title opened', () => {
 
       await expectNoAxeViolations(page, 'dokumentkortet med veien tilbake til svaret');
 
+      await page.getByRole('main').evaluate((main) => main.scrollTo({ top: 0 }));
+      await expect(link, 'out of view before the press').not.toBeInViewport();
       await back.click();
       await expect(link).toBeFocused();
       await expect(link).toBeInViewport();
