@@ -9,8 +9,8 @@ import { ask, MOCK } from './helpers';
  * Behaviour only, as a reader meets it: the link takes focus to the document's level-3 heading in
  * the sources panel, or into it, onto something named for the document (KA CC: one assertion for
  * KA's view and genki's part, whose heading holds the card's toggle), without opening or closing
- * the card; every excerpt stays closed, no excerpt offers «Tilbake til svaret» (which only the
- * excerpt a marker opened has), the address gets no fragment, and Escape comes back to the link.
+ * the card; every excerpt stays closed, the only «Tilbake til svaret» is the card's own (no excerpt
+ * is opened or marked), the address gets no fragment, and Escape comes back to the link.
  * An open excerpt is told by its toggle, which reads «Lukk utdrag N»; the control follows a footnote,
  * which opens and marks its excerpt, and counts one of each.
  */
@@ -72,7 +72,7 @@ test.describe('a title in «Kilder brukt i svaret»', () => {
       await expectFocusOnDocument(page, panel);
       expect(await cardOpen(page), 'going to the card does not open or close it').toBe(openBefore);
       await expect(openExcerpts(panel)).toHaveCount(0);
-      await expect(panel.getByRole('button', { name: 'Tilbake til svaret' })).toHaveCount(0);
+      await expect(panel.getByRole('button', { name: 'Tilbake til svaret' })).toHaveCount(1);
       expect(page.url(), 'the address must not get a fragment').toBe(address);
 
       await page.keyboard.press('Escape');
