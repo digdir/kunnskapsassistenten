@@ -560,9 +560,89 @@ body {
   color: var(--ds-color-neutral-text-subtle);
 }
 
+/* The answer's own width, for the footnote rule below. Only in the answer card,
+   where footnotes are: a query container is a formatting-context root, so a
+   heading's margin no longer collapses with its parent's, and the info pages'
+   headings moved 20 px down when every `.markdown` was one (2026-11-04). */
+.ka-answer-card .markdown {
+  container-type: inline-size;
+}
+
 /* `line-height: 0` keeps a `[n]` superscript from pushing lines apart. */
 .markdown__citation {
   line-height: 0;
+}
+
+/* A footnote as a small round mark raised a little beside the word, its
+   number in the smallest font size and the accent's darkest text, filled with
+   the accent on hover. Each mark stands the smallest size step (4 px) from
+   what comes before it: two 20 px marks in a row are then 24 px apart centre
+   to centre, the spacing WCAG 2.5.8 asks of targets under 24 px. At 3 px
+   axe's target-size rule fails them (measured 2026-11-03). */
+.markdown__citation--linked {
+  vertical-align: baseline;
+}
+
+/* The end of the word before a run of footnotes and the footnotes, on one
+   line: a circle alone at the start of a line reads as belonging to nothing
+   (390 px, measured 2026-11-03). */
+.markdown__citation-run,
+.markdown__citation-marks {
+  white-space: nowrap;
+}
+
+/* Where the column is narrower than a long word and its circle, WebKit lets the
+   held run hang past the paragraph instead of breaking the word (measured
+   2026-11-04: up to 22 px at 320 px, past the card's clipping edge with two
+   circles). There the circles may start a line, as before the hold, still held
+   together with the punctuation after them. */
+@container (inline-size < 20rem) {
+  .markdown__citation-run {
+    white-space: normal;
+  }
+}
+
+.markdown__citation-mark {
+  display: inline-block;
+  box-sizing: border-box;
+  min-inline-size: var(--ds-size-5);
+  block-size: var(--ds-size-5);
+  margin-inline-start: var(--ds-size-1);
+  padding-inline: var(--ds-size-1);
+  border-radius: var(--ds-border-radius-full);
+  background: var(--ds-color-accent-surface-tinted);
+  color: var(--ds-color-accent-text-default);
+  font-size: var(--ds-font-size-1);
+  font-weight: var(--ds-font-weight-semibold);
+  line-height: var(--ds-size-5);
+  text-align: center;
+  text-decoration: none;
+  vertical-align: var(--ds-size-1);
+}
+
+/* The brackets and the model's space before `[n]`, kept in the text for
+   whoever copies the answer but not drawn. Inline and not `ds-sr-only`: an
+   absolutely positioned element is a block to `innerText` and to copying,
+   which then read «[ 1 ]». The link is named by `aria-label`, so none of it is
+   read out. */
+.markdown__citation-copy {
+  font-size: 0;
+}
+
+/* Hover only where there is one, as Designsystemet does for links: after a tap
+   on a touch screen the fill would otherwise stay. */
+@media (hover: hover) and (pointer: fine) {
+  .markdown__citation-mark:hover {
+    background: var(--ds-color-accent-base-default);
+    color: var(--ds-color-accent-base-contrast-default);
+  }
+}
+
+/* Forced colours drop the fill, so the circle gets a ring in the link colour. */
+@media (forced-colors: active) {
+  .markdown__citation-mark {
+    border: var(--ds-border-width-default) solid;
+  }
 }
 
 /* After an error React could not recover from (src/layout/AppErrorBoundary.tsx). Nothing here

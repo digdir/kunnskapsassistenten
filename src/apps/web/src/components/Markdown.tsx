@@ -41,11 +41,23 @@ function linkableHref(href: string): string | undefined {
 
 const CITATION_MARKER = /\[(\d+)\]/g;
 
+/** Punctuation that closes the clause a footnote ends, held on the line of its circles. */
+const TRAILING_PUNCTUATION = /^[.,;:!?)\]»”’]+/u;
+
 /** What a `[n]` says when the excerpt behind it never arrived. */
 export const MISSING_SOURCE = 'Kilden kom ikke fram';
 
-// Replaces `[n]` with a superscript link to the excerpt, named by document and page: a bare
-// «[3]» tells a screen reader user nothing.
+/** A piece of one text child: prose, a marker with no source, or a linked marker. */
+type CitationPiece =
+  | { kind: 'text'; text: string }
+  | { kind: 'lost'; node: ReactNode }
+  | { kind: 'mark'; key: string; number: number; target: CitationTarget; space: string };
+
+// Replaces `[n]` with a link to the excerpt, named by its excerpt and the document it is in: a bare
+// «[3]» tells a screen reader user nothing. It is drawn as the number in a small circle, 4 px from
+// the word before it, and kept on that word's line: a circle alone at the start of a line reads as
+// belonging to nothing. The model's space before `[n]` and the brackets stay in the
+// text, out of sight, so a copied answer still reads «ord [1][2]».
 function withCitations(
   children: ReactNode,
   targets: Map<number, CitationTarget>,
@@ -58,55 +70,126 @@ function withCitations(
   return Children.map(children, (child, childIndex) => {
     if (typeof child !== 'string') return child;
 
-    const parts: ReactNode[] = [];
+    const pieces: CitationPiece[] = [];
     let consumed = 0;
 
     for (const match of child.matchAll(CITATION_MARKER)) {
       const number = Number(match[1]);
       const target = targets.get(number);
+      const key = `${childIndex}-${match.index}`;
 
       // No excerpt behind the marker (answer stopped before the sources arrived): plain text that
       // says why, with sr-only text because `title` alone is mouse-only.
       if (!target) {
         if (!sourcesLost) continue;
-        if (match.index > consumed) parts.push(child.slice(consumed, match.index));
-        parts.push(
-          <sup
-            className="markdown__citation"
-            title={MISSING_SOURCE}
-            key={`${childIndex}-${match.index}`}
-          >
-            {match[0]}
-            <span className="ds-sr-only"> ({MISSING_SOURCE.toLocaleLowerCase('nb-NO')})</span>
-          </sup>,
-        );
+        if (match.index > consumed)
+          pieces.push({ kind: 'text', text: child.slice(consumed, match.index) });
+        pieces.push({
+          kind: 'lost',
+          node: (
+            <sup className="markdown__citation" title={MISSING_SOURCE} key={key}>
+              {match[0]}
+              <span className="ds-sr-only"> ({MISSING_SOURCE.toLocaleLowerCase('nb-NO')})</span>
+            </sup>
+          ),
+        });
         consumed = match.index + match[0].length;
         continue;
       }
 
-      if (match.index > consumed) parts.push(child.slice(consumed, match.index));
-      parts.push(
-        <sup className="markdown__citation" key={`${childIndex}-${match.index}`}>
-          <Link
-            href={`#${target.targetId}`}
-            aria-label={target.label}
-            title={target.label}
-            // `preventDefault`: following the href would navigate to `/threads/:id#excerpt-n`
-            // and remount the chat slot. The href stays for screen readers, new tabs and copying.
-            onClick={(event) => {
-              event.preventDefault();
-              onActivate?.(number);
-            }}
-          >
-            {match[0]}
-          </Link>
-        </sup>,
-      );
+      // The whitespace just before the marker goes with it, out of sight: the circle keeps its
+      // own 4 px from the word instead of a space and 4 px.
+      const before = child.slice(consumed, match.index);
+      const text = before.trimEnd();
+      if (text) pieces.push({ kind: 'text', text });
+      pieces.push({ kind: 'mark', key, number, target, space: before.slice(text.length) });
       consumed = match.index + match[0].length;
     }
 
-    if (parts.length === 0) return child;
-    if (consumed < child.length) parts.push(child.slice(consumed));
+    if (pieces.length === 0) return child;
+    if (consumed < child.length) pieces.push({ kind: 'text', text: child.slice(consumed) });
+
+    const space = (piece: Extract<CitationPiece, { kind: 'mark' }>) =>
+      piece.space ? (
+        <span className="markdown__citation-copy" key={`${piece.key}-space`}>
+          {piece.space}
+        </span>
+      ) : null;
+    const mark = (piece: Extract<CitationPiece, { kind: 'mark' }>) => (
+      <sup className="markdown__citation markdown__citation--linked" key={piece.key}>
+        <Link
+          className="markdown__citation-mark"
+          href={`#${piece.target.targetId}`}
+          aria-label={piece.target.label}
+          title={piece.target.label}
+          // `preventDefault`: following the href would navigate to `/threads/:id#excerpt-n`
+          // and remount the chat slot. The href stays for screen readers, new tabs and copying.
+          onClick={(event) => {
+            event.preventDefault();
+            onActivate?.(piece.number);
+          }}
+        >
+          {/* The link is named by `aria-label`, so the brackets are never read out. */}
+          <span className="markdown__citation-copy">[</span>
+          {piece.number}
+          <span className="markdown__citation-copy">]</span>
+        </Link>
+      </sup>
+    );
+
+    // Each run of markers is held on one line with the end of the word before it. Only the last
+    // character goes into the run, so a long word can still break where it has to: at 320 px a
+    // whole word held with two circles did not fit the answer card. The circles and the
+    // punctuation after them are held on their own as well, so where a narrow answer lets the
+    // circles move to the next line, a full stop never starts a line alone.
+    const parts: ReactNode[] = [];
+    let index = 0;
+    const run = (tail: string) => {
+      const held: ReactNode[] = tail ? [tail] : [];
+      const marks: ReactNode[] = [];
+      for (let piece = pieces[index]; piece?.kind === 'mark'; piece = pieces[index]) {
+        if (marks.length === 0) held.push(space(piece));
+        else marks.push(space(piece));
+        marks.push(mark(piece));
+        index += 1;
+      }
+      const after = pieces[index];
+      const closing =
+        after?.kind === 'text' ? after.text.match(TRAILING_PUNCTUATION)?.[0] : undefined;
+      if (after?.kind === 'text' && closing) {
+        marks.push(closing);
+        pieces[index] = { kind: 'text', text: after.text.slice(closing.length) };
+      }
+      held.push(
+        <span className="markdown__citation-marks" key="marks">
+          {marks}
+        </span>,
+      );
+      return (
+        <span className="markdown__citation-run" key={`${childIndex}-run-${index}`}>
+          {held}
+        </span>
+      );
+    };
+
+    while (index < pieces.length) {
+      const piece = pieces[index];
+      if (piece.kind === 'mark') {
+        parts.push(run(''));
+        continue;
+      }
+      index += 1;
+      if (piece.kind === 'lost') {
+        parts.push(piece.node);
+      } else if (pieces[index]?.kind !== 'mark') {
+        if (piece.text) parts.push(piece.text);
+      } else {
+        const tail = Array.from(piece.text).at(-1) ?? '';
+        const head = piece.text.slice(0, piece.text.length - tail.length);
+        if (head) parts.push(head);
+        parts.push(run(tail));
+      }
+    }
     return parts;
   });
 }
