@@ -76,6 +76,8 @@ test.describe('the way back from a document a title opened', () => {
       await expect(drawer).toBeVisible();
       await expect(drawer.getByRole('heading', { name: DOCUMENT, level: 3 })).toBeFocused();
 
+      await page.getByRole('main').evaluate((main) => main.scrollTo({ top: 0 }));
+      await expect(link, 'out of view before the press').not.toBeInViewport();
       await drawer.getByRole('button', { name: 'Tilbake til svaret', exact: true }).click();
 
       await expect(drawer).toHaveCount(0);
