@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { userDocumentSource } from '../../api/mock/fixtures';
-import { documentDomId } from './ids';
+import { documentDomId, documentHeadingDomId } from './ids';
 import { answerDomId, excerptDomId, type AnswerSources, type SourceDocument } from '../../model';
 import { SourcesView } from './SourcesView';
 
@@ -1022,6 +1022,118 @@ describe('SourcesView and a document from «Kilder brukt i svaret»', () => {
     expect(document.activeElement).toBe(
       screen.getByRole('link', { name: 'Tildelingsbrev Nkom 2026' }),
     );
+  });
+
+  /**
+   * The title under the answer that sends the reader to doc-b, a footnote, and the panel, in the
+   * narrow layout's drawer or not.
+   */
+  function Landing({
+    documentId,
+    citationNumber,
+    nonce,
+    inDrawer = false,
+    onCollapsedChange,
+  }: {
+    documentId?: string;
+    citationNumber?: number;
+    nonce?: number;
+    inDrawer?: boolean;
+    onCollapsedChange?: (collapsed: boolean) => void;
+  }) {
+    const panel = (
+      <SourcesView
+        answers={[first, second]}
+        activeDocumentId={documentId}
+        activeCitationNumber={citationNumber}
+        activeCitationNonce={nonce}
+        activeCitationMessageId={
+          documentId === undefined && citationNumber === undefined ? undefined : 'svar-1'
+        }
+        onCollapsedChange={onCollapsedChange}
+      />
+    );
+    return (
+      <>
+        <a href={`#${documentHeadingDomId('doc-b')}`}>Tildelingsbrev Nkom 2026</a>
+        <a href={`#${excerptDomId(1)}`}>[1]</a>
+        {inDrawer ? <dialog open>{panel}</dialog> : panel}
+      </>
+    );
+  }
+
+  /** Presses the title, as the reader does, and waits for the card's heading to take focus. */
+  async function pressTitle(
+    rerender: (ui: ReactElement) => void,
+    props: { inDrawer?: boolean; onCollapsedChange?: (collapsed: boolean) => void } = {},
+  ) {
+    const title = screen.getByRole('link', { name: 'Tildelingsbrev Nkom 2026' });
+    title.focus();
+    fireEvent.click(title);
+    rerender(<Landing documentId="doc-b" nonce={1} {...props} />);
+    const heading = await screen.findByRole('heading', { name: 'Tildelingsbrev Nkom 2026' });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+    return { title, heading };
+  }
+
+  it('offers «Tilbake til svaret» on the card the title sent the reader to, and only there', async () => {
+    const { container, rerender } = render(<Landing />);
+    expect(screen.queryByRole('button', { name: 'Tilbake til svaret' })).toBeNull();
+
+    const { heading } = await pressTitle(rerender);
+
+    const back = screen.getByRole('button', { name: 'Tilbake til svaret' });
+    expect(screen.getAllByRole('button', { name: 'Tilbake til svaret' })).toHaveLength(1);
+    expect(document.getElementById(documentDomId('doc-b'))?.contains(back)).toBe(true);
+    // The name is the visible text (WCAG 2.5.3).
+    expect(back.getAttribute('aria-label')).toBeNull();
+    expect(back.textContent).toBe('Tilbake til svaret');
+    // The next stop after the heading the reader landed on.
+    const after = [...container.querySelectorAll('a[href], button, input, summary')].filter(
+      (element) => heading.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(after[0]).toBe(back);
+  });
+
+  it('goes back to the title with «Tilbake til svaret», centred, as Escape does', async () => {
+    const scrolled = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const { rerender } = render(<Landing />);
+    const { title } = await pressTitle(rerender);
+    scrolled.mockClear();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tilbake til svaret' }));
+
+    expect(document.activeElement).toBe(title);
+    expect(scrolled.mock.contexts).toEqual([title]);
+    expect(scrolled.mock.calls[0]?.[0]).toMatchObject({ block: 'center' });
+    scrolled.mockRestore();
+  });
+
+  it('closes the narrow layout’s drawer before it moves focus to the title', async () => {
+    const onCollapsedChange = vi.fn();
+    const { rerender } = render(<Landing inDrawer onCollapsedChange={onCollapsedChange} />);
+    const { title } = await pressTitle(rerender, { inDrawer: true, onCollapsedChange });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tilbake til svaret' }));
+
+    expect(onCollapsedChange).toHaveBeenCalledWith(true);
+    // Not yet: the rest of the page is inert while the modal drawer is open.
+    expect(document.activeElement).not.toBe(title);
+    await waitFor(() => expect(document.activeElement).toBe(title));
+  });
+
+  it('takes the way back off the card when a footnote sends the reader elsewhere', async () => {
+    const { rerender } = render(<Landing />);
+    await pressTitle(rerender);
+
+    rerender(<Landing citationNumber={1} nonce={2} />);
+
+    const excerpt = document.getElementById(excerptDomId(1)) as HTMLElement;
+    await waitFor(() => expect(document.activeElement).toBe(excerpt));
+    const card = document.getElementById(documentDomId('doc-b')) as HTMLElement;
+    expect(within(card).queryByRole('button', { name: 'Tilbake til svaret' })).toBeNull();
+    // The control: the excerpt the footnote opened has its own.
+    expect(within(excerpt).getAllByRole('button', { name: 'Tilbake til svaret' })).toHaveLength(1);
   });
 
   it('moves focus again when the same document is asked for twice', async () => {

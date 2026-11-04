@@ -315,7 +315,7 @@ export function SourcesView({
     if (activeDocumentId === undefined) return;
     if (previous.documentId === activeDocumentId && previous.nonce === activeCitationNonce) return;
 
-    // Escape on the card comes back to the title the reader chose.
+    // «Tilbake til svaret» and Escape on the card come back to the title the reader chose.
     const href = `#${documentHeadingDomId(activeDocumentId)}`;
     const activated = activatedMarker.current;
     activatedMarker.current = null;
@@ -514,7 +514,8 @@ export function SourcesView({
                 uses={activeAnswer?.uses}
                 onShowUse={showUse}
                 // The card a title in «Kilder brukt i svaret» sent the reader
-                // to: Escape on it goes back, and nothing on it is marked.
+                // to: «Tilbake til svaret» and Escape on it go back, and
+                // nothing on it is marked.
                 asked={askedDocumentHere === source.id}
               />
             ))}
