@@ -27,3 +27,16 @@ export function answerScopeText(
   // was asked of the whole of another corpus.
   return answerCorpusName ? `Hentet fra ${answerCorpusName}` : undefined;
 }
+
+/** «Så på hvilke kilder tråden leser fra» in «Fremgangsmåte»: the corpus, and the reader's filter
+    on it. Unlike the line over the answer, the corpus is always named, since this is where the
+    reader looks for which documents were searched. Undefined when neither is known. */
+export function procedureScopeText(
+  selection: FilterSelection,
+  corpusName?: string,
+): string | undefined {
+  const narrowed = filterSummaryText(selection);
+  if (narrowed && corpusName) return `${corpusName}, avgrenset til ${narrowed}.`;
+  if (narrowed) return `Avgrenset til ${narrowed}.`;
+  return corpusName ? `Alle dokumentene i ${corpusName}.` : undefined;
+}

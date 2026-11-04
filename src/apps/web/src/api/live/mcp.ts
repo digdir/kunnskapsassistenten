@@ -11,8 +11,10 @@ import type {
   ThinkingStepKind,
 } from '../../model';
 import { documentUrl } from '../documentUrls';
+import type { MarkerRef } from '../excerptCitations';
 import type { DatasetFilterFields } from '../filterFields';
 import { publicUrl } from '../publicUrl';
+import { stepFindings } from '../stepFindings';
 
 // The MCP wire format, translated into our own events. Where the protocol documentation and the
 // server disagree, this follows the server.
@@ -221,6 +223,31 @@ export function toSourceDocuments(chunks: McpChunk[], dataset?: string): SourceD
   return [...documents.values()];
 }
 
+/**
+ * Which excerpt each marker in the answer means, when the service cites by excerpt
+ * (digdir/genki#273, strategy config `citeBy: excerpt`): `structuredContent.markers`, one
+ * `{ marker, chunk_id, document }` per marker, `marker` as written without its brackets. Undefined
+ * when genki sends none, which is the service citing by document, as before: then `[n]` keeps
+ * today's meaning. An entry that is not of that shape is skipped.
+ */
+export function markerRefs(structured: { markers?: unknown } | undefined): MarkerRef[] | undefined {
+  const list = structured?.markers;
+  if (!Array.isArray(list)) return undefined;
+  return list.flatMap((item: unknown) => {
+    if (typeof item !== 'object' || item === null) return [];
+    const { marker, chunk_id: chunkId, document } = item as Record<string, unknown>;
+    if (typeof chunkId !== 'string' || chunkId === '') return [];
+    if (typeof marker !== 'string' && typeof marker !== 'number') return [];
+    return [
+      {
+        marker: String(marker),
+        chunkId,
+        ...(typeof document === 'string' && document !== '' ? { documentId: document } : {}),
+      },
+    ];
+  });
+}
+
 export function toCitations(documents: SourceDocument[]): Citation[] {
   return documents.flatMap((document) =>
     document.excerpts
@@ -260,13 +287,20 @@ function toolVoice(tool: string, isRead: boolean): { kind: ThinkingStepKind; lab
 function toolCallStep(call: ToolCall, index: number): ThinkingStep {
   const tool = call.tool ?? 'ukjent';
   const isRead = tool.includes('read') || Boolean(call.args?.chunk_ids?.length);
+  const summary = tool === ANSWER_TOOL ? undefined : call['result-summary'];
+  const queries = queriesOf(call);
+  // From the arguments when the call starts, from the report when it is done. The step is sent
+  // again under the same id, so «Fremgangsmåte» fills in rather than adding a line.
+  const findings = stepFindings(tool, queries, summary);
 
   return {
     id: `tool-${index}-${tool}`,
     ...toolVoice(tool, isRead),
-    detail: tool === ANSWER_TOOL ? undefined : call['result-summary'],
-    queries: queriesOf(call),
+    detail: summary,
+    queries,
     durationMs: call['duration-ms'],
+    tool,
+    ...(findings ? { findings } : {}),
   };
 }
 

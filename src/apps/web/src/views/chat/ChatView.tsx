@@ -9,12 +9,12 @@ import { useCorpus } from '../../layout/useCorpus';
 import { useFilterSelection } from '../../layout/useFilterSelection';
 import { useMainScroll } from '../../layout/useMainScroll';
 import { useThread } from '../../layout/useThread';
-import { emptyFilterSelection, type ThreadDetail } from '../../model';
+import { citationUses, emptyFilterSelection, type ThreadDetail } from '../../model';
 import { Composer } from './Composer';
 import { MessageList } from './MessageList';
 import { ScrollToBottom } from './ScrollToBottom';
 import { chatErrorText } from './errorText';
-import { answerScopeText } from './filterSummary';
+import { answerScopeText, procedureScopeText } from './filterSummary';
 import {
   CLARIFICATION_PLACEHOLDER,
   DISCLAIMER,
@@ -118,6 +118,23 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
     [appliedFilters, corpusKey, messages, thread?.filter],
   );
 
+  // «Så på hvilke kilder tråden leser fra» in «Fremgangsmåte»: the same filter, with the corpus
+  // always named. From the answer's key, or the chooser's for one still on its way, which was
+  // asked of the corpus chosen now.
+  const procedureScope = useCallback(
+    (messageId: string) => {
+      const answer = messages.find((message) => message.id === messageId);
+      const applied =
+        appliedFilters[messageId] ?? answer?.filter ?? thread?.filter ?? emptyFilterSelection;
+      const key = answer?.corpusKey ?? corpusKey;
+      return procedureScopeText(
+        applied,
+        corpusOption(key) === undefined ? undefined : corpusDisplayNameFor(key),
+      );
+    },
+    [appliedFilters, corpusKey, messages, thread?.filter],
+  );
+
   // Through the polite region this view already keeps in the page: one that
   // arrives WITH its text was inserted, not changed, and announces nothing.
   // Only while the skeleton is on screen; a question in the gap says its own.
@@ -182,7 +199,7 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
 
   // Activating a `[n]` marker is the shell's business: it opens the sources
   // panel and tells it which excerpt to show. Neither view knows the other.
-  const { showCitation } = useCitation();
+  const { showCitation, showDocument } = useCitation();
 
   // The shell gives the conversation an address on the first question, so
   // «Kopier lenke til tråden» has something to copy (C16). A no-op after it.
@@ -250,6 +267,8 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
         // on. It arrives with the frame ending the stream, so it is part of
         // the signature or the panel never hears about it.
         ...(message.corpusKey === undefined ? {} : { corpusKey: message.corpusKey }),
+        // Where the answer cites each excerpt, for the back-link from the panel.
+        uses: citationUses(message.content),
       });
     }
   }, [messages, reported, setAnswerSources, clearAnswerSources, setDocuments]);
@@ -376,6 +395,7 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
       {messages.length > 0 ? (
         <MessageList
           filterSummary={filterSummary}
+          procedureScope={procedureScope}
           attachmentsFor={(messageId) => attachmentsByMessage[messageId]}
           foundNothing={(messageId) => noHitsAnswers.has(messageId)}
           /* Which turn the alert below is speaking for. A failed turn keeps
@@ -388,6 +408,7 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
             focusField();
           }}
           onSelectSource={showCitation}
+          onSelectDocument={showDocument}
         />
       ) : loading ? (
         <ThreadLoading />

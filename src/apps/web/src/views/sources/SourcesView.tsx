@@ -3,13 +3,20 @@ import { corpusDisplayNameFor, corpusOption } from '../../api';
 import { EmptyState, findHits, PanelHeader, stepHit, type SearchHit } from '../../components';
 import { useActiveCorpus } from '../../layout/useActiveCorpus';
 import { ViewHead } from '../../layout/ViewHead';
-import { excerptDomId, type AnswerSources, type Excerpt, type SourceDocument } from '../../model';
+import {
+  answerDomId,
+  excerptDomId,
+  type AnswerSources,
+  type Excerpt,
+  type SourceDocument,
+} from '../../model';
 import { AnswerSwitcher } from './AnswerSwitcher';
 import { ExcerptSearch } from './ExcerptSearch';
 import { CorpusDisclaimer } from './CorpusDisclaimer';
 import { corpusKeyFor, isOwnDocument } from './origin';
 import { SourceDocumentCard } from './SourceDocumentCard';
 import { distinctTitles } from './distinctTitles';
+import { documentHeadingDomId } from './ids';
 import { SourcesPlaceholder } from './SourcesPlaceholder';
 import { noAnswerYet, emptyStateFor, type SourcesEmptyState } from './emptyStates';
 import { readableDocuments } from './readableText';
@@ -57,10 +64,10 @@ function excerptOfHit(sources: SourceDocument[], hit: SearchHit | undefined): Ex
 /** Stands in for a message id while the shell still holds one flat list. */
 const LEGACY_ANSWER_ID = 'siste-svar';
 
-// The `[n]` marker to return focus to: the focused one if it matches, since a
-// number can stand twice, or else any match, since Safari does not focus links.
-function markerFor(citationNumber: number): HTMLElement | null {
-  const href = `#${excerptDomId(citationNumber)}`;
+// The link to return focus to, a `[n]` marker or a title in «Kilder brukt i
+// svaret»: the focused one if it matches, since a number can stand twice, or
+// else any match, since Safari does not focus links.
+function markerFor(href: string): HTMLElement | null {
   const focused = document.activeElement;
 
   if (focused instanceof HTMLElement && focused.getAttribute('href') === href) return focused;
@@ -145,6 +152,7 @@ export function SourcesView({
   activeCitationNumber,
   activeCitationNonce,
   activeCitationMessageId,
+  activeDocumentId,
 }: SourcesViewProps) {
   // The disclaimer is drawn outside the sticky head and the search field
   // inside it, so the id that ties them together is made here, where both are.
@@ -185,10 +193,18 @@ export function SourcesView({
   // a second click on the same marker count. `shownFor` is the answer it was
   // resolved against, so the highlight stays with that answer.
   const [handled, setHandled] = useState<
-    { number?: number; nonce?: number; messageId?: string; shownFor?: string } | undefined
+    | {
+        number?: number;
+        documentId?: string;
+        nonce?: number;
+        messageId?: string;
+        shownFor?: string;
+      }
+    | undefined
   >(undefined);
   if (
     handled?.number !== activeCitationNumber ||
+    handled?.documentId !== activeDocumentId ||
     handled?.nonce !== activeCitationNonce ||
     handled?.messageId !== activeCitationMessageId
   ) {
@@ -204,21 +220,37 @@ export function SourcesView({
 
     setHandled({
       number: activeCitationNumber,
+      documentId: activeDocumentId,
       nonce: activeCitationNonce,
       messageId: activeCitationMessageId,
-      shownFor: activeCitationNumber === undefined ? undefined : citedAnswer?.messageId,
+      shownFor:
+        activeCitationNumber === undefined && activeDocumentId === undefined
+          ? undefined
+          : citedAnswer?.messageId,
     });
 
-    const target = allExcerpts(citedAnswer?.documents ?? []).find(
-      (excerpt) => excerpt.citationNumber === activeCitationNumber,
-    );
+    const target =
+      activeCitationNumber === undefined
+        ? undefined
+        : allExcerpts(citedAnswer?.documents ?? []).find(
+            (excerpt) => excerpt.citationNumber === activeCitationNumber,
+          );
 
     if (target !== undefined && !openExcerptIds.has(target.id)) {
       setOpenExcerptIds(new Set(openExcerptIds).add(target.id));
     }
 
+    // A document from «Kilder brukt i svaret»: its card, with no excerpt opened
+    // and nothing marked.
+    const targetDocument =
+      activeDocumentId === undefined
+        ? undefined
+        : citedAnswer?.documents.find((source) => source.id === activeDocumentId);
+
     // The default layout starts collapsed, where a marker would do nothing.
-    if (target !== undefined && collapsed) onCollapsedChange?.(false);
+    if ((target !== undefined || targetDocument !== undefined) && collapsed) {
+      onCollapsedChange?.(false);
+    }
   }
 
   // Effects run on mount: a view mounted with a citation already set must not
@@ -238,7 +270,7 @@ export function SourcesView({
   useEffect(() => {
     function record(event: MouseEvent) {
       const target = event.target instanceof Element ? event.target : null;
-      const marker = target?.closest('a[href^="#excerpt-"]');
+      const marker = target?.closest('a[href^="#excerpt-"], a[href^="#kilde-dokument-"]');
       if (!(marker instanceof HTMLElement) || marker.closest('.sources-view') !== null) return;
       activatedMarker.current = placeOf(marker);
     }
@@ -256,7 +288,7 @@ export function SourcesView({
 
     const activated = activatedMarker.current;
     activatedMarker.current = null;
-    const focused = markerFor(activeCitationNumber);
+    const focused = markerFor(`#${excerptDomId(activeCitationNumber)}`);
     returnTarget.current =
       activated?.href === `#${excerptDomId(activeCitationNumber)}`
         ? activated
@@ -271,14 +303,77 @@ export function SourcesView({
     );
   }, [activeCitationNumber, activeCitationNonce]);
 
+  // A document asked for by name goes to its card's heading, once per request, and is not marked.
+  const revealedDocument = useRef<{ documentId?: string; nonce?: number }>({
+    documentId: activeDocumentId,
+    nonce: activeCitationNonce,
+  });
+  useEffect(() => {
+    const previous = revealedDocument.current;
+    revealedDocument.current = { documentId: activeDocumentId, nonce: activeCitationNonce };
+
+    if (activeDocumentId === undefined) return;
+    if (previous.documentId === activeDocumentId && previous.nonce === activeCitationNonce) return;
+
+    // «Tilbake til svaret» and Escape on the card come back to the title the reader chose.
+    const href = `#${documentHeadingDomId(activeDocumentId)}`;
+    const activated = activatedMarker.current;
+    activatedMarker.current = null;
+    const focused = markerFor(href);
+    returnTarget.current =
+      activated?.href === href ? activated : focused === null ? null : placeOf(focused);
+
+    // Two frames, as for a marker: in case the panel had to be un-collapsed.
+    return afterRender(() =>
+      afterRender(() => scrollToAndFocus(documentHeadingDomId(activeDocumentId))),
+    );
+  }, [activeDocumentId, activeCitationNonce]);
+
   /** A detached marker would drop focus to `<body>`, hence `markerAt`. */
   function returnToAnswer() {
     const place = returnTarget.current;
     const marker = place === null ? null : markerAt(place);
     if (marker === null) return;
 
-    scrollElementIntoView(marker);
-    marker.focus({ preventScroll: true });
+    goToMarker(marker);
+  }
+
+  // The view's own box, to tell whether it sits in the narrow layout's modal drawer.
+  const viewRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Focus a marker in the answer. In the modal drawer the rest of the page is inert, so focus
+   * could not move there: the drawer closes first, and focus moves once it has.
+   */
+  function goToMarker(marker: HTMLElement) {
+    const go = () => {
+      // Centred, so the sentence the marker ends is in view above it.
+      marker.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'center' });
+      marker.focus({ preventScroll: true });
+    };
+    if (viewRef.current?.closest('dialog[open]')) {
+      onCollapsedChange?.(true);
+      afterRender(() => afterRender(go));
+    } else {
+      go();
+    }
+  }
+
+  /**
+   * The back-link: use `use` of excerpt `citationNumber`, in the answer on screen. The answer is
+   * the chat's, so the panel only moves focus to its marker.
+   */
+  function showUse(citationNumber: number, use: number) {
+    const messageId = activeAnswer?.messageId;
+    const scope =
+      (messageId === undefined || messageId === LEGACY_ANSWER_ID
+        ? null
+        : document.getElementById(answerDomId(messageId))) ?? document.querySelector('main');
+    const markers = scope
+      ? [...scope.querySelectorAll<HTMLElement>(`a[href="#${excerptDomId(citationNumber)}"]`)]
+      : [];
+    const marker = markers[use - 1];
+    if (marker !== undefined) goToMarker(marker);
   }
 
   function setExcerptOpen(excerptId: string, open: boolean) {
@@ -352,9 +447,10 @@ export function SourcesView({
   const citationIsOnScreen =
     handled?.shownFor !== undefined && handled.shownFor === activeAnswer?.messageId;
   const activeNumberHere = citationIsOnScreen ? activeCitationNumber : undefined;
+  const askedDocumentHere = citationIsOnScreen ? activeDocumentId : undefined;
 
   return (
-    <div className="sources-view">
+    <div className="sources-view" ref={viewRef}>
       {/* Mounted from the first render: a live region has to exist before its
           content changes. The visible counter is `aria-hidden`. */}
       <output className="ds-sr-only">{answerLabel}</output>
@@ -415,6 +511,12 @@ export function SourcesView({
                 currentHit={currentHit}
                 activeCitationNumber={activeNumberHere}
                 onReturnToAnswer={returnToAnswer}
+                uses={activeAnswer?.uses}
+                onShowUse={showUse}
+                // The card a title in «Kilder brukt i svaret» sent the reader
+                // to: «Tilbake til svaret» and Escape on it go back, and
+                // nothing on it is marked.
+                asked={askedDocumentHere === source.id}
               />
             ))}
           </div>

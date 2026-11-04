@@ -46,7 +46,9 @@ function Shell({ children }: { children: ReactNode }) {
   return (
     <MemoryRouter>
       <MainScrollContext value={scrollRef}>
-        <CitationContext value={{ activeCitation: undefined, showCitation: () => {} }}>
+        <CitationContext
+          value={{ activeCitation: undefined, showCitation: () => {}, showDocument: () => {} }}
+        >
           <AnswerSourcesContext value={inertAnswerSources}>
             <ThreadContext value={{ startThread: (question) => threadFromQuestion(question) }}>
               <FilterContext value={{ selection: emptyFilterSelection, setSelection: () => {} }}>

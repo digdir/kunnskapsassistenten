@@ -1,5 +1,4 @@
 import { Card, Paragraph } from '@digdir/designsystemet-react';
-import { useState } from 'react';
 import type { Message } from '../../model';
 import { AnswerMessage } from './AnswerMessage';
 import { attachmentsOnMessage } from './attachmentText';
@@ -13,11 +12,15 @@ type MessageListProps = {
      answer numbers its excerpts from 1, so the number alone does not say
      which excerpt. */
   onSelectSource: (citationNumber: number, messageId: string) => void;
+  /** A document in «Kilder brukt i svaret» was chosen, with the answer it belongs to. */
+  onSelectDocument?: (documentId: string, messageId: string) => void;
   /** Ask the stopped question again, in place of the answer that was cut off. */
   onRegenerate: () => void;
   /** «Avgrenset til …» over an answer, by message id. Absent means the
      question was asked against the whole corpus. */
   filterSummary?: (messageId: string) => string | undefined;
+  /** Which documents an answer's thread read from, as «Fremgangsmåte» says it, by message id. */
+  procedureScope?: (messageId: string) => string | undefined;
   /** Whether the search behind an answer came back empty, by message id and
       not «the last one»: it is a fact about that answer, however many turns
       come after it. */
@@ -31,43 +34,19 @@ type MessageListProps = {
 
 /**
  * The conversation, as an ordered list because the order is the meaning. Who
- * said what is carried by text in a hidden span, not by colour or side, and
- * this file owns which answer the pinned search strip belongs to.
+ * said what is carried by text in a hidden span, not by colour or side.
  */
 export function MessageList({
   messages,
   onSelectSource,
+  onSelectDocument,
   onRegenerate,
   filterSummary,
+  procedureScope,
   foundNothing,
   liveErrorId,
   attachmentsFor,
 }: MessageListProps) {
-  // The answer whose search strip is in the view-head, and what is typed in
-  // it. One strip, one query: switching answers starts a fresh search rather
-  // than carrying the last one over to a different text.
-  const [searchingId, setSearchingId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  /* «Svar 2 av 3», for the strip to say what it is searching now that it is
-    no longer drawn inside the answer. Counted over the assistant turns in
-    the order they were given, which is the order the reader sees. */
-  const answerIds = messages.filter((message) => message.role === 'assistant').map((m) => m.id);
-  const searchLabelFor = (messageId: string) => {
-    if (answerIds.length < 2) return 'Søk i svaret';
-    return `Søk i svar ${answerIds.indexOf(messageId) + 1} av ${answerIds.length}`;
-  };
-
-  function openSearch(messageId: string) {
-    setSearchingId(messageId);
-    setSearchQuery('');
-  }
-
-  function closeSearch() {
-    setSearchingId(null);
-    setSearchQuery('');
-  }
-
   return (
     <ol className="ka-messages">
       {messages.map((message, index) => {
@@ -136,18 +115,14 @@ export function MessageList({
             liveErrorId={liveErrorId}
             message={message}
             narrowedTo={filterSummary?.(message.id)}
+            scope={procedureScope?.(message.id)}
             /* What this answer is an answer to, for «Fremgangsmåte». The
                list is the one place that knows: an answer carries no
                question, and the turn before it is right here. */
             question={questionBefore(messages, index)}
-            onCloseSearch={closeSearch}
             onRegenerate={onRegenerate}
-            onSearchQueryChange={setSearchQuery}
             onSelectSource={onSelectSource}
-            onToggleSearch={() => openSearch(message.id)}
-            searchLabel={searchLabelFor(message.id)}
-            searchOpen={searchingId === message.id}
-            searchQuery={searchQuery}
+            onSelectDocument={onSelectDocument}
           />
         );
       })}

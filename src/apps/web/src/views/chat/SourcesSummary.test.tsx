@@ -31,7 +31,7 @@ const documents = [
 
 describe('SourcesSummary', () => {
   it('har ett dokument per rad, i panelets rekkefølge, med utdragene markørene peker på', () => {
-    render(<SourcesSummary documents={documents} onSelectSource={() => {}} />);
+    render(<SourcesSummary documents={documents} onSelectDocument={() => {}} />);
 
     const rows = within(screen.getByRole('list')).getAllByRole('listitem');
     expect(rows.map((row) => row.textContent)).toEqual([
@@ -41,30 +41,28 @@ describe('SourcesSummary', () => {
     ]);
   });
 
-  it('åpner kildepanelet på dokumentets første utdrag, som en markør gjør', () => {
-    // Det første etter nummer, ikke etter rekkefølge: Årsrapporten har
-    // utdragene i rekkefølgen 2, 1, og [1] er det svaret viser til først.
-    const onSelectSource = vi.fn();
-    render(<SourcesSummary documents={documents} onSelectSource={onSelectSource} />);
+  it('opens the sources panel on the document itself, not on its first excerpt', () => {
+    const onSelectDocument = vi.fn();
+    render(<SourcesSummary documents={documents} onSelectDocument={onSelectDocument} />);
 
     fireEvent.click(screen.getByRole('link', { name: 'Årsrapport Nkom 2025' }));
     fireEvent.click(screen.getByRole('link', { name: 'Tildelingsbrev Nkom 2026' }));
 
-    expect(onSelectSource.mock.calls).toEqual([[1], [3]]);
+    expect(onSelectDocument.mock.calls).toEqual([['a'], ['b']]);
     expect(screen.getByRole('link', { name: 'Årsrapport Nkom 2025' }).getAttribute('href')).toBe(
-      '#excerpt-1',
+      '#kilde-dokument-a-tittel',
     );
   });
 
   it('lar et dokument uten nummer stå som tekst, fordi det ikke er noe å gå til', () => {
-    render(<SourcesSummary documents={documents} onSelectSource={() => {}} />);
+    render(<SourcesSummary documents={documents} onSelectDocument={() => {}} />);
 
     expect(screen.getByText('Instruks for økonomistyring').closest('a')).toBeNull();
   });
 
   it('er åpen fra start, som Figma tegner den', () => {
     const { container } = render(
-      <SourcesSummary documents={documents} onSelectSource={() => {}} />,
+      <SourcesSummary documents={documents} onSelectDocument={() => {}} />,
     );
 
     expect(container.querySelector('details')?.open).toBe(true);
@@ -87,7 +85,7 @@ describe('SourcesSummary', () => {
       },
       1,
     );
-    render(<SourcesSummary documents={[own]} onSelectSource={() => {}} />);
+    render(<SourcesSummary documents={[own]} onSelectDocument={() => {}} />);
 
     const link = screen.getByRole('link', { name: 'Årsrapport Nkom 2025, ditt dokument' });
     const visible = [...link.childNodes]
@@ -107,7 +105,7 @@ describe('SourcesSummary', () => {
           documentWith('12', 'Tildelingsbrev 2026', [4]),
           documentWith('88640', 'Årsrapport Datatilsynet 2023', [3]),
         ]}
-        onSelectSource={() => {}}
+        onSelectDocument={() => {}}
       />,
     );
 
@@ -119,7 +117,7 @@ describe('SourcesSummary', () => {
   });
 
   it('tegner ingenting uten dokumenter', () => {
-    const { container } = render(<SourcesSummary documents={[]} onSelectSource={() => {}} />);
+    const { container } = render(<SourcesSummary documents={[]} onSelectDocument={() => {}} />);
 
     expect(container.childElementCount).toBe(0);
   });
@@ -136,16 +134,17 @@ describe('SourcesSummary i svaret', () => {
     sources: documents,
   };
 
-  function show(message: Message, onSelectSource = vi.fn()) {
+  function show(message: Message, onSelectDocument = vi.fn()) {
     render(
       <MessageList
         foundNothing={() => false}
         messages={[message]}
         onRegenerate={() => {}}
-        onSelectSource={onSelectSource}
+        onSelectSource={() => {}}
+        onSelectDocument={onSelectDocument}
       />,
     );
-    return onSelectSource;
+    return onSelectDocument;
   }
 
   it('står under svaret og over avslutningsspørsmålet', () => {
@@ -158,12 +157,12 @@ describe('SourcesSummary i svaret', () => {
     ).toBeTruthy();
   });
 
-  it('sender med hvilket svar markøren hører til, så panelet kan bytte til det', () => {
-    const onSelectSource = show(answer);
+  it('sends the document and the answer it belongs to, so the panel can switch to it', () => {
+    const onSelectDocument = show(answer);
 
     fireEvent.click(screen.getByRole('link', { name: 'Tildelingsbrev Nkom 2026' }));
 
-    expect(onSelectSource).toHaveBeenCalledWith(3, 'a1');
+    expect(onSelectDocument).toHaveBeenCalledWith('b', 'a1');
   });
 
   it('kommer først når svaret er ferdig', () => {

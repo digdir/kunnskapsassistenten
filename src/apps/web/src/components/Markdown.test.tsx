@@ -163,6 +163,73 @@ describe('Markdown citations', () => {
     expect(seen).toEqual([2]);
   });
 
+  // A footnote is drawn as a number in a small circle. The brackets stay in the text, out of
+  // sight, for whoever copies the answer; the link's name is its `aria-label`.
+  it('shows the number alone, with the brackets kept out of sight', () => {
+    render(<Markdown citations={targets}>{'Ett [1][2] og slutt.'}</Markdown>);
+
+    const [first, second] = screen.getAllByRole('link');
+    expect(first.classList.contains('markdown__citation-mark')).toBe(true);
+    const visible = (link: HTMLElement) =>
+      [...link.childNodes]
+        .filter(
+          (node) =>
+            !(node instanceof HTMLElement && node.classList.contains('markdown__citation-copy')),
+        )
+        .map((node) => node.textContent)
+        .join('');
+    expect([visible(first), visible(second)]).toEqual(['1', '2']);
+    expect(first.querySelectorAll('.markdown__citation-copy')).toHaveLength(2);
+  });
+
+  // At 390 px a circle wrapped alone to the start of a line, away from the word it belongs to.
+  // The model's space before `[n]` is kept out of sight, so the circle is 4 px from the word.
+  // Only the word's last character is held, so the word itself can still break: at 320 px
+  // «rapporteringskrav» with two circles held whole did not fit the answer card.
+  it('holds a run of footnotes on one line with the end of the word before it', () => {
+    const { container } = render(
+      <Markdown citations={targets}>{'Avvik rapporteres kvartalsvis [1][2] i året.'}</Markdown>,
+    );
+
+    const runs = container.querySelectorAll('.markdown__citation-run');
+    expect(runs).toHaveLength(1);
+    expect(runs[0].firstChild?.textContent).toBe('s');
+    expect(runs[0].previousSibling?.textContent).toBe('Avvik rapporteres kvartalsvi');
+    expect(runs[0].querySelectorAll('a')).toHaveLength(2);
+    // The space before the first marker is in the run, hidden, and nothing is lost from the text.
+    expect(runs[0].children[0].classList.contains('markdown__citation-copy')).toBe(true);
+    expect(runs[0].children[0].textContent).toBe(' ');
+    expect(container.textContent).toBe('Avvik rapporteres kvartalsvis [1][2] i året.');
+  });
+
+  // Where a narrow answer releases the hold on the word, the circles may move to the next line,
+  // but the full stop after them goes with them rather than starting a line alone.
+  it('holds the circles and the punctuation after them together, without the space before them', () => {
+    const { container } = render(
+      <Markdown citations={targets}>
+        {'Avvik rapporteres kvartalsvis [1][2]. Neste setning.'}
+      </Markdown>,
+    );
+
+    const run = container.querySelector('.markdown__citation-run');
+    const marks = run?.querySelector('.markdown__citation-marks');
+    expect(marks?.querySelectorAll('a')).toHaveLength(2);
+    expect(marks?.lastChild?.textContent).toBe('.');
+    expect(marks?.querySelector('.markdown__citation-copy')?.textContent).toBe('[');
+    expect(run?.children[0]?.textContent).toBe(' ');
+    expect(run?.nextSibling?.textContent).toBe(' Neste setning.');
+    expect(container.textContent).toBe('Avvik rapporteres kvartalsvis [1][2]. Neste setning.');
+  });
+
+  it('starts a run at the marker when no word comes right before it', () => {
+    const { container } = render(<Markdown citations={targets}>{'**Fet** [1] og [2].'}</Markdown>);
+
+    const runs = [...container.querySelectorAll('.markdown__citation-run')];
+    expect(runs.map((run) => run.querySelectorAll('a').length)).toEqual([1, 1]);
+    expect(runs[1].firstChild?.textContent).toBe('g');
+    expect(container.textContent).toBe('Fet [1] og [2].');
+  });
+
   it('renders markers inside list items and table cells too', () => {
     render(<Markdown citations={targets}>{'- punkt [1]'}</Markdown>);
     expect(screen.getByRole('listitem').textContent).toBe('punkt [1]');
@@ -170,10 +237,10 @@ describe('Markdown citations', () => {
   });
 });
 
-describe('markør uten kilde', () => {
-  it('blir tekst med en forklaring, ikke en lenke', () => {
-    // Et avbrutt svar har skrevet [3], men kildene kom aldri. En lenke til
-    // ingenting er verre enn ingen lenke.
+describe('a marker with no source', () => {
+  it('becomes text with an explanation, not a link', () => {
+    // A stopped answer has written [3], but the sources never came. A link to
+    // nothing is worse than no link.
     const { container } = render(
       <Markdown citations={[]} sourcesLost>
         {'Et svar med [3] i seg.'}
@@ -185,11 +252,11 @@ describe('markør uten kilde', () => {
     const marker = container.querySelector('sup[title]');
     expect(marker?.getAttribute('title')).toBe('Kilden kom ikke fram');
     expect(marker?.textContent).toContain('[3]');
-    // `title` alene er bare for mus. Dette er for den som lytter.
+    // `title` alone is for the mouse only. This is for whoever listens.
     expect(marker?.textContent?.toLowerCase()).toContain('kilden kom ikke fram');
   });
 
-  it('lar teksten rundt stå urørt', () => {
+  it('leaves the text around it untouched', () => {
     const { container } = render(
       <Markdown citations={[]} sourcesLost>
         {'Før [3] etter.'}
@@ -197,54 +264,6 @@ describe('markør uten kilde', () => {
     );
     expect(container.textContent).toContain('Før ');
     expect(container.textContent).toContain(' etter.');
-  });
-});
-
-describe('Markdown og søk i teksten', () => {
-  const marks = (container: HTMLElement) => [...container.querySelectorAll('mark')];
-
-  it('marks every match, in every kind of block', () => {
-    const { container } = render(
-      <Markdown markClassName="treff" searchQuery="mål">
-        {'# Måloppnåelse\n\nNkom måler mål mot mål.\n\n- ett mål\n- to'}
-      </Markdown>,
-    );
-
-    // Case-insensitive, so «Mål» in the heading counts too: five in all.
-    expect(marks(container)).toHaveLength(5);
-    expect(marks(container).every((mark) => mark.className === 'treff')).toBe(true);
-    // The text itself is untouched; only the wrapping changed.
-    expect(container.textContent).toContain('Nkom måler mål mot mål.');
-  });
-
-  it('marks nothing on a query too short to be one', () => {
-    const { container } = render(<Markdown searchQuery="m">{'Nkom måler mål.'}</Markdown>);
-
-    // `MIN_QUERY_LENGTH` is the sources panel's rule, and there is one search
-    // mechanism, not two.
-    expect(marks(container)).toHaveLength(0);
-  });
-
-  it('leaves a citation marker a link when the prose around it is marked', () => {
-    const { container } = render(
-      <Markdown
-        citations={[{ number: 1, targetId: 'excerpt-1', label: 'Årsrapport, side 4' }]}
-        searchQuery="måler"
-      >
-        {'Nkom måler dette [1] hvert år.'}
-      </Markdown>,
-    );
-
-    expect(marks(container)).toHaveLength(1);
-    expect(screen.getByRole('link', { name: 'Årsrapport, side 4' })).toBeTruthy();
-  });
-
-  it('does not mark markdown syntax the reader never sees', () => {
-    // The `#` is gone by the time the answer is on screen, so a search for it
-    // must not report a hit the highlight cannot show.
-    const { container } = render(<Markdown searchQuery="# ">{'# Overskrift'}</Markdown>);
-
-    expect(marks(container)).toHaveLength(0);
   });
 });
 

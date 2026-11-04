@@ -385,7 +385,7 @@ test.describe('samtalen', () => {
       await page.keyboard.press('Enter');
 
       // Stopp mens søket går, før det første ordet i svaret.
-      await expect(page.getByText('Tenker …')).toBeVisible();
+      await expect(page.getByText(/^Jobber/)).toBeVisible();
       await page.getByRole('button', { name: 'Avbryt genereringen' }).click();
 
       /*
@@ -417,7 +417,7 @@ test.describe('samtalen', () => {
 
     // Stopp i tenkefasen, før det første ordet: det er turen som ikke ble
     // lagret i det hele tatt.
-    await expect(page.getByText('Tenker …')).toBeVisible();
+    await expect(page.getByText(/^Jobber/)).toBeVisible();
     await page.getByRole('button', { name: 'Avbryt genereringen' }).click();
     await expect(page.getByText('Du stoppet søket før svaret begynte.')).toBeVisible();
 

@@ -7,7 +7,7 @@ export type { Citation } from './citation';
 export type { FacetValue, FilterDimension, FilterFacet, FilterSelection } from './filter';
 export { emptyFilterSelection, filterDimensions, isEmptySelection } from './filter';
 export type { Message, MessageRole, MessageStatus } from './message';
-export type { RetrievalDetails, ThinkingStep, ThinkingStepKind } from './retrieval';
+export type { RetrievalDetails, StepFindings, ThinkingStep, ThinkingStepKind } from './retrieval';
 export { withoutRetriedAttempts } from './retriedTurns';
 export type {
   AnswerSources,
@@ -16,7 +16,14 @@ export type {
   RelevanceLevel,
   SourceDocument,
 } from './source';
-export { citationAccessibleName, citationTargets, excerptDomId, relevanceLabels } from './source';
+export {
+  answerDomId,
+  citationAccessibleName,
+  citationTargets,
+  citationUses,
+  excerptDomId,
+  relevanceLabels,
+} from './source';
 export { chatErrorCode } from './stream';
 export type { ChatError, ChatErrorCode, StreamEvent } from './stream';
 export { threadFromQuestion } from './thread';

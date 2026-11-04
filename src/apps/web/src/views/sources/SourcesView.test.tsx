@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { useState } from 'react';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { useState, type ReactElement } from 'react';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { userDocumentSource } from '../../api/mock/fixtures';
-import { documentDomId } from './ids';
-import { excerptDomId, type AnswerSources, type SourceDocument } from '../../model';
+import { documentDomId, documentHeadingDomId } from './ids';
+import { answerDomId, excerptDomId, type AnswerSources, type SourceDocument } from '../../model';
 import { SourcesView } from './SourcesView';
 
 /**
@@ -957,5 +957,289 @@ describe('SourcesView, utdrag fra korpuset som lesbar tekst', () => {
     });
 
     expect(screen.getByText('1 av 1 treff')).toBeTruthy();
+  });
+});
+
+describe('SourcesView and a document from «Kilder brukt i svaret»', () => {
+  const first: AnswerSources = {
+    messageId: 'svar-1',
+    status: 'complete',
+    documents: [
+      documentWith('doc-a', 'Årsrapport Nkom 2025', [1, 2]),
+      documentWith('doc-b', 'Tildelingsbrev Nkom 2026', [3]),
+    ],
+  };
+  const second: AnswerSources = {
+    messageId: 'svar-2',
+    status: 'complete',
+    documents: [documentWith('doc-c', 'Instruks for Nkom', [1])],
+  };
+
+  function Asked({ documentId, nonce }: { documentId?: string; nonce?: number }) {
+    return (
+      <SourcesView
+        answers={[first, second]}
+        activeDocumentId={documentId}
+        activeCitationNonce={nonce}
+        activeCitationMessageId={documentId === undefined ? undefined : 'svar-1'}
+      />
+    );
+  }
+
+  it('goes to the card of that answer, focuses its heading, and marks and opens nothing', async () => {
+    const { container, rerender } = render(<Asked />);
+    expect(screen.getByRole('heading', { name: 'Instruks for Nkom' })).toBeTruthy();
+
+    rerender(<Asked documentId="doc-b" nonce={1} />);
+
+    const heading = await screen.findByRole('heading', { name: 'Tildelingsbrev Nkom 2026' });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+    expect(container.querySelector('[data-active="true"]')).toBeNull();
+    expect(container.querySelectorAll('details[open]')).toHaveLength(0);
+  });
+
+  it('goes back to the title with Escape, as an excerpt goes back to its marker', async () => {
+    const { rerender } = render(
+      <>
+        <a href="#kilde-dokument-doc-b-tittel">Tildelingsbrev Nkom 2026</a>
+        <Asked />
+      </>,
+    );
+    const title = screen.getByRole('link', { name: 'Tildelingsbrev Nkom 2026' });
+    title.focus();
+    fireEvent.click(title);
+    rerender(
+      <>
+        <a href="#kilde-dokument-doc-b-tittel">Tildelingsbrev Nkom 2026</a>
+        <Asked documentId="doc-b" nonce={1} />
+      </>,
+    );
+    const heading = await screen.findByRole('heading', { name: 'Tildelingsbrev Nkom 2026' });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+
+    fireEvent.keyDown(heading, { key: 'Escape' });
+
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Tildelingsbrev Nkom 2026' }),
+    );
+  });
+
+  /**
+   * The title under the answer that sends the reader to doc-b, a footnote, and the panel, in the
+   * narrow layout's drawer or not.
+   */
+  function Landing({
+    documentId,
+    citationNumber,
+    nonce,
+    inDrawer = false,
+    onCollapsedChange,
+  }: {
+    documentId?: string;
+    citationNumber?: number;
+    nonce?: number;
+    inDrawer?: boolean;
+    onCollapsedChange?: (collapsed: boolean) => void;
+  }) {
+    const panel = (
+      <SourcesView
+        answers={[first, second]}
+        activeDocumentId={documentId}
+        activeCitationNumber={citationNumber}
+        activeCitationNonce={nonce}
+        activeCitationMessageId={
+          documentId === undefined && citationNumber === undefined ? undefined : 'svar-1'
+        }
+        onCollapsedChange={onCollapsedChange}
+      />
+    );
+    return (
+      <>
+        <a href={`#${documentHeadingDomId('doc-b')}`}>Tildelingsbrev Nkom 2026</a>
+        <a href={`#${excerptDomId(1)}`}>[1]</a>
+        {inDrawer ? <dialog open>{panel}</dialog> : panel}
+      </>
+    );
+  }
+
+  /** Presses the title, as the reader does, and waits for the card's heading to take focus. */
+  async function pressTitle(
+    rerender: (ui: ReactElement) => void,
+    props: { inDrawer?: boolean; onCollapsedChange?: (collapsed: boolean) => void } = {},
+  ) {
+    const title = screen.getByRole('link', { name: 'Tildelingsbrev Nkom 2026' });
+    title.focus();
+    fireEvent.click(title);
+    rerender(<Landing documentId="doc-b" nonce={1} {...props} />);
+    const heading = await screen.findByRole('heading', { name: 'Tildelingsbrev Nkom 2026' });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+    return { title, heading };
+  }
+
+  it('offers «Tilbake til svaret» on the card the title sent the reader to, and only there', async () => {
+    const { container, rerender } = render(<Landing />);
+    expect(screen.queryByRole('button', { name: 'Tilbake til svaret' })).toBeNull();
+
+    const { heading } = await pressTitle(rerender);
+
+    const back = screen.getByRole('button', { name: 'Tilbake til svaret' });
+    expect(screen.getAllByRole('button', { name: 'Tilbake til svaret' })).toHaveLength(1);
+    expect(document.getElementById(documentDomId('doc-b'))?.contains(back)).toBe(true);
+    // The name is the visible text (WCAG 2.5.3).
+    expect(back.getAttribute('aria-label')).toBeNull();
+    expect(back.textContent).toBe('Tilbake til svaret');
+    // The next stop after the heading the reader landed on.
+    const after = [...container.querySelectorAll('a[href], button, input, summary')].filter(
+      (element) => heading.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(after[0]).toBe(back);
+  });
+
+  it('goes back to the title with «Tilbake til svaret», centred, as Escape does', async () => {
+    const scrolled = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const { rerender } = render(<Landing />);
+    const { title } = await pressTitle(rerender);
+    scrolled.mockClear();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tilbake til svaret' }));
+
+    expect(document.activeElement).toBe(title);
+    expect(scrolled.mock.contexts).toEqual([title]);
+    expect(scrolled.mock.calls[0]?.[0]).toMatchObject({ block: 'center' });
+    scrolled.mockRestore();
+  });
+
+  it('closes the narrow layout’s drawer before it moves focus to the title', async () => {
+    const onCollapsedChange = vi.fn();
+    const { rerender } = render(<Landing inDrawer onCollapsedChange={onCollapsedChange} />);
+    const { title } = await pressTitle(rerender, { inDrawer: true, onCollapsedChange });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tilbake til svaret' }));
+
+    expect(onCollapsedChange).toHaveBeenCalledWith(true);
+    // Not yet: the rest of the page is inert while the modal drawer is open.
+    expect(document.activeElement).not.toBe(title);
+    await waitFor(() => expect(document.activeElement).toBe(title));
+  });
+
+  it('takes the way back off the card when a footnote sends the reader elsewhere', async () => {
+    const { rerender } = render(<Landing />);
+    await pressTitle(rerender);
+
+    rerender(<Landing citationNumber={1} nonce={2} />);
+
+    const excerpt = document.getElementById(excerptDomId(1)) as HTMLElement;
+    await waitFor(() => expect(document.activeElement).toBe(excerpt));
+    const card = document.getElementById(documentDomId('doc-b')) as HTMLElement;
+    expect(within(card).queryByRole('button', { name: 'Tilbake til svaret' })).toBeNull();
+    // The control: the excerpt the footnote opened has its own.
+    expect(within(excerpt).getAllByRole('button', { name: 'Tilbake til svaret' })).toHaveLength(1);
+  });
+
+  it('moves focus again when the same document is asked for twice', async () => {
+    const { rerender } = render(<Asked />);
+    rerender(<Asked documentId="doc-a" nonce={1} />);
+    const heading = await screen.findByRole('heading', { name: 'Årsrapport Nkom 2025' });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+
+    (document.activeElement as HTMLElement).blur();
+    rerender(<Asked documentId="doc-a" nonce={2} />);
+
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+  });
+});
+
+describe('SourcesView, from an excerpt back to where the answer uses it', () => {
+  const answer: AnswerSources = {
+    messageId: 'svar-2',
+    status: 'complete',
+    documents: [
+      documentWith('doc-a', 'Årsrapport Nkom 2025', [1]),
+      documentWith('doc-b', 'Tildelingsbrev Nkom 2026', [2]),
+    ],
+    uses: { 1: 3, 2: 1 },
+  };
+
+  /** Two answers in the conversation, both citing excerpt 1; the panel shows the second. */
+  function Conversation({ uses = true }: { uses?: boolean }) {
+    return (
+      <>
+        <ol>
+          <li id={answerDomId('svar-1')}>
+            <a href={`#${excerptDomId(1)}`}>[1] i første svar</a>
+          </li>
+          <li id={answerDomId('svar-2')}>
+            <a href={`#${excerptDomId(1)}`}>[1] første bruk</a>
+            <a href={`#${excerptDomId(2)}`}>[2] eneste bruk</a>
+            <a href={`#${excerptDomId(1)}`}>[1] andre bruk</a>
+            <a href={`#${excerptDomId(1)}`}>[1] tredje bruk</a>
+          </li>
+        </ol>
+        <SourcesView
+          answers={[
+            { ...answer, messageId: 'svar-1' },
+            uses ? answer : { ...answer, uses: undefined },
+          ]}
+        />
+      </>
+    );
+  }
+
+  const backLink = (name: RegExp) => screen.getByRole('button', { name });
+
+  it('steps through the uses of an excerpt cited three times, and wraps', () => {
+    render(<Conversation />);
+    const link = backLink(/^Vis hvor svaret bruker utdrag 1/u);
+    expect(link.getAttribute('aria-label')).toBe('Vis hvor svaret bruker utdrag 1 (1/3)');
+    expect(link.textContent).toBe('1/3');
+
+    const uses = ['[1] første bruk', '[1] andre bruk', '[1] tredje bruk', '[1] første bruk'];
+    const names = ['1/3', '2/3', '3/3', '1/3'];
+    uses.forEach((use, index) => {
+      fireEvent.click(link);
+      expect(document.activeElement).toBe(screen.getByRole('link', { name: use }));
+      expect(link.getAttribute('aria-label')).toBe(
+        `Vis hvor svaret bruker utdrag 1 (${names[index]})`,
+      );
+    });
+  });
+
+  it('names an excerpt used once without a count, and goes to that one use', () => {
+    render(<Conversation />);
+    const link = backLink(/^Vis hvor svaret bruker utdrag 2/u);
+
+    expect(link.getAttribute('aria-label')).toBe('Vis hvor svaret bruker utdrag 2');
+    expect(link.textContent).toBe('');
+    fireEvent.click(link);
+    expect(document.activeElement).toBe(screen.getByRole('link', { name: '[2] eneste bruk' }));
+  });
+
+  it('draws no back-link when nothing says how the answer uses its excerpts', () => {
+    render(<Conversation uses={false} />);
+
+    expect(screen.queryByRole('button', { name: /^Vis hvor svaret bruker/u })).toBeNull();
+  });
+
+  it('closes the narrow layout’s drawer before it moves focus to the answer', async () => {
+    const onCollapsedChange = vi.fn();
+    render(
+      <>
+        <ol>
+          <li id={answerDomId('svar-2')}>
+            <a href={`#${excerptDomId(2)}`}>[2] eneste bruk</a>
+          </li>
+        </ol>
+        <dialog open>
+          <SourcesView answers={[answer]} onCollapsedChange={onCollapsedChange} />
+        </dialog>
+      </>,
+    );
+
+    fireEvent.click(backLink(/^Vis hvor svaret bruker utdrag 2/u));
+
+    expect(onCollapsedChange).toHaveBeenCalledWith(true);
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('link', { name: '[2] eneste bruk' })),
+    );
   });
 });

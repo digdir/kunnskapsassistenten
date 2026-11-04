@@ -3,7 +3,8 @@ import { ExternalLinkIcon } from '@navikt/aksel-icons';
 import { hitsFor, type SearchHit } from '../../components';
 import type { SourceDocument } from '../../model';
 import { SourceExcerpt } from './SourceExcerpt';
-import { documentDomId } from './ids';
+import { ReturnToAnswerButton } from './ReturnToAnswerButton';
+import { documentDomId, documentHeadingDomId } from './ids';
 import { documentLinkLabel } from './kudosLink';
 import { documentSubtitle, isOwnDocument, OWN_DOCUMENT_NO_LINK } from './origin';
 
@@ -23,6 +24,15 @@ type SourceDocumentCardProps = {
   activeCitationNumber?: number;
   /** Back to the marker; handed on only to the excerpt that marker points at. */
   onReturnToAnswer?: () => void;
+  /** How many places in the answer cite each excerpt, by number. */
+  uses?: Record<number, number>;
+  /** Shows the reader one use of an excerpt in the answer, by its number and the use. */
+  onShowUse?: (citationNumber: number, use: number) => void;
+  /**
+   * This is the document a title in «Kilder brukt i svaret» asked for; «Tilbake til svaret» and
+   * Escape go back to that title.
+   */
+  asked?: boolean;
 };
 
 /**
@@ -39,6 +49,9 @@ export function SourceDocumentCard({
   currentHit,
   activeCitationNumber,
   onReturnToAnswer,
+  asked = false,
+  uses,
+  onShowUse,
 }: SourceDocumentCardProps) {
   const subtitle = documentSubtitle(source);
   const own = isOwnDocument(source);
@@ -48,14 +61,40 @@ export function SourceDocumentCard({
       // Neutral surface, like the answer card. Without it the card
       // inherits accent from the root and turns marine in dark mode.
       data-color="neutral"
-      className="source-document ds-focus"
+      className="source-document"
       id={documentDomId(source.id)}
-      tabIndex={-1}
+      // Escape on the card a title sent the reader to goes back to the title,
+      // as Escape in an excerpt goes back to its marker. Scoped to the card, so
+      // the search field keeps its own Escape.
+      onKeyDown={
+        asked && onReturnToAnswer !== undefined
+          ? (event) => {
+              if (event.key !== 'Escape') return;
+              event.stopPropagation();
+              onReturnToAnswer();
+            }
+          : undefined
+      }
     >
       <Card.Block className="source-document__head">
-        <Heading level={3} data-size="xs">
+        {/* Where «Kilder brukt i svaret» lands: focus, not only scroll, so a
+            screen reader says which document the reader came to. */}
+        <Heading
+          level={3}
+          data-size="xs"
+          className="ds-focus"
+          id={documentHeadingDomId(source.id)}
+          tabIndex={-1}
+        >
           {name}
         </Heading>
+        {/* The way back for a pointer, as Escape is for the keyboard. Under the
+            heading the reader lands on, and the next Tab stop after it; beside
+            it, a long title would be squeezed into a narrow column. The card
+            gets no band or tint, so it stays unmarked. */}
+        {asked && onReturnToAnswer !== undefined && (
+          <ReturnToAnswerButton className="source-document__back" onClick={onReturnToAnswer} />
+        )}
       </Card.Block>
 
       <Card.Block className="source-document__body">
@@ -87,6 +126,15 @@ export function SourceDocumentCard({
               // Only the excerpt the marker points at gets a way back, because
               // it is the only one the reader was sent to.
               onReturnToAnswer={active ? onReturnToAnswer : undefined}
+              // Every cited excerpt gets the back-link to its uses.
+              uses={
+                excerpt.citationNumber === undefined ? 0 : (uses?.[excerpt.citationNumber] ?? 0)
+              }
+              onShowUse={
+                onShowUse === undefined || excerpt.citationNumber === undefined
+                  ? undefined
+                  : (use) => onShowUse(excerpt.citationNumber as number, use)
+              }
             />
           );
         })}

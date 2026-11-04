@@ -1,0 +1,267 @@
+{
+  "about": "One real run on genki-test (service version 4), captured from /v1 with genai_steps on 2026-11-03. Trimmed to the steps, the question and the cited sources; the answer and the excerpt texts are left out.",
+  "question": "Sammenlign det fem største forskjellene mellom de to siste årsrapportene til digdir",
+  "capturedAt": "2026-11-03T10:02:36.613Z",
+  "genkiSha": "e54d3ac6b13dd0bc89589e1bb85c0291a15e6bcb",
+  "serviceVersion": "4",
+  "seconds": 24.4,
+  "sources": [
+    {
+      "name": "Årsrapport Digitaliseringsdirektoratet 2024",
+      "url": "https://kudos.dfo.no/dokumenter?query=%C3%85rsrapport%20Digitaliseringsdirektoratet%202024"
+    },
+    {
+      "name": "Årsrapport Digitaliseringsdirektoratet 2023",
+      "url": "https://kudos.dfo.no/dokumenter?query=%C3%85rsrapport%20Digitaliseringsdirektoratet%202023"
+    }
+  ],
+  "steps": [
+    {
+      "event": "agent/iteration-started",
+      "iteration": 0,
+      "max-iterations": 30
+    },
+    {
+      "event": "tool/call",
+      "stage": "tool",
+      "tool": "plan_queries",
+      "iteration": 0
+    },
+    {
+      "event": "agent/turn-completed",
+      "iteration": 0,
+      "tool-calls": [
+        {
+          "tool": "plan_queries",
+          "args": {
+            "query": "Sammenlign de to siste årsrapportene til Digitaliseringsdirektoratet Digdir"
+          },
+          "ok?": true,
+          "duration-ms": 3124,
+          "result-summary": "Generated 6 queries: \"sammenligning av de to siste årsrapportene til digdir\", \"digdirs årsrapport 2024\", \"digitaliseringsdirektoratet årsrapport\", \"digitaliseringsdirektoratet måloppnåelse og ressursbruk\", \"digitaliseringsdirektoratet årsrapport merknader tiltak effekt\", \"digdirs årsrapport 2021\""
+        }
+      ]
+    },
+    {
+      "event": "agent/iteration-started",
+      "iteration": 1,
+      "max-iterations": 30
+    },
+    {
+      "event": "tool/call",
+      "stage": "tool",
+      "tool": "search",
+      "iteration": 1
+    },
+    {
+      "event": "tool/call",
+      "stage": "tool",
+      "tool": "inspect_filters",
+      "iteration": 1
+    },
+    {
+      "event": "agent/turn-completed",
+      "iteration": 1,
+      "tool-calls": [
+        {
+          "tool": "search",
+          "args": {
+            "queries": [
+              "Digdir årsrapport 2025",
+              "Digitaliseringsdirektoratet årsrapport 2025",
+              "Digdir årsrapport 2024"
+            ]
+          },
+          "ok?": true,
+          "duration-ms": 743,
+          "result-summary": "Search pass 1: found 43 chunks (43 new). 43 total seen. Auto-filtered by orgs_long: Digitaliseringsdirektoratet. Ranking: ColBERT semantic rerank (244ms). Higher rerank= means more semantically relevant to the query. Showing top 20 by rank; 23 lower-ranked chunks omitted. Refine the query or read from the visible set.\n1. chunk_id=74ce04bdc30e doc_num=371920 chunk_index=134/? title=\"Årsrapport Digi"
+        },
+        {
+          "tool": "inspect_filters",
+          "args": {
+            "fields": ["title", "year", "owner_short", "orgs_short"],
+            "max_options": 10
+          },
+          "ok?": true,
+          "duration-ms": 39,
+          "result-summary": "Available filter fields:\n- concerned_years (type: multiselect, filter-value-type: string)\n- doc_num (type: multiselect, filter-value-type: string)\n- orgs_long (type: multiselect, filter-value-type: string)\n- orgs_short (type: multiselect, filter-value-type: string)\n- title (type: contains, filter-value-type: string)\n- type (type: multiselect, filter-value-type: string)\n\nTop facet options:\n- title:"
+        }
+      ]
+    },
+    {
+      "event": "agent/iteration-started",
+      "iteration": 2,
+      "max-iterations": 30
+    },
+    {
+      "event": "tool/call",
+      "stage": "tool",
+      "tool": "search",
+      "iteration": 2
+    },
+    {
+      "event": "agent/turn-completed",
+      "iteration": 2,
+      "tool-calls": [
+        {
+          "tool": "search",
+          "args": {
+            "queries": [
+              "\"Årsrapport Digitaliseringsdirektoratet 2023\"",
+              "\"Årsrapport Digitaliseringsdirektoratet 2024\" \"Hovedtall\"",
+              "\"Årsrapport Digitaliseringsdirektoratet 2023\" \"Hovedtall\"",
+              "\"Årsrapport Digitaliseringsdirektoratet 2024\" \"Årets aktiviteter og resultater\""
+            ]
+          },
+          "ok?": true,
+          "duration-ms": 774,
+          "result-summary": "Search pass 2: found 38 chunks (32 new). 75 total seen. Auto-filtered by orgs_long: Digitaliseringsdirektoratet. Ranking: ColBERT semantic rerank (277ms). Higher rerank= means more semantically relevant to the query. Showing top 20 by rank; 18 lower-ranked chunks omitted. Refine the query or read from the visible set.\n1. chunk_id=82c044920f85 doc_num=88642 chunk_index=118/? title=\"Årsrapport Digit"
+        }
+      ]
+    },
+    {
+      "event": "agent/iteration-started",
+      "iteration": 3,
+      "max-iterations": 30
+    },
+    {
+      "event": "tool/call",
+      "stage": "tool",
+      "tool": "read_chunks",
+      "iteration": 3
+    },
+    {
+      "event": "tool/call",
+      "stage": "tool",
+      "tool": "read_chunks",
+      "iteration": 3
+    },
+    {
+      "event": "tool/call",
+      "stage": "tool",
+      "tool": "read_chunks",
+      "iteration": 3
+    },
+    {
+      "event": "tool/call",
+      "stage": "tool",
+      "tool": "read_chunks",
+      "iteration": 3
+    },
+    {
+      "event": "tool/call",
+      "stage": "tool",
+      "tool": "read_chunks",
+      "iteration": 3
+    },
+    {
+      "event": "tool/call",
+      "stage": "tool",
+      "tool": "read_chunks",
+      "iteration": 3
+    },
+    {
+      "event": "agent/turn-completed",
+      "iteration": 3,
+      "tool-calls": [
+        {
+          "tool": "read_chunks",
+          "args": {
+            "doc_num": "371920",
+            "chunk_range": {
+              "from": 0,
+              "to": 26
+            },
+            "max_content_length": 18000
+          },
+          "ok?": true,
+          "duration-ms": 168,
+          "result-summary": "Read 3 chunks (4532 chars this call, 4532 cumulative):\n\n<untrusted_data kind=\"documents\">\n--- chunk_id=964cb20df247 doc_num=371920 chunk_index=24 title=\"Årsrapport Digitaliseringsdirektoratet 2024\" url=https://kudos.dfo.no/dokumenter?query=%C3%85rsrapport%20Digitaliseringsdirektoratet%202024 ---\n\n\nDigdir jobber for å styrke digital samhandling og samordning i offentlig sektor. Det kan bidra til at"
+        },
+        {
+          "tool": "read_chunks",
+          "args": {
+            "doc_num": "88642",
+            "chunk_range": {
+              "from": 0,
+              "to": 28
+            },
+            "max_content_length": 18000
+          },
+          "ok?": true,
+          "duration-ms": 210,
+          "result-summary": "Read 3 chunks (8462 chars this call, 12994 cumulative):\n\n<untrusted_data kind=\"documents\">\n--- chunk_id=447f2853d6be doc_num=88642 chunk_index=0 title=\"Årsrapport Digitaliseringsdirektoratet 2023\" url=https://kudos.dfo.no/dokumenter?query=%C3%85rsrapport%20Digitaliseringsdirektoratet%202023 ---\n{0}\n\n------------------------------------------------\n\n— Saman for ein enklare digital kvardag\n\n{1}\n\n---"
+        },
+        {
+          "tool": "read_chunks",
+          "args": {
+            "doc_num": "371920",
+            "chunk_range": {
+              "from": 80,
+              "to": 119
+            },
+            "max_content_length": 24000
+          },
+          "ok?": true,
+          "duration-ms": 120,
+          "result-summary": "Read 3 chunks (3552 chars this call, 16546 cumulative):\n\n<untrusted_data kind=\"documents\">\n--- chunk_id=985e93a6317e doc_num=371920 chunk_index=86 title=\"Årsrapport Digitaliseringsdirektoratet 2024\" url=https://kudos.dfo.no/dokumenter?query=%C3%85rsrapport%20Digitaliseringsdirektoratet%202024 ---\n\n\nDei nasjonale fellesløysingane er sentrale «byggeklossar» i Noregs felles digitale infrastruktur og "
+        },
+        {
+          "tool": "read_chunks",
+          "args": {
+            "doc_num": "88642",
+            "chunk_range": {
+              "from": 90,
+              "to": 128
+            },
+            "max_content_length": 24000
+          },
+          "ok?": true,
+          "duration-ms": 99,
+          "result-summary": "Read 3 chunks (9311 chars this call, 25857 cumulative):\n\n<untrusted_data kind=\"documents\">\n--- chunk_id=06252fe98e47 doc_num=88642 chunk_index=117 title=\"Årsrapport Digitaliseringsdirektoratet 2023\" url=https://kudos.dfo.no/dokumenter?query=%C3%85rsrapport%20Digitaliseringsdirektoratet%202023 ---\n**Ressursbruken gjenspeiler Digdirs rolle som regjeringens fremste verktøy for raskere og mer samordne"
+        },
+        {
+          "tool": "read_chunks",
+          "args": {
+            "doc_num": "371920",
+            "chunk_range": {
+              "from": 130,
+              "to": 159
+            },
+            "max_content_length": 16000
+          },
+          "ok?": true,
+          "duration-ms": 102,
+          "result-summary": "Read 3 chunks (3422 chars this call, 29279 cumulative):\n\n<untrusted_data kind=\"documents\">\n--- chunk_id=26f585eca2f5 doc_num=371920 chunk_index=130 title=\"Årsrapport Digitaliseringsdirektoratet 2024\" url=https://kudos.dfo.no/dokumenter?query=%C3%85rsrapport%20Digitaliseringsdirektoratet%202024 ---\n— Vi fikk gjennomført ein pilot for å utstede MinID i skulen, trass enkelte utfordringar.\n\n— MinID i "
+        },
+        {
+          "tool": "read_chunks",
+          "args": {
+            "doc_num": "88642",
+            "chunk_range": {
+              "from": 130,
+              "to": 160
+            },
+            "max_content_length": 16000
+          },
+          "ok?": true,
+          "duration-ms": 106,
+          "result-summary": "Read 3 chunks (5150 chars this call, 34429 cumulative):\n\n<untrusted_data kind=\"documents\">\n--- chunk_id=75e5f8668727 doc_num=88642 chunk_index=130 title=\"Årsrapport Digitaliseringsdirektoratet 2023\" url=https://kudos.dfo.no/dokumenter?query=%C3%85rsrapport%20Digitaliseringsdirektoratet%202023 ---\nDigdir jobber kontinuerlig med å sikre en effektiv og brukervennlig administrativ funksjon gjennom dig"
+        }
+      ]
+    },
+    {
+      "stage": "read-signal"
+    },
+    {
+      "stage": "gate"
+    },
+    {
+      "stage": "citations"
+    },
+    {
+      "event": "agent/finalized",
+      "iteration": 3
+    }
+  ]
+}

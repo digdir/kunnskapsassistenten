@@ -13,6 +13,7 @@ import { MOCK_CORPUS } from '../corpus';
 import { daysAgo } from './clock';
 import { scriptedThreads } from './conversations/threads';
 import { sourceFrom } from './conversations/types';
+import { citedMockAnswer } from './excerptContract';
 
 // Fixtures for development without a backend. Unlike Figma's sample data, the keywords match
 // the NKOM question and the documents are distinct.
@@ -185,6 +186,9 @@ export const nkomThinkingSteps: ThinkingStep[] = [
     ],
     detail: '60 utdrag funnet, 10 beholdt etter rangering.',
     durationMs: 2410,
+    // What genki's report of the same call says, as stepFindings reads it.
+    tool: 'search',
+    findings: { newHits: 60 },
   },
   {
     id: 'step-3',
@@ -192,6 +196,8 @@ export const nkomThinkingSteps: ThinkingStep[] = [
     label: 'Jeg leser de mest relevante utdragene.',
     detail: '5 utdrag fra 3 dokumenter.',
     durationMs: 980,
+    tool: 'read_chunks',
+    findings: { excerptsRead: 5, documentsRead: nkomSources.map((document) => document.title) },
   },
   {
     id: 'step-4',
@@ -227,6 +233,9 @@ function withoutMessages({ messages, ...thread }: ThreadDetail): Thread {
  */
 export const threads: Thread[] = [nkomThread, ...scriptedThreads.map(withoutMessages)];
 
+// As the mock streams it: through the same mapping as live (excerptContract.ts).
+const nkomShown = citedMockAnswer(NKOM_ANSWER, nkomSources);
+
 const nkomMessages: Message[] = [
   {
     id: 'msg-nkom-question',
@@ -239,10 +248,10 @@ const nkomMessages: Message[] = [
   {
     id: 'msg-nkom-answer',
     role: 'assistant',
-    content: NKOM_ANSWER,
+    content: nkomShown.content,
     createdAt: daysAgo(0, 10),
-    citations: nkomCitations,
-    sources: nkomSources,
+    citations: nkomShown.citations,
+    sources: nkomShown.documents,
     retrieval: nkomRetrieval,
     thinkingSteps: nkomThinkingSteps,
     corpusKey: MOCK_CORPUS.key,

@@ -76,7 +76,27 @@ export type AnswerSources = {
   sourcesNotStored?: boolean;
   /** The corpus the ANSWER came from, not the one selected now. See `Message.corpusKey`. */
   corpusKey?: string;
+  /**
+   * How many places in the answer cite each excerpt, by its number: the back-link from an
+   * excerpt steps through them. Absent: not counted.
+   */
+  uses?: Record<number, number>;
 };
+
+/** How many times the answer writes each `[n]`, by number. */
+export function citationUses(content: string): Record<number, number> {
+  const uses: Record<number, number> = {};
+  for (const match of content.matchAll(/\[(\d{1,3})\]/g)) {
+    const number = Number(match[1]);
+    uses[number] = (uses[number] ?? 0) + 1;
+  }
+  return uses;
+}
+
+/** The DOM id of one answer in the conversation, where its `[n]` markers are. */
+export function answerDomId(messageId: string): string {
+  return `svar-${messageId}`;
+}
 
 /**
  * The DOM id of an excerpt in the sources panel. The answer's `[n]` marker
@@ -87,17 +107,13 @@ export function excerptDomId(citationNumber: number): string {
 }
 
 /**
- * The accessible name of a `[n]` marker: «Kilde 3: Årsrapport Nasjonal
- * kommunikasjonsmyndighet 2022, side 41». A bare «[3]» tells a screen reader
- * user nothing about where they are being sent.
+ * The accessible name of a `[n]` marker, and its tooltip: «Utdrag 3: Årsrapport Nasjonal
+ * kommunikasjonsmyndighet 2022» (Lars, 2026-11-03). Only the excerpt has a number, so the name
+ * says which excerpt and whose document; a bare «[3]» tells a screen reader user nothing about
+ * where they are being sent.
  */
-export function citationAccessibleName(
-  citationNumber: number,
-  documentTitle: string,
-  page?: number,
-): string {
-  const where = page === undefined ? '' : `, side ${page}`;
-  return `Kilde ${citationNumber}: ${documentTitle}${where}`;
+export function citationAccessibleName(citationNumber: number, documentTitle: string): string {
+  return `Utdrag ${citationNumber}: ${documentTitle}`;
 }
 
 /**
@@ -113,7 +129,7 @@ export function citationTargets(documents: SourceDocument[]): CitationTarget[] {
       return {
         number,
         targetId: excerptDomId(number),
-        label: citationAccessibleName(number, document.title, excerpt.page),
+        label: citationAccessibleName(number, document.title),
       };
     })
     .sort((a, b) => a.number - b.number);

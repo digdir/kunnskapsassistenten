@@ -156,6 +156,10 @@
   /* The row's height: the summary's, and so the heading's box over it. */
   --ka-excerpt-row: var(--ds-size-10);
 
+  /* The heading's z-index below lifts it over the summary only, inside the excerpt. Without a
+     context of its own it stacked level with the pinned view head and, coming later, painted over
+     the head's «Søk i kildene» when the panel scrolled. */
+  isolation: isolate;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   padding: var(--ka-excerpt-padding);
@@ -189,6 +193,29 @@
 
 .source-excerpt__head > * {
   margin-block: 0;
+}
+
+/* «Utdrag N» and the back-link to its uses, side by side. */
+.source-excerpt__title {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-size-1);
+}
+
+.source-excerpt__title > :first-child {
+  margin-block: 0;
+  /* «Utdrag 12» on one line; the back-link is what gives way. */
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* The head lets clicks through to the summary under it; the back-link is the one control on it. */
+.source-excerpt__uses {
+  pointer-events: auto;
+}
+
+.source-excerpt__use-count {
+  font-variant-numeric: tabular-nums;
 }
 
 .source-excerpt__details {
@@ -263,8 +290,11 @@
   color: var(--ds-color-neutral-text-subtle);
 }
 
-/* «Tilbake til svaret» on a line of its own, as wide as its content. */
-.source-excerpt__back {
+/* «Tilbake til svaret» on a line of its own, as wide as its content. On the
+   card, Designsystemet's block spacing puts it a size-3 under the heading, the
+   same gap the excerpt's has above it. */
+.source-excerpt__back,
+.source-document__back {
   display: flex;
   inline-size: fit-content;
 }

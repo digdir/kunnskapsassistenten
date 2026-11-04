@@ -2,10 +2,8 @@ import { Button, Card, Paragraph, Skeleton, Spinner } from '@digdir/designsystem
 import { ArrowsCirclepathIcon, InformationSquareIcon } from '@navikt/aksel-icons';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Markdown } from '../../components';
-import { ViewHead } from '../../layout/ViewHead';
-import { citationTargets, type Message } from '../../model';
+import { answerDomId, citationTargets, type Message } from '../../model';
 import { AnswerActions } from './AnswerActions';
-import { AnswerSearch } from './AnswerSearch';
 import { AnswerTime } from './AnswerTime';
 import { ProcedurePanel } from './ProcedurePanel';
 import { RetrievalPanel } from './RetrievalPanel';
@@ -22,26 +20,15 @@ import {
   NO_SOURCES_WARNING,
   REGENERATE,
 } from './text';
-import { ANSWER_MARK_CLASS, useAnswerHits } from './useAnswerHits';
 
 type AnswerMessageProps = {
   message: Message;
   /** A `[n]` marker was activated, with the answer it sits in. */
   onSelectSource: (citationNumber: number, messageId: string) => void;
+  /** A document in «Kilder brukt i svaret» was chosen, with the answer it belongs to. */
+  onSelectDocument?: (documentId: string, messageId: string) => void;
   /** Ask the stopped question again, in place of the answer that was cut off. */
   onRegenerate: () => void;
-  /** Whether the search strip belongs to THIS answer right now. Held by the
-      list, because the strip is drawn in the shell's view-head and there is
-      one of those per region. */
-  searchOpen: boolean;
-  /** What is typed in the strip. One strip, one query. */
-  searchQuery: string;
-  onSearchQueryChange: (query: string) => void;
-  /** Open the search on this answer, or close it if it is already here. */
-  onToggleSearch: () => void;
-  onCloseSearch: () => void;
-  /** «Søk i svar 2 av 3» — which answer the pinned strip is searching. */
-  searchLabel: string;
   /** The turn the error alert is about, if any. A failed turn outlives its
       alert and must then say for itself why there is no answer; while the
       alert is up, the card stays quiet rather than repeating it. */
@@ -52,6 +39,8 @@ type AnswerMessageProps = {
   /** The reader's own question, for «Fremgangsmåte» to recognise a search
       word that is only the question over again. See ProcedurePanel. */
   question?: string;
+  /** Which documents the thread read from, for «Fremgangsmåte». */
+  scope?: string;
   /** The search behind this answer came back empty, so the answer is the
       notice saying so and what a finished answer offers onward does not
       apply. */
@@ -81,16 +70,12 @@ export function AnswerSkeleton() {
 export function AnswerMessage({
   message,
   onSelectSource,
+  onSelectDocument,
   onRegenerate,
-  searchOpen,
-  searchQuery,
-  onSearchQueryChange,
-  onToggleSearch,
-  onCloseSearch,
-  searchLabel,
   liveErrorId,
   narrowedTo,
   question,
+  scope,
   foundNothing,
 }: AnswerMessageProps) {
   const streaming = message.status === 'streaming';
@@ -112,8 +97,6 @@ export function AnswerMessage({
   // displayLevel.ts and issue 88.
   const detailed = useDisplayLevel() === 'detaljert';
 
-  const searching = searchOpen;
-  const query = searchQuery;
   // Held still between renders, and not as polish: `Markdown` memoises
   // `components` on these two, so new ones per render remount the whole
   // answer and swap out the marker node a click just moved focus into.
@@ -131,39 +114,9 @@ export function AnswerMessage({
     [message.id],
   );
 
-  const answerRef = useRef<HTMLDivElement>(null);
-  const searchFieldRef = useRef<HTMLInputElement>(null);
-  const searchToggleRef = useRef<HTMLButtonElement>(null);
-  const { hitCount, currentIndex, step } = useAnswerHits(answerRef, searching ? query : '');
-
-  // Closing puts focus back on the button that opened it: the strip is gone
-  // by the time this has run, and a keyboard user in the field would land on
-  // `<body>`, a whole page from the answer they were reading (WCAG 2.4.3).
-  function closeSearch() {
-    onCloseSearch();
-    searchToggleRef.current?.focus();
-  }
-
   return (
-    <li className="ka-message ka-message--assistant">
-      {/* The search strip, pinned to the top of the column by the shell: in
-          this card, which scrolls, it ends up under the compose field. First
-          in the view, so the portal and the DOM agree on the tab order. */}
-      {searching ? (
-        <ViewHead>
-          <AnswerSearch
-            currentHitIndex={currentIndex}
-            fieldRef={searchFieldRef}
-            hitCount={hitCount}
-            label={searchLabel}
-            onClose={closeSearch}
-            onQueryChange={onSearchQueryChange}
-            onStep={step}
-            query={query}
-          />
-        </ViewHead>
-      ) : null}
-
+    // The id is where the sources panel finds this answer's markers, for the back-link.
+    <li className="ka-message ka-message--assistant" id={answerDomId(message.id)}>
       <span className="ds-sr-only">Kunnskapsassistenten svarte:</span>
 
       {/* Which documents the question was asked against. Over the card, as a
@@ -190,10 +143,12 @@ export function AnswerMessage({
           />
         ) : (
           <ProcedurePanel
+            documents={message.sources}
             question={question}
-            retrieval={message.retrieval}
+            scope={scope}
             status={streaming && empty ? 'thinking' : 'done'}
             steps={steps}
+            thoughtMs={message.thoughtMs}
           />
         )
       ) : null}
@@ -216,26 +171,19 @@ export function AnswerMessage({
               </Paragraph>
             ) : null}
 
-            {/* The ref is what the search counts marks inside, so it wraps the
-                answer and nothing else: the closing question and the action
-                row are not part of what was searched. */}
-            <div ref={answerRef}>
-              {empty ? null : (
-                <Markdown
-                  citations={citations}
-                  markClassName={ANSWER_MARK_CLASS}
-                  onCitationActivate={activateCitation}
-                  searchQuery={searching ? query : ''}
-                  // A stopped answer wrote its markers; the excerpts were
-                  // still on their way. Then `[3]` is drawn as text that says
-                  // why, not as a link to nothing.
-                  sourcesLost={aborted}
-                  startLevel={3}
-                >
-                  {message.content}
-                </Markdown>
-              )}
-            </div>
+            {empty ? null : (
+              <Markdown
+                citations={citations}
+                onCitationActivate={activateCitation}
+                // A stopped answer wrote its markers; the excerpts were still
+                // on their way. Then `[3]` is drawn as text that says why, not
+                // as a link to nothing.
+                sourcesLost={aborted}
+                startLevel={3}
+              >
+                {message.content}
+              </Markdown>
+            )}
 
             {/* The live region says the same thing in words, so this line is
                 decoration. */}
@@ -272,7 +220,10 @@ export function AnswerMessage({
                 sources arrive in the last frame, and a list that grew while
                 the text was written would move under it. */}
             {complete && !empty && !foundNothing ? (
-              <SourcesSummary documents={message.sources ?? []} onSelectSource={activateCitation} />
+              <SourcesSummary
+                documents={message.sources ?? []}
+                onSelectDocument={(documentId) => onSelectDocument?.(documentId, message.id)}
+              />
             ) : null}
 
             {complete && !empty && !foundNothing ? (
@@ -285,18 +236,6 @@ export function AnswerMessage({
               <AnswerActions
                 content={message.content}
                 createdAt={message.createdAt}
-                onToggleSearch={() => {
-                  if (searching) {
-                    closeSearch();
-                    return;
-                  }
-                  onToggleSearch();
-                  // The strip is not in the page yet, so the focus goes on the
-                  // next render.
-                  queueMicrotask(() => searchFieldRef.current?.focus());
-                }}
-                searchOpen={searching}
-                searchToggleRef={searchToggleRef}
                 sources={message.sources}
               />
             </Card.Block>
