@@ -2,10 +2,11 @@ import { Button, Details, Heading, Link, Paragraph } from '@digdir/designsysteme
 import { ExternalLinkIcon } from '@navikt/aksel-icons';
 import { HighlightedText, type SearchHit } from '../../components';
 import { useState } from 'react';
-import { BackIcon, ShowUseIcon } from '../../components/icons';
+import { ShowUseIcon } from '../../components/icons';
 import { excerptDomId, type Excerpt } from '../../model';
 import { kudosLinkLabel, reachesPage } from './kudosLink';
 import { excerptName } from './excerptName';
+import { ReturnToAnswerButton } from './ReturnToAnswerButton';
 
 type SourceExcerptProps = {
   excerpt: Excerpt;
@@ -205,19 +206,8 @@ export function SourceExcerpt({
             </Link>
           )}
 
-          {/* A button: a fragment would be a route change that remounts the
-              chat slot (see the marker in Markdown.tsx). */}
           {onReturnToAnswer !== undefined && (
-            <Button
-              type="button"
-              variant="tertiary"
-              data-size="sm"
-              className="source-excerpt__back"
-              onClick={onReturnToAnswer}
-            >
-              <BackIcon aria-hidden />
-              Tilbake til svaret
-            </Button>
+            <ReturnToAnswerButton className="source-excerpt__back" onClick={onReturnToAnswer} />
           )}
         </Details.Content>
       </Details>

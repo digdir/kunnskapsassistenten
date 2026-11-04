@@ -3,6 +3,7 @@ import { ExternalLinkIcon } from '@navikt/aksel-icons';
 import { hitsFor, type SearchHit } from '../../components';
 import type { SourceDocument } from '../../model';
 import { SourceExcerpt } from './SourceExcerpt';
+import { ReturnToAnswerButton } from './ReturnToAnswerButton';
 import { documentDomId, documentHeadingDomId } from './ids';
 import { documentLinkLabel } from './kudosLink';
 import { documentSubtitle, isOwnDocument, OWN_DOCUMENT_NO_LINK } from './origin';
@@ -27,7 +28,10 @@ type SourceDocumentCardProps = {
   uses?: Record<number, number>;
   /** Shows the reader one use of an excerpt in the answer, by its number and the use. */
   onShowUse?: (citationNumber: number, use: number) => void;
-  /** This is the document a title in «Kilder brukt i svaret» asked for; Escape goes back to it. */
+  /**
+   * This is the document a title in «Kilder brukt i svaret» asked for; «Tilbake til svaret» and
+   * Escape go back to that title.
+   */
   asked?: boolean;
 };
 
@@ -60,9 +64,8 @@ export function SourceDocumentCard({
       className="source-document"
       id={documentDomId(source.id)}
       // Escape on the card a title sent the reader to goes back to the title,
-      // as Escape in an excerpt goes back to its marker. Nothing is drawn for
-      // it, so the card stays unmarked. Scoped to the card, so the search
-      // field keeps its own Escape.
+      // as Escape in an excerpt goes back to its marker. Scoped to the card, so
+      // the search field keeps its own Escape.
       onKeyDown={
         asked && onReturnToAnswer !== undefined
           ? (event) => {
@@ -85,6 +88,13 @@ export function SourceDocumentCard({
         >
           {name}
         </Heading>
+        {/* The way back for a pointer, as Escape is for the keyboard. Under the
+            heading the reader lands on, and the next Tab stop after it; beside
+            it, a long title would be squeezed into a narrow column. The card
+            gets no band or tint, so it stays unmarked. */}
+        {asked && onReturnToAnswer !== undefined && (
+          <ReturnToAnswerButton className="source-document__back" onClick={onReturnToAnswer} />
+        )}
       </Card.Block>
 
       <Card.Block className="source-document__body">
