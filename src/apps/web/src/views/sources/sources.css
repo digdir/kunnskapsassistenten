@@ -290,8 +290,11 @@
   color: var(--ds-color-neutral-text-subtle);
 }
 
-/* «Tilbake til svaret» on a line of its own, as wide as its content. */
-.source-excerpt__back {
+/* «Tilbake til svaret» on a line of its own, as wide as its content. On the
+   card, Designsystemet's block spacing puts it a size-3 under the heading, the
+   same gap the excerpt's has above it. */
+.source-excerpt__back,
+.source-document__back {
   display: flex;
   inline-size: fit-content;
 }
