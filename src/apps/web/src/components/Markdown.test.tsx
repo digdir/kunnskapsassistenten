@@ -202,6 +202,25 @@ describe('Markdown citations', () => {
     expect(container.textContent).toBe('Avvik rapporteres kvartalsvis [1][2] i året.');
   });
 
+  // Where a narrow answer releases the hold on the word, the circles may move to the next line,
+  // but the full stop after them goes with them rather than starting a line alone.
+  it('holds the circles and the punctuation after them together, without the space before them', () => {
+    const { container } = render(
+      <Markdown citations={targets}>
+        {'Avvik rapporteres kvartalsvis [1][2]. Neste setning.'}
+      </Markdown>,
+    );
+
+    const run = container.querySelector('.markdown__citation-run');
+    const marks = run?.querySelector('.markdown__citation-marks');
+    expect(marks?.querySelectorAll('a')).toHaveLength(2);
+    expect(marks?.lastChild?.textContent).toBe('.');
+    expect(marks?.querySelector('.markdown__citation-copy')?.textContent).toBe('[');
+    expect(run?.children[0]?.textContent).toBe(' ');
+    expect(run?.nextSibling?.textContent).toBe(' Neste setning.');
+    expect(container.textContent).toBe('Avvik rapporteres kvartalsvis [1][2]. Neste setning.');
+  });
+
   it('starts a run at the marker when no word comes right before it', () => {
     const { container } = render(<Markdown citations={targets}>{'**Fet** [1] og [2].'}</Markdown>);
 

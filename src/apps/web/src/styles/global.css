@@ -560,10 +560,11 @@ body {
   color: var(--ds-color-neutral-text-subtle);
 }
 
-/* The answer's own width, for the footnote rule below. It never sizes itself
-   from its content, so the containment changes no width (measured in the
-   answer, the clarification and the info pages, 2026-11-04). */
-.markdown {
+/* The answer's own width, for the footnote rule below. Only in the answer card,
+   where footnotes are: a query container is a formatting-context root, so a
+   heading's margin no longer collapses with its parent's, and the info pages'
+   headings moved 20 px down when every `.markdown` was one (2026-11-04). */
+.ka-answer-card .markdown {
   container-type: inline-size;
 }
 
@@ -585,15 +586,16 @@ body {
 /* The end of the word before a run of footnotes and the footnotes, on one
    line: a circle alone at the start of a line reads as belonging to nothing
    (390 px, measured 2026-11-03). */
-.markdown__citation-run {
+.markdown__citation-run,
+.markdown__citation-marks {
   white-space: nowrap;
 }
 
 /* Where the column is narrower than a long word and its circle, WebKit lets the
-   held run hang past the paragraph instead of breaking the word, and the period
-   after it starts the next line alone (measured 2026-11-04: up to 22 px at 320
-   px, past the card's clipping edge with two circles). There a circle may start
-   a line, as before the hold. */
+   held run hang past the paragraph instead of breaking the word (measured
+   2026-11-04: up to 22 px at 320 px, past the card's clipping edge with two
+   circles). There the circles may start a line, as before the hold, still held
+   together with the punctuation after them. */
 @container (inline-size < 20rem) {
   .markdown__citation-run {
     white-space: normal;

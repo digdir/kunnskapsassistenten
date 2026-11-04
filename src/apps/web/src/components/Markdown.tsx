@@ -41,6 +41,9 @@ function linkableHref(href: string): string | undefined {
 
 const CITATION_MARKER = /\[(\d+)\]/g;
 
+/** Punctuation that closes the clause a footnote ends, held on the line of its circles. */
+const TRAILING_PUNCTUATION = /^[.,;:!?)\]»”’]+/u;
+
 /** What a `[n]` says when the excerpt behind it never arrived. */
 export const MISSING_SOURCE = 'Kilden kom ikke fram';
 
@@ -106,12 +109,13 @@ function withCitations(
     if (pieces.length === 0) return child;
     if (consumed < child.length) pieces.push({ kind: 'text', text: child.slice(consumed) });
 
-    const mark = (piece: Extract<CitationPiece, { kind: 'mark' }>) => [
+    const space = (piece: Extract<CitationPiece, { kind: 'mark' }>) =>
       piece.space ? (
         <span className="markdown__citation-copy" key={`${piece.key}-space`}>
           {piece.space}
         </span>
-      ) : null,
+      ) : null;
+    const mark = (piece: Extract<CitationPiece, { kind: 'mark' }>) => (
       <sup className="markdown__citation markdown__citation--linked" key={piece.key}>
         <Link
           className="markdown__citation-mark"
@@ -130,20 +134,37 @@ function withCitations(
           {piece.number}
           <span className="markdown__citation-copy">]</span>
         </Link>
-      </sup>,
-    ];
+      </sup>
+    );
 
     // Each run of markers is held on one line with the end of the word before it. Only the last
     // character goes into the run, so a long word can still break where it has to: at 320 px a
-    // whole word held with two circles did not fit the answer card.
+    // whole word held with two circles did not fit the answer card. The circles and the
+    // punctuation after them are held on their own as well, so where a narrow answer lets the
+    // circles move to the next line, a full stop never starts a line alone.
     const parts: ReactNode[] = [];
     let index = 0;
     const run = (tail: string) => {
       const held: ReactNode[] = tail ? [tail] : [];
+      const marks: ReactNode[] = [];
       for (let piece = pieces[index]; piece?.kind === 'mark'; piece = pieces[index]) {
-        held.push(...mark(piece));
+        if (marks.length === 0) held.push(space(piece));
+        else marks.push(space(piece));
+        marks.push(mark(piece));
         index += 1;
       }
+      const after = pieces[index];
+      const closing =
+        after?.kind === 'text' ? after.text.match(TRAILING_PUNCTUATION)?.[0] : undefined;
+      if (after?.kind === 'text' && closing) {
+        marks.push(closing);
+        pieces[index] = { kind: 'text', text: after.text.slice(closing.length) };
+      }
+      held.push(
+        <span className="markdown__citation-marks" key="marks">
+          {marks}
+        </span>,
+      );
       return (
         <span className="markdown__citation-run" key={`${childIndex}-run-${index}`}>
           {held}
@@ -161,7 +182,7 @@ function withCitations(
       if (piece.kind === 'lost') {
         parts.push(piece.node);
       } else if (pieces[index]?.kind !== 'mark') {
-        parts.push(piece.text);
+        if (piece.text) parts.push(piece.text);
       } else {
         const tail = Array.from(piece.text).at(-1) ?? '';
         const head = piece.text.slice(0, piece.text.length - tail.length);
