@@ -406,7 +406,7 @@ describe('facets, against a Typesense shaped like Kudos', () => {
       ok: false,
       body: {
         error:
-          'Filteret har feltet «year», som ikke finnes. Feltene er «type», «orgs_long», «concerned_years», som i field i /api/facets.',
+          'Filteret har feltet «year», som ikke finnes. Feltene er «type», «orgs_long», «concerned_years», som i field i /api/v2/facets.',
         code: 'filter-unknown-field',
         field: 'year',
       },

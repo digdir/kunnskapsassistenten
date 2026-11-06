@@ -3,7 +3,7 @@ import { after, before, describe, test } from 'node:test';
 import { events, fakeBackend, setEnvironment, type Backend } from '../fixtures/backend.ts';
 
 /*
- * POST …/ask through the app, the route both versions share (apiAsk.ts), and
+ * POST /api/v2/ask through the app (apiAsk.ts), and
  * what the server does when it starts (app.ts, `startUp`).
  */
 setEnvironment();
@@ -104,32 +104,30 @@ describe('headless-rag down', () => {
     );
   });
 
-  test('the thread list, a rename and a delete get the code too, in both versions', async () => {
-    for (const base of ['/api', '/api/v2']) {
-      assert.deepEqual(await down(`${base}/conversations`), {
+  test('the thread list, a rename and a delete get the code too', async () => {
+    assert.deepEqual(await down('/api/v2/conversations'), {
+      status: 502,
+      body: { error: 'Kunne ikke hente samtaler.', code: 'backend_unreachable' },
+    });
+    assert.deepEqual(
+      await down('/api/v2/conversations/c1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Nytt navn' }),
+      }),
+      { status: 502, body: { error: 'Kunne ikke endre navn.', code: 'backend_unreachable' } },
+    );
+    assert.deepEqual(
+      await down('/api/v2/conversations/c1', {
+        method: 'DELETE',
+        // A browser sends its origin with a DELETE; the CSRF check asks for it.
+        headers: { Origin: 'http://localhost:8787' },
+      }),
+      {
         status: 502,
-        body: { error: 'Kunne ikke hente samtaler.', code: 'backend_unreachable' },
-      });
-      assert.deepEqual(
-        await down(`${base}/conversations/c1`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: 'Nytt navn' }),
-        }),
-        { status: 502, body: { error: 'Kunne ikke endre navn.', code: 'backend_unreachable' } },
-      );
-      assert.deepEqual(
-        await down(`${base}/conversations/c1`, {
-          method: 'DELETE',
-          // A browser sends its origin with a DELETE; the CSRF check asks for it.
-          headers: { Origin: 'http://localhost:8787' },
-        }),
-        {
-          status: 502,
-          body: { error: 'Kunne ikke slette samtalen.', code: 'backend_unreachable' },
-        },
-      );
-    }
+        body: { error: 'Kunne ikke slette samtalen.', code: 'backend_unreachable' },
+      },
+    );
   });
 });
 

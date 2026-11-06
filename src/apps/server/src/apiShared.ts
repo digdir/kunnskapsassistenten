@@ -23,8 +23,9 @@ import { getTokens } from './tokenStore.ts';
 export type Env = { Variables: SessionVars };
 
 /**
- * The routes both API versions answer the same way, written once and mounted
- * in each (apiV1.ts, apiV2.ts, decisions/0009).
+ * Routes kept apart from the version module and mounted in apiV2.ts. `/api/*`
+ * mounted them too, until the client in apps/web-preact was retired
+ * (decisions/0009, 0012).
  */
 export const shared = new Hono<Env>();
 
@@ -46,7 +47,7 @@ shared.get('/me', async (c) => {
   } satisfies MeResponse);
 });
 
-/** Whatever the reason, none is the same empty list, which both clients read. */
+/** Whatever the reason, none is the same empty list, which the client reads. */
 const noAgents: ModelsResponse = { agents: [] };
 
 shared.get('/models', async (c) => {
@@ -118,8 +119,8 @@ shared.post('/feedback', async (c) => {
 
 /**
  * A thread, with what this BFF remembers of it: the last answer's sources, one
- * per chunk, and the filter it was started with. Each version gives the
- * sources in its own format. Throws when the thread is not the user's.
+ * per chunk, and the filter it was started with. Throws when the thread is
+ * not the user's.
  */
 export async function rememberedThread(
   caller: Caller,
