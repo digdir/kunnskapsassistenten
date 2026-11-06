@@ -1,7 +1,7 @@
 # Kunnskapsassistenten, frontend
 
 The client for Kunnskapsassistenten (KA) at Digdir. Vite, React, TypeScript,
-React Router 8.3.1 in client mode, Designsystemet 1.21.0. Node 24 or newer, as in CI and the image.
+React Router 8.3.1 in client mode, Designsystemet 1.23.0. Node 24 or newer, as in CI and the image.
 More in `README.md`, the short version of the rules in `CONTRIBUTING.md`. Paths
 and commands below apply from the folder this file is in.
 
