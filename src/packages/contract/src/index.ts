@@ -136,15 +136,6 @@ export type TurnEvent =
   | DoneEvent
   | ErrorEvent;
 
-/**
- * What `/api/ask` sends, for the client in `apps/web-preact`: the six event
- * types main sent at `8639267`, which are all it handles. Its `switch` has no
- * `default`, so any other type empties the turn, and every event after it is
- * lost. `/api/v2/ask` sends `TurnEvent` (decisions/0009).
- */
-export type TurnEventV1 =
-  ConversationEvent | StageEvent | DeltaEvent | SourcesEvent | DoneEvent | ErrorEvent;
-
 export interface AskRequest {
   query: string;
   model?: string;
@@ -195,7 +186,7 @@ export interface CapabilitiesResponse {
   dataset?: DatasetInfo;
 }
 
-/** `400` from `POST /api/ask` when a value is one the backend refuses. */
+/** `400` from `POST /api/v2/ask` when a value is one the backend refuses. */
 export interface FilterInvalidValue {
   error: string;
   code: 'filter-invalid-value';
@@ -203,8 +194,8 @@ export interface FilterInvalidValue {
 }
 
 /**
- * `400` from `POST /api/ask` when the filter has a key that is not one of the
- * corpus's field names (`field` in `/api/facets`), such as a facet id.
+ * `400` from `POST /api/v2/ask` when the filter has a key that is not one of
+ * the corpus's field names (`field` in `/api/v2/facets`), such as a facet id.
  */
 export interface FilterUnknownField {
   error: string;
@@ -212,7 +203,7 @@ export interface FilterUnknownField {
   field: string;
 }
 
-/** `400` from `POST /api/ask` when one field has more values than the backend takes. */
+/** `400` from `POST /api/v2/ask` when one field has more values than the backend takes. */
 export interface FilterTooManyValues {
   error: string;
   code: 'filter-too-many-values';
@@ -242,7 +233,7 @@ export interface Message {
   created: number;
   /**
    * A turn that failed at the backend, which stores its error sentence as the
-   * answer (digdir/digdir-headless-rag#22). The text is then empty. `/api/v2` only.
+   * answer (digdir/digdir-headless-rag#22). The text is then empty.
    */
   failed?: boolean;
   /** The run behind an assistant turn, for `POST …/feedback`. genki only. */
@@ -255,8 +246,7 @@ export interface ConversationDetail {
   messages: Message[];
   /**
    * The last answer's sources, from the BFF's memory: empty after a restart,
-   * and never there for the answers before it. One per document in `/api/*`
-   * and one per chunk in `/api/v2/*` (decisions/0009).
+   * and never there for the answers before it. One per chunk.
    */
   sources?: Source[];
   /** The filter the thread was started with. The BFF holds it for the thread. */
