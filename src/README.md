@@ -1,56 +1,58 @@
-# Kunnskapsassistenten, applikasjonen
+# Kunnskapsassistenten, the application
 
-**Frontenden til Kunnskapsassistenten, bygd på `digdir-headless-rag`.**
+**The frontend of Kunnskapsassistenten, built on `digdir-headless-rag`.**
 
-Samme produkt, samme brukeropplevelse, ny teknologi og en annen backend. Den
-skal kunne kjøres ved siden av den "gamle"
-[Kunnskapsassistenten](https://test.kunnskap.digdir.cloud) og sammenlignes med
-den. Selve poenget er byttet: hold frontenden konstant, bytt motoren under, og
-finn ut hva den nye backenden faktisk klarer.
+Same product, same user experience, new technology and a different backend. It
+is meant to run alongside the "old"
+[Kunnskapsassistenten](https://test.kunnskap.digdir.cloud) and be compared with
+it. The whole point is the swap: keep the frontend constant, swap the engine
+underneath, and find out what the new backend can actually do.
 
-**Porten er gjennomført.** Klienten er skrevet om fra bunnen i Preact, snakker
-med `digdir-headless-rag` over det offentlige API-et, og gir svar med kilder
-mot Kudos-korpuset: tråder, strømmede svar med statusetiketter, kildepanel med
-utdrag, filtre og innlogging. Underveis ga det elleve dokumenterte hull i
-backendens offentlige kontrakt, og noe for evalueringene å kjøre mot.
+**The port is complete.** The client is rewritten from scratch in Preact, talks
+to `digdir-headless-rag` over the public API, and gives answers with sources
+against the Kudos corpus: threads, streamed answers with status labels, a source
+panel with excerpts, filters and sign-in. Along the way it turned up eleven
+documented gaps in the backend's public contract, and something for the
+evaluations to run against.
 
-## Utrullet
+## Deployed
 
 <https://qa.kunnskap.digdir.cloud>
 
-Logg inn med Entra ID. Kontoer som finnes i tenanten slipper inn.
+Sign in with Entra ID. Accounts that exist in the tenant are let in.
 
-To ting er ikke på plass i det utrullede miljøet, og begge ligger i backenden,
-ikke her:
+Two things are not in place in the deployed environment, and both are in the
+backend, not here:
 
-- **Svar.** `test.rag.digdir.cloud` tilbyr bare `fact-checker` og
-  `retrieve-only`, og avviser de agentiske RAG-modusene med `mode_not_allowed`.
-  Appen er koblet opp og klar; den dagen agenten er slått på der, svarer den.
-- **Filtre.** Den utrullede backenden tar ikke imot filteret fra klienten, så
-  chipsene vises deaktivert med en forklaring. De slår seg på av seg selv når
-  backenden begynner å ta imot dem, uten ny utrulling.
+- **Answers.** `test.rag.digdir.cloud` only offers `fact-checker` and
+  `retrieve-only`, and rejects the agentic RAG modes with `mode_not_allowed`.
+  The app is wired up and ready; the day the agent is switched on there, it
+  answers.
+- **Filters.** The deployed backend does not accept the filter from the client,
+  so the chips are shown disabled with an explanation. They switch on by
+  themselves when the backend starts accepting them, without a new deployment.
 
-Mot en lokal backend med de foreslåtte endringene virker begge deler, og det
-er der sammenligningen mot dagens Kunnskapsassistent gjøres.
+Against a local backend with the proposed changes, both work, and that is where
+the comparison with the current Kunnskapsassistenten is made.
 
 ```
-apps/web           Vite + Preact + Designsystemet (-css / -web). Ingen hemmeligheter.
-apps/server        Hono. Holder API-nøkkelen. Det eneste som snakker med backenden.
-packages/contract  Typene som går mellom de to.
+apps/web           Vite + Preact + Designsystemet (-css / -web). No secrets.
+apps/server        Hono. Holds the API key. The only thing that talks to the backend.
+packages/contract  The types that pass between the two.
 ```
 
 ```
 Preact SPA ──► apps/server ──► digdir-headless-rag
-               (BFF-en)        /api/mcp     samtale + strømming
-                               /v1/models   oppslag
-                          ──► Typesense     fasetter, utdrag fra kilder
-                                            (ingen av delene finnes i API-et)
+               (the BFF)       /api/mcp     conversation + streaming
+                               /v1/models   lookup
+                          ──► Typesense     facets, excerpts from sources
+                                            (neither is in the API)
 ```
 
-Nettleseren får aldri API-nøkkelen. Det er et krav fra backenden, ikke en
-preferanse: den autentiserer applikasjoner og ikke personer, og `X-User-Id`
-godtas uten verifisering. Derfor må noe på serversiden _være_ identiteten. Se
-[`decisions/0002`](decisions/0002-backend-for-frontend.md).
+The browser never gets the API key. That is a requirement from the backend, not
+a preference: it authenticates applications and not people, and `X-User-Id` is
+accepted without verification. So something on the server side has to _be_ the
+identity. See [`decisions/0002`](decisions/0002-backend-for-frontend.md).
 
 ## Getting started
 
@@ -62,10 +64,10 @@ Only the client against genki-test, step by step and also for those who are not
 developers: [Run locally](apps/web/docs/run-locally.md). In short,
 `npm run web`, with `apps/web/.env.local` made from `.env.example`.
 
-### 1. Klonen og Node 24
+### 1. The clone and Node 24
 
-`mise.toml` låser Node-versjonen. Med [mise](https://mise.jdx.dev) aktivert i
-skallet:
+`mise.toml` pins the Node version. With [mise](https://mise.jdx.dev) activated
+in the shell:
 
 ```sh
 git clone https://github.com/digdir/kunnskapsassistenten.git
@@ -75,71 +77,72 @@ mise install
 node --version
 ```
 
-Den siste skal skrive `v24.21.0`. Har du Node 24.15 eller nyere fra før,
-holder det: `engines` krever `>=24.15`, som jsdom i `apps/web-preact` gjør, og
-`.npmrc` har `engine-strict`.
+The last one should print `v24.21.0`. If you already have Node 24.15 or newer,
+that is enough: `engines` requires `>=24.15`, as jsdom in `apps/web-preact`
+does, and `.npmrc` has `engine-strict`.
 
-### 2. Avhengighetene
+### 2. The dependencies
 
 ```sh
 npm ci
 ```
 
-Én låsefil for hele workspace-et: BFF-en i `apps/server`, klienten i
-`apps/web` og typene mellom dem i `packages/contract`.
+One lockfile for the whole workspace: the BFF in `apps/server`, the client in
+`apps/web` and the types between them in `packages/contract`.
 
-`npm ci` kjører `prepare` i `apps/web`, og den legger `pre-commit` og
-`pre-push` i `.git/hooks` for hele repoet. `pre-commit` kjører lint-staged på
-filene som committes, og `pre-push` typesjekker klienten. npm 11 kjører ikke
-installasjonsskript fra avhengigheter som ikke er godkjent i `allowScripts`, og
-sier på slutten fra om `simple-git-hooks` og `fsevents`. Krokene kommer likevel,
-fra `prepare`, og resten av oppskriften virker uten de to skriptene.
+`npm ci` runs `prepare` in `apps/web`, and that puts `pre-commit` and
+`pre-push` in `.git/hooks` for the whole repo. `pre-commit` runs lint-staged on
+the files being committed, and `pre-push` typechecks the client. npm 11 does not
+run install scripts from dependencies that are not approved in `allowScripts`,
+and reports `simple-git-hooks` and `fsevents` at the end. The hooks are
+installed anyway, from `prepare`, and the rest of the recipe works without those
+two scripts.
 
-### 3. BFF-en mot en backend
+### 3. The BFF against a backend
 
 ```sh
 cp apps/server/.env.example apps/server/.env
 ```
 
-Fyll inn `DIGDIR_API_BASE` og `DIGDIR_API_KEY` i `apps/server/.env`. Er
-datasettet et annet enn standarden, også `DIGDIR_TENANT` og
-`DIGDIR_DATASET_CONFIG_KEY`. `KA_FILTER_FIELDS` og `KA_DATASETS` gir klienten
-feltene i filteret og navnet på korpuset. Typesense (`TYPESENSE_API_HOST`,
-`TYPESENSE_API_KEY_ADMIN` og `KUDOS_DOCS_COLLECTION`) gir filtrene og utdragene
-i kildene. BFF-en bare søker der, så nøkkelen er en søkenøkkel, aldri
-adminnøkkelen, selv om variabelen heter `_ADMIN`. Nøklene blir i BFF-en og når
-aldri nettleseren.
+Fill in `DIGDIR_API_BASE` and `DIGDIR_API_KEY` in `apps/server/.env`. If the
+dataset is not the default one, also `DIGDIR_TENANT` and
+`DIGDIR_DATASET_CONFIG_KEY`. `KA_FILTER_FIELDS` and `KA_DATASETS` give the
+client the fields in the filter and the name of the corpus. Typesense
+(`TYPESENSE_API_HOST`, `TYPESENSE_API_KEY_ADMIN` and `KUDOS_DOCS_COLLECTION`)
+provides the filters and the excerpts in the sources. The BFF only searches
+there, so the key is a search key, never the admin key, even though the variable
+is called `_ADMIN`. The keys stay in the BFF and never reach the browser.
 
 ```sh
 npm run doctor
 ```
 
-`npm run doctor` er den raske måten å finne ut hvorfor ingenting virker.
-Den sjekker at nøkkelen autentiserer, at den gir tilgang til agenten som er
-satt opp, at samtale-API-et svarer, og at Typesense er tilgjengelig. Feiler
-noe, sier den hva du skal endre. Typesense-sjekken slår opp samlingen med
-`GET /collections/…`, og det har en søkenøkkel ikke lov til: målt 13.10 svarte
-det 401, mens søket BFF-en gjør, svarte 200.
+`npm run doctor` is the quick way to find out why nothing works. It checks that
+the key authenticates, that it gives access to the agent that is configured,
+that the conversation API answers, and that Typesense is reachable. If something
+fails, it says what to change. The Typesense check looks up the collection with
+`GET /collections/…`, which a search key is not allowed to do: measured 13.10,
+that returned 401, while the search the BFF makes returned 200.
 
-To backender, styrt av `DIGDIR_API_BASE`:
+Two backends, selected by `DIGDIR_API_BASE`:
 
-|                                 |                                                                                       |
-| ------------------------------- | ------------------------------------------------------------------------------------- |
-| `https://test.rag.digdir.cloud` | utrullet testmiljø. Ingenting å kjøre selv, men du trenger en nøkkel for det miljøet. |
-| `http://localhost:8099`         | lokalt. Oppsett ligger i `digdir-headless-rag`.                                       |
+|                                 |                                                                                              |
+| ------------------------------- | -------------------------------------------------------------------------------------------- |
+| `https://test.rag.digdir.cloud` | deployed test environment. Nothing to run yourself, but you need a key for that environment. |
+| `http://localhost:8099`         | local. The setup is in `digdir-headless-rag`.                                                |
 
-Eller genki, se [Mot genki](#mot-genki).
+Or genki, see [Against genki](#against-genki).
 
-Nøkler gjelder per miljø: en som er laget lokalt autentiserer ikke mot den
-utrullede backenden. Uten Typesense svarer appen, men filterraden skjules og
-kildekortene viser ingen utdrag.
+Keys are per environment: one made locally does not authenticate against the
+deployed backend. Without Typesense the app answers, but the filter row is
+hidden and the source cards show no excerpts.
 
-### Mot genki
+### Against genki
 
-genki er den nye backenden ([`decisions/0010`](decisions/0010-genki-as-backend.md)).
-BFF-en snakker med den på samme måte som med `digdir-headless-rag`, så byttet
-er bare innstillinger i `apps/server/.env`. `DIGDIR_API_KEY` er
-tjenestenøkkelen fra genki, se under:
+genki is the new backend ([`decisions/0010`](decisions/0010-genki-as-backend.md)).
+The BFF talks to it the same way as to `digdir-headless-rag`, so the switch is
+only settings in `apps/server/.env`. `DIGDIR_API_KEY` is the service key from
+genki, see below:
 
 ```sh
 DIGDIR_API_BASE=https://api.genki-test.digdir.cloud
@@ -150,34 +153,34 @@ DIGDIR_TENANT=public-sector-knowledge
 DIGDIR_DATASET_CONFIG_KEY=default
 ```
 
-genki kaller verktøy `<tjeneste>__<variant>` og knytter samtaler til
-tjenesten, så `DIGDIR_TOOL` og `DIGDIR_AGENT_ID` må endres. Tenanten og
-datasettnøkkelen over gjør genki om til Kudos-datasettet sitt.
+genki names tools `<service>__<variant>` and ties conversations to the service,
+so `DIGDIR_TOOL` and `DIGDIR_AGENT_ID` have to change. genki maps the tenant and
+the dataset key above to its Kudos dataset.
 
-Nøkkelen er en tjenestenøkkel for `kunnskapsassistenten`, laget under
-«API-nøkler for tjenesten» i portalen (`https://portal.genki-test.digdir.cloud`).
-genki-test er låst for modellkall, så nøkkelen må lages av en som har logget
-inn med Entra ID, ikke TestID. En nøkkel laget av andre svarer
-`urn:genai:problem:locked-environment`. Lokalt er adressen
-`http://localhost:8080`, med en nøkkel fra den lokale genki-en.
+The key is a service key for `kunnskapsassistenten`, made under «API-nøkler for
+tjenesten» in the portal (`https://portal.genki-test.digdir.cloud`). genki-test
+is locked for model calls, so the key has to be made by someone who signed in
+with Entra ID, not TestID. A key made by anyone else gets
+`urn:genai:problem:locked-environment`. Locally the address is
+`http://localhost:8080`, with a key from the local genki.
 
-`npm run doctor` sjekker oppsettet mot genki på samme måte.
+`npm run doctor` checks the setup against genki the same way.
 
-Filtermålingen ([Hva backenden støtter](#hva-backenden-støtter)) spør
-headless-rags `builtin.retrieve-only-agent__retrieve-only`, som genki ikke har.
-Mot genki får den ikke svar, og etter forsøkene er filterpanelet av.
-`KA_CAPABILITIES=filters` slår det på. Lest i koden, ikke målt.
+The filter check ([What the backend supports](#what-the-backend-supports)) asks
+headless-rag's `builtin.retrieve-only-agent__retrieve-only`, which genki does not
+have. Against genki it gets no answer, and after the attempts the filter panel
+is off. `KA_CAPABILITIES=filters` turns it on. Read in the code, not measured.
 
-### 4. BFF-en og klienten sammen
+### 4. The BFF and the client together
 
 ```sh
 VITE_API_MODE=bff KA_BFF_URL=http://localhost:8787 npm run dev
 ```
 
-BFF-en starter på `PORT` fra `.env` (8787), og klienten på
-<http://localhost:5173>, med `/api` og `/auth` sendt videre til BFF-en.
-`KA_BFF_URL` må med, for ellers ser klienten etter BFF-en på 8788. Er 5173
-opptatt, velger Vite neste ledige port og skriver den ut.
+The BFF starts on `PORT` from `.env` (8787), and the client on
+<http://localhost:5173>, with `/api` and `/auth` forwarded to the BFF.
+`KA_BFF_URL` is needed, because otherwise the client looks for the BFF on 8788.
+If 5173 is taken, Vite picks the next free port and prints it.
 
 ### 5. The client alone, against the backend
 
@@ -202,7 +205,7 @@ the excerpts come from Typesense. If anything is missing, the dev server prints
 one line at startup saying what and where it is set. Mock is only for the tests
 below.
 
-### 6. Testene
+### 6. The tests
 
 ```sh
 npm run format:check
@@ -212,20 +215,21 @@ npm run lint --workspace apps/web
 npm run build
 ```
 
-`npm test` kjører serverens tester med `node --test` og klientens med vitest.
+`npm test` runs the server's tests with `node --test` and the client's with
+vitest.
 
-End-to-end med Playwright. Suiten bygger klienten i mock og tester den på
-port 4173, eller på den `KA_E2E_PORT` sier.
+End-to-end with Playwright. The suite builds the client in mock and tests it on
+port 4173, or on the one `KA_E2E_PORT` gives.
 
 ```sh
 npx playwright install chromium
 npm run test:e2e --workspace apps/web
 ```
 
-### 7. Bildet
+### 7. The image
 
-Det samme bildet som utrullingen bruker: BFF-en med den bygde klienten, fra
-samme origin.
+The same image the deployment uses: the BFF with the built client, from the
+same origin.
 
 ```sh
 docker build --tag ka .
@@ -234,12 +238,12 @@ curl -fsS --retry 15 --retry-all-errors --retry-delay 1 http://localhost:8787/ap
 docker stop ka
 ```
 
-`curl` skal skrive `{"ok":true}`.
+`curl` should print `{"ok":true}`.
 
-Bildet har begge klientene. En nettleser uten cookien `ka_klient` får den
-nåværende i `apps/web-preact`, eller den `KA_DEFAULT_CLIENT` sier (`ny` eller
-`gammel`). `?klient=ny` og `?klient=gammel` bytter for én nettleser. Hver
-klient spør sin egen versjon av API-et: `apps/web-preact` `/api/*` og
+The image has both clients. A browser without the cookie `ka_klient` gets the
+current one in `apps/web-preact`, or the one `KA_DEFAULT_CLIENT` names (`ny` or
+`gammel`). `?klient=ny` and `?klient=gammel` switch for one browser. Each
+client calls its own version of the API: `apps/web-preact` `/api/*` and
 `apps/web` `/api/v2/*` (`decisions/0009`).
 
 ## Commands
@@ -259,75 +263,76 @@ klient spør sin egen versjon av API-et: `apps/web-preact` `/api/*` og
 
 ## Status
 
-Klienten virker ende til ende mot Kudos-korpuset gjennom BFF-en: tråder,
-strømmede svar med agentens steg, og kilder med utdrag når Typesense er satt
-opp.
+The client works end to end against the Kudos corpus through the BFF: threads,
+streamed answers with the agent's steps, and sources with excerpts when
+Typesense is set up.
 
-Den samme builden kjører mot begge versjoner av backenden. Se [Hva backenden
-støtter](#hva-backenden-støtter).
+The same build runs against both versions of the backend. See [What the backend
+supports](#what-the-backend-supports).
 
-|                                                                   |                                                                                                                         |
-| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Samtale gjennom BFF-en: strømmet svar og agentens steg            | ferdig. To visningsnivåer, Standard og Detaljert. Etter ny innlasting er stegene borte, for BFF-en tar ikke vare på dem |
-| Trådliste: søk, endre navn, slett                                 | ferdig. Gruppert etter tid, spør før sletting, og tar endringen tilbake når BFF-en sier nei                             |
-| Flere turer i samme tråd, startskjerm med forslag                 | ferdig                                                                                                                  |
-| Adresser                                                          | `/threads/<id>` åpner tråden. Infosider, 404-side og egen sidetittel per rute                                           |
-| Kilder: klikkbare `[n]`, utdrag per svar, «Kilder brukt i svaret» | ferdig, med søk i svaret og i kildene. Etter ny innlasting har bare siste svar kilder, fra BFF-ens minne                |
-| Kopier svaret og lenken til tråden, nøkkelord fra søket           | ferdig                                                                                                                  |
-| Lenke til tilbakemelding                                          | ikke med                                                                                                                |
-| Valg av agent                                                     | ferdig, fra `/api/models`. Agentens modus kan ikke velges                                                               |
-| Innlogging                                                        | i BFF-en, Entra ID, av lokalt. Se [Innlogging](#innlogging). Ved 401 tar klienten vare på utkastet før innloggingen     |
-| Navn og «Logg ut»                                                 | fra `/api/me`. «Logg ut» tømmer også det klienten husker om svarene i nettleseren                                       |
-| Bildet                                                            | BFF-en med klienten bygget i bff-modus, fra samme origin. Se [`deploy/`](deploy/README.md)                              |
-| Filterpanel: fasetter med antall, låst per tråd                   | ferdig, med beskjed når filteret er låst. Felt og korpusnavn fra BFF-en                                                 |
-| Filtre når backenden ikke tar imot dem                            | panelet sier «Filtrering er ikke tilgjengelig ennå»                                                                     |
-| Genererte trådtitler                                              | faller tilbake på spørsmålet til backenden lager en                                                                     |
-| Mapper                                                            | droppet. Backenden har tagger, ikke mapper                                                                              |
-| Uten backend                                                      | mock med et utdrag av Kudos, bare for de automatiske testene                                                            |
-| Oppsett                                                           | paneler som endrer bredde, skuffer på smal skjerm, og lys og mørk modus                                                 |
+|                                                                        |                                                                                                                            |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Conversation through the BFF: streamed answer and the agent's steps    | done. Two display levels, Standard and Detaljert. After a reload the steps are gone, because the BFF does not keep them    |
+| Thread list: search, rename, delete                                    | done. Grouped by time, asks before deleting, and rolls the change back when the BFF says no                                |
+| Several turns in the same thread, start screen with suggestions        | done                                                                                                                       |
+| URLs                                                                   | `/threads/<id>` opens the thread. Info pages, a 404 page and a page title of its own per route                             |
+| Sources: clickable `[n]`, excerpts per answer, «Kilder brukt i svaret» | done, with search in the answer and in the sources. After a reload only the last answer has sources, from the BFF's memory |
+| Copy the answer and the link to the thread, keywords from the search   | done                                                                                                                       |
+| Link to feedback                                                       | not included                                                                                                               |
+| Choice of agent                                                        | done, from `/api/models`. The agent's mode cannot be chosen                                                                |
+| Sign-in                                                                | in the BFF, Entra ID, off locally. See [Sign-in](#sign-in). On a 401 the client saves the draft before sign-in             |
+| Name and «Logg ut»                                                     | from `/api/me`. «Logg ut» also clears what the client remembers about the answers in the browser                           |
+| The image                                                              | the BFF with the client built in bff mode, from the same origin. See [`deploy/`](deploy/README.md)                         |
+| Filter panel: facets with counts, locked per thread                    | done, with a notice when the filter is locked. Fields and corpus name from the BFF                                         |
+| Filters when the backend does not accept them                          | the panel says «Filtrering er ikke tilgjengelig ennå»                                                                      |
+| Generated thread titles                                                | falls back to the question until the backend makes one                                                                     |
+| Folders                                                                | dropped. The backend has tags, not folders                                                                                 |
+| Without a backend                                                      | mock with an extract of Kudos, only for the automated tests                                                                |
+| Layout                                                                 | resizable panels, drawers on narrow screens, and light and dark mode                                                       |
 
-## Hva backenden støtter
+## What the backend supports
 
-Serveren måler det ved oppstart i stedet for å anta det, og eksponerer
-resultatet på `/api/capabilities`. Da virker den samme builden mot begge
-versjoner av backenden, og filtrene slår seg på uten ny utrulling den dagen
-endringene er inne.
+The server measures it at startup instead of assuming it, and exposes the
+result at `/api/capabilities`. That way the same build works against both
+versions of the backend, and the filters switch on without a new deployment the
+day the changes are in.
 
-Filtermålingen er en faktisk test, ikke en erklæring: den sender et filter som
-ikke kan treffe noe, og sammenligner med samme søk uten filter. Kommer det
-treff uten filter og null med, kom filteret fram. Uten den kontrollen ville en
-backend som er nede sett ut som en som støtter filtre.
+The filter check is a real test, not a declaration: it sends a filter that
+cannot match anything, and compares with the same search without a filter. If
+there are hits without the filter and none with it, the filter got through.
+Without that control, a backend that is down would look like one that supports
+filters.
 
-Tvinges med `KA_CAPABILITIES="filters"` eller `"no-filters"`.
+Forced with `KA_CAPABILITIES="filters"` or `"no-filters"`.
 
-## Innlogging
+## Sign-in
 
-`AUTH_MODE` velger mekanisme.
+`AUTH_MODE` picks the mechanism.
 
-|                |                                                                 |
-| -------------- | --------------------------------------------------------------- |
-| `entra`        | Entra ID. Det som kjører på `qa.kunnskap.digdir.cloud`.         |
-| `ansattporten` | Ansattporten, mot genki. Personens token går til backenden.     |
-| `off`          | Kun lokalt. Usignert id, hvem som helst kan bli hvem som helst. |
+|                |                                                                      |
+| -------------- | -------------------------------------------------------------------- |
+| `entra`        | Entra ID. What runs on `qa.kunnskap.digdir.cloud`.                   |
+| `ansattporten` | Ansattporten, against genki. The person's token goes to the backend. |
+| `off`          | Local only. Unsigned id, anyone can become anyone.                   |
 
-Utelater du `AUTH_MODE` utledes den: `entra` hvis Azure-variablene er satt,
-ellers `off`. Serveren skriver hvilken modus den kjører i ved hver oppstart.
+If you leave out `AUTH_MODE`, it is derived: `entra` if the Azure variables are
+set, otherwise `off`. The server prints which mode it runs in at every startup.
 
-Ingen token når nettleseren, bare en signert informasjonskapsel. `/api/*`
-svarer 401 uten innlogging, og `/api/health` er åpen. Hvem som slipper inn,
-bestemmes av Entra ID og ikke av appen. `AUTH_MODE=off` nekter å starte hvis
-`APP_ORIGIN` ikke er localhost. Oppsett i [`deploy/README.md`](deploy/README.md).
+No token reaches the browser, only a signed cookie. `/api/*` answers 401 without
+sign-in, and `/api/health` is open. Who gets in is decided by Entra ID, not by
+the app. `AUTH_MODE=off` refuses to start if `APP_ORIGIN` is not localhost.
+Setup in [`deploy/README.md`](deploy/README.md).
 
 ### Ansattporten
 
-Med `AUTH_MODE=ansattporten` logger personen inn med Ansattporten i BFF-en,
-og BFF-en spør genki med personens token i stedet for tjenestenøkkelen
-([`decisions/0011`](decisions/0011-ansattporten-in-the-bff.md)). Tokenene blir
-i serveren; nettleseren får bare en signert informasjonskapsel med en nøkkel
-til dem. De fornyes med refresh-tokenet før de går ut, og «Logg ut» avslutter
-også økten i Ansattporten.
+With `AUTH_MODE=ansattporten` the person signs in with Ansattporten in the BFF,
+and the BFF calls genki with the person's token instead of the service key
+([`decisions/0011`](decisions/0011-ansattporten-in-the-bff.md)). The tokens stay
+on the server; the browser only gets a signed cookie with a key to them. They
+are renewed with the refresh token before they expire, and «Logg ut» also ends
+the session in Ansattporten.
 
-Lokalt, mot genki-test, i `apps/server/.env`:
+Locally, against genki-test, in `apps/server/.env`:
 
 ```sh
 AUTH_MODE=ansattporten
@@ -337,55 +342,56 @@ DIGDIR_TOOL=kunnskapsassistenten__default
 DIGDIR_AGENT_ID=kunnskapsassistenten
 DIGDIR_DATASET_CONFIG_KEY=default
 ANSATTPORTEN_ISSUER=https://test.ansattporten.no
-ANSATTPORTEN_CLIENT_ID=<klient-id fra Samarbeidsportalen>
-ANSATTPORTEN_CLIENT_SECRET=<klienthemmeligheten>
+ANSATTPORTEN_CLIENT_ID=<client id from Samarbeidsportalen>
+ANSATTPORTEN_CLIENT_SECRET=<the client secret>
 ANSATTPORTEN_REDIRECT_URI=http://localhost:8787/auth/callback
 ANSATTPORTEN_ALTINN_RESOURCE=urn:altinn:resource:digdir-genai-platform-test
 KA_CAPABILITIES=no-filters
 ```
 
-`DIGDIR_API_KEY` kan stå tom. Den brukes da bare til filtermålingen, og uten
-den gjelder `KA_CAPABILITIES`. Klienten må være registrert i Ansattporten med
-`http://localhost:8787/auth/callback`, og i genki-portalen som en brukerflate
-av typen `browser` med samme klient-id.
+`DIGDIR_API_KEY` can be left empty. It is then only used for the filter check,
+and without it `KA_CAPABILITIES` applies. The client has to be registered in
+Ansattporten with `http://localhost:8787/auth/callback`, and in the genki portal
+as a client of type `browser` with the same client id.
 
-Hvem som slipper inn:
+Who gets in:
 
-- Organisasjonene står i tokenet (`authorization_details` for Altinn-ressursen).
-  Er det én, sendes ingen `GenAI-Acting-For`. Er det flere, velger personen på
-  `/auth/org`, og valget sendes som `GenAI-Acting-For`.
-- En innlogging med Entra ID gjennom Ansattporten har ingen organisasjoner i
-  tokenet. Da spør BFF-en genki (`GET /me`). Tokenet har heller ikke navn, så
-  e-postadressen vises i stedet.
-- genki-test er låst for språkmodeller: bare Entra ID-innlogginger i Digdirs
-  gruppe får svar. Andre får siden «Ingen tilgang» ved innlogging
-  (`urn:genai:problem:entra-not-trusted`), eller beskjeden «Testmiljøet er
-  låst» når de spør (`urn:genai:problem:locked-environment`).
+- The organisations are in the token (`authorization_details` for the Altinn
+  resource). If there is one, no `GenAI-Acting-For` is sent. If there are
+  several, the person chooses on `/auth/org`, and the choice is sent as
+  `GenAI-Acting-For`.
+- A sign-in with Entra ID through Ansattporten has no organisations in the
+  token. Then the BFF asks genki (`GET /me`). The token has no name either, so
+  the email address is shown instead.
+- genki-test is locked for language models: only Entra ID sign-ins in Digdir's
+  group get answers. Others get the page «Ingen tilgang» at sign-in
+  (`urn:genai:problem:entra-not-trusted`), or the message «Testmiljøet er låst»
+  when they ask (`urn:genai:problem:locked-environment`).
 
-Tokenene ligger i minnet til prosessen. En omstart logger alle ut, og
-utrullingen holder hver person på samme replika (`stickySessions`).
+The tokens are held in the process's memory. A restart signs everyone out, and
+the deployment keeps each person on the same replica (`stickySessions`).
 
-Den delte hemmeligheten i lenken (`?secret=`) hører til serveren i
-`apps/web/server`, som ruller ut klienten alene mot headless-rag. Den er ikke
-endret. BFF-en har ingen slik port: med Ansattporten er innloggingen porten.
+The shared secret in the link (`?secret=`) belongs to the server in
+`apps/web/server`, which deploys the client on its own against headless-rag. It
+is unchanged. The BFF has no such gate: with Ansattporten, sign-in is the gate.
 
-### Tilbakemelding
+### Feedback
 
-`POST /api/feedback` og `/api/v2/feedback` tar `{ conversationId, taskId,
-rating, comment? }` og sender den videre til genki. `taskId` kommer med `done`
-i svaret og på svarene når en tråd leses. BFF-en sender bare tilbakemelding på
-et svar som står i personens egen tråd. headless-rag sender ingen `taskId`, så
-der gir ruten 404. En backend som har svar-id-er, men ikke tar imot
-tilbakemelding, gir `{ ok: false, unavailable: true }`. Ingen av klientene har
-knappene ennå.
+`POST /api/feedback` and `/api/v2/feedback` take `{ conversationId, taskId,
+rating, comment? }` and forward it to genki. `taskId` comes with `done` in the
+answer, and on the answers when a thread is read. The BFF only sends feedback on
+an answer that is in the person's own thread. headless-rag sends no `taskId`, so
+there the route gives 404. A backend that has answer ids but does not accept
+feedback gives `{ ok: false, unavailable: true }`. Neither client has the
+buttons yet.
 
-## Dokumentasjon
+## Documentation
 
 From 2026-10-16, new and changed text in the repo is written in English:
 code, comments, test names, commit messages, branch names, PRs, issues,
 reviews and docs. What users see or hear stays Norwegian bokmål with æøå.
-Older Norwegian text, such as most of this README, is translated when a PR
-touches it.
+Older Norwegian text is translated when a PR touches it, as this README has
+been.
 
 [`decisions/`](decisions/) are the ADRs, in English like `digdir-headless-rag`:
 why Preact, why a BFF, why `/api/mcp` rather than `/v1`. 0004–0008 came with
@@ -396,20 +402,19 @@ API in two versions: `/api/*` in the format from main for the client in
 `apps/web-preact`, and `/api/v2/*` for the client in `apps/web`. 0010 is genki
 as the backend, and 0011 sign-in with Ansattporten in the BFF.
 
-[`deploy/README.md`](deploy/README.md) dekker utrulling til Azure og
-innlogging.
+[`deploy/README.md`](deploy/README.md) covers deployment to Azure and sign-in.
 
-## Hvor ting ligger
+## Where things are
 
-| Hvor                                              | Hva                                                                                            |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `src/`                                            | **Dette.** Applikasjonen: SPA, server og kontrakt.                                             |
-| [`../docs/`](../docs)                             | Designarbeid, akseptansekriterier, innsikt.                                                    |
-| [`../docs/archive/evals/`](../docs/archive/evals) | Evalueringene fra headless-rag-tida, arkivert som dokumentasjon. Kjøres ikke.                  |
-| `digdir/digdir-headless-rag`                      | **Backenden.** Brukes kun over HTTP.                                                           |
-| `digdir/digdir-rag`                               | **Arkivert.** Den opprinnelige Clojure-monolitten. Kilde til norsk tekst, ikke en avhengighet. |
-| `digdir/digdir-rag-frontend`                      | **Egen alfa-demo.** Uten sammenheng med dette, tross navnet.                                   |
+| Where                                             | What                                                                                       |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `src/`                                            | **This.** The application: SPA, server and contract.                                       |
+| [`../docs/`](../docs)                             | Design work, acceptance criteria, insight.                                                 |
+| [`../docs/archive/evals/`](../docs/archive/evals) | The evaluations from the headless-rag period, archived as documentation. Not run.          |
+| `digdir/digdir-headless-rag`                      | **The backend.** Used over HTTP only.                                                      |
+| `digdir/digdir-rag`                               | **Archived.** The original Clojure monolith. A source of Norwegian text, not a dependency. |
+| `digdir/digdir-rag-frontend`                      | **A separate alpha demo.** Unrelated to this, despite the name.                            |
 
-Arbeidsmateriale som hører til prosjektet men ikke til repoet, som den
-opprinnelige planen, presentasjonene og det fangede stilarket, ligger utenfor i
-`_notes/` ved siden av utsjekkene.
+Working material that belongs to the project but not to the repo, such as the
+original plan, the presentations and the captured stylesheet, is kept outside,
+in `_notes/` next to the checkouts.
