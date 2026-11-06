@@ -247,6 +247,14 @@
   margin-inline: calc(var(--ds-size-2) * -1);
 }
 
+/* Designsystemet 1.23 sets the chevron on the summary's first line, measured
+   from its padding. This summary has no padding over and under, so the chevron
+   is centred in the row, beside «Åpne», instead. */
+.source-excerpt__details > summary::before {
+  align-self: center;
+  translate: none;
+}
+
 /* The box's padding is the indent, so Designsystemet's indent and spacing,
    written in `:where()`, are replaced here. */
 .source-excerpt__details > :not(summary):not(u-summary) {
