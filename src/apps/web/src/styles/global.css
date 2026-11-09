@@ -228,9 +228,9 @@ body {
   padding-inline: var(--ka-rail-padding-inline);
 }
 
-/* ── The bar, below 774 with `mobile-top-row` ──────────────────────────── */
+/* ── The bar, below 774 ────────────────────────────────────────────────── */
 
-/* Below `compactMaxViewport` with `mobile-top-row`, the rails become a bar above the main column
+/* Below `compactMaxViewport` the rails become a bar above the main column
    (digdir/kunnskapsassistenten#120). Grid placement, not React, so views keep their state and
    the tab order stays navigation button, answer, sources button. */
 .shell[data-compact] {

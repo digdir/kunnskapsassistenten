@@ -1,7 +1,7 @@
-import { act, render, renderHook, screen } from '@testing-library/react';
+import { act, cleanup, render, renderHook, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { setFlag } from '../flags';
+import { FLAGS_STORAGE_KEY } from '../flags';
 import { resetFlags } from '../flags/flags';
 import { resetViewport, setViewportWidth } from '../test/matchMedia';
 import { LayoutProvider } from './LayoutProvider';
@@ -16,12 +16,12 @@ import {
 } from './viewModel';
 
 /**
- * Panelene som en rad øverst på telefon, bak flagget `mobile-top-row`
- * (digdir/kunnskapsassistenten#120).
+ * The panel buttons as a row at the top on a phone (digdir/kunnskapsassistenten#120).
  *
- * Av som standard: uten flagget er skallet det samme som før, med skinner på
- * sidene. Med flagget og et vindu under 774 står de to knappene i en rad
- * øverst, og hovedkolonnen får hele bredden.
+ * Below 774 the two buttons stand in a row above the answer column, and the column gets the
+ * whole width. From 774 the rails are at the sides, as before. No flag: it was the trial
+ * `mobile-top-row`, and a browser that still has it stored gets the same page as one that never
+ * had it.
  */
 globalThis.ResizeObserver ??= class {
   observe() {}
@@ -53,71 +53,66 @@ function openShell(width: number) {
   return document.querySelector<HTMLElement>('.shell')!;
 }
 
+/** What a browser that tried the flag still has stored. */
+function storeRetiredFlag() {
+  localStorage.setItem(FLAGS_STORAGE_KEY, JSON.stringify(['mobile-top-row']));
+  resetFlags();
+}
+
 describe('compactMaxViewport', () => {
-  it('er to skinner og hovedkolonnens gulv: 67 + 640 + 67', () => {
+  it('is two rails and the answer column floor: 67 + 640 + 67', () => {
     expect(compactMaxViewport).toBe(774);
     expect(compactMaxViewport).toBeLessThan(drawerMaxViewport);
   });
 });
 
 describe('useCompactMode', () => {
-  it('er av uten flagget, også på telefon', () => {
-    setViewportWidth(393);
-    const { result } = renderHook(() => useCompactMode());
-
-    expect(result.current).toBe(false);
-  });
-
-  it('er på med flagget og et vindu under 774', () => {
-    setFlag('mobile-top-row', true);
+  it('is on below 774, with no flag', () => {
     setViewportWidth(393);
     const { result } = renderHook(() => useCompactMode());
 
     expect(result.current).toBe(true);
   });
 
-  it('er av med flagget når vinduet er 774 eller bredere', () => {
-    setFlag('mobile-top-row', true);
+  it('is off at 774 and wider', () => {
     setViewportWidth(774);
     const { result } = renderHook(() => useCompactMode());
 
     expect(result.current).toBe(false);
   });
 
-  it('følger flagget og vinduet uten at siden lastes på nytt', () => {
-    setViewportWidth(393);
+  it('follows the window without a reload', () => {
+    setViewportWidth(1024);
     const { result } = renderHook(() => useCompactMode());
-    expect(result.current).toBe(false);
-
-    act(() => setFlag('mobile-top-row', true));
-    expect(result.current).toBe(true);
-
-    act(() => setViewportWidth(1024));
     expect(result.current).toBe(false);
 
     act(() => setViewportWidth(393));
     expect(result.current).toBe(true);
+
+    act(() => setViewportWidth(1024));
+    expect(result.current).toBe(false);
+  });
+
+  it('is the same with the retired flag stored', () => {
+    storeRetiredFlag();
+    setViewportWidth(393);
+    const { result } = renderHook(() => useCompactMode());
+    expect(result.current).toBe(true);
+
+    act(() => setViewportWidth(1440));
+    expect(result.current).toBe(false);
   });
 });
 
-describe('skallet med raden øverst', () => {
-  it('er som før uten flagget', () => {
-    const shell = openShell(393);
-
-    expect(shell.hasAttribute('data-compact')).toBe(false);
-    expect(shell.style.getPropertyValue('--ka-main-min-width')).toBe('259px');
-  });
-
-  it('gir hovedkolonnen hele bredden med flagget på', () => {
-    setFlag('mobile-top-row', true);
+describe('the shell with the row at the top', () => {
+  it('gives the answer column the whole width on a phone', () => {
     const shell = openShell(393);
 
     expect(shell.hasAttribute('data-compact')).toBe(true);
     expect(shell.style.getPropertyValue('--ka-main-min-width')).toBe('393px');
   });
 
-  it('beholder begge knappene, som åpner de samme skuffene', () => {
-    setFlag('mobile-top-row', true);
+  it('keeps both buttons, which open the same drawers', () => {
     openShell(393);
 
     const threads = screen.getByRole('button', { name: 'Vis tråder og filter' });
@@ -129,16 +124,26 @@ describe('skallet med raden øverst', () => {
     expect(screen.getByRole('dialog', { name: 'Tråder og filter' })).toBeTruthy();
   });
 
-  it('har ingen rad på desktop, selv med flagget på', () => {
-    setFlag('mobile-top-row', true);
-    const shell = openShell(1440);
+  it('has no row at 774 and wider', () => {
+    for (const width of [774, 1440]) {
+      const shell = openShell(width);
 
-    expect(shell.hasAttribute('data-compact')).toBe(false);
+      expect(shell.hasAttribute('data-compact'), `${width} px`).toBe(false);
+      cleanup();
+    }
+  });
+
+  it('draws the same with the retired flag stored', () => {
+    storeRetiredFlag();
+    const shell = openShell(393);
+
+    expect(shell.hasAttribute('data-compact')).toBe(true);
+    expect(shell.style.getPropertyValue('--ka-main-min-width')).toBe('393px');
   });
 });
 
-describe('raden og vinduet med raden øverst, fra 280 til 773 px', () => {
-  it('gir hovedkolonnen en minstebredde som aldri er over vinduet', () => {
+describe('the row and the window with the row at the top, from 280 to 773 px', () => {
+  it('gives the answer column a minimum width never above the window', () => {
     // The floor is min(640, window), and nothing else is on the row: the rails
     // are in the bar. The grid's `1fr` gives the column the rest, which the
     // end-to-end test measures (tests/e2e/viewport-fit.spec.ts).
@@ -147,14 +152,14 @@ describe('raden og vinduet med raden øverst, fra 280 til 773 px', () => {
       const style = layoutStyle(defaultLayout, viewport, true, true);
       const main = Number.parseFloat(style['--ka-main-min-width']);
       if (main !== Math.min(640, viewport)) {
-        found.push(`${viewport} px: minstebredden er ${main}`);
+        found.push(`${viewport} px: the minimum width is ${main}`);
       }
       for (const slot of sidebarSlots) {
         const width = Number.parseFloat(style[`--ka-${slot}-width`]);
-        if (width !== 67) found.push(`${viewport} px: ${slot} er ${width} i raden`);
+        if (width !== 67) found.push(`${viewport} px: ${slot} is ${width} in the row`);
       }
     }
 
-    expect(found.slice(0, 10), `${found.length} tilfeller`).toEqual([]);
+    expect(found.slice(0, 10), `${found.length} cases`).toEqual([]);
   });
 });

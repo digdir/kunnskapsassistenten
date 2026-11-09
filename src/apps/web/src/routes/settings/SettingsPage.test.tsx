@@ -1,16 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { forgetFlags, isFlagOn } from '../../flags';
+import { FLAGS_STORAGE_KEY, forgetFlags, isFlagOn } from '../../flags';
 import { getFooterMode, resetFooterMode } from '../../layout/footerMode';
 import { getDisplayLevel, resetDisplayLevel } from '../../views/chat/displayLevel';
 import { SettingsPage } from './SettingsPage';
 import { useSettingsLinks } from './useSettingsLinks';
 
-/** Skriver adressen ut, så en test kan lese hvor en gammel lenke landet. */
+/** Writes the address out, so a test can read where an old link landed. */
 function Address() {
   const { pathname, search, hash } = useLocation();
-  return <p data-testid="adresse">{pathname + search + hash}</p>;
+  return <p data-testid="address">{pathname + search + hash}</p>;
 }
 
 function Links() {
@@ -38,7 +38,7 @@ beforeEach(() => {
 });
 
 describe('SettingsPage', () => {
-  it('har fargemodus, svarvisningen og eksperimentene', () => {
+  it('has colour mode, the answer view and the experiments', () => {
     open();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Innstillinger' })).toBeTruthy();
@@ -47,7 +47,7 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Eksperimenter' })).toBeTruthy();
   });
 
-  it('skifter svarvisning med én gang', () => {
+  it('switches the answer view at once', () => {
     open();
 
     const detailed = screen.getByRole('radio', { name: /Detaljert/u }) as HTMLInputElement;
@@ -57,8 +57,8 @@ describe('SettingsPage', () => {
     expect(detailed.checked).toBe(true);
   });
 
-  it('har fot-valget lokalt, og to valg som ikke endrer hverandre', () => {
-    // Vitest kjører med `import.meta.env.DEV`, som utviklingsserveren.
+  it('has the foot choice locally, and two choices that do not change each other', () => {
+    // Vitest runs with `import.meta.env.DEV`, like the development server.
     open();
 
     fireEvent.click(screen.getByRole('radio', { name: /Festet/u }));
@@ -67,7 +67,7 @@ describe('SettingsPage', () => {
     expect(getDisplayLevel()).toBe('standard');
   });
 
-  it('slår på et eksperiment med bryteren', () => {
+  it('turns an experiment on with the switch', () => {
     open();
 
     const toggle = screen.getByRole('switch', {
@@ -77,11 +77,11 @@ describe('SettingsPage', () => {
     fireEvent.click(toggle);
 
     expect(isFlagOn('year-ranges')).toBe(true);
-    // Bryteren viser det den gjorde, ikke bare flagget.
+    // The switch shows what it did, not only the flag.
     expect(toggle.checked).toBe(true);
   });
 
-  it('lenker til saken for eksperimentet, i ny fane og sagt i ord', () => {
+  it('links to the issue for the experiment, in a new tab and said in words', () => {
     open();
 
     const link = screen.getByRole('link', { name: /^Sak 115 ?\(åpnes i ny fane\)$/u });
@@ -92,32 +92,42 @@ describe('SettingsPage', () => {
   });
 });
 
-describe('gamle lenker', () => {
-  it('sender #innstillinger til siden', () => {
+describe('old links', () => {
+  it('sends #innstillinger to the page', () => {
     open('/threads/abc#innstillinger');
 
-    expect(screen.getByTestId('adresse').textContent).toBe('/innstillinger');
+    expect(screen.getByTestId('address').textContent).toBe('/innstillinger');
   });
 
-  it('sender #feature-flags til siden', () => {
+  it('sends #feature-flags to the page', () => {
     open('/#feature-flags');
 
-    expect(screen.getByTestId('adresse').textContent).toBe('/innstillinger');
+    expect(screen.getByTestId('address').textContent).toBe('/innstillinger');
   });
 
-  it('slår på flagget i ?flagg= og tar parameteren ut, men beholder resten', () => {
+  it('turns on the flag in ?flagg= and takes the parameter out, but keeps the rest', () => {
     open('/?flagg=year-ranges&annet=1');
 
     expect(isFlagOn('year-ranges')).toBe(true);
-    expect(screen.getByTestId('adresse').textContent).toBe('/innstillinger?annet=1');
+    expect(screen.getByTestId('address').textContent).toBe('/innstillinger?annet=1');
     expect(
       (screen.getByRole('switch', { name: /Årsfilter med perioder/u }) as HTMLInputElement).checked,
     ).toBe(true);
   });
 
-  it('lar andre adresser være', () => {
+  it('lands a link to the retired flag mobile-top-row on the page, with every switch off', () => {
+    open('/?flagg=mobile-top-row');
+
+    expect(screen.getByTestId('address').textContent).toBe('/innstillinger');
+    const switches = screen.getAllByRole('switch') as HTMLInputElement[];
+    expect(switches.length).toBeGreaterThan(0);
+    expect(switches.filter((toggle) => toggle.checked)).toEqual([]);
+    expect(localStorage.getItem(FLAGS_STORAGE_KEY)).toBeNull();
+  });
+
+  it('leaves other addresses alone', () => {
     open('/threads/abc');
 
-    expect(screen.getByTestId('adresse').textContent).toBe('/threads/abc');
+    expect(screen.getByTestId('address').textContent).toBe('/threads/abc');
   });
 });

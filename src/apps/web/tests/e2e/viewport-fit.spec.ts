@@ -3,43 +3,47 @@ import { covers } from './a11y';
 import { ANSWER_TIMEOUT, composer } from './helpers';
 
 /**
- * Ingenting ruller sidelengs, på noen bredde fra 320 (WCAG 1.4.10 Reflow).
+ * Nothing scrolls sideways, at any width from 320 (WCAG 1.4.10 Reflow).
  *
- * Målt 06.10 på telefon: hovedkolonnen rullet sidelengs, 37 px på 375 og 19
- * på 393, med et rullefelt nederst på skjermen. Årsaken var lange ord som
- * ikke ble brutt, i et forslag og i en trådtittel, og chips som ikke kunne
- * brytes. Denne fila passer på at det ikke kommer tilbake, uansett hva som
- * stikker ut neste gang.
+ * Measured 06.10 on a phone: the answer column scrolled sideways, 37 px at
+ * 375 and 19 at 393, with a scrollbar at the bottom of the screen. The cause
+ * was long words that were not broken, in a suggestion and in a thread title,
+ * and chips that could not wrap. This file makes sure it does not come back,
+ * whatever sticks out next time.
  *
- * Én test per bruddpunkt, som går gjennom tilstandene i samme side. Feiler
- * noe, sier meldingen hvilken tilstand, hvilket element og hvor langt.
+ * One test per breakpoint, which walks through the states in the same page.
+ * When something fails, the message says which state, which element and how
+ * far.
  *
- * Påstandene regnes ut i siden:
- * - `<html>` har ikke overflyt, og `window.scrollTo` flytter ingenting.
- * - `main` ruller ikke sidelengs.
- * - Ingen synlige elementer går utenfor vinduet sidelengs. Bare det som ikke
- *   ligger inne i en boks med `overflow-x` som klipper eller ruller, sjekkes
- *   her: alt inne i `main` og panelene ligger i en slik boks, og dekkes av de
- *   to neste. Lukkede skuffer, `inert` og `hidden` regnes ikke.
- * - Ingen tekst kuttes av en boks med `overflow: hidden` eller `clip`.
- *   Svarkortet er en slik boks (`.ds-card`), så et ord som ikke brytes i et
- *   svar, får ikke `main` til å rulle. Det blir borte i stedet, og det er det
- *   denne fanger. Tekst med `text-overflow: ellipsis` er kuttet med vilje og
- *   regnes ikke, og heller ikke hopp-lenkene før de får fokus.
- * - Bare de avtalte boksene ruller (`SCROLLERS`).
+ * The assertions are computed in the page:
+ * - `<html>` has no overflow, and `window.scrollTo` moves nothing.
+ * - `main` does not scroll sideways.
+ * - No visible element goes outside the window sideways. Only what is not
+ *   inside a box whose `overflow-x` clips or scrolls is checked here:
+ *   everything inside `main` and the panels is in such a box, and is covered
+ *   by the next two. Closed drawers, `inert` and `hidden` do not count.
+ * - No text is cut off by a box with `overflow: hidden` or `clip`. The answer
+ *   card (`.ds-card`) is such a box, so a word that does not break in an
+ *   answer does not make `main` scroll. It disappears instead, and that is
+ *   what this one catches. Text with `text-overflow: ellipsis` is cut on
+ *   purpose and does not count, nor do the skip links before they get focus.
+ * - Only the agreed boxes scroll (`SCROLLERS`).
+ *
+ * Below 774 the panel buttons stand in a row at the top
+ * (digdir/kunnskapsassistenten#120), and `expectTopRow` measures it.
  */
 
 type Size = { name: string; width: number; height: number; dpr?: 2 | 3 };
 
-/** Telefonene har `dpr`, og kjører med `isMobile` og `hasTouch`. */
+/** The phones have `dpr`, and run with `isMobile` and `hasTouch`. */
 const SIZES: Size[] = [
   { name: '320×568', width: 320, height: 568, dpr: 2 },
   { name: '360×740', width: 360, height: 740, dpr: 3 },
   { name: '375×667', width: 375, height: 667, dpr: 2 },
   { name: '393×852', width: 393, height: 852, dpr: 3 },
   { name: '430×932', width: 430, height: 932, dpr: 3 },
-  { name: 'liggende 667×375', width: 667, height: 375, dpr: 2 },
-  { name: 'liggende 852×393', width: 852, height: 393, dpr: 3 },
+  { name: 'landscape 667×375', width: 667, height: 375, dpr: 2 },
+  { name: 'landscape 852×393', width: 852, height: 393, dpr: 3 },
   { name: '768×1024', width: 768, height: 1024 },
   { name: '1024×768', width: 1024, height: 768 },
   { name: '1280×800', width: 1280, height: 800 },
@@ -85,7 +89,7 @@ async function measure(page: Page): Promise<Fit> {
     const root = document.documentElement;
     const width = root.clientWidth;
     const main = document.querySelector('main');
-    if (!main) throw new Error('fant ikke main');
+    if (!main) throw new Error('main not found');
 
     const describe = (el: Element) =>
       el.tagName.toLowerCase() +
@@ -122,9 +126,11 @@ async function measure(page: Page): Promise<Fit> {
       if (!shown(el) || clipped(el)) continue;
       const box = el.getBoundingClientRect();
       if (box.right > width + 0.5) {
-        outside.push(`${describe(el)} går ${Math.round(box.right - width)} px ut til høyre`);
+        outside.push(
+          `${describe(el)} sticks out ${Math.round(box.right - width)} px past the end edge`,
+        );
       } else if (box.left < -0.5) {
-        outside.push(`${describe(el)} går ${Math.round(-box.left)} px ut til venstre`);
+        outside.push(`${describe(el)} sticks out ${Math.round(-box.left)} px past the start edge`);
       }
     }
     const texts = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -136,7 +142,7 @@ async function measure(page: Page): Promise<Fit> {
       const right = Math.max(...[...range.getClientRects()].map((box) => box.right));
       if (right > width + 0.5) {
         outside.push(
-          `teksten «${node.textContent.trim().slice(0, 40)}» i ${describe(parent)} går ${Math.round(right - width)} px ut`,
+          `the text «${node.textContent.trim().slice(0, 40)}» in ${describe(parent)} sticks out ${Math.round(right - width)} px`,
         );
       }
     }
@@ -173,7 +179,7 @@ async function measure(page: Page): Promise<Fit> {
           const forScreenReader = box.width <= 1 || box.height <= 1;
           if (!forScreenReader && right > edge + 0.5) {
             cut.push(
-              `teksten «${node.textContent.trim().slice(0, 40)}» kuttes ${Math.round(right - edge)} px av ${describe(up)}`,
+              `the text «${node.textContent.trim().slice(0, 40)}» is cut ${Math.round(right - edge)} px by ${describe(up)}`,
             );
           }
           break;
@@ -191,9 +197,9 @@ async function measure(page: Page): Promise<Fit> {
       if (!x && !y) continue;
       const rule = allowed.find((candidate) => el.matches(candidate.selector));
       if (x && !rule?.x) {
-        scrolling.push(`${describe(el)} ruller ${el.scrollWidth - el.clientWidth} px sidelengs`);
+        scrolling.push(`${describe(el)} scrolls ${el.scrollWidth - el.clientWidth} px sideways`);
       }
-      if (y && !rule?.y) scrolling.push(`${describe(el)} ruller på langs`);
+      if (y && !rule?.y) scrolling.push(`${describe(el)} scrolls vertically`);
     }
 
     const start = { x: window.scrollX, y: window.scrollY };
@@ -213,12 +219,12 @@ async function measure(page: Page): Promise<Fit> {
 }
 
 function expectFits(fit: Fit, where: string): void {
-  expect.soft(fit.html, `${where}: <html> har overflyt`).toEqual({ x: 0, y: 0 });
-  expect.soft(fit.moved, `${where}: window.scrollTo flyttet siden`).toEqual({ x: 0, y: 0 });
-  expect.soft(fit.main, `${where}: main ruller sidelengs`).toBe(0);
-  expect.soft(fit.outside, `${where}: utenfor vinduet sidelengs`).toEqual([]);
-  expect.soft(fit.cut, `${where}: tekst kuttes av en boks`).toEqual([]);
-  expect.soft(fit.scrolling, `${where}: ruller uten å skulle`).toEqual([]);
+  expect.soft(fit.html, `${where}: <html> overflows`).toEqual({ x: 0, y: 0 });
+  expect.soft(fit.moved, `${where}: window.scrollTo moved the page`).toEqual({ x: 0, y: 0 });
+  expect.soft(fit.main, `${where}: main scrolls sideways`).toBe(0);
+  expect.soft(fit.outside, `${where}: outside the window sideways`).toEqual([]);
+  expect.soft(fit.cut, `${where}: text cut off by a box`).toEqual([]);
+  expect.soft(fit.scrolling, `${where}: scrolls when it should not`).toEqual([]);
 }
 
 /**
@@ -236,8 +242,8 @@ const FINISH_AT_ONCE_MS = 2_000;
  * A short one, up to `FINISH_AT_ONCE_MS`, is run to its end at once with
  * `finish()` rather than waited for. What is measured is the layout it ends
  * in, and a machine under load can take seconds to play one that lasts
- * 300 ms: one run on a busy machine failed here with «animasjonene ble ikke
- * ferdige» after a drawer opened, and the next run passed 26 of 26.
+ * 300 ms: one run on a busy machine failed here with «the animations did
+ * not finish» after a drawer opened, and the next run passed 26 of 26.
  * Throttling the CPU 20 times did not bring it back, since the compositor
  * plays CSS animations by the clock.
  *
@@ -272,12 +278,12 @@ async function settled(page: Page): Promise<void> {
                     ? animation.animationName
                     : animation instanceof CSSTransition
                       ? animation.transitionProperty
-                      : 'animasjon';
+                      : 'animation';
                 const target =
                   animation.effect instanceof KeyframeEffect ? animation.effect.target : null;
-                const where = `${name} på ${target?.tagName.toLowerCase() ?? 'ukjent'}`;
+                const where = `${name} on ${target?.tagName.toLowerCase() ?? 'unknown'}`;
                 const length = Number(animation.effect?.getComputedTiming().endTime ?? 0);
-                if (length > finishAtOnce) return `${where} varer ${Math.round(length)} ms`;
+                if (length > finishAtOnce) return `${where} lasts ${Math.round(length)} ms`;
                 try {
                   animation.finish();
                 } catch {
@@ -287,7 +293,7 @@ async function settled(page: Page): Promise<void> {
               }),
           FINISH_AT_ONCE_MS,
         ),
-      { message: 'animasjonene ble ikke ferdige', timeout: 5_000 },
+      { message: 'the animations did not finish', timeout: 5_000 },
     )
     .toEqual([]);
 }
@@ -323,10 +329,10 @@ async function closeOverlay(page: Page, overlay: Locator): Promise<void> {
   await settled(page);
 }
 
-/** Below this, `mobile-top-row` puts the two buttons in a bar (`compactMaxViewport`). */
+/** Below this the two buttons stand in a bar above the answer column (`compactMaxViewport`). */
 const TOP_ROW_BELOW = 774;
 
-/** The narrowest size from `width` up: where a flag that stops at `width` is seen to stop. */
+/** The narrowest size from `width` up: where something that stops at `width` is seen to stop. */
 function narrowestFrom(width: number): number {
   return Math.min(...SIZES.map((size) => size.width).filter((each) => each >= width));
 }
@@ -335,8 +341,8 @@ type FlagState = {
   name: string;
   on: readonly string[];
   /**
-   * The sizes where the flag changes the page. Elsewhere it is the page «uten
-   * flagg» measures, and running it again costs a test each and finds nothing.
+   * The sizes where the flag changes the page. Elsewhere it is the page «no
+   * flags» measures, and running it again costs a test each and finds nothing.
    * Left out, every size. The resize runs under every state, since it crosses
    * the limits.
    */
@@ -348,9 +354,13 @@ type FlagState = {
  * changes the layout adds a line here, with `sizes` when it only acts at some.
  */
 const FLAG_STATES: FlagState[] = [
-  { name: 'uten flagg', on: [] },
+  { name: 'no flags', on: [] },
+  /*
+   * Retired when the row at the top became standard. A browser that tried it
+   * still has it stored, and has to get the same page as one that never did.
+   */
   {
-    name: 'mobile-top-row',
+    name: 'retired mobile-top-row stored',
     on: ['mobile-top-row'],
     sizes: (size) => size.width <= narrowestFrom(TOP_ROW_BELOW),
   },
@@ -381,10 +391,10 @@ async function withFlags(page: Page, on: readonly string[]): Promise<void> {
 }
 
 /**
- * With `mobile-top-row` on in a narrow window: the two buttons in a bar above
- * the answer column, and the column in the whole width. Elsewhere: no bar.
+ * Below `TOP_ROW_BELOW`: the two buttons in a bar above the answer column, and
+ * the column in the whole width. From it up: no bar.
  */
-async function expectTopRow(page: Page, on: readonly string[], where: string): Promise<void> {
+async function expectTopRow(page: Page, where: string): Promise<void> {
   const row = await page.evaluate(() => {
     const width = document.documentElement.clientWidth;
     const main = document.querySelector('main')!.getBoundingClientRect();
@@ -401,15 +411,18 @@ async function expectTopRow(page: Page, on: readonly string[], where: string): P
         buttons.length === 2 && buttons.every((button) => button.bottom <= main.top + 0.5),
     };
   });
-  const expected = on.includes('mobile-top-row') && row.width < TOP_ROW_BELOW;
+  const expected = row.width < TOP_ROW_BELOW;
   expect
-    .soft(row.bar, `${where}: raden øverst ${expected ? 'mangler' : 'står der uten å skulle'}`)
+    .soft(
+      row.bar,
+      `${where}: the row at the top ${expected ? 'is missing' : 'is there when it should not be'}`,
+    )
     .toBe(expected);
   if (!expected) return;
   expect
-    .soft(row.main, `${where}: hovedkolonnen har ikke hele bredden`)
+    .soft(row.main, `${where}: the answer column does not have the whole width`)
     .toEqual({ left: 0, width: row.width });
-  expect.soft(row.buttonsAbove, `${where}: knappene står ikke over hovedkolonnen`).toBe(true);
+  expect.soft(row.buttonsAbove, `${where}: the buttons are not above the answer column`).toBe(true);
 }
 
 for (const flags of FLAG_STATES) {
@@ -420,7 +433,7 @@ for (const flags of FLAG_STATES) {
         ...(size.dpr ? { isMobile: true, hasTouch: true, deviceScaleFactor: size.dpr } : {}),
       });
 
-      test(`ingenting ruller sidelengs på ${size.name}, ${flags.name}`, async ({
+      test(`nothing scrolls sideways at ${size.name}, ${flags.name}`, async ({
         page,
       }, testInfo) => {
         covers(testInfo, 'skallet: ingenting ruller sidelengs fra 320 (WCAG 1.4.10)');
@@ -429,12 +442,12 @@ for (const flags of FLAG_STATES) {
 
         await page.goto('/');
         await expect(page.locator('main')).toBeVisible();
-        expectFits(await measure(page), 'startsiden');
-        await expectTopRow(page, flags.on, 'startsiden');
+        expectFits(await measure(page), 'front page');
+        await expectTopRow(page, 'front page');
 
         await page.getByRole('button', { name: /^Agent:/ }).click();
         await expect(page.locator('.ka-agent-picker')).toBeVisible();
-        expectFits(await measure(page), 'agentmenyen åpen');
+        expectFits(await measure(page), 'agent menu open');
         await closeOverlay(page, page.locator('.ka-agent-picker'));
 
         await composer(page).click();
@@ -443,22 +456,22 @@ for (const flags of FLAG_STATES) {
         await expect(page.getByRole('button', { name: 'Kopier svaret' })).toBeVisible({
           timeout: ANSWER_TIMEOUT,
         });
-        expectFits(await measure(page), 'svar med en lang lenke');
+        expectFits(await measure(page), 'answer with a long link');
 
         await page.goto('/threads/nkom-maaloppnaaelse');
         await expect(page.locator('main .markdown').first()).toBeVisible();
-        expectFits(await measure(page), 'tråd med svar og kilder');
+        expectFits(await measure(page), 'thread with answer and sources');
 
-        await expectTopRow(page, flags.on, 'tråd med svar og kilder');
+        await expectTopRow(page, 'thread with answer and sources');
 
         await openSidebar(page, panelButtons(flags.on).primary);
-        expectFits(await measure(page), 'navigasjonspanelet åpent');
+        expectFits(await measure(page), 'navigation panel open');
         if (await page.locator('dialog[open]').count()) {
           await closeOverlay(page, page.locator('dialog[open]'));
         }
 
         await openSidebar(page, panelButtons(flags.on).secondary);
-        expectFits(await measure(page), 'kildepanelet åpent');
+        expectFits(await measure(page), 'sources panel open');
         if (await page.locator('dialog[open]').count()) {
           await closeOverlay(page, page.locator('dialog[open]'));
         }
@@ -473,25 +486,26 @@ for (const flags of FLAG_STATES) {
         );
         await page.reload();
         await expect(page.locator('main .markdown').first()).toBeVisible();
-        expectFits(await measure(page), 'brede panelbredder lagret fra en annen økt');
-        await expectTopRow(page, flags.on, 'brede panelbredder lagret fra en annen økt');
+        expectFits(await measure(page), 'wide panel widths stored by another session');
+        await expectTopRow(page, 'wide panel widths stored by another session');
       });
     });
   }
 
   /**
-   * Fra desktop til telefon i samme økt, og telefonen snudd.
+   * From desktop to phone in the same session, and the phone turned.
    *
-   * Etter et slikt bytte sto det et mørkt felt under panelene. Skallet var like
-   * høyt som før, og resten av skjermen var tom. Siden var zoomet ut: raden ble
-   * regnet fra `innerWidth`, som på en telefon er det synlige vinduet, og en rad
-   * som var for bred, fikk vinduet til å melde seg bredere, så raden holdt seg for
-   * bred. Målt 06.10: 774 × 1678 CSS-px og zoom 0,51, med et skall på 852 px øverst.
+   * After such a switch there was a dark field under the panels. The shell was
+   * as tall as before, and the rest of the screen was empty. The page was
+   * zoomed out: the row was computed from `innerWidth`, which on a phone is the
+   * visible window, and a row that was too wide made the window report itself
+   * wider, so the row stayed too wide. Measured 06.10: 774 × 1678 CSS px and
+   * zoom 0.51, with a shell of 852 px at the top.
    *
-   * `isMobile` er det som gjør at Chromium zoomer ut, så testen må ha det fra
-   * start og bytte størrelse i samme side, slik DevTools gjør.
+   * `isMobile` is what makes Chromium zoom out, so the test must have it from
+   * the start and change size in the same page, as DevTools does.
    */
-  test.describe(`bytte av størrelse i samme økt, ${flags.name}`, () => {
+  test.describe(`resizing in the same session, ${flags.name}`, () => {
     test.use({
       viewport: { width: 1440, height: 900 },
       isMobile: true,
@@ -499,7 +513,7 @@ for (const flags of FLAG_STATES) {
       deviceScaleFactor: 3,
     });
 
-    test('skallet dekker vinduet etter bytte fra desktop til telefon og snudd telefon', async ({
+    test('the shell covers the window after switching from desktop to phone and turning the phone', async ({
       page,
     }, testInfo) => {
       covers(testInfo, 'skallet: ingenting ruller sidelengs fra 320 (WCAG 1.4.10)');
@@ -509,9 +523,9 @@ for (const flags of FLAG_STATES) {
       await expect(page.locator('main .markdown').first()).toBeVisible();
 
       for (const [width, height, where] of [
-        [393, 852, 'byttet fra 1440×900 til 393×852'],
-        [852, 393, 'snudd til 852×393'],
-        [393, 852, 'snudd tilbake til 393×852'],
+        [393, 852, 'switched from 1440×900 to 393×852'],
+        [852, 393, 'turned to 852×393'],
+        [393, 852, 'turned back to 393×852'],
       ] as const) {
         await page.setViewportSize({ width, height });
         // Two frames for the new size to reach layout, then until nothing moves.
@@ -536,16 +550,38 @@ for (const flags of FLAG_STATES) {
           };
         });
 
-        expect.soft(screen.scale, `${where}: siden er zoomet`).toBe(1);
+        expect.soft(screen.scale, `${where}: the page is zoomed`).toBe(1);
         expect
-          .soft(screen.visual, `${where}: det synlige vinduet er større enn siden`)
+          .soft(screen.visual, `${where}: the visible window is larger than the page`)
           .toEqual(screen.layout);
         expect
-          .soft(screen.shell, `${where}: skallet dekker ikke vinduet`)
+          .soft(screen.shell, `${where}: the shell does not cover the window`)
           .toEqual({ top: 0, height: height });
         expectFits(await measure(page), where);
-        await expectTopRow(page, flags.on, where);
+        await expectTopRow(page, where);
       }
     });
   });
 }
+
+/**
+ * A link to the retired flag still lands on Innstillinger, as every `?flagg=`
+ * link does, but turns nothing on and stores nothing.
+ */
+test.describe('a link to the retired flag mobile-top-row', () => {
+  test.use({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true });
+
+  test('lands on Innstillinger with every experiment off, and the row at the top', async ({
+    page,
+  }) => {
+    await page.goto('/?flagg=mobile-top-row');
+
+    await expect(page).toHaveURL(/\/innstillinger$/u);
+    await expect(page.getByRole('heading', { level: 2, name: 'Eksperimenter' })).toBeVisible();
+    const switches = page.getByRole('switch');
+    await expect(switches.first()).toBeAttached();
+    for (const toggle of await switches.all()) await expect(toggle).not.toBeChecked();
+    expect(await page.evaluate(() => localStorage.getItem('ka.flags.v1'))).toBeNull();
+    await expectTopRow(page, 'Innstillinger after the link');
+  });
+});
