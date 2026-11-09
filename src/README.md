@@ -8,7 +8,7 @@ is meant to run alongside the "old"
 it. The whole point is the swap: keep the frontend constant, swap the engine
 underneath, and find out what the new backend can actually do.
 
-**The port is complete.** The client is rewritten from scratch in Preact, talks
+**The port is complete.** The client is rewritten from scratch in React, talks
 to `digdir-headless-rag` over the public API, and gives answers with sources
 against the Kudos corpus: threads, streamed answers with status labels, a source
 panel with excerpts, filters and sign-in. Along the way it turned up eleven
@@ -36,13 +36,13 @@ Against a local backend with the proposed changes, both work, and that is where
 the comparison with the current Kunnskapsassistenten is made.
 
 ```
-apps/web           Vite + Preact + Designsystemet (-css / -web). No secrets.
+apps/web           Vite + React + Designsystemet (-css / -react). No secrets.
 apps/server        Hono. Holds the API key. The only thing that talks to the backend.
 packages/contract  The types that pass between the two.
 ```
 
 ```
-Preact SPA ──► apps/server ──► digdir-headless-rag
+React SPA  ──► apps/server ──► digdir-headless-rag
                (the BFF)       /api/mcp     conversation + streaming
                                /v1/models   lookup
                           ──► Typesense     facets, excerpts from sources
@@ -78,8 +78,8 @@ node --version
 ```
 
 The last one should print `v24.21.0`. If you already have Node 24.15 or newer,
-that is enough: `engines` requires `>=24.15`, as jsdom in `apps/web-preact`
-does, and `.npmrc` has `engine-strict`.
+that is enough: `engines` requires `>=24.15`, and `.npmrc` has
+`engine-strict`.
 
 ### 2. The dependencies
 
@@ -240,11 +240,9 @@ docker stop ka
 
 `curl` should print `{"ok":true}`.
 
-The image has both clients. A browser without the cookie `ka_klient` gets the
-current one in `apps/web-preact`, or the one `KA_DEFAULT_CLIENT` names (`ny` or
-`gammel`). `?klient=ny` and `?klient=gammel` switch for one browser. Each
-client calls its own version of the API: `apps/web-preact` `/api/*` and
-`apps/web` `/api/v2/*` (`decisions/0009`).
+The image serves the client in `apps/web`, which calls the API under
+`/api/v2/*`. `/api/health` answers beside it for the readiness probe and the
+image's health check (`decisions/0012`).
 
 ## Commands
 
@@ -279,9 +277,9 @@ supports](#what-the-backend-supports).
 | Sources: clickable `[n]`, excerpts per answer, «Kilder brukt i svaret» | done, with search in the answer and in the sources. After a reload only the last answer has sources, from the BFF's memory |
 | Copy the answer and the link to the thread, keywords from the search   | done                                                                                                                       |
 | Link to feedback                                                       | not included                                                                                                               |
-| Choice of agent                                                        | done, from `/api/models`. The agent's mode cannot be chosen                                                                |
+| Choice of agent                                                        | done, from `/api/v2/models`. The agent's mode cannot be chosen                                                             |
 | Sign-in                                                                | in the BFF, Entra ID, off locally. See [Sign-in](#sign-in). On a 401 the client saves the draft before sign-in             |
-| Name and «Logg ut»                                                     | from `/api/me`. «Logg ut» also clears what the client remembers about the answers in the browser                           |
+| Name and «Logg ut»                                                     | from `/api/v2/me`. «Logg ut» also clears what the client remembers about the answers in the browser                        |
 | The image                                                              | the BFF with the client built in bff mode, from the same origin. See [`deploy/`](deploy/README.md)                         |
 | Filter panel: facets with counts, locked per thread                    | done, with a notice when the filter is locked. Fields and corpus name from the BFF                                         |
 | Filters when the backend does not accept them                          | the panel says «Filtrering er ikke tilgjengelig ennå»                                                                      |
@@ -293,7 +291,7 @@ supports](#what-the-backend-supports).
 ## What the backend supports
 
 The server measures it at startup instead of assuming it, and exposes the
-result at `/api/capabilities`. That way the same build works against both
+result at `/api/v2/capabilities`. That way the same build works against both
 versions of the backend, and the filters switch on without a new deployment the
 day the changes are in.
 
@@ -318,8 +316,8 @@ Forced with `KA_CAPABILITIES="filters"` or `"no-filters"`.
 If you leave out `AUTH_MODE`, it is derived: `entra` if the Azure variables are
 set, otherwise `off`. The server prints which mode it runs in at every startup.
 
-No token reaches the browser, only a signed cookie. `/api/*` answers 401 without
-sign-in, and `/api/health` is open. Who gets in is decided by Entra ID, not by
+No token reaches the browser, only a signed cookie. `/api/v2/*` answers 401
+without sign-in, and `/api/health` and `/api/v2/health` are open. Who gets in is decided by Entra ID, not by
 the app. `AUTH_MODE=off` refuses to start if `APP_ORIGIN` is not localhost.
 Setup in [`deploy/README.md`](deploy/README.md).
 
@@ -377,13 +375,12 @@ is unchanged. The BFF has no such gate: with Ansattporten, sign-in is the gate.
 
 ### Feedback
 
-`POST /api/feedback` and `/api/v2/feedback` take `{ conversationId, taskId,
-rating, comment? }` and forward it to genki. `taskId` comes with `done` in the
+`POST /api/v2/feedback` takes `{ conversationId, taskId, rating, comment? }`
+and forwards it to genki. `taskId` comes with `done` in the
 answer, and on the answers when a thread is read. The BFF only sends feedback on
 an answer that is in the person's own thread. headless-rag sends no `taskId`, so
 there the route gives 404. A backend that has answer ids but does not accept
-feedback gives `{ ok: false, unavailable: true }`. Neither client has the
-buttons yet.
+feedback gives `{ ok: false, unavailable: true }`.
 
 ## Documentation
 
@@ -398,9 +395,10 @@ why Preact, why a BFF, why `/api/mcp` rather than `/v1`. 0004–0008 came with
 the client in `apps/web`: where the knowledge about a corpus should live, the
 client behind the BFF, filter fields and corpus names from the BFF, the display
 level, and the text in the excerpts and the sources after a reload. 0009 is the
-API in two versions: `/api/*` in the format from main for the client in
+API version in the path: `/api/*` in the format from main for the client in
 `apps/web-preact`, and `/api/v2/*` for the client in `apps/web`. 0010 is genki
-as the backend, and 0011 sign-in with Ansattporten in the BFF.
+as the backend, 0011 sign-in with Ansattporten in the BFF, and 0012 retires
+`apps/web-preact` and `/api/*` with it.
 
 [`deploy/README.md`](deploy/README.md) covers deployment to Azure and sign-in.
 
