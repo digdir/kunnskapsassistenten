@@ -15,7 +15,7 @@ export type Present<E> = (events: AsyncIterable<TurnEvent>) => AsyncIterable<E>;
  * `POST …/ask` for one API version: the same question to headless-rag, the
  * same checks and the same memory of sources and filters, with the events in
  * the version's own format (`present`). The memory reads the events before
- * they are presented, so both versions remember the same thing.
+ * they are presented, so what it keeps does not depend on the format.
  */
 export function askRoute<E>(present: Present<E>) {
   return async (c: Context<Env>) => {

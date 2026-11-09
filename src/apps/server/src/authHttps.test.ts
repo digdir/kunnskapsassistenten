@@ -33,8 +33,8 @@ describe('auth routes on https, where cookies carry the __Host- prefix', () => {
   });
 
   test('an image that points at logout leaves the session alone', async () => {
-    // `![x](/auth/logout)` in an answer becomes an <img> in apps/web-preact,
-    // and the browser fetches it with the cookie as soon as the answer is drawn.
+    // `![x](/auth/logout)` in an answer can become an <img>, and the browser
+    // fetches it with the cookie as soon as the answer is drawn.
     const res = await app.request('/auth/logout', { headers: { 'Sec-Fetch-Dest': 'image' } });
     assert.equal(res.status, 403);
     assert.equal(res.headers.get('set-cookie'), null);
@@ -49,7 +49,7 @@ describe('auth routes on https, where cookies carry the __Host- prefix', () => {
   });
 
   test('a page that goes to logout still logs out', async () => {
-    // «Logg ut» in both clients is a link, so the browser says document.
+    // «Logg ut» in the client is a link, so the browser says document.
     const res = await app.request('/auth/logout', {
       headers: { 'Sec-Fetch-Dest': 'document' },
     });
