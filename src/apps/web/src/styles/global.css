@@ -263,6 +263,15 @@ body {
   grid-column: 1 / -1;
 }
 
+/* In the bar a rail is as wide as its button plus the text edge on each side, not the 67 of a
+   rail at the side. With size containment its `auto` column took the 67 of `min-inline-size`, so
+   the sources button stood 9 px from the window edge at 390 and was clipped from 667. The drawer
+   it holds is a container of its own. */
+.shell[data-compact] > :is(.primary-sidebar, .secondary-sidebar) {
+  container-type: normal;
+  min-inline-size: 0;
+}
+
 /* In the bar a rail is just its button; `--ds-size-2` is Designsystemet's gap between buttons. */
 .shell[data-compact] > :is(.primary-sidebar, .secondary-sidebar) > .panel {
   padding-block: var(--ds-size-2);

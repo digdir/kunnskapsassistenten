@@ -390,25 +390,46 @@ async function withFlags(page: Page, on: readonly string[]): Promise<void> {
   );
 }
 
+/** At and below this the text edge is its 16 px floor: `clamp(16px, 4vw, 32px)`. */
+const TEXT_EDGE_FLOOR_UP_TO = 400;
+
 /**
  * Below `TOP_ROW_BELOW`: the two buttons in a bar above the answer column, and
  * the column in the whole width. From it up: no bar.
+ *
+ * In the bar each button stands on the text edge, `--ka-main-padding-inline`,
+ * measured from its own window edge: 16 px on a phone held upright. Measured
+ * before the fix at 390: 16 at the start and 9 at the end, and from 667 the
+ * end button ran past the window edge, where the panel clipped it.
  */
 async function expectTopRow(page: Page, where: string): Promise<void> {
   const row = await page.evaluate(() => {
     const width = document.documentElement.clientWidth;
     const main = document.querySelector('main')!.getBoundingClientRect();
-    const buttons = [
-      ...document.querySelectorAll(
-        '.shell > :is(.primary-sidebar, .secondary-sidebar) .sidebar-header button[aria-controls]',
-      ),
-    ].map((button) => button.getBoundingClientRect());
+    const button = (slot: string) =>
+      document
+        .querySelector(`.shell > .${slot} > .panel > .sidebar-header button[aria-controls]`)
+        ?.getBoundingClientRect();
+    const primary = button('primary-sidebar');
+    const secondary = button('secondary-sidebar');
+    const buttons = [primary, secondary].filter((box) => box !== undefined);
+    // The text edge as the page resolves it, from the same custom property.
+    const probe = document.createElement('div');
+    probe.style.paddingInlineStart = 'var(--ka-main-padding-inline)';
+    document.body.append(probe);
+    const textEdge = Number.parseFloat(getComputedStyle(probe).paddingInlineStart);
+    probe.remove();
+    const tenth = (value: number) => Math.round(value * 10) / 10;
     return {
       width,
       bar: document.querySelector('.shell')!.hasAttribute('data-compact'),
       main: { left: Math.round(main.left), width: Math.round(main.width) },
-      buttonsAbove:
-        buttons.length === 2 && buttons.every((button) => button.bottom <= main.top + 0.5),
+      buttonsAbove: buttons.length === 2 && buttons.every((box) => box.bottom <= main.top + 0.5),
+      textEdge: tenth(textEdge),
+      insets: {
+        start: primary ? tenth(primary.left) : null,
+        end: secondary ? tenth(width - secondary.right) : null,
+      },
     };
   });
   const expected = row.width < TOP_ROW_BELOW;
@@ -423,6 +444,20 @@ async function expectTopRow(page: Page, where: string): Promise<void> {
     .soft(row.main, `${where}: the answer column does not have the whole width`)
     .toEqual({ left: 0, width: row.width });
   expect.soft(row.buttonsAbove, `${where}: the buttons are not above the answer column`).toBe(true);
+  for (const side of ['start', 'end'] as const) {
+    expect
+      .soft(
+        Math.abs((row.insets[side] ?? Infinity) - row.textEdge),
+        `${where}: the ${side} button is ${row.insets[side]} px from its edge, not on the text edge at ${row.textEdge} px`,
+      )
+      .toBeLessThanOrEqual(0.5);
+  }
+  if (row.width <= TEXT_EDGE_FLOOR_UP_TO) {
+    expect.soft(row.insets, `${where}: the buttons are not 16 px from the edges`).toEqual({
+      start: 16,
+      end: 16,
+    });
+  }
 }
 
 for (const flags of FLAG_STATES) {

@@ -145,8 +145,10 @@ describe('the shell with the row at the top', () => {
 describe('the row and the window with the row at the top, from 280 to 773 px', () => {
   it('gives the answer column a minimum width never above the window', () => {
     // The floor is min(640, window), and nothing else is on the row: the rails
-    // are in the bar. The grid's `1fr` gives the column the rest, which the
-    // end-to-end test measures (tests/e2e/viewport-fit.spec.ts).
+    // are in the bar, keep their rail state in the model, and are sized to
+    // their buttons there by CSS. The grid's `1fr` gives the column the rest,
+    // and the button insets, which the end-to-end test measures
+    // (tests/e2e/viewport-fit.spec.ts).
     const found: string[] = [];
     for (let viewport = 280; viewport < compactMaxViewport; viewport += 1) {
       const style = layoutStyle(defaultLayout, viewport, true, true);
