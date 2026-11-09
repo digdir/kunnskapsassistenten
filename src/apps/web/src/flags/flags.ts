@@ -18,13 +18,6 @@ export type Flag = {
 /** A flag removed from here is ignored in storage and dropped on the next write. */
 export const FLAGS = [
   {
-    id: 'mobile-top-row',
-    title: 'Panelene som en rad øverst på mobil',
-    description:
-      'På telefon ligger tråder, filter og kilder i en rad øverst i stedet for som skinner på sidene.',
-    issue: 'https://github.com/digdir/kunnskapsassistenten/issues/120',
-  },
-  {
     id: 'year-ranges',
     title: 'Årsfilter med perioder',
     description:
@@ -106,7 +99,7 @@ export function isFlagOn(id: FlagId): boolean {
 
 export function setFlag(id: FlagId, on: boolean): void {
   if (!isFlagId(id)) {
-    throw new Error(`Ukjent flagg: ${String(id)}.`);
+    throw new Error(`Unknown flag: ${String(id)}.`);
   }
   if (isFlagOn(id) === on) return;
   const next: Partial<Record<FlagId, true>> = { ...getState() };

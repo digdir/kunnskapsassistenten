@@ -34,8 +34,8 @@
     "*": "prettier --check --ignore-unknown"
   },
   "dependencies": {
-    "@digdir/designsystemet-css": "1.21.0",
-    "@digdir/designsystemet-react": "1.21.0",
+    "@digdir/designsystemet-css": "1.23.0",
+    "@digdir/designsystemet-react": "1.23.0",
     "@navikt/aksel-icons": "8.16.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -45,8 +45,8 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
-    "@digdir/designsystemet": "1.21.0",
-    "@digdir/designsystemet-types": "1.21.0",
+    "@digdir/designsystemet": "1.23.0",
+    "@digdir/designsystemet-types": "1.23.0",
     "@playwright/test": "1.63.0",
     "@testing-library/react": "16.3.3",
     "@types/node": "^24.13.3",
@@ -62,6 +62,6 @@
     "stylelint-browser-compat": "1.0.0-beta.180",
     "typescript": "~6.0.2",
     "vite": "^8.3.3",
-    "vitest": "5.0.0"
+    "vitest": "5.0.5"
   }
 }
