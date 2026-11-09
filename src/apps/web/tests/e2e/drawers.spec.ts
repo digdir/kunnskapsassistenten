@@ -11,10 +11,11 @@ import { walkWithTab, MOCK } from './helpers';
  * layout, so src/layout/DrawerShell.test.tsx measures the state and the markup
  * and stops there.
  *
- * Two widths, and both are requirements rather than devices. 1024 × 768 is the
- * small laptop punkt 17 measured rolling 51 px sideways. 720 is 1440 at 200 %
- * zoom, which is WCAG 1.4.4 Resize text (AA) — and it is under 774, so it is
- * also where the answer column's 640 px floor has to give way.
+ * Three widths, and they are requirements rather than devices. 1024 × 768 is
+ * the small laptop punkt 17 measured rolling 51 px sideways. 720 is 1440 at
+ * 200 % zoom, which is WCAG 1.4.4 Resize text (AA). 390 is a phone. The last
+ * two are under 774, where the buttons that open the drawers stand in a row
+ * at the top (digdir/kunnskapsassistenten#120).
  *
  * The numbers are written out rather than imported, for the reason
  * layout.spec.ts gives: a test that imports the number it checks agrees with
@@ -22,8 +23,10 @@ import { walkWithTab, MOCK } from './helpers';
  */
 const DRAWER_BREAKPOINT = 1139;
 const NARROW = { width: 1024, height: 768 };
-/** 1440 at 200 %. The answer column cannot have its floor here: 67+640+67 = 774. */
+/** 1440 at 200 %. Under 67 + 640 + 67 = 774, so the buttons are in the row at the top. */
 const ZOOMED = { width: 720, height: 900 };
+/** A phone, with the row at the top. */
+const PHONE = { width: 390, height: 844 };
 const WIDE = { width: 1440, height: 900 };
 
 const NAV_DRAWER = 400;
@@ -77,7 +80,7 @@ async function expectNoSidewaysScroll(page: Page, where: string): Promise<void> 
           const width = window.innerWidth;
           return document.documentElement.scrollWidth - width;
         }),
-      { message: `overflødig bredde ${where}` },
+      { message: `extra width ${where}` },
     )
     .toBe(0);
 }
@@ -99,12 +102,12 @@ const box = (page: Page, selector: string) =>
  */
 async function expectWidth(page: Page, selector: string, expected: number, where: string) {
   await expect
-    .poll(async () => (await box(page, selector)).width, { message: `bredden på ${where}` })
+    .poll(async () => (await box(page, selector)).width, { message: `the width of ${where}` })
     .toBe(expected);
 }
 
-test.describe('skuffer under 1139', () => {
-  test('over brytepunktet står panelet ved siden av svaret, som før', async ({
+test.describe('drawers below 1139', () => {
+  test('above the breakpoint the panel stands beside the answer, as before', async ({
     page,
   }, testInfo) => {
     covers(testInfo, 'skuffer: bare under brytepunktet');
@@ -114,8 +117,8 @@ test.describe('skuffer under 1139', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Skjul tråder og filter' })).toBeVisible();
 
-    // Og på brytepunktet selv: 1139 er «trenger 1139», altså fortsatt ved
-    // siden av. Det er under det skuffene begynner.
+    // And at the breakpoint itself: 1139 is «needs 1139», so still beside.
+    // The drawers start below it.
     await page.setViewportSize({ width: DRAWER_BREAKPOINT, height: 900 });
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
@@ -123,7 +126,9 @@ test.describe('skuffer under 1139', () => {
     await expect(show(page, 'tråder og filter')).toBeVisible();
   });
 
-  test('railknappen åpner en skuff over svaret, fra sin egen kant', async ({ page }, testInfo) => {
+  test('the rail button opens a drawer over the answer, from its own edge', async ({
+    page,
+  }, testInfo) => {
     covers(testInfo, 'skuffer: åpne og lukke');
     await page.setViewportSize(NARROW);
     await page.goto('/threads/nkom-maaloppnaaelse');
@@ -134,14 +139,14 @@ test.describe('skuffer under 1139', () => {
       right: NAV_DRAWER,
       width: NAV_DRAWER,
     });
-    // Ekte `showModal()`, ikke et lag vi har tegnet selv. Det er den som tar
-    // med seg fokusfelle, inert bakgrunn og Escape.
+    // A real `showModal()`, not a layer we drew ourselves. That is what brings
+    // the focus trap, the inert background and Escape.
     expect(await nav.evaluate((element) => element.matches(':modal'))).toBe(true);
 
     await page.keyboard.press('Escape');
     await expect(nav).toBeHidden();
 
-    // Kildepanelet kommer fra den andre kanten, flust mot vindusranda.
+    // The sources panel comes from the other edge, flush with the window edge.
     await openDrawer(page, 'kilder');
     expect(await box(page, 'dialog[open]')).toEqual({
       x: NARROW.width - SOURCES_DRAWER,
@@ -150,53 +155,66 @@ test.describe('skuffer under 1139', () => {
     });
   });
 
-  test('Escape lukker og gir fokus tilbake til knappen som åpnet', async ({ page }, testInfo) => {
-    covers(testInfo, 'skuffer: Escape og fokus tilbake');
-    await page.setViewportSize(NARROW);
-    await page.goto('/threads/nkom-maaloppnaaelse');
+  for (const size of [NARROW, PHONE]) {
+    const where = size === PHONE ? `${size.width}, from the row at the top` : `${size.width}`;
 
-    const button = show(page, 'tråder og filter');
-    await button.click();
-    await expect(drawer(page, 'tråder og filter')).toBeVisible();
+    test(`Escape closes and gives focus back to the button that opened it, ${where}`, async ({
+      page,
+    }, testInfo) => {
+      covers(testInfo, 'skuffer: Escape og fokus tilbake');
+      await page.setViewportSize(size);
+      await page.goto('/threads/nkom-maaloppnaaelse');
 
-    await page.keyboard.press('Escape');
-    await expect(drawer(page, 'tråder og filter')).toBeHidden();
+      const button = show(page, 'tråder og filter');
+      await button.click();
+      await expect(drawer(page, 'tråder og filter')).toBeVisible();
 
-    // WCAG 2.4.3: fokus skal ikke falle til body når det leseren sto i
-    // forsvinner. `<dialog>` gir det tilbake til det som åpnet den.
-    await expect(show(page, 'tråder og filter')).toBeFocused();
-  });
+      await page.keyboard.press('Escape');
+      await expect(drawer(page, 'tråder og filter')).toBeHidden();
 
-  test('fokus er fanget i skuffa, og bakgrunnen kan ikke nås', MOCK, async ({ page }, testInfo) => {
-    covers(testInfo, 'skuffer: fokusfelle (WCAG 2.4.3)');
-    await page.setViewportSize(NARROW);
-    await page.goto('/threads/nkom-maaloppnaaelse');
-    const nav = await openDrawer(page, 'tråder og filter');
-
-    // Hele Tab-vandringen skal ligge inne i skuffa. Ingen av stoppene får
-    // være i svarkolonnen eller på railen bak.
-    const steps = await walkWithTab(page);
-    expect(steps.length, 'skuffa skal ha noe å tabbe til').toBeGreaterThan(0);
-
-    const outside = await nav.evaluate((dialog) =>
-      [...document.querySelectorAll('[data-e2e-seen]')]
-        .filter((element) => !dialog.contains(element))
-        .map((element) => element.getAttribute('aria-label') ?? element.textContent?.trim() ?? '?'),
-    );
-    expect(outside, 'ingen tabbstopp utenfor skuffa').toEqual([]);
-
-    // Og skrivefeltet i svaret er ikke bare utenfor tab-rekkefølgen, det er
-    // utilgjengelig: en modal `<dialog>` gjør resten av siden inert.
-    const reachable = await page.evaluate(() => {
-      const composer = document.querySelector('.main textarea, .main input');
-      if (!composer) return 'fant ikke skrivefeltet';
-      (composer as HTMLElement).focus();
-      return document.activeElement === composer ? 'tok fokus' : 'inert';
+      // WCAG 2.4.3: focus must not fall to body when what the reader was on
+      // goes away. `<dialog>` gives it back to what opened it.
+      await expect(show(page, 'tråder og filter')).toBeFocused();
     });
-    expect(reachable, 'bakgrunnen skal være inert').toBe('inert');
-  });
 
-  test('bare én skuff om gangen', async ({ page }, testInfo) => {
+    test(
+      `focus is trapped in the drawer, and the background cannot be reached, ${where}`,
+      MOCK,
+      async ({ page }, testInfo) => {
+        covers(testInfo, 'skuffer: fokusfelle (WCAG 2.4.3)');
+        await page.setViewportSize(size);
+        await page.goto('/threads/nkom-maaloppnaaelse');
+        const nav = await openDrawer(page, 'tråder og filter');
+
+        // The whole Tab walk stays inside the drawer. None of the stops may be
+        // in the answer column or on the rail or row behind.
+        const steps = await walkWithTab(page);
+        expect(steps.length, 'the drawer has something to tab to').toBeGreaterThan(0);
+
+        const outside = await nav.evaluate((dialog) =>
+          [...document.querySelectorAll('[data-e2e-seen]')]
+            .filter((element) => !dialog.contains(element))
+            .map(
+              (element) => element.getAttribute('aria-label') ?? element.textContent?.trim() ?? '?',
+            ),
+        );
+        expect(outside, 'no tab stops outside the drawer').toEqual([]);
+
+        // And the compose field in the answer is not just out of the tab
+        // order, it cannot be reached: a modal `<dialog>` makes the rest of the
+        // page inert.
+        const reachable = await page.evaluate(() => {
+          const composer = document.querySelector('.main textarea, .main input');
+          if (!composer) return 'compose field not found';
+          (composer as HTMLElement).focus();
+          return document.activeElement === composer ? 'took focus' : 'inert';
+        });
+        expect(reachable, 'the background is inert').toBe('inert');
+      },
+    );
+  }
+
+  test('only one drawer at a time', async ({ page }, testInfo) => {
     covers(testInfo, 'skuffer: én om gangen');
     await page.setViewportSize(NARROW);
     await page.goto('/threads/nkom-maaloppnaaelse');
@@ -205,56 +223,58 @@ test.describe('skuffer under 1139', () => {
     await page.keyboard.press('Escape');
     await openDrawer(page, 'kilder');
 
-    // Ikke en egen regel: regel B gjelder alt under 1440, og 1139 er under
-    // 1440, så to skuffer kan ikke være åpne fordi to sidekolonner ikke kan.
+    // Not a rule of its own: rule B covers everything under 1440, and 1139 is
+    // under 1440, so two drawers cannot be open because two sidebars cannot.
     await expect(page.getByRole('dialog')).toHaveCount(1);
     await expect(drawer(page, 'kilder')).toBeVisible();
   });
 
-  test('ingen vannrett rulling ved 1024 eller ved 200 % zoom', async ({ page }, testInfo) => {
+  test('no horizontal scrolling at 1024, at 200 % zoom or on a phone', async ({
+    page,
+  }, testInfo) => {
     covers(testInfo, 'skuffer: ingen vannrett rulling (WCAG 1.4.10)');
 
-    for (const size of [NARROW, ZOOMED]) {
+    for (const size of [NARROW, ZOOMED, PHONE]) {
       await page.setViewportSize(size);
       await page.goto('/threads/nkom-maaloppnaaelse');
-      await expectNoSidewaysScroll(page, `${size.width} med begge foldet bort`);
+      await expectNoSidewaysScroll(page, `${size.width} with both folded away`);
 
       for (const panel of ['tråder og filter', 'kilder'] as const) {
         await openDrawer(page, panel);
-        await expectNoSidewaysScroll(page, `${size.width} med ${panel} åpen`);
+        await expectNoSidewaysScroll(page, `${size.width} with ${panel} open`);
         await page.keyboard.press('Escape');
         await expect(page.getByRole('dialog')).toBeHidden();
       }
     }
   });
 
-  test('hovedkolonnen får plassen, og gulvet viker når vinduet er for smalt', async ({
+  test('the answer column gets the room, and the whole window below 774', async ({
     page,
   }, testInfo) => {
     covers(testInfo, 'skuffer: hovedkolonnens bredde');
 
-    // 1024 − 67 − 67 = 890: det er plassen mellom railene, og den fyller
-    // rulleregionen. Lesebredden stopper på taket sitt på 800 og sentreres i
-    // den. To tall siden rulleregionen og lesebredden ble skilt — `.main`
-    // fyller feltet så hjulet virker i margen òg, `.main-column` holder
-    // teksten. Railene blir stående i vindusranda.
+    // 1024 − 67 − 67 = 890: the room between the rails, and it fills the
+    // scrolling region. The reading width stops at its ceiling of 800 and is
+    // centred in it. Two numbers since the scrolling region and the reading
+    // width were split — `.main` fills the field so the wheel works in the
+    // margin too, `.main-column` holds the text. The rails stay at the window
+    // edges.
     await page.setViewportSize(NARROW);
     await page.goto('/threads/nkom-maaloppnaaelse');
-    await expectWidth(page, '.main', NARROW.width - 2 * RAIL, 'rulleregionen ved 1024');
-    await expectWidth(page, '.main-column', MAIN_MAX, 'lesebredden ved 1024');
+    await expectWidth(page, '.main', NARROW.width - 2 * RAIL, 'the scrolling region at 1024');
+    await expectWidth(page, '.main-column', MAIN_MAX, 'the reading width at 1024');
 
-    // 720: 67 + 640 + 67 = 774, altså 54 px for mye. Gulvet finnes for at
-    // kildene skal kunne leses VED SIDEN AV svaret, og her er ingenting ved
-    // siden av svaret — så det viker, teksten brytes, og ingenting klippes.
-    // Her er de to like: plassen er 586, og lesebredden tar det som er igjen
-    // fordi taket på 800 er romsligere enn feltet. `.main` er fortsatt det
-    // rette å måle, for påstanden er at GULVET vek.
-    await page.setViewportSize(ZOOMED);
-    await expectWidth(page, '.main', ZOOMED.width - 2 * RAIL, 'hovedkolonnen ved 720');
-    await expectNoSidewaysScroll(page, '720 etter at gulvet vek');
+    // 720 and 390: under 67 + 640 + 67 = 774 the rails would leave the answer
+    // column less than its floor, so their buttons stand in a row at the top
+    // and the column takes the whole window.
+    for (const size of [ZOOMED, PHONE]) {
+      await page.setViewportSize(size);
+      await expectWidth(page, '.main', size.width, `the answer column at ${size.width}`);
+      await expectNoSidewaysScroll(page, `${size.width} with the row at the top`);
+    }
   });
 
-  test('en bredde dratt i et vidt vindu følger ikke med inn i skuffa', async ({
+  test('a width dragged in a wide window does not follow into the drawer', async ({
     page,
   }, testInfo) => {
     covers(testInfo, 'skuffer: lagret bredde ignoreres');
@@ -272,25 +292,27 @@ test.describe('skuffer under 1139', () => {
     await page.setViewportSize(NARROW);
     await openDrawer(page, 'tråder og filter');
 
-    // En bredde valgt for en kolonne som står ved siden av svaret sier
-    // ingenting om en som ligger over det.
+    // A width chosen for a column beside the answer says nothing about one
+    // that lies over it.
     expect((await box(page, 'dialog[open]')).width).toBe(NAV_DRAWER);
   });
 
   test(
-    'hodet i skuffa står på skuffas egen flate, i begge moduser',
+    'the head in the drawer stands on the drawer’s own surface, in both modes',
     MOCK,
     async ({ page }, testInfo) => {
       covers(testInfo, 'skuffer: hodet deler flate med skuffa');
 
-      // `--ka-region-surface` skal deklareres der flata deklareres, så det
-      // klebrige hodet ikke driver fra grunnen det er malt på. En skuff var en
-      // region variabelen ikke visste om: panelet inne i den er barn av
-      // `<dialog>`, ikke av landemerket, så det arvet sidas tone fra `:root` og
-      // malte et grått bånd tvers over en hvit skuff.
+      // `--ka-region-surface` has to be declared where the surface is
+      // declared, so the sticky head does not drift from the ground it is
+      // painted on. A drawer was a region the variable did not know about: the
+      // panel inside it is a child of `<dialog>`, not of the landmark, so it
+      // inherited the page's tone from `:root` and painted a grey band across
+      // a white drawer.
       //
-      // Målt før fiksen, brukerblikk 4 funn 1: hode #f3f4f4 på en #ffffff skuff
-      // i lys, #192029 på rgb(32 40 52) i mørk, på både 1024 og 720.
+      // Measured before the fix, user review 4 finding 1: head #f3f4f4 on a
+      // #ffffff drawer in light, #192029 on rgb(32 40 52) in dark, at both
+      // 1024 and 720.
       for (const size of [NARROW, ZOOMED]) {
         await page.setViewportSize(size);
         await page.goto('/threads/nkom-maaloppnaaelse');
@@ -305,20 +327,18 @@ test.describe('skuffer under 1139', () => {
               const dialog = document.querySelector('dialog[open]')!;
               const head = dialog.querySelector('.view-head');
               return {
-                // Et tomt hode tegner ingen linje og ingen flate, så det ville
-                // bestått denne uansett. `fylt` er vakta på at målingen faktisk
-                // hadde noe å måle.
-                fylt: (head?.children.length ?? 0) > 0,
-                skuff: getComputedStyle(dialog).backgroundColor,
-                hode: head ? getComputedStyle(head).backgroundColor : 'fant ikke hodet',
+                // An empty head draws no line and no surface, so it would pass
+                // this anyway. `filled` guards that the measurement actually
+                // had something to measure.
+                filled: (head?.children.length ?? 0) > 0,
+                drawer: getComputedStyle(dialog).backgroundColor,
+                head: head ? getComputedStyle(head).backgroundColor : 'head not found',
               };
             });
 
-            expect(ground.fylt, `${panel} ved ${size.width} i ${scheme} skal ha et hode`).toBe(
-              true,
-            );
-            expect(ground.hode, `hodet i ${panel} ved ${size.width} i ${scheme}`).toBe(
-              ground.skuff,
+            expect(ground.filled, `${panel} at ${size.width} in ${scheme} has a head`).toBe(true);
+            expect(ground.head, `the head in ${panel} at ${size.width} in ${scheme}`).toBe(
+              ground.drawer,
             );
 
             await page.keyboard.press('Escape');
@@ -329,17 +349,17 @@ test.describe('skuffer under 1139', () => {
     },
   );
 
-  test('null axe-brudd i lys og mørk, på begge bredder', async ({ page }, testInfo) => {
+  test('zero axe violations in light and dark, at every width', async ({ page }, testInfo) => {
     covers(testInfo, 'skuffer: tilgjengelig i begge moduser');
 
-    for (const size of [NARROW, ZOOMED]) {
+    for (const size of [NARROW, ZOOMED, PHONE]) {
       await page.setViewportSize(size);
       await page.goto('/threads/nkom-maaloppnaaelse');
 
       for (const scheme of ['light', 'dark'] as const) {
         await setColorScheme(page, scheme);
         await openDrawer(page, 'tråder og filter');
-        await expectNoAxeViolations(page, `skuff ved ${size.width} i ${scheme}`);
+        await expectNoAxeViolations(page, `drawer at ${size.width} in ${scheme}`);
         await saveScreenshot(page, `skuff-${size.width}-${scheme}`);
         await page.keyboard.press('Escape');
         await expect(page.getByRole('dialog')).toBeHidden();

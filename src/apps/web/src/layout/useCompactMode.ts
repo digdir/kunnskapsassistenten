@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from 'react';
-import { useFlag } from '../flags';
 import { compactViewportQuery } from './viewModel';
 
 function subscribe(onChange: () => void): () => void {
@@ -13,12 +12,10 @@ function getSnapshot(): boolean {
 }
 
 /**
- * True while the rails stand in a bar above the answer column (flag `mobile-top-row`,
- * digdir/kunnskapsassistenten#120, below `compactMaxViewport`). Read during render so the first
- * paint on a phone is already the bar; it changes where things are drawn, never collapsed state.
+ * True while the rails stand in a bar above the answer column, below `compactMaxViewport`
+ * (digdir/kunnskapsassistenten#120). Read during render so the first paint on a phone is already
+ * the bar; it changes where things are drawn, never collapsed state.
  */
 export function useCompactMode(): boolean {
-  const narrow = useSyncExternalStore(subscribe, getSnapshot);
-  const on = useFlag('mobile-top-row');
-  return on && narrow;
+  return useSyncExternalStore(subscribe, getSnapshot);
 }

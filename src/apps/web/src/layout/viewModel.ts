@@ -184,15 +184,14 @@ export const drawerViewportQuery = `(width < ${drawerMaxViewport}px)`;
 
 /**
  * Below 67 + 640 + 67 = 774 the rails eat an answer column already under its
- * floor, so with `mobile-top-row` (digdir/kunnskapsassistenten#120) they move
- * to a bar above it.
+ * floor, so they move to a bar above it (digdir/kunnskapsassistenten#120).
  */
 export const compactMaxViewport =
   slotRail(defaultLayout.slots['primary-sidebar'].sizing) +
   slotFloor(defaultLayout.slots.main.sizing) +
   slotRail(defaultLayout.slots['secondary-sidebar'].sizing);
 
-/** True while the window is narrow enough for the bar, flag or not. */
+/** True while the window is narrow enough for the bar. */
 export const compactViewportQuery = `(width < ${compactMaxViewport}px)`;
 
 /**
