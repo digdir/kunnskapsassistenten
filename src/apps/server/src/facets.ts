@@ -248,7 +248,7 @@ export class FilterUnknownField extends Error {
     super(
       `Filteret har feltet «${field}», som ikke finnes. ` +
         (known.length
-          ? `Feltene er ${known.map((f) => `«${f}»`).join(', ')}, som i field i /api/facets.`
+          ? `Feltene er ${known.map((f) => `«${f}»`).join(', ')}, som i field i /api/v2/facets.`
           : 'Det er ingen filterfelt satt opp.'),
     );
     this.field = field;

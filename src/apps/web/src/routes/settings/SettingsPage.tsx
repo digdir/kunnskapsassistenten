@@ -1,7 +1,6 @@
 import { Fieldset, Heading, Link, Paragraph, Radio, Switch } from '@digdir/designsystemet-react';
 import { ExternalLinkIcon } from '@navikt/aksel-icons';
 import { useId } from 'react';
-import { kaEnv } from '../../api/runtimeConfig';
 import { PageTitle } from '../../components';
 import { FLAGS, setFlag, useFlag } from '../../flags';
 import { ColorSchemeToggle } from '../../layout/ColorSchemeToggle';
@@ -130,14 +129,6 @@ export function SettingsPage() {
       <Paragraph className="settings-page__note" data-size="sm" variant="long">
         Valgene huskes i denne nettleseren. Eksperimentene slås av når du logger ut.
       </Paragraph>
-
-      {/* The BFF serves the previous client too and switches by a cookie `?klient=gammel` sets.
-          A full navigation, so the BFF sees it, and only behind the BFF. */}
-      {kaEnv().VITE_API_MODE === 'bff' && (
-        <Paragraph data-size="sm">
-          <Link href="/?klient=gammel">Bytt til forrige klient</Link>
-        </Paragraph>
-      )}
     </article>
   );
 }
