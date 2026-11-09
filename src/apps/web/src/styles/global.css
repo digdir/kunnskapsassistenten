@@ -228,9 +228,9 @@ body {
   padding-inline: var(--ka-rail-padding-inline);
 }
 
-/* ── The bar, below 774 with `mobile-top-row` ──────────────────────────── */
+/* ── The bar, below 774 ────────────────────────────────────────────────── */
 
-/* Below `compactMaxViewport` with `mobile-top-row`, the rails become a bar above the main column
+/* Below `compactMaxViewport` the rails become a bar above the main column
    (digdir/kunnskapsassistenten#120). Grid placement, not React, so views keep their state and
    the tab order stays navigation button, answer, sources button. */
 .shell[data-compact] {
@@ -261,6 +261,15 @@ body {
 .shell[data-compact] > .main {
   grid-row: 2;
   grid-column: 1 / -1;
+}
+
+/* In the bar a rail is as wide as its button plus the text edge on each side, not the 67 of a
+   rail at the side. With size containment its `auto` column took the 67 of `min-inline-size`, so
+   the sources button stood 9 px from the window edge at 390 and was clipped from 667. The drawer
+   it holds is a container of its own. */
+.shell[data-compact] > :is(.primary-sidebar, .secondary-sidebar) {
+  container-type: normal;
+  min-inline-size: 0;
 }
 
 /* In the bar a rail is just its button; `--ds-size-2` is Designsystemet's gap between buttons. */

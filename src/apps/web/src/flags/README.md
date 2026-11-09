@@ -1,36 +1,42 @@
-# Funksjonsflagg
+# Feature flags
 
-Flagg er forsøk som skal kunne prøves side om side og tas bort når valget er
-tatt. De andre innstillingene er valg som blir. Alle flagg er av til
-noen slår dem på, og de lagres per nettleser under `ka.flags.v1`. «Logg ut»
-sletter dem (`beforeLogout` i `src/api/session.ts`).
+Flags are trials, meant to be tried side by side and removed once the choice is
+made. The other settings are choices that stay. Every flag is off until someone
+turns it on, and they are stored per browser under `ka.flags.v1`. «Logg ut»
+deletes them (`beforeLogout` in `src/api/session.ts`).
 
-## Slå på et flagg
+## Turning a flag on
 
-- **Siden:** «Eksperimenter» på Innstillinger (`/innstillinger`), lenket fra
-  foten av navigasjonspanelet. Én bryter per flagg. Den gamle adressen
-  `#feature-flags` lander der.
-- **En lenke:** `?flagg=mobile-top-row`, eller flere med komma
-  (`?flagg=a,b`). Lenken slår bare på. Parameteren tas ut av adressen, og
-  Innstillinger åpnes, så den som fikk lenken ser hva som ble slått på og kan
-  slå det av. Ukjente id-er gjør ingenting.
+- **The page:** «Eksperimenter» on Innstillinger (`/innstillinger`), linked
+  from the foot of the navigation panel. One switch per flag. The old address
+  `#feature-flags` lands there.
+- **A link:** `?flagg=year-ranges`, or several with commas (`?flagg=a,b`). The
+  link only turns flags on. The parameter is taken out of the address and
+  Innstillinger opens, so whoever got the link sees what was turned on and can
+  turn it off. Unknown ids do nothing.
 
-## Flaggene
+## The flags
 
-| Id                     | Hva                                                                                  | Issue                                                                                        |
-| ---------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `mobile-top-row`       | Panelene som en rad øverst på telefon, i stedet for skinner                          | [digdir/kunnskapsassistenten#120](https://github.com/digdir/kunnskapsassistenten/issues/120) |
-| `year-ranges`          | Årsfeltet tar perioder, som 2021 eller 2023–2028, og år på rad står som én merkelapp | [digdir/kunnskapsassistenten#115](https://github.com/digdir/kunnskapsassistenten/issues/115) |
-| `compact-filter-chips` | Én merkelapp når alle eller mange verdier i et felt er valgt                         | [digdir/kunnskapsassistenten#116](https://github.com/digdir/kunnskapsassistenten/issues/116) |
-| `filters-right-panel`  | Filtreringen over kildene i høyre panel, navigasjonspanelet med bare trådene         | [digdir/kunnskapsassistenten#84](https://github.com/digdir/kunnskapsassistenten/issues/84)   |
+| Id                     | What                                                                                       | Issue                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `year-ranges`          | The year field takes periods, such as 2021 or 2023–2028, and consecutive years are one tag | [digdir/kunnskapsassistenten#115](https://github.com/digdir/kunnskapsassistenten/issues/115) |
+| `compact-filter-chips` | One tag when all or many values in a field are chosen                                      | [digdir/kunnskapsassistenten#116](https://github.com/digdir/kunnskapsassistenten/issues/116) |
+| `filters-right-panel`  | The filters above the sources in the sources panel, the navigation panel with threads only | [digdir/kunnskapsassistenten#84](https://github.com/digdir/kunnskapsassistenten/issues/84)   |
 
-## Legge til og ta bort
+## Adding and removing
 
-- **Legge til:** en rad i `FLAGS` i `flags.ts`, med id, tittel, én linje
-  beskrivelse og lenke til issuen. Les flagget med `useFlag('id')`, eller
-  `isFlagOn('id')` utenfor en komponent.
-- **Ta bort:** når valget er tatt, slett raden og alle `useFlag`-kall for den.
-  TypeScript sier fra om kall som står igjen. Et flagg som er lagret i en
-  nettleser, men som ikke står i lista, leses som av.
-- Bruk aldri en id om igjen til et annet forsøk: en gammel lenke ville slått
-  på noe annet enn den lovet.
+- **Adding:** a row in `FLAGS` in `flags.ts`, with an id, a title, a one-line
+  description and a link to the issue. Read the flag with `useFlag('id')`, or
+  `isFlagOn('id')` outside a component.
+- **Removing:** once the choice is made, delete the row and every `useFlag`
+  call for it. TypeScript reports the calls that are left. A flag stored in a
+  browser but not in the list reads as off and is dropped on the next write,
+  and a link naming it turns nothing on.
+- Never reuse an id for another trial: an old link would turn on something
+  other than what it promised.
+
+## Retired ids
+
+| Id               | Outcome                                                                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mobile-top-row` | Standard below 774 px: the panel buttons in a row at the top ([digdir/kunnskapsassistenten#120](https://github.com/digdir/kunnskapsassistenten/issues/120)) |
