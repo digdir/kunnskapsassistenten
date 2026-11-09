@@ -1,6 +1,8 @@
 # 0009 — The API version in the path, one core, and main's format for the current client
 
-**Status:** accepted · **Date:** 2026-10-07
+**Status:** accepted · **Date:** 2026-10-07 · **Superseded in part:**
+2026-11-06 by [0012](0012-retire-the-previous-client.md), which retires the
+current client below and `/api/*` with it, except `/api/health`
 
 ## Context
 

@@ -4,17 +4,15 @@ import { bodyLimit } from 'hono/body-limit';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import type { Env } from './apiShared.ts';
-import { v1 } from './apiV1.ts';
 import { v2 } from './apiV2.ts';
 import { mountAnsattporten, requireAnsattporten } from './ansattporten.ts';
 import { mountAuth, readUser, requireAuth } from './auth.ts';
 import { probe } from './capabilities.ts';
-import { clientOf, switchByQuery, type Client } from './clientSwitch.ts';
 import { config } from './config.ts';
 import { facets } from './facets.ts';
 import { sessionMiddleware } from './session.ts';
 
-/** The BFF: sign-in, the two API versions and the client. server.ts serves it. */
+/** The BFF: sign-in, the API and the client. server.ts serves it. */
 export const app = new Hono<Env>();
 
 app.use('*', sessionMiddleware);
@@ -64,11 +62,11 @@ app.use('/api/*', async (c, next) => {
 });
 
 /*
- * The version is in the path, and each client asks for its own
- * (decisions/0009). `/api/v2` first, so `/api` never sees its paths.
+ * The API is `/api/v2` (decisions/0009). `/api/health` stays beside it for
+ * the readiness probe and the image's health check (decisions/0012).
  */
+app.get('/api/health', (c) => c.json({ ok: true }));
 app.route('/api/v2', v2);
-app.route('/api', v1);
 
 // Before the SPA fallback, or a mistyped endpoint answers 200 with index.html.
 app.all('/api/*', (c) => c.json({ error: 'Ukjent endepunkt.' }, 404));
@@ -81,45 +79,24 @@ const cacheFor =
     if (c.res.ok) c.res.headers.set('Cache-Control', value);
   };
 
-/** So a cache keeps the two clients' pages apart. */
-const varyOnCookie: MiddlewareHandler = async (c, next) => {
-  await next();
-  if (c.res.ok) c.res.headers.append('Vary', 'Cookie');
-};
+/** The build of apps/web. Left out, the BFF serves only the API. */
+const root = config.webRoot;
 
-/** The two builds, by client. Either can be left out, and then the other is served. */
-const builds: Partial<Record<Client, string>> = {
-  ...(config.webRoot ? { ny: config.webRoot } : {}),
-  ...(config.webRootPreact ? { gammel: config.webRootPreact } : {}),
-};
-const roots = Object.values(builds);
-const indexOf = new Map(
-  roots.map((root) => [root, serveStatic({ root, path: 'index.html' })] as const),
-);
-
-if (roots.length) {
-  // Vite puts a content hash in every name under /assets/, so the two builds'
-  // files cannot collide, and both are served whichever client is chosen.
+if (root) {
+  // Vite puts a content hash in every name under /assets/.
   app.use('/assets/*', cacheFor('public, max-age=31536000, immutable'));
-  for (const root of roots) app.use('/assets/*', serveStatic({ root }));
+  app.use('/assets/*', serveStatic({ root }));
   // A name from an older build is gone, and must not become index.html cached for a year.
   app.all('/assets/*', (c) => c.text('Fant ikke fila.', 404));
-  for (const root of roots) {
-    app.get('/favicon.ico', serveStatic({ root, path: 'favicon.ico' }));
-  }
-  app.get('*', switchByQuery(config.auth.origin.startsWith('https://')));
+  app.get('/favicon.ico', serveStatic({ root, path: 'favicon.ico' }));
   app.get('*', async (c, next) => {
     if (config.auth.enabled && !(await readUser(c))) {
       return c.redirect(`/auth/login?next=${encodeURIComponent(c.req.path)}`);
     }
     return next();
   });
-  // index.html names the hashed files, so it is asked for again on every load,
-  // and which one it is depends on the cookie.
-  app.get('*', cacheFor('no-cache'), varyOnCookie, (c, next) => {
-    const root = builds[clientOf(c, config.defaultClient)] ?? roots[0]!;
-    return indexOf.get(root)!(c, next);
-  });
+  // index.html names the hashed files, so it is asked for again on every load.
+  app.get('*', cacheFor('no-cache'), serveStatic({ root, path: 'index.html' }));
 }
 
 /**

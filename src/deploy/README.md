@@ -72,9 +72,8 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
   --revision-suffix sha$SHA
 ```
 
-**The first rollout of an image with the new client** (`apps/web` and
-`apps/web-preact` side by side) needs two variables a deployment from before it
-does not have. The path above swaps the image and nothing else: without
+**The first rollout of an image with the client in `apps/web`** needs two
+variables a deployment from before it does not have. The path above swaps the image and nothing else: without
 `KA_FILTER_FIELDS` the BFF has no facets and no filter panel, and without
 `KA_DATASETS` no name for the dataset. Set them in the same update, once, with
 the template's defaults under the dataset key `kudos`:
@@ -93,10 +92,11 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
 
 The values are quoted because `|` is a pipe to the shell. `--set-env-vars`
 adds or updates the variables it names and leaves the others as they are.
-`KA_DEFAULT_CLIENT` is left unset, so a browser without the `ka_klient` cookie
-gets the current client; add `KA_DEFAULT_CLIENT=ny` to the same list when the
-new one is to be the default. Later rollouts take the path above, and the
-variables stay.
+Later rollouts take the path above, and the variables stay.
+
+The image serves only the client in `apps/web` (`decisions/0012`). A
+`KA_DEFAULT_CLIENT` left on the app from before is ignored, and a browser's
+`ka_klient` cookie no longer matters.
 
 Config or a secret, about 30 seconds and no rebuild. `read -rs` reads the
 value without showing it or keeping it in the shell history:
@@ -163,11 +163,6 @@ passed as `KA_FILTER_FIELDS` and `KA_DATASETS` under `digdirDatasetConfigKey`.
 They default to Kudos: `documentType:type|organisation:orgs_long|year:concerned_years:integer`
 and `Kudos`. The year needs `integer`, or it finds nothing. Another dataset
 needs its own fields, and an empty `kaFilterFields` means no filter panel.
-
-`kaDefaultClient` is the client a browser without the `ka_klient` cookie gets:
-`gammel`, the current client in `apps/web-preact`, unless it is set to `ny`,
-the client in `apps/web`. The image has both. `?klient=ny` and `?klient=gammel`
-switch one browser.
 
 ## Known limits
 
