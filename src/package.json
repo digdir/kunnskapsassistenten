@@ -30,6 +30,9 @@
   "overrides": {
     "stylelint-browser-compat": {
       "postcss-selector-parser": "7.1.6"
+    },
+    "@bundled-es-modules/glob": {
+      "glob": "^14.0.4"
     }
   }
 }
