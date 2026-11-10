@@ -1,34 +1,40 @@
 # Deploying to Azure Container Apps
 
-One container: the Hono server holds the API key, talks to
-`digdir-headless-rag`, and serves the built SPA from the same origin. Same
-origin is not cosmetic, it is what keeps the session cookie first-party.
+One container: the Hono server signs people in, keeps their tokens, talks to
+genki, and serves the built SPA from the same origin. Same origin is not
+cosmetic, it is what keeps the session cookie first-party.
 
 **Deployed and in use:** `https://qa.kunnskap.digdir.cloud`
-Resource group `rg-ka-test-weu`, West Europe, subscription `Altinn-AI-Assistant`,
-images in `sharedregistryswc`. Every `az` command below names the
-subscription, because the one a machine has as its default may be another. The
-DNS records for the domain live in the Azure DNS zone `kunnskap.digdir.cloud` in
-`rg-ka-test-weu`, delegated from `digdir.cloud` at Porkbun; the certificate
-is managed by Container Apps.
+Container app `ka-app` in resource group `rg-ka-test-weu`, West Europe,
+subscription `Altinn-AI-Assistant`. Its images are in `sharedregistryswc`, a
+registry shared with other apps, in resource group `rg-shared-registry-swc`,
+Sweden Central. Every `az` command below names the subscription, because the
+one a machine has as its default may be another. The DNS records for the
+domain live in the Azure DNS zone `kunnskap.digdir.cloud` in `rg-ka-test-weu`,
+delegated from `digdir.cloud` at Porkbun; the certificate is managed by
+Container Apps.
 
 ## What is already set up
 
-Sign-in is Entra ID, app registration `altinn-ai-assistant-ka-sso`, single
-tenant, with admin consent granted. Only accounts that exist in the tenant can
-sign in, and the app adds no check of its own. `AUTH_MODE=off` is for local
+Sign-in is Ansattporten, `AUTH_MODE=ansattporten`: the server signs the person
+in and calls genki with their token (`decisions/0011`). Who gets in is decided
+by Ansattporten and genki, and the app adds no check of its own. The app has no
+service key and no Entra ID settings. `AUTH_MODE=off` is for local
 development only: unsigned identity, anyone can be anyone, and the server
 refuses to start with it unless `APP_ORIGIN` is localhost.
 
-A new public host needs its `https://<host>/auth/callback` added to the app
-registration's redirect URIs before `APP_ORIGIN` and `AZURE_REDIRECT_URI` point
-at it.
+The app pulls its image with the managed identity `ka-app-id`, which has
+`AcrPull` on the registry.
+
+A new public host needs its callback registered with the Ansattporten client
+before `APP_ORIGIN` and `ANSATTPORTEN_REDIRECT_URI` point at it. The next
+section has the two URIs.
 
 ## Ansattporten instead of Entra ID
 
 `authMode=ansattporten` signs people in with Ansattporten and sends their
-token to genki (`decisions/0011`). It needs, besides the genki values in
-Deploying from scratch:
+token to genki (`decisions/0011`). It is what the test site runs. It needs,
+besides the genki values in Deploying from scratch:
 
 | Parameter                    | genki-test                                                  |
 | ---------------------------- | ----------------------------------------------------------- |
@@ -41,14 +47,24 @@ Deploying from scratch:
 | `kaCapabilities`             | `no-filters` or `filters`, as there is no key to probe with |
 
 `digdirApiKey` may then be empty, and `azureClientId` and `azureClientSecret`
-are not used. The redirect URI is `https://<publicHost>/auth/callback` and
-must be registered with the client in Samarbeidsportalen, with
-`https://<publicHost>/` as post-logout redirect URI. The same client id is
-registered in the genki portal as a `browser` frontend for the service.
+are not used. The test site has none of the three. The redirect URI is
+`https://<publicHost>/auth/callback` and must be registered with the client in
+Samarbeidsportalen, with `https://<publicHost>/` as post-logout redirect URI.
+The same client id is registered in the genki portal as a `browser` frontend
+for the service.
 
 The tokens live in the replica that signed the person in, so ingress is
 sticky in this mode, and the app keeps one replica, since removing a replica
 signs out everyone on it. A new revision or a restart signs everyone out.
+
+`authMode=entra` is the template's default, and the test site does not run
+with it. It signs people in with Entra ID, app registration
+`altinn-ai-assistant-ka-sso`, single tenant, with admin consent granted. Only
+accounts that exist in the tenant can sign in, and the app adds no check of
+its own. The server then calls the backend with a service key, so
+`digdirApiKey`, `azureClientId` and `azureClientSecret` are required, and a
+new public host needs its `https://<host>/auth/callback` among the app
+registration's redirect URIs.
 
 ## Changing a running deployment
 
@@ -72,39 +88,26 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
   --revision-suffix sha$SHA
 ```
 
-**The first rollout of an image with the client in `apps/web`** needs two
-variables a deployment from before it does not have. The path above swaps the image and nothing else: without
-`KA_FILTER_FIELDS` the BFF has no facets and no filter panel, and without
-`KA_DATASETS` no name for the dataset. Set them in the same update, once, with
-the template's defaults under the dataset key `kudos`:
+That swaps the image and nothing else. The variables and secrets stay as they
+are, among them `KA_FILTER_FIELDS` and `KA_DATASETS`, which give the filter
+panel its fields and the dataset its name. To change a variable, add
+`--set-env-vars` to an `az containerapp update`: it adds or updates the
+variables it names and leaves the others as they are. Quote a value with `|`
+in it, because `|` is a pipe to the shell.
+
+The image serves only the client in `apps/web` (`decisions/0012`).
+`KA_DEFAULT_CLIENT` is no longer set on the app, and a browser's `ka_klient`
+cookie no longer matters.
+
+Config or a secret, about 30 seconds and no rebuild. The app's secrets are
+`session-secret`, `ansattporten-client-secret` and `typesense-key`. This
+replaces the Ansattporten client secret. `read -rs` reads the value without
+showing it or keeping it in the shell history:
 
 ```sh
-git status --short
-SHA=$(git rev-parse --short HEAD)
-
-az acr build --subscription Altinn-AI-Assistant --registry sharedregistryswc --image ka-app:$SHA \
-  --file src/Dockerfile src
-az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
-  --image sharedregistryswc.azurecr.io/ka-app:$SHA \
-  --set-env-vars 'KA_FILTER_FIELDS=kudos=documentType:type|organisation:orgs_long|year:concerned_years:integer' 'KA_DATASETS=kudos=Kudos' \
-  --revision-suffix sha$SHA
-```
-
-The values are quoted because `|` is a pipe to the shell. `--set-env-vars`
-adds or updates the variables it names and leaves the others as they are.
-Later rollouts take the path above, and the variables stay.
-
-The image serves only the client in `apps/web` (`decisions/0012`). A
-`KA_DEFAULT_CLIENT` left on the app from before is ignored, and a browser's
-`ka_klient` cookie no longer matters.
-
-Config or a secret, about 30 seconds and no rebuild. `read -rs` reads the
-value without showing it or keeping it in the shell history:
-
-```sh
-read -rs KEY
-az containerapp secret set --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu --secrets digdir-api-key="$KEY"
-az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu --revision-suffix key$(date +%H%M%S)
+read -rs SECRET
+az containerapp secret set --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu --secrets ansattporten-client-secret="$SECRET"
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu --revision-suffix secret$(date +%H%M%S)
 ```
 
 `secret set` alone changes nothing that is running: the value is only picked up
@@ -125,12 +128,40 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
 
 ## Deploying from scratch
 
-Only needed if the resource group is gone.
+Only needed if the resource group is gone. The names are the test site's. The
+template names what it creates after its `name` parameter, `ka-app` by
+default: the container app `ka-app`, the environment `ka-app-env`, the
+identity `ka-app-id` and the log workspace `ka-app-logs`. The registry is not
+created here: `sharedregistryswc` is in its own resource group.
+
+The template's defaults are hosted headless-rag and Entra ID, which is not
+what the test site runs, so the command passes genki and Ansattporten. The two
+`read` lines take the Ansattporten client id and then its secret, the secret
+without showing it, and the session secret is made new:
 
 ```sh
+SHA=$(git rev-parse --short HEAD)
+read -r CLIENT_ID
+read -rs CLIENT_SECRET
+SESSION_SECRET=$(openssl rand -hex 32)
+
 az group create --subscription Altinn-AI-Assistant -n rg-ka-test-weu -l westeurope
-az acr build --subscription Altinn-AI-Assistant --registry sharedregistryswc --image ka-app:$(git rev-parse --short HEAD) --file src/Dockerfile src
-az deployment group create --subscription Altinn-AI-Assistant -g rg-ka-test-weu --template-file src/deploy/main.bicep --parameters ...
+az acr build --subscription Altinn-AI-Assistant --registry sharedregistryswc --image ka-app:$SHA \
+  --file src/Dockerfile src
+az deployment group create --subscription Altinn-AI-Assistant -g rg-ka-test-weu \
+  --template-file src/deploy/main.bicep --parameters \
+  image=sharedregistryswc.azurecr.io/ka-app:$SHA \
+  acrLoginServer=sharedregistryswc.azurecr.io \
+  publicHost=qa.kunnskap.digdir.cloud \
+  sessionSecret="$SESSION_SECRET" \
+  digdirApiBase=https://api.genki-test.digdir.cloud \
+  digdirTool=kunnskapsassistenten__default \
+  digdirAgentId=kunnskapsassistenten \
+  digdirDatasetConfigKey=default \
+  authMode=ansattporten \
+  ansattportenClientId="$CLIENT_ID" \
+  ansattportenClientSecret="$CLIENT_SECRET" \
+  ansattportenAltinnResource=urn:altinn:resource:digdir-genai-platform-test
 ```
 
 The first `az deployment group create` **fails** on the image pull. That is
@@ -144,19 +175,24 @@ az role assignment create --subscription Altinn-AI-Assistant --role AcrPull \
   --scope "$(az acr show --subscription Altinn-AI-Assistant -n sharedregistryswc --query id -o tsv)"
 ```
 
+The template does not set up the domain. The DNS zone
+`kunnskap.digdir.cloud`, the binding of `qa.kunnskap.digdir.cloud` to the app
+and its managed certificate are not in `main.bicep`; `publicHost` only decides
+`APP_ORIGIN` and the sign-in callback.
+
 Parameters the template needs are declared with `@description` in
-`main.bicep`. The ones that are not obvious: `digdirDatasetConfigKey` is
-`kudos` on the hosted backend and `default` locally, and `publicHost` is the
-custom domain, which decides `APP_ORIGIN` and the Entra callback.
+`main.bicep`. `image`, `acrLoginServer` and `sessionSecret` have no default.
+The ones that are not obvious: `digdirDatasetConfigKey` is `default` on genki
+and locally and `kudos` on hosted headless-rag, and `publicHost` is the custom
+domain.
 
 `digdirApiBase`, `digdirTool` and `digdirAgentId` choose the backend. They
-default to headless-rag. For genki-test: `https://api.genki-test.digdir.cloud`,
-`kunnskapsassistenten__default` and `kunnskapsassistenten`, with
-`digdirDatasetConfigKey` set to `default` and `digdirApiKey` a genki service key
-for `kunnskapsassistenten`, made by an Entra ID login (genki-test is locked).
-On a running deployment the same switch is
-`--set-env-vars DIGDIR_API_BASE=… DIGDIR_TOOL=… DIGDIR_AGENT_ID=… DIGDIR_DATASET_CONFIG_KEY=default`
-and the key with `secret set` as above.
+default to headless-rag. For genki-test, as above:
+`https://api.genki-test.digdir.cloud`, `kunnskapsassistenten__default` and
+`kunnskapsassistenten`, with `digdirDatasetConfigKey` set to `default`.
+`digdirApiKey` is for `authMode=entra`: a genki service key for
+`kunnskapsassistenten`, made by an Entra ID login (genki-test is locked). With
+Ansattporten only the capability probe would use it.
 
 `kaFilterFields` and `kaDataset` are the dataset's filter fields and its name,
 passed as `KA_FILTER_FIELDS` and `KA_DATASETS` under `digdirDatasetConfigKey`.
@@ -164,9 +200,16 @@ They default to Kudos: `documentType:type|organisation:orgs_long|year:concerned_
 and `Kudos`. The year needs `integer`, or it finds nothing. Another dataset
 needs its own fields, and an empty `kaFilterFields` means no filter panel.
 
+The test site also has `kaCapabilities` and `typesenseApiKey` set, which the
+command above leaves out. Without `kaCapabilities` the filters are off.
+Typesense needs `typesenseHost`, `kudosDocsCollection` and `typesenseApiKey`
+together: without them the filter panel is empty and the sources show no
+excerpt.
+
 ## Known limits
 
-**Questions do not answer on the deployed instance.**
+**Questions do not answer against hosted headless-rag,** the template's
+default backend, which the test site does not use.
 `test.rag.digdir.cloud` rejects `agent-rag-graph-bundled` and
 `agent-rag-graph-faithful` with `mode_not_allowed`, and `simple-qa` returns
 `isError` with an empty answer. Only `fact-checker` and `retrieve-only` work
@@ -175,17 +218,21 @@ all five agents explicitly, so it is the backend's configuration and not a key
 scope. A local backend exposes nine agent and mode pairs including the ones
 needed.
 
-**Filters are disabled.** The capability probe finds the hosted backend drops
-caller-supplied filters, so the chips render disabled with an explanation.
-They enable themselves once the backend takes filters, with no redeploy.
-`kaCapabilities=filters` forces them on if the probe cannot get an answer.
+**The filters follow `KA_CAPABILITIES` on the test site.** With Ansattporten
+and no service key there is nothing to probe with, so the variable decides:
+`filters` turns them on, and anything else leaves the panel saying
+«Filtrering er ikke tilgjengelig ennå». With a service key the capability
+probe decides. Against hosted headless-rag it finds that the backend drops
+caller-supplied filters, so they are off there too, and they come on once the
+backend takes filters, with no redeploy. `kaCapabilities=filters` forces them
+on if the probe cannot get an answer.
 Against a slow backend the probe can stay unsettled for about 9 minutes
 (three tries of 60 s, 1 and 5 minutes apart), with the filters hidden, and
 then answers no until the app restarts.
 
-**The hosted dataset key is `kudos`, not `default`.** Getting it wrong fails
-every call with "API key is not allowed to access the requested dataset",
-which reads like a permissions problem.
+**The dataset key is `default` on genki and `kudos` on hosted headless-rag.**
+Getting it wrong on headless-rag fails every call with "API key is not allowed
+to access the requested dataset", which reads like a permissions problem.
 
 ## Choices worth knowing about
 
