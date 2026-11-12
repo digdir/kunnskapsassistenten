@@ -66,6 +66,8 @@ import { useStoredValue, type AssistantStorage } from './storage.js';
 
 export interface AssistantFeedback {
   answerId: string;
+  /** genki's run (`task` in `POST /api/feedback`), when given; see the component page. */
+  runId?: string | undefined;
   rating: 'up' | 'down';
   reasons: readonly string[];
   comment?: string | undefined;
@@ -192,6 +194,16 @@ const firstSentence = (text: string | undefined) => {
 };
 
 const threadInAddress = () => new URLSearchParams(location.search).get('t') ?? undefined;
+
+/** The answer with the markers its sources came with: `[N]` names an excerpt only with them. */
+const withMarkers = (
+  answer: AnswerData,
+  markers: AnswerData['markers'] | undefined,
+): AnswerData => {
+  const next = { ...answer };
+  delete next.markers;
+  return markers ? { ...next, markers } : next;
+};
 
 export const useAssistant = ({
   api,
@@ -819,19 +831,25 @@ export const useAssistant = ({
         } else if (event.type === 'text') update((a) => ({ ...a, text: a.text + event.text }));
         else if (event.type === 'retract') update((a) => ({ ...a, text: '' }));
         else if (event.type === 'sources') {
-          update((a) => ({ ...a, sources: event.sources.map(fromWire) }));
+          update((a) => withMarkers({ ...a, sources: event.sources.map(fromWire) }, event.markers));
           if (sourcesOn && event.sources.length > 0)
             setRequest({ action: 'offer', side: 'secondary' });
         } else if (event.type === 'done') {
           finish();
-          update((a) => ({
-            ...a,
-            text: event.answer.text || a.text,
-            sources: event.answer.sources.map(fromWire),
-            noAnswer: event.answer.noAnswer,
-            status: 'complete',
-            created: Date.now(),
-          }));
+          update((a) =>
+            withMarkers(
+              {
+                ...a,
+                text: event.answer.text || a.text,
+                sources: event.answer.sources.map(fromWire),
+                noAnswer: event.answer.noAnswer,
+                status: 'complete',
+                created: Date.now(),
+                ...(event.answer.taskId ? { runId: event.answer.taskId } : {}),
+              },
+              event.answer.markers,
+            ),
+          );
           if (sourcesOn && event.answer.sources.length > 0)
             setRequest({ action: 'offer', side: 'secondary' });
           if (approachOn) stepsReported.current?.(frames > 0);

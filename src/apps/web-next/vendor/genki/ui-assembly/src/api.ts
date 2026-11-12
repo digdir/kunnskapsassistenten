@@ -26,6 +26,8 @@ export interface AnswerData {
   error?: string | undefined;
   /** Why it failed, for the answer block's heading and advice. */
   failure?: AnswerFailure | undefined;
+  /** genki's id for the run that gave the answer (`genai-task`), which feedback is sent on. */
+  runId?: string | undefined;
 }
 
 export interface Turn {
@@ -152,7 +154,14 @@ interface WireSource {
   url?: string;
   document_id?: string;
   documentId?: string;
-  excerpts?: { chunk_id?: string; chunkId?: string; text?: string; position?: number }[];
+  excerpts?: {
+    chunk_id?: string;
+    chunkId?: string;
+    text?: string;
+    position?: number;
+    /** The markers that cite this excerpt, from a service that cites excerpts. */
+    markers?: string[];
+  }[];
   version?: string;
   publishedAt?: string;
 }
@@ -171,6 +180,8 @@ interface ApiMessage {
   created: number;
   chunks: ApiChunk[];
   sources?: WireSource[];
+  /** The assistant message's run, the id feedback is sent on. */
+  task?: string;
 }
 
 /** The collection a thread was made in, from its `corpus:` tag. */
@@ -234,19 +245,43 @@ const fromChunks = (chunks: readonly ApiChunk[], corpus?: CorpusProfile) => {
   return { sources: [...documents.values()], markers };
 };
 
+// A stored turn keeps its markers only on its excerpts; each leads to the excerpt as drawn.
+const markersFromSources = (
+  wire: readonly WireSource[],
+  drawn: readonly SourceDocument[],
+): AnswerMarker[] | undefined => {
+  const found = wire.flatMap((source, s) =>
+    (source.excerpts ?? []).flatMap((excerpt, e) => {
+      const shown = drawn[s]?.excerpts[e];
+      const markers: unknown = excerpt.markers;
+      if (!shown || !Array.isArray(markers)) return [];
+      const documentId = drawn[s]?.documentId;
+      return markers
+        .filter((marker): marker is string => typeof marker === 'string')
+        .map((marker) => ({
+          marker,
+          chunkId: shown.chunkId,
+          ...(documentId ? { documentId } : {}),
+        }));
+    }),
+  );
+  return found.length > 0 ? found : undefined;
+};
+
 const answerFromMessage = (message: ApiMessage, corpus?: CorpusProfile): AnswerData => {
-  if (message.sources && message.sources.length > 0)
-    return {
-      text: message.text,
-      status: 'complete',
-      sources: message.sources.map((s, at) => sourceFromWire(s, corpus, at)),
-      created: message.created,
-    };
-  if (message.chunks.length > 0) {
-    const { sources, markers } = fromChunks(message.chunks, corpus);
-    return { text: message.text, status: 'complete', sources, markers, created: message.created };
+  const stored = {
+    text: message.text,
+    status: 'complete' as const,
+    created: message.created,
+    ...(message.task ? { runId: message.task } : {}),
+  };
+  if (message.sources && message.sources.length > 0) {
+    const sources = message.sources.map((s, at) => sourceFromWire(s, corpus, at));
+    const markers = markersFromSources(message.sources, sources);
+    return { ...stored, sources, ...(markers ? { markers } : {}) };
   }
-  return { text: message.text, status: 'complete', created: message.created };
+  if (message.chunks.length > 0) return { ...stored, ...fromChunks(message.chunks, corpus) };
+  return stored;
 };
 
 /**
