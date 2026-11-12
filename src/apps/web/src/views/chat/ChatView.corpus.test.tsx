@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { useRef, type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatClient } from '../../api';
 import { AnswerSourcesContext, inertAnswerSources } from '../../layout/answerSourcesContext';
 import { CitationContext } from '../../layout/citationContext';
@@ -15,34 +15,37 @@ import { ChatView } from './ChatView';
 import { GENERAL_KICKSTARTERS, KICKSTARTERS } from './text';
 
 /**
- * Forslagene på tomtilstanden, sett gjennom viewet (brukerblikk 5, funn 2).
+ * The suggestions on the empty state, seen through the view (user view 5, finding 2).
  *
- * `kickstartersFor` er testet for seg. Dette er koblingen: at viewet faktisk
- * leser det aktive korpuset, og at lista bytter når korpuset bytter — uten
- * omlasting, som er hele poenget med at `useCorpus` leser en ekstern lagring
- * under render.
+ * `kickstartersFor` is tested on its own. This is the link: that the view
+ * actually reads the active corpus, and that the list changes when the corpus
+ * changes, without a reload, which is the whole point of `useCorpus` reading
+ * an external store during render.
  *
- * Hooken står inn for her av samme grunn som i `FiltersView.corpus.test.tsx`:
- * den leser en modul-lagring som er låst ved oppstart fra miljøet, så begge
- * tilstandene finnes ikke i én kjøring uten dette.
+ * The hook is stood in for here for the same reason as in
+ * `FiltersView.corpus.test.tsx`: it reads a module store locked at startup
+ * from the environment, so both states cannot exist in one run without this.
  */
-const corpus = vi.hoisted(() => ({ active: 'mock' as string | undefined }));
+const corpus = vi.hoisted(() => ({
+  active: 'mock' as string | undefined,
+  option: undefined as { key: string; label: string } | undefined,
+}));
 
 vi.mock('../../layout/useCorpus', () => ({
   useCorpus: () => ({
     options: [],
     active: corpus.active,
-    option: undefined,
+    option: corpus.option,
     choosable: false,
     set: vi.fn(),
   }),
 }));
 
-/** En klient som aldri blir spurt: tomtilstanden stiller ingen spørsmål. */
+/** A client that is never asked: the empty state asks no questions. */
 const idleClient: ChatClient = {
   // oxlint-disable-next-line require-yield
   async *ask() {
-    throw new Error('ikke spurt');
+    throw new Error('not asked');
   },
   listThreads: async () => [],
   getThread: async () => null,
@@ -72,10 +75,14 @@ function Shell({ children }: { children: ReactNode }) {
 
 const shown = () => screen.getAllByRole('button').map((button) => button.textContent?.trim() ?? '');
 
-describe('ChatView og forslagene per korpus', () => {
-  it('viser Kudos-spørsmålene over mock-korpuset', () => {
-    // Mock er de 938 Kudos-dokumentene spørsmålene navngir. Kudos-pilot er
-    // det ikke, tross navnet — se kickstartersPerCorpus.test.ts.
+describe('ChatView and the suggestions per corpus', () => {
+  beforeEach(() => {
+    corpus.option = undefined;
+  });
+
+  it('shows the Kudos questions over the mock corpus', () => {
+    // Mock is the 938 Kudos documents the questions name. Kudos-pilot is
+    // not, despite the name: see kickstartersPerCorpus.test.ts.
     corpus.active = 'mock';
     render(
       <Shell>
@@ -86,7 +93,7 @@ describe('ChatView og forslagene per korpus', () => {
     for (const question of KICKSTARTERS) expect(shown()).toContain(question);
   });
 
-  it('viser de generelle spørsmålene over Wikipedia-korpuset', () => {
+  it('shows the general questions over the Wikipedia corpus', () => {
     corpus.active = 'norquad-docs';
     render(
       <Shell>
@@ -95,15 +102,15 @@ describe('ChatView og forslagene per korpus', () => {
     );
 
     for (const question of GENERAL_KICKSTARTERS) expect(shown()).toContain(question);
-    // Og ingen av Kudos-spørsmålene, som er selve funnet.
+    // And none of the Kudos questions, which is the finding itself.
     for (const question of KICKSTARTERS) expect(shown()).not.toContain(question);
   });
 
-  it('bytter liste når korpuset byttes, uten omlasting', () => {
+  it('changes the list when the corpus changes, without a reload', () => {
     /*
-     * Viewet leser korpuset under render, så en ny render er alt som skal til.
-     * Cachet det lista ved montering, ville en leser som byttet korpus sittet
-     * igjen med forslagene fra det forrige til hen lastet sida på nytt.
+     * The view reads the corpus during render, so a new render is all it
+     * takes. Had it cached the list on mount, a reader who changed corpus
+     * would keep the previous one's suggestions until they reloaded the page.
      */
     corpus.active = 'mock';
     const { rerender } = render(
@@ -123,16 +130,33 @@ describe('ChatView og forslagene per korpus', () => {
     expect(shown()).toContain(GENERAL_KICKSTARTERS[0]);
     expect(shown()).not.toContain(KICKSTARTERS[0]);
   });
+
+  it('names the active collection in the general questions', () => {
+    corpus.active = 'kudos';
+    corpus.option = { key: 'kudos', label: 'Kudos' };
+    render(
+      <Shell>
+        <ChatView client={idleClient} />
+      </Shell>,
+    );
+
+    expect(shown()).toContain('Hva handler dokumentene i Kudos om?');
+    expect(shown()).not.toContain(GENERAL_KICKSTARTERS[0]);
+  });
 });
 
 /**
- * Sammenligningen i `filterSummary`: svarets korpus mot det valgte.
+ * The comparison in `filterSummary`: the answer's corpus against the chosen one.
  *
- * Den hadde ingen test (KA CC bør 2 på #138), og det er den ene linja hele
- * saken hviler på — leses navnet fra valget i stedet for fra svaret, er
- * feilen fra #129 tilbake uten at noe annet endrer seg.
+ * It had no test (KA CC should 2 on #138), and it is the one line the whole
+ * matter rests on: if the name is read from the choice instead of from the
+ * answer, the bug from #129 is back without anything else changing.
  */
-describe('ChatView og korpuset på linja over svaret', () => {
+describe('ChatView and the corpus on the line above the answer', () => {
+  beforeEach(() => {
+    corpus.option = undefined;
+  });
+
   const answered = (corpusKeyOnAnswer?: string): Message[] => [
     {
       id: 'u1',
@@ -161,7 +185,7 @@ describe('ChatView og korpuset på linja over svaret', () => {
     messages,
   });
 
-  it('navngir korpuset når svaret kom fra et annet enn det valgte', () => {
+  it('names the corpus when the answer came from another than the chosen one', () => {
     corpus.active = 'norquad-mock';
     render(
       <Shell>
@@ -172,7 +196,7 @@ describe('ChatView og korpuset på linja over svaret', () => {
     expect(screen.getByText(`Hentet fra ${corpusDisplayNameFor('mock')}`)).toBeTruthy();
   });
 
-  it('tier når svaret kom fra det korpuset som er valgt', () => {
+  it('says nothing when the answer came from the chosen corpus', () => {
     corpus.active = 'mock';
     render(
       <Shell>
@@ -183,12 +207,12 @@ describe('ChatView og korpuset på linja over svaret', () => {
     expect(screen.queryByText(/Hentet fra/u)).toBeNull();
   });
 
-  it('tier når nøkkelen ikke er et korpus denne installasjonen kjenner', () => {
+  it('says nothing when the key is not a corpus this installation knows', () => {
     /*
-     * `corpusDisplayNameFor` svarer «standardsamlingen» for en nøkkel den ikke
-     * kjenner, og det er en setning om en standard heller enn om dette
-     * svaret. En live-backend som valgte datasettet selv sender nettopp en
-     * slik nøkkel (KA CC bør 1 på #138).
+     * `corpusDisplayNameFor` answers «standardsamlingen» for a key it does not
+     * know, which is a sentence about a default rather than about this answer.
+     * A live backend that chose the dataset itself sends just such a key
+     * (KA CC should 1 on #138).
      */
     corpus.active = 'mock';
     render(
@@ -201,7 +225,7 @@ describe('ChatView og korpuset på linja over svaret', () => {
     expect(screen.queryByText(/Hentet fra/u)).toBeNull();
   });
 
-  it('tier når svaret ikke sier hvilket korpus det kom fra', () => {
+  it('says nothing when the answer does not say which corpus it came from', () => {
     corpus.active = 'mock';
     render(
       <Shell>

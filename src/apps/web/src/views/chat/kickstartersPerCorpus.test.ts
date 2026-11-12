@@ -3,64 +3,81 @@ import { MOCK_CORPUS } from '../../api/corpus';
 import { GENERAL_KICKSTARTERS, KICKSTARTERS, kickstartersFor } from './text';
 
 /**
- * Forslagene på tomtilstanden følger korpuset (brukerblikk 5, funn 2).
+ * The suggestions on the empty state follow the corpus (user view 5, finding 2).
  *
- * De tre Kudos-spørsmålene sto over hvert eneste korpus, også over 351
- * Wikipedia-artikler som ikke kan svare på noen av dem. Det er ikke en påstand
- * som leses rart, det er en invitasjon til å stille tre spørsmål korpuset ikke
- * kan svare på.
+ * The three Kudos questions stood over every corpus, also over 351 Wikipedia
+ * articles that can answer none of them. That is not a claim that reads oddly,
+ * it is an invitation to ask three questions the corpus cannot answer.
  */
 describe('kickstartersFor', () => {
-  it('gir Kudos-spørsmålene til mock-korpuset', () => {
-    // Mock svarer fra de 938 Kudos-dokumentene spørsmålene navngir.
+  it('gives the Kudos questions to the mock corpus', () => {
+    // Mock answers from the 938 Kudos documents the questions name.
     expect(kickstartersFor('mock')).toEqual(KICKSTARTERS);
   });
 
-  it('gir de generelle spørsmålene til kudos-pilot, tross navnet', () => {
+  it('gives the general questions to kudos-pilot, despite the name', () => {
     /*
-     * Målt live av KA CC på #111, og grunnen til at denne testen finnes:
-     * piloten heter Kudos og mock ER Kudos, så de så ut som ett tilfelle. Men
-     * piloten er fem årsrapporter fra 2025, fra andre virksomheter enn dem
-     * spørsmålene navngir. «DSS sine årsrapporter» kom tilbake som «finner
-     * ikke DSS» uten kilder, mens de generelle tre fikk ekte svar med kilder.
+     * Measured live by KA CC on #111, and the reason this test exists: the
+     * pilot is called Kudos and mock IS Kudos, so they looked like one case.
+     * But the pilot is five annual reports from 2025, from other agencies than
+     * the ones the questions name. «DSS sine årsrapporter» came back as «cannot
+     * find DSS» without sources, while the general three got real answers.
      */
     expect(kickstartersFor('kudos-pilot')).toEqual(GENERAL_KICKSTARTERS);
   });
 
-  it('holder seg til mock-korpusets faktiske nøkkel', () => {
+  it("keeps to the mock corpus's actual key", () => {
     /*
-     * Nøkkelen står som streng her og eies av src/api/corpus.ts. Denne
-     * påstanden er hele koblingen: døpes korpuset om der, blir dette rødt i
-     * stedet for at mock stille faller tilbake til de generelle forslagene.
+     * The key is written out here and owned by src/api/corpus.ts. This
+     * assertion is the whole link: if the corpus is renamed there, this turns
+     * red instead of mock silently falling back to the general suggestions.
      */
     expect(kickstartersFor(MOCK_CORPUS.key)).toEqual(KICKSTARTERS);
   });
 
-  it('gir de generelle spørsmålene til norquad-docs', () => {
+  it('gives the general questions to norquad-docs', () => {
     expect(kickstartersFor('norquad-docs')).toEqual(GENERAL_KICKSTARTERS);
   });
 
-  it('gir de generelle spørsmålene til en nøkkel ingen har skrevet en liste for', () => {
-    // Den trygge retningen å ta feil i: et generelt spørsmål over Kudos virker
-    // fortsatt, et Kudos-spørsmål over Wikipedia gjør ikke det.
+  it('gives the general questions to a key nobody has written a list for', () => {
+    // The safe direction to be wrong in: a general question over Kudos still
+    // works, a Kudos question over Wikipedia does not.
     expect(kickstartersFor('et-korpus-som-kommer-senere')).toEqual(GENERAL_KICKSTARTERS);
   });
 
-  it('gir de generelle spørsmålene når ingen nøkkel er satt', () => {
+  it('gives the general questions when no key is set', () => {
     expect(kickstartersFor(undefined)).toEqual(GENERAL_KICKSTARTERS);
   });
 
-  it('spør om dokumentene og ikke om noe i dem', () => {
+  it('asks about the documents and not about anything in them', () => {
     /*
-     * Det er det som gjør de generelle tre generelle. Nevner ett av dem et
-     * emne, er det den samme feilen ett korpus lenger fram — så testen holder
-     * dem fra å samle opp innhold over tid.
+     * That is what makes the general three general. If one of them names a
+     * subject, it is the same mistake one corpus further on, so the test keeps
+     * them from gathering content over time.
      */
     expect(GENERAL_KICKSTARTERS).toHaveLength(3);
     for (const question of GENERAL_KICKSTARTERS) {
       expect(question, question).not.toMatch(/Kudos|Digdir|Udir|DSS|årsrapport|tildelingsbrev/iu);
-      // Hele spørsmål, ikke halve: knappen leses før den plukkes.
+      // Whole questions, not half ones: the button is read before it is picked.
       expect(question, question).not.toMatch(/…|\.\.\./u);
     }
+  });
+
+  it('names the collection in each general question when its name is known', () => {
+    expect(kickstartersFor('kudos', 'Kudos')).toEqual([
+      'Hva handler dokumentene i Kudos om?',
+      'Gi meg en oversikt over de viktigste temaene i Kudos.',
+      'Oppsummer det viktigste i Kudos i noen få punkter.',
+    ]);
+  });
+
+  it('never asks about «denne samlingen» once the collection has a name', () => {
+    // genki does not tell the model which collection it searches, so it asked back (12.11).
+    for (const question of kickstartersFor('kudos', 'Kudos'))
+      expect(question, question).not.toMatch(/denne samlingen/iu);
+  });
+
+  it('keeps the questions of a corpus with its own list, even with a name', () => {
+    expect(kickstartersFor('mock', 'Kudos')).toEqual(KICKSTARTERS);
   });
 });
