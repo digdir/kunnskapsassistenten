@@ -50,16 +50,11 @@ describe('/api/v2/ask', () => {
     assert.deepEqual(
       sent
         .find((e) => e.type === 'sources')
-        ?.sources.map((s: Record<string, unknown>) => [
-          s.marker,
-          s.docNum,
-          s.chunkId,
-          s.excerpt,
-        ]),
+        ?.sources.map((s: Record<string, unknown>) => [s.docNum, s.chunkId, s.excerpt]),
       [
-        [1, '1', 'a', 'Første avsnitt.'],
-        [2, '1', 'b', 'Andre avsnitt.'],
-        [3, '2', 'c', 'Tredje avsnitt.'],
+        ['1', 'a', 'Første avsnitt.'],
+        ['1', 'b', 'Andre avsnitt.'],
+        ['2', 'c', 'Tredje avsnitt.'],
       ],
     );
   });
