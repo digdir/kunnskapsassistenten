@@ -86,6 +86,19 @@ async function startGenki() {
       );
       return;
     }
+    if (path === '/api/conversations/c-own') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          conversation: { id: 'c-own', topic: 'Min tråd', created: 1 },
+          messages: [
+            { id: 'm1', role: 'user', text: 'Hva er fast?', created: 1 },
+            { id: 'm2', role: 'assistant', text: 'Svar.', created: 2, task: 'task-own' },
+          ],
+        }),
+      );
+      return;
+    }
     if (path === '/api/datasets/broken') {
       res.writeHead(500, {
         'content-type': 'application/json',
@@ -229,6 +242,20 @@ describe('the page', () => {
     assert.match(next.res.headers.get('Vary') ?? '', /Cookie/);
     assert.equal(
       (await page('/innstillinger', 'ka_ui=next')).body,
+      '<html lang="nb">next</html>',
+    );
+  });
+
+  test("«Endringslogg» and «Om prosjektet» are apps/web's pages, whichever client was chosen", async () => {
+    for (const path of ['/endringslogg', '/om-prosjektet']) {
+      const chosen = await page(path, 'ka_ui=next');
+      assert.equal(chosen.body, '<html lang="nb">classic</html>', path);
+      assert.match(chosen.res.headers.get('Vary') ?? '', /Cookie/);
+      assert.equal((await page(path)).body, '<html lang="nb">classic</html>', path);
+    }
+    // Only those: the rest of the next client's addresses stay its own.
+    assert.equal(
+      (await page('/endringslogg/x', 'ka_ui=next')).body,
       '<html lang="nb">next</html>',
     );
   });
@@ -720,6 +747,84 @@ describe("the proxy with a person's token", () => {
       body: JSON.stringify({ task: 't', rating: 'up' }),
     });
     assert.equal(feedback.status, 403);
+    assert.equal(seen.length, 0);
+  });
+});
+
+describe('feedback on an answer', () => {
+  const rate = (
+    host: { request: (path: string, init: RequestInit) => Response | Promise<Response> },
+    body: unknown,
+    headers: Record<string, string> = {},
+  ) =>
+    host.request('/api/next/feedback', {
+      method: 'POST',
+      headers: { ...JSON_HEADERS, Origin: ORIGIN, 'Sec-Fetch-Site': 'same-origin', ...headers },
+      body: JSON.stringify(body),
+    });
+  const RATING = {
+    conversationId: 'c-own',
+    taskId: 'task-own',
+    rating: 'down',
+    reasons: [' Feil ', '', 'Mangler kilde'],
+    comment: '  For kort.  ',
+  };
+
+  const withPerson = () => {
+    const host = new Hono();
+    host.use('*', async (c, next) => {
+      c.set('caller' as never, { userId: 'ansattporten:1', token: 'person-token' } as never);
+      return next();
+    });
+    host.route('/api/next', nextApi.nextRoutes());
+    return host;
+  };
+
+  test('is refused with the service key, and genki is never asked', async () => {
+    const res = await rate(app, RATING);
+    assert.equal(res.status, 403);
+    assert.deepEqual(await res.json(), { error: 'refused', code: 'not_allowed' });
+    assert.equal(seen.length, 0);
+  });
+
+  test("is sent with the person's token for a run in their own thread, with reasons and comment", async () => {
+    const res = await rate(withPerson(), RATING);
+    assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), { ok: true });
+    assert.deepEqual(
+      seen.map((s) => [s.method, s.url]),
+      [
+        ['GET', '/api/conversations/c-own'],
+        ['POST', '/api/feedback'],
+      ],
+    );
+    assert.equal(seen[1]!.headers.authorization, 'Bearer person-token');
+    assert.equal(seen[1]!.headers['x-api-key'], undefined);
+    assert.deepEqual(JSON.parse(seen[1]!.body), {
+      task: 'task-own',
+      rating: 'down',
+      reasons: ['Feil', 'Mangler kilde'],
+      comment: 'For kort.',
+    });
+  });
+
+  test('is refused for a run that is not in the thread, before genki records anything', async () => {
+    const res = await rate(withPerson(), { ...RATING, taskId: 'task-someone-else' });
+    assert.equal(res.status, 404);
+    assert.deepEqual(
+      seen.map((s) => [s.method, s.url]),
+      [['GET', '/api/conversations/c-own']],
+    );
+  });
+
+  test('is refused from another site, and with a body it cannot read', async () => {
+    const host = withPerson();
+    assert.equal((await rate(host, RATING, { 'Sec-Fetch-Site': 'cross-site' })).status, 403);
+    assert.equal((await rate(host, RATING, { Origin: 'https://evil.example' })).status, 403);
+    assert.equal((await rate(host, { ...RATING, rating: 'meh' })).status, 400);
+    assert.equal((await rate(host, { ...RATING, reasons: 'Feil' })).status, 400);
+    assert.equal((await rate(host, { ...RATING, reasons: [1] })).status, 400);
+    assert.equal((await rate(host, { ...RATING, conversationId: '' })).status, 400);
     assert.equal(seen.length, 0);
   });
 });

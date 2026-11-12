@@ -47,4 +47,17 @@ describe('Prøv ny versjon', () => {
       body: JSON.stringify({ ui: 'next' }),
     });
   });
+
+  it("on apps/web's page while the next client is chosen, goes to its front page without choosing again", async () => {
+    const fetcher = vi.fn(async () => Response.json({ ui: 'next', available: true }));
+    const go = vi.fn();
+    render(
+      <ul>
+        <TryNextVersion fetcher={fetcher} go={go} />
+      </ul>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: TRY_NEXT_LABEL }));
+    expect(go).toHaveBeenCalledWith('/');
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
 });

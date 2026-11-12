@@ -26,6 +26,8 @@ export interface AnswerData {
   error?: string | undefined;
   /** Why it failed, for the answer block's heading and advice. */
   failure?: AnswerFailure | undefined;
+  /** genki's id for the run that gave the answer (`genai-task`), which feedback is sent on. */
+  runId?: string | undefined;
 }
 
 export interface Turn {
@@ -152,7 +154,16 @@ interface WireSource {
   url?: string;
   document_id?: string;
   documentId?: string;
-  excerpts?: { chunk_id?: string; chunkId?: string; text?: string; position?: number }[];
+  excerpts?: {
+    chunk_id?: string;
+    chunkId?: string;
+    text?: string;
+    position?: number;
+    /** Its own section path, which the Sources block titles the excerpt by. */
+    heading?: string;
+    /** The markers that cite this excerpt, from a service that cites excerpts. */
+    markers?: string[];
+  }[];
   version?: string;
   publishedAt?: string;
 }
@@ -171,6 +182,10 @@ interface ApiMessage {
   created: number;
   chunks: ApiChunk[];
   sources?: WireSource[];
+  /** The answer's markers, `{ marker, chunk_id, document }`, when the stored turn carries them. */
+  markers?: unknown;
+  /** The assistant message's run, the id feedback is sent on. */
+  task?: string;
 }
 
 /** The collection a thread was made in, from its `corpus:` tag. */
@@ -197,10 +212,12 @@ export const sourceFromWire = (raw: WireSource, corpus?: CorpusProfile, at = 0):
     ...(raw.publishedAt ? { publishedAt: raw.publishedAt } : {}),
     excerpts: (raw.excerpts ?? []).map((e, i) => {
       const text = e.text ?? '';
+      const heading: unknown = e.heading;
       return {
         chunkId: e.chunkId || e.chunk_id || minted(i),
         text,
         ...(e.position !== undefined ? { position: e.position } : {}),
+        ...(typeof heading === 'string' ? { heading } : {}),
         ...(text ? {} : { textUnavailable: true }),
       };
     }),
@@ -234,19 +251,61 @@ const fromChunks = (chunks: readonly ApiChunk[], corpus?: CorpusProfile) => {
   return { sources: [...documents.values()], markers };
 };
 
+// The turn's own list; a marker that does not name its excerpt and document is left out.
+const storedMarkers = (raw: unknown): AnswerMarker[] | undefined => {
+  const found = (Array.isArray(raw) ? (raw as unknown[]) : []).flatMap((m) => {
+    if (typeof m !== 'object' || m === null) return [];
+    const { marker, chunk_id: chunkId, document: documentId } = m as Record<string, unknown>;
+    return typeof marker === 'string' &&
+      typeof chunkId === 'string' &&
+      typeof documentId === 'string'
+      ? [{ marker, chunkId, documentId }]
+      : [];
+  });
+  return found.length > 0 ? found : undefined;
+};
+
+// A turn stored with markers only on its excerpts: each leads to the excerpt as drawn.
+const markersFromSources = (
+  wire: readonly WireSource[],
+  drawn: readonly SourceDocument[],
+): AnswerMarker[] | undefined => {
+  const found = wire.flatMap((source, s) =>
+    (source.excerpts ?? []).flatMap((excerpt, e) => {
+      const shown = drawn[s]?.excerpts[e];
+      const markers: unknown = excerpt.markers;
+      if (!shown || !Array.isArray(markers)) return [];
+      const documentId = drawn[s]?.documentId;
+      return markers
+        .filter((marker): marker is string => typeof marker === 'string')
+        .map((marker) => ({
+          marker,
+          chunkId: shown.chunkId,
+          ...(documentId ? { documentId } : {}),
+        }));
+    }),
+  );
+  return found.length > 0 ? found : undefined;
+};
+
 const answerFromMessage = (message: ApiMessage, corpus?: CorpusProfile): AnswerData => {
-  if (message.sources && message.sources.length > 0)
-    return {
-      text: message.text,
-      status: 'complete',
-      sources: message.sources.map((s, at) => sourceFromWire(s, corpus, at)),
-      created: message.created,
-    };
+  const keptMarkers = storedMarkers(message.markers);
+  const stored = {
+    text: message.text,
+    status: 'complete' as const,
+    created: message.created,
+    ...(message.task ? { runId: message.task } : {}),
+  };
+  if (message.sources && message.sources.length > 0) {
+    const sources = message.sources.map((s, at) => sourceFromWire(s, corpus, at));
+    const markers = keptMarkers ?? markersFromSources(message.sources, sources);
+    return { ...stored, sources, ...(markers ? { markers } : {}) };
+  }
   if (message.chunks.length > 0) {
     const { sources, markers } = fromChunks(message.chunks, corpus);
-    return { text: message.text, status: 'complete', sources, markers, created: message.created };
+    return { ...stored, sources, markers: keptMarkers ?? markers };
   }
-  return { text: message.text, status: 'complete', created: message.created };
+  return stored;
 };
 
 /**

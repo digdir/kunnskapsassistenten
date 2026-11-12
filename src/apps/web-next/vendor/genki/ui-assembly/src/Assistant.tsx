@@ -165,9 +165,11 @@ const AnswerRow = ({
       feedback={feedback}
       onFeedback={(given) => {
         setStatus('sending');
+        const runId = a.turns.find((one) => one.id === turn.id)?.answer?.runId;
         void Promise.resolve(
           a.onFeedback?.({
             answerId: turn.id,
+            ...(runId ? { runId } : {}),
             rating: given.rating,
             reasons: given.reasons,
             comment: given.comment,
