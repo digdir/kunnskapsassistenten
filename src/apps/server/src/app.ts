@@ -7,6 +7,7 @@ import type { Env } from './apiShared.ts';
 import { v2 } from './apiV2.ts';
 import { mountAnsattporten, requireAnsattporten } from './ansattporten.ts';
 import { mountAuth, readUser, requireAuth } from './auth.ts';
+import { EXCERPT_TRIAL_HEADER, withExcerptTrial } from './backend.ts';
 import { probe } from './capabilities.ts';
 import { config } from './config.ts';
 import { facets } from './facets.ts';
@@ -61,6 +62,11 @@ const HEALTH = new Set(['/api/health', '/api/v2/health']);
 app.use('/api/*', async (c, next) => {
   if (HEALTH.has(c.req.path)) return next();
   return ansattporten ? requireAnsattporten(c, next) : requireAuth(c, next);
+});
+// After sign-in has set the caller, so every call to genki for them follows the trial.
+app.use('/api/*', async (c, next) => {
+  c.set('caller', withExcerptTrial(c.get('caller'), c.req.header(EXCERPT_TRIAL_HEADER)));
+  return next();
 });
 
 /*

@@ -46,6 +46,7 @@ shared.get('/me', async (c) => {
       ? { organisations: tokens.organisations, actingFor: tokens.actingFor ?? null }
       : {}),
     ...(environment ? { environment } : {}),
+    ...(config.excerptEnvironment ? { excerptTrial: true } : {}),
   } satisfies MeResponse);
 });
 

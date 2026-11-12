@@ -156,6 +156,19 @@ export function testersConfig(env: NodeJS.ProcessEnv = process.env) {
   return { ids: ids as ReadonlySet<string>, environment };
 }
 
+/** The genki environment the excerpt trial asks for (`KA_EXCERPT_ENVIRONMENT`); unset, no trial. */
+export function excerptEnvironmentConfig(env: NodeJS.ProcessEnv = process.env) {
+  const environment = (env.KA_EXCERPT_ENVIRONMENT ?? '').trim();
+  if (!environment) return undefined;
+  if (!ENVIRONMENT_NAME.test(environment)) {
+    console.error(
+      `KA_EXCERPT_ENVIRONMENT must be a genki environment name. Got "${environment}".`,
+    );
+    process.exit(1);
+  }
+  return environment;
+}
+
 const auth = authConfig();
 
 export const config = {
@@ -190,6 +203,8 @@ export const config = {
   next: nextConfig(),
 
   testers: testersConfig(),
+
+  excerptEnvironment: excerptEnvironmentConfig(),
 
   auth,
 } as const;
