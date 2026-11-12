@@ -150,8 +150,8 @@ The template takes the same as `kaNext`, `kaNextModel` and `kaNextTenant`, empty
 ## Testers and genki's test environment
 
 `KA_TESTERS` names the testers by user id, separated by commas or spaces (`decisions/0014`).
-Every call the server makes to genki for a tester carries `GenAI-Environment: test`, and the chat
-shows «Testmiljø» beside the send button. Everyone else sends no header and gets the service's
+A tester's questions, threads and feedback, in both clients, go to genki with
+`GenAI-Environment: test`, and the chat shows «Testmiljø» beside the send button. Everyone else sends no header and gets the service's
 `prod`. `KA_TEST_ENVIRONMENT` names another environment than `test`. Without `KA_TESTERS` nobody
 is a tester and nothing changes.
 

@@ -32,11 +32,11 @@ before(async () => {
 });
 after(() => backend.restore());
 
-async function ask(sid: string) {
+async function ask(sid: string, extra: Record<string, string> = {}) {
   sent.length = 0;
   const res = await app.request('/api/v2/ask', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Cookie: `ka_sid=${sid}` },
+    headers: { 'Content-Type': 'application/json', Cookie: `ka_sid=${sid}`, ...extra },
     body: JSON.stringify({ query: 'Hva sier årsrapportene?' }),
   });
   assert.equal(res.status, 200);
@@ -72,6 +72,13 @@ describe('a tester in KA_TESTERS', () => {
 describe('anyone not in KA_TESTERS', () => {
   test('sends no GenAI-Environment, so genki runs prod', async () => {
     assert.deepEqual(await ask('someone-else'), [
+      ['/api/conversations', null],
+      ['/api/mcp', null],
+    ]);
+  });
+
+  test('cannot choose an environment by sending GenAI-Environment from the browser', async () => {
+    assert.deepEqual(await ask('someone-else', { 'GenAI-Environment': 'test' }), [
       ['/api/conversations', null],
       ['/api/mcp', null],
     ]);

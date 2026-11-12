@@ -12,15 +12,17 @@ and once `test` exists a publish moves `test` and leaves `prod` until it is prom
 picks its environment with the header `GenAI-Environment` on MCP, REST, the OpenAI-compatible
 API and A2A. Without the header it runs `prod`.
 
-The BFF makes every call to genki on a person's behalf through one function, `backendHeaders`
-in `backend.ts`: MCP from `apps/web`, conversations, feedback and the proxy for `apps/web-next`.
+Once a person is signed in, the BFF makes its calls to genki for them through one function,
+`backendHeaders` in `backend.ts`: MCP from `apps/web`, conversations, feedback, models with the
+person's token, and the proxy for `apps/web-next`.
 
 ## Decision
 
 **The BFF sends `GenAI-Environment` for testers and nothing for anyone else.**
 `backendHeaders` adds `GenAI-Environment: <KA_TEST_ENVIRONMENT>` (default `test`) when the
 caller's user id is in `KA_TESTERS`. Everyone else sends no header and gets genki's `prod`. With
-`KA_TESTERS` empty or unset the BFF sends exactly what it sent before.
+`KA_TESTERS` empty or unset the BFF sends exactly what it sent before. The browser cannot choose:
+a `GenAI-Environment` it sends is not passed on.
 
 **A tester is named by the session's user id**, the id `/api/v2/me` gives as `userId`: with
 Ansattporten `ansattporten:<sub>`, where `sub` is Ansattporten's subject for KA's client and is
