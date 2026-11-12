@@ -21,10 +21,13 @@ const KUDOS_FIELDS: readonly FieldSpec[] = [
   { id: 'concerned_years', label: 'År', heading: 'År', kind: 'year', integer: true },
 ];
 
+const KUDOS = 'Kudos';
+
+// The collection by name: the model is not told which one it searches, so «denne samlingen» is asked back.
 const SUGGESTIONS = [
-  'Hva handler dokumentene i denne samlingen om?',
-  'Gi meg en oversikt over de viktigste temaene.',
-  'Oppsummer det viktigste i noen få punkter.',
+  `Hva handler dokumentene i ${KUDOS} om?`,
+  `Gi meg en oversikt over de viktigste temaene i ${KUDOS}.`,
+  `Oppsummer det viktigste i ${KUDOS} i noen få punkter.`,
 ];
 const FOLLOW_UPS = ['Kan du utdype?', 'Identifiser utfordringer', 'Lag relaterte spørsmål'];
 
@@ -72,7 +75,7 @@ export const profileFor = (me: Me): AssistantProfile => ({
   followUps: FOLLOW_UPS,
   corpora: {
     kudos: {
-      label: 'Kudos',
+      label: KUDOS,
       description: 'dokumenter fra kudos.dfo.no',
       fields: KUDOS_FIELDS,
       typeField: 'type',
