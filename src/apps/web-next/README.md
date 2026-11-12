@@ -13,7 +13,8 @@ this client's profile menu. Nothing here imports `apps/web`.
 - `src/profile.ts`: what KA knows that genki does not say: Kudos's fields and words, the
   suggestions, the document links and the experiments. UI text is Norwegian bokmål.
 - `src/menu.tsx`: KA's entries in genki's profile menu: «Endringslogg» and «Om prosjektet», which
-  are apps/web's pages (the server serves them from apps/web whichever client was chosen), and
+  are apps/web's pages (the server serves them from apps/web whichever client was chosen), opened
+  with this client's address in `?fra=` for apps/web's «Tilbake til ny versjon», and
   «Tilbake til gammel versjon».
 - `src/feedback.ts`: feedback on an answer, to the server's `POST /api/next/feedback`, which
   checks that the run is in the person's own thread and takes it only with a person's token.
