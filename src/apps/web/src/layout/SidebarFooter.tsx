@@ -1,6 +1,7 @@
 import { Link } from '@digdir/designsystemet-react';
 import { CogIcon } from '@navikt/aksel-icons';
 import { Link as RouterLink, useLocation } from 'react-router';
+import { TryNextVersion } from '../nextVersion/TryNextVersion';
 import { infoPages } from '../routes/info/infoPages';
 import { SETTINGS_PATH, SETTINGS_TITLE } from '../routes/settings/SettingsPage';
 
@@ -36,6 +37,7 @@ export function SidebarFooter() {
             </li>
           );
         })}
+        <TryNextVersion />
       </ul>
     </div>
   );
