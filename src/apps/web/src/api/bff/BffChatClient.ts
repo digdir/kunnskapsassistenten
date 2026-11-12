@@ -37,6 +37,7 @@ import {
 } from './mapping';
 import { BFF_API } from './api';
 import { resetSignIn, toLogin } from './signIn';
+import { trialHeaders } from '../trials';
 
 export type BffChatClientOptions = {
   /** Where the BFF's API is. Relative: the BFF serves this client itself. */
@@ -140,7 +141,7 @@ export class BffChatClient implements ChatClient {
   async #fetch(path: string, init?: RequestInit): Promise<Response> {
     const response = await fetch(`${this.#basePath}${path}`, {
       ...init,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      headers: { 'Content-Type': 'application/json', ...trialHeaders(), ...init?.headers },
     });
     if (response.status === 401) this.#onUnauthorized(keepDraft());
     return response;

@@ -78,6 +78,9 @@ param kaTesters string = ''
 @description('The genki environment testers get. Empty is `test`.')
 param kaTestEnvironment string = ''
 
+@description('The genki environment that cites by excerpt, for people who turn the trial on in the app (decisions/0016). Empty: no trial.')
+param kaExcerptEnvironment string = ''
+
 var appHost = empty(publicHost) ? '${name}.${containerEnv.properties.defaultDomain}' : publicHost
 var ansattporten = authMode == 'ansattporten'
 
@@ -203,6 +206,9 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             ],
             empty(kaTestEnvironment) ? [] : [
               { name: 'KA_TEST_ENVIRONMENT', value: kaTestEnvironment }
+            ],
+            empty(kaExcerptEnvironment) ? [] : [
+              { name: 'KA_EXCERPT_ENVIRONMENT', value: kaExcerptEnvironment }
             ]
           )
           probes: [

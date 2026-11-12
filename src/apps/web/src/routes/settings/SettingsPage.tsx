@@ -1,8 +1,9 @@
 import { Fieldset, Heading, Link, Paragraph, Radio, Switch } from '@digdir/designsystemet-react';
 import { ExternalLinkIcon } from '@navikt/aksel-icons';
-import { useId } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { fetchOfferedTrials } from '../../api/trials';
 import { PageTitle } from '../../components';
-import { FLAGS, setFlag, useFlag } from '../../flags';
+import { FLAGS, setFlag, useFlag, type FlagId } from '../../flags';
 import { ColorSchemeToggle } from '../../layout/ColorSchemeToggle';
 import { setFooterMode, useFooterMode, type FooterMode } from '../../layout/footerMode';
 import { setDisplayLevel, useDisplayLevel, type DisplayLevel } from '../../views/chat/displayLevel';
@@ -54,6 +55,8 @@ export function SettingsPage() {
   const footerName = useId();
   const level = useDisplayLevel();
   const footerMode = useFooterMode();
+  const offered = useOfferedTrials();
+  const flags = FLAGS.filter((flag) => !('needsServer' in flag) || offered.includes(flag.id));
 
   return (
     <article className="settings-page">
@@ -98,7 +101,7 @@ export function SettingsPage() {
           Forsøk som ikke er bestemt ennå. Alle er av til du slår dem på.
         </Paragraph>
         <div className="settings-page__flags">
-          {FLAGS.map((flag) => (
+          {flags.map((flag) => (
             <FlagSwitch flag={flag} key={flag.id} />
           ))}
         </div>
@@ -131,6 +134,19 @@ export function SettingsPage() {
       </Paragraph>
     </article>
   );
+}
+
+/** The flags the BFF offers (`needsServer`), asked once when the page opens. */
+function useOfferedTrials(): readonly FlagId[] {
+  const [offered, setOffered] = useState<readonly FlagId[]>([]);
+  useEffect(() => {
+    const abort = new AbortController();
+    void fetchOfferedTrials(abort.signal).then((found) => {
+      if (!abort.signal.aborted) setOffered(found);
+    });
+    return () => abort.abort();
+  }, []);
+  return offered;
 }
 
 function FlagSwitch({ flag }: { flag: (typeof FLAGS)[number] }) {

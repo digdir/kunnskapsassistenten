@@ -179,6 +179,35 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
 A new revision signs everyone out with Ansattporten, as every rollout does. The template takes
 the same as `kaTesters` and `kaTestEnvironment`, empty by default.
 
+## The excerpt trial
+
+`KA_EXCERPT_ENVIRONMENT` names a genki environment of the service whose version cites by
+excerpt (`decisions/0016`). With it set, Innstillinger in `apps/web` offers «Fotnoter som
+viser til utdraget», and the calls of a person who turns it on go to genki with `GenAI-Environment` set to
+that environment. Testers keep their own environment. Without it there is no switch and nothing
+changes.
+
+Add the environment to the genki service first: until it has one, genki refuses those questions
+with `409 environment_not_found`. A key or client bound to environments must allow it too. Then,
+about 30 seconds and no rebuild, type the environment's
+name when the first command waits:
+
+```sh
+read -r EXCERPT_ENVIRONMENT
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --set-env-vars "KA_EXCERPT_ENVIRONMENT=$EXCERPT_ENVIRONMENT" --revision-suffix excerpt$(date +%H%M%S)
+```
+
+The trial is gone again with:
+
+```sh
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --remove-env-vars KA_EXCERPT_ENVIRONMENT --revision-suffix excerpt$(date +%H%M%S)
+```
+
+A new revision signs everyone out with Ansattporten, as every rollout does. The template takes
+the same as `kaExcerptEnvironment`, empty by default.
+
 ## Deploying from scratch
 
 Only needed if the resource group is gone.
