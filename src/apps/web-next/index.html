@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="nb" data-color-scheme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/src/favicon.svg" />
+    <!-- Inter, as apps/web loads it: the font Designsystemet is built with. -->
+    <link
+      rel="stylesheet"
+      href="https://altinncdn.no/fonts/inter/v4.1/inter.css"
+      integrity="sha384-OcHzc/By/OPw9uJREawUCjP2inbOGKtKb4A/I2iXxmknUfog2H8Adx71tWVZRscD"
+      crossorigin="anonymous"
+    />
+    <title>Kunnskapsassistenten</title>
+  </head>
+  <!-- data-size and data-color on <body>, as in apps/web: on <html>, 1rem would be 18px and every
+       --ds-size-* would grow 12.5 %, so the shell's sums would not match what is drawn. -->
+  <body data-size="md" data-color="accent">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

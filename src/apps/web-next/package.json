@@ -1,0 +1,35 @@
+{
+  "name": "@ka/web-next",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Kunnskapsassistenten's next client, drawn from genki's UI blocks, behind a toggle on the same server.",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "sync-genki": "sh scripts/sync-genki.sh"
+  },
+  "dependencies": {
+    "@digdir/designsystemet-css": "1.23.0",
+    "@digdir/designsystemet-react": "1.23.0",
+    "@navikt/aksel-icons": "8.22.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.3",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "29.1.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.3",
+    "vitest": "5.0.5"
+  }
+}
