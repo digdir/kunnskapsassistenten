@@ -44,6 +44,11 @@ async function startGenki() {
     seen.push({ method: req.method ?? '', url: req.url ?? '', headers: req.headers, body });
     const path = (req.url ?? '').split('?')[0];
     if (path === '/v1/chat/completions') {
+      if (JSON.parse(body).conversation_id === 'not-yours') {
+        res.writeHead(404, { 'content-type': 'application/problem+json' });
+        res.end(JSON.stringify({ code: 'conversation_not_found' }));
+        return;
+      }
       const question = JSON.parse(body).messages?.[0]?.content;
       res.writeHead(200, {
         'content-type': 'text/event-stream',
@@ -515,6 +520,29 @@ describe('the proxy', () => {
     const first = arrivals.find((a) => a.text.includes('"n":1'))!.at;
     const last = arrivals.find((a) => a.text.includes('[DONE]'))!.at;
     assert.ok(last - first >= 120, `the first chunk came ${last - first} ms before the end`);
+  });
+
+  test("an answer in a thread makes apps/web forget the sources it kept for the thread's last answer", async () => {
+    const sourceStore = await import('./sourceStore.ts');
+    const kept = [{ docNum: '7', title: 'Årsrapport 2020', url: '', chunkId: 'k1' }];
+    for (const id of ['c-1', 'c-2', 'not-yours']) sourceStore.remember(id, kept);
+
+    const answered = await post('/v1/chat/completions', QUESTION);
+    assert.equal(answered.status, 200);
+    await answered.text();
+    assert.deepEqual(sourceStore.recall('c-1'), [], 'the next answer is the last, not this');
+    assert.deepEqual(sourceStore.recall('c-2'), kept, 'another thread keeps its own');
+
+    const refused = await post('/v1/chat/completions', {
+      ...QUESTION,
+      conversation_id: 'not-yours',
+    });
+    assert.equal(refused.status, 404);
+    assert.deepEqual(
+      sourceStore.recall('not-yours'),
+      kept,
+      'a refused question changes nothing',
+    );
   });
 
   test('stopping the answer ends the call to genki', async () => {

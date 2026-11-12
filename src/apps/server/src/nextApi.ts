@@ -19,6 +19,7 @@ import type { Env } from './apiShared.ts';
 import { readSessionId } from './auth.ts';
 import { backendHeaders, knownProblem, type Caller } from './backend.ts';
 import { config } from './config.ts';
+import * as sourceStore from './sourceStore.ts';
 import { getTokens } from './tokenStore.ts';
 
 // ── Which client ──
@@ -442,6 +443,9 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
       const failure = await upstreamFailure(upstream);
       return failed(c, upstream.status, failure.message, failure.code);
     }
+    // apps/web hangs a thread's kept sources on its last answer (sourceStore.ts), now this one.
+    const thread = shaped.body?.conversation_id;
+    if (method === 'POST' && typeof thread === 'string') sourceStore.forget(thread);
 
     // The body as it comes, never read, re-chunked or compressed here: an answer streams.
     const out = new Headers({ 'X-Accel-Buffering': 'no' });
