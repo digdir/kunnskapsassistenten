@@ -473,6 +473,38 @@ describe('samlede merkelapper (compact-filter-chips)', () => {
     expect(chips(container)).toHaveLength(12);
   });
 
+  it('draws one «Alle virksomheter» chip after «Velg alle», not one per value, without the flag', () => {
+    const { container } = render(<Organisations initial={[]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Velg alle virksomheter' }));
+
+    expect(chips(container)).toEqual(['Alle virksomheter']);
+  });
+
+  it('keeps a lone chosen value as its own chip when it is the only one listed, with or without the flag', () => {
+    const one: FilterFacet = { ...organisations, values: organisations.values.slice(0, 1) };
+    const { container, rerender } = render(
+      <FacetField facet={one} selected={first(1)} onChange={() => {}} />,
+    );
+    expect(chips(container)).toEqual(first(1));
+
+    act(() => setFlag('compact-filter-chips', true));
+    rerender(<FacetField facet={one} selected={first(1)} onChange={() => {}} />);
+    expect(chips(container)).toEqual(first(1));
+  });
+
+  it('clears the field when the «Alle virksomheter» chip is removed, without the flag', () => {
+    const seen: string[][] = [];
+    const { container } = render(<Organisations initial={first(20)} seen={seen} />);
+
+    fireEvent.click(
+      screen.getByRole('option', { name: /^Alle virksomheter, Trykk for å fjerne alle/u }),
+    );
+
+    expect(seen.at(-1)).toEqual([]);
+    expect(chips(container)).toEqual([]);
+  });
+
   it('samler mange valgte verdier i én merkelapp', () => {
     setFlag('compact-filter-chips', true);
     const { container } = render(<Organisations initial={first(12)} />);
@@ -628,16 +660,18 @@ describe('«Velg alle» og «Tøm» for skjermleseren', () => {
 
   // u-combobox reads out one chip that comes or goes («Fjernet …», «Lagt til …»); the view
   // saying it too was heard twice (measured 12.10).
-  it('lar u-combobox si fra alene når bare én verdi endres', () => {
+  it('lets u-combobox alone tell «Tøm» that removes one value', () => {
     const said: (string | undefined)[] = [];
-    const { unmount } = render(<Organisations initial={all.slice(0, 1)} said={said} />);
+    render(<Organisations initial={all.slice(0, 1)} said={said} />);
     fireEvent.click(screen.getByRole('button', { name: 'Tøm virksomheter' }));
     expect(said).toEqual([undefined]);
-    unmount();
+  });
 
+  it('says «Velg alle» in the panel when it adds one value and the «Alle» chip comes, without the flag', () => {
+    const said: (string | undefined)[] = [];
     render(<Organisations initial={all.slice(1)} said={said} />);
     fireEvent.click(screen.getByRole('button', { name: 'Velg alle virksomheter' }));
-    expect(said).toEqual([undefined, undefined]);
+    expect(said).toEqual(['Alle 20 virksomheter er valgt.']);
   });
 
   it('lar u-combobox si fra alene også bak den samlede merkelappen, som blir stående', () => {

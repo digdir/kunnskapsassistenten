@@ -20,7 +20,7 @@ deletes them (`beforeLogout` in `src/api/session.ts`).
 | Id                     | What                                                                                       | Issue                                                                                        |
 | ---------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
 | `year-ranges`          | The year field takes periods, such as 2021 or 2023–2028, and consecutive years are one tag | [digdir/kunnskapsassistenten#115](https://github.com/digdir/kunnskapsassistenten/issues/115) |
-| `compact-filter-chips` | One tag when all or many values in a field are chosen                                      | [digdir/kunnskapsassistenten#116](https://github.com/digdir/kunnskapsassistenten/issues/116) |
+| `compact-filter-chips` | One tag when many values in a field are chosen; all chosen is one tag without the flag     | [digdir/kunnskapsassistenten#116](https://github.com/digdir/kunnskapsassistenten/issues/116) |
 | `filters-right-panel`  | The filters above the sources in the sources panel, the navigation panel with threads only | [digdir/kunnskapsassistenten#84](https://github.com/digdir/kunnskapsassistenten/issues/84)   |
 
 ## Adding and removing

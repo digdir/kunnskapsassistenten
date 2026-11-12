@@ -27,8 +27,7 @@ export const FLAGS = [
   {
     id: 'compact-filter-chips',
     title: 'Samlede merkelapper i filteret',
-    description:
-      'Når alle eller mange verdier er valgt, står én merkelapp, som «Alle dokumenttyper» eller «12 virksomheter».',
+    description: 'Når mange verdier er valgt, står én merkelapp, som «12 virksomheter».',
     issue: 'https://github.com/digdir/kunnskapsassistenten/issues/116',
   },
   {
