@@ -86,6 +86,27 @@ describe('sourceDocumentsFrom', () => {
     expect(document?.excerpts[0]?.kudosUrl).toBe(url);
   });
 
+  it("keeps each chunk's section path on its own excerpt", () => {
+    const [document] = sourceDocumentsFrom([
+      source({ chunkId: 'a', heading: 'Samlet vurdering › Digitalt utenforskap' }),
+      source({ chunkId: 'b', heading: 'Vurdering av framtidsutsikter' }),
+    ]);
+
+    expect(document?.excerpts.map((e) => e.heading)).toEqual([
+      'Samlet vurdering › Digitalt utenforskap',
+      'Vurdering av framtidsutsikter',
+    ]);
+  });
+
+  it('leaves the heading out when the BFF sends none, or a blank one', () => {
+    const [document] = sourceDocumentsFrom([
+      source({ chunkId: 'a' }),
+      source({ chunkId: 'b', heading: '  ' }),
+    ]);
+
+    for (const excerpt of document?.excerpts ?? []) expect('heading' in excerpt).toBe(false);
+  });
+
   it('counts hits by chunk and documents by document', () => {
     const state = new BffTurnState();
     state.read({ type: 'delta', text: 'Svar [1][2].' });
@@ -140,6 +161,16 @@ describe('threadDetailFromBff: sources the BFF did not keep', () => {
 
     expect(thread.messages[3]?.sources).toHaveLength(1);
     expect(thread.messages[3]?.sourcesNotStored).toBeUndefined();
+  });
+
+  it("keeps each excerpt's section path in a reloaded answer", () => {
+    const thread = threadDetailFromBff({
+      conversation: { id: 'c1', topic: 'Første', created: 1 },
+      messages,
+      sources: [{ ...kept[0]!, heading: 'Mål › Styringsparametere' }],
+    });
+
+    expect(thread.messages[3]?.sources?.[0]?.excerpts[0]?.heading).toBe('Mål › Styringsparametere');
   });
 
   it('marks the last answer too when the BFF has nothing, which is also what a restart looks like', () => {
