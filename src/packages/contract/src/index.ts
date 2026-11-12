@@ -303,6 +303,8 @@ export interface MeResponse {
   organisations?: Organisation[];
   /** With Ansattporten: the one chosen, when there are several. */
   actingFor?: string | null;
+  /** For a tester only: the genki environment the BFF asks with (`KA_TEST_ENVIRONMENT`). */
+  environment?: string;
 }
 
 export interface Organisation {
