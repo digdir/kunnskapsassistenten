@@ -10,6 +10,8 @@ import { mountAuth, readUser, requireAuth } from './auth.ts';
 import { probe } from './capabilities.ts';
 import { config } from './config.ts';
 import { facets } from './facets.ts';
+import { nextPage } from './nextPage.ts';
+import { nextRoutes } from './nextApi.ts';
 import { sessionMiddleware } from './session.ts';
 
 /** The BFF: sign-in, the API and the client. server.ts serves it. */
@@ -67,6 +69,8 @@ app.use('/api/*', async (c, next) => {
  */
 app.get('/api/health', (c) => c.json({ ok: true }));
 app.route('/api/v2', v2);
+// The next client's API, only while it is switched on (decisions/0013).
+if (config.next.enabled) app.route('/api/next', nextRoutes());
 
 // Before the SPA fallback, or a mistyped endpoint answers 200 with index.html.
 app.all('/api/*', (c) => c.json({ error: 'Ukjent endepunkt.' }, 404));
@@ -89,14 +93,28 @@ if (root) {
   // A name from an older build is gone, and must not become index.html cached for a year.
   app.all('/assets/*', (c) => c.text('Fant ikke fila.', 404));
   app.get('/favicon.ico', serveStatic({ root, path: 'favicon.ico' }));
+  // The next client's page and files, when it is on and built (decisions/0013).
+  const nextClient = nextPage(root);
+  if (nextClient) {
+    app.use('/next-assets/*', cacheFor('public, max-age=31536000, immutable'));
+    app.use('/next-assets/*', nextClient.files);
+    app.all('/next-assets/*', (c) => c.text('Fant ikke fila.', 404));
+    app.get('*', nextClient.threadLinks);
+  }
   app.get('*', async (c, next) => {
     if (config.auth.enabled && !(await readUser(c))) {
-      return c.redirect(`/auth/login?next=${encodeURIComponent(c.req.path)}`);
+      // With the next client the thread is in the query (`?t=`), and must survive the sign-in.
+      const back = nextClient ? `${c.req.path}${new URL(c.req.url).search}` : c.req.path;
+      return c.redirect(`/auth/login?next=${encodeURIComponent(back)}`);
     }
     return next();
   });
   // index.html names the hashed files, so it is asked for again on every load.
-  app.get('*', cacheFor('no-cache'), serveStatic({ root, path: 'index.html' }));
+  app.get(
+    '*',
+    cacheFor('no-cache'),
+    nextClient ? nextClient.page : serveStatic({ root, path: 'index.html' }),
+  );
 }
 
 /**
