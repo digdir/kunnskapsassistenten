@@ -72,7 +72,7 @@ param kaNextModel string = ''
 @description('The genki tenant the next client reads collections and facets from. Empty is `digdir`.')
 param kaNextTenant string = ''
 
-@description('Testers by session user id (`userId` in `/api/v2/me`), separated by commas or spaces: their calls to genki carry `GenAI-Environment` (decisions/0014). Empty: nobody is a tester.')
+@description('Testers by session user id (`userId` in `/api/v2/me`), separated by commas or spaces: their calls to genki carry `GenAI-Environment` (decisions/0015). Empty: nobody is a tester.')
 param kaTesters string = ''
 
 @description('The genki environment testers get. Empty is `test`.')
