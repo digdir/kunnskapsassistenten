@@ -152,6 +152,8 @@ export interface ConversationMessage {
   tags: string[];
   filterValue: unknown;
   chunks: ConversationChunk[];
+  sources?: Source[];
+  markers?: AnswerMarker[];
 }
 
 export interface ConversationPage {

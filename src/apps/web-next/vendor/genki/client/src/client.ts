@@ -386,6 +386,17 @@ export const createClient = (options: ClientOptions) => {
 
   const conversationOf = (raw: unknown): Conversation => raw as Conversation;
 
+  const messageOf = (raw: unknown): ConversationMessage => {
+    const { sources, markers, ...rest }: Json = isRecord(raw) ? raw : {};
+    const read = sourcesOf(sources);
+    const cited = markersOf(markers);
+    return {
+      ...(rest as unknown as ConversationMessage),
+      ...(read.length > 0 ? { sources: read } : {}),
+      ...(cited === undefined ? {} : { markers: cited }),
+    };
+  };
+
   return {
     listServices: async (call?: CallOptions): Promise<Service[]> => {
       const body = await json('GET', '/v1/models', undefined, call);
@@ -430,8 +441,8 @@ export const createClient = (options: ClientOptions) => {
         id: string,
         params: { branches?: 'all'; diagnostics?: boolean } = {},
         call?: CallOptions,
-      ): Promise<{ conversation: Conversation; messages: ConversationMessage[] }> =>
-        (await json(
+      ): Promise<{ conversation: Conversation; messages: ConversationMessage[] }> => {
+        const body = await json(
           'GET',
           `/api/conversations/${encodeURIComponent(id)}${query({
             branches: params.branches,
@@ -439,7 +450,12 @@ export const createClient = (options: ClientOptions) => {
           })}`,
           undefined,
           call,
-        )) as unknown as { conversation: Conversation; messages: ConversationMessage[] },
+        );
+        return {
+          conversation: conversationOf(body.conversation),
+          messages: Array.isArray(body.messages) ? body.messages.map(messageOf) : [],
+        };
+      },
       update: async (
         id: string,
         changes: { title?: string; tags?: string[] },
