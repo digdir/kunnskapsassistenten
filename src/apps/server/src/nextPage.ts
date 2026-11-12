@@ -27,10 +27,7 @@ export const threadLinkFor = (ui: 'next' | 'classic', path: string, query: URLSe
   return path === '/' && id && THREAD_ID.test(id) ? `/threads/${id}` : undefined;
 };
 
-/**
- * apps/web's own pages, which the next client has no page for: its profile menu links to them, and
- * they are apps/web's whichever client was chosen. A link from there to `/` is the chosen client.
- */
+/** apps/web's pages the next client's menu links to, served from apps/web whatever the cookie. */
 export const CLASSIC_PAGES: ReadonlySet<string> = new Set(['/endringslogg', '/om-prosjektet']);
 
 export function nextPage(classicRoot: string) {

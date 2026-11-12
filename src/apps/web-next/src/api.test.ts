@@ -59,8 +59,7 @@ describe('a call refused with 401', () => {
   });
 });
 
-// genki can number excerpts (`markers`) where a service cites by excerpt. KA's service cites by
-// document, so its answers carry no markers, and read as they did before the client took them.
+// KA's service cites by document, so its answers carry no excerpt markers and read as before.
 describe('an answer from a service that cites documents', () => {
   const json = (body: unknown) => Response.json(body);
   const stream = (...frames: unknown[]) =>

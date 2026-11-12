@@ -192,8 +192,7 @@ describe('feedback on an answer', () => {
       },
     ]);
     render(<App me={me} api={api} />);
-    // genki draws a footnote only for an excerpt a marker names; `[1]` naming a document is
-    // left out of the text, as in the snapshot before the markers came.
+    // genki draws footnotes only for excerpt markers; `[1]` naming a document is left out.
     await waitFor(() =>
       expect(document.querySelector('.uib-answer-text')?.textContent).toBe(
         'Ventetiden gikk ned.',

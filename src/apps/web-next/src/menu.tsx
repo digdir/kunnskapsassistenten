@@ -1,6 +1,4 @@
-// KA's entries in genki's profile menu (`profile.menu`): «Endringslogg» and «Om prosjektet», which
-// are apps/web's pages (the server serves them from apps/web whichever client was chosen), and
-// «Tilbake til gammel versjon», the way back to apps/web. UI text is Norwegian bokmål.
+// KA's entries in genki's profile menu: apps/web's info pages and the way back to apps/web.
 import type { AssistantProfile } from '@genai/ui-assembly';
 import { ArrowUndoIcon, InformationIcon } from '@navikt/aksel-icons';
 

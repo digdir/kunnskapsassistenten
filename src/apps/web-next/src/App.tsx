@@ -1,8 +1,7 @@
 // Kunnskapsassistenten's next client: `<Assistant>` from genki's @genai/ui-assembly with the
 // template `knowledge-assistant-next`, against genki through this site's server. What is this
-// host's own stays here: who is signed in (`/api/next/me`), the profile and its menu, the paths,
-// the `ka-next.` keys in this browser, the colour scheme, feedback, and the way back to the old
-// client.
+// host's own stays here: who is signed in (`/api/next/me`), the profile, the paths, the
+// `ka-next.` keys in this browser, the colour scheme, and the way back to the old client.
 import {
   Assistant,
   browserStorage,
@@ -86,8 +85,7 @@ export const App = ({ me, api, onSwitchBack = () => switchClient('classic') }: A
         onNotice={say}
         colorScheme={scheme}
         onColorSchemeChange={setScheme}
-        // A block, not an expression: the assembly calls this from an effect, which takes what
-        // it returns for its cleanup.
+        // A block body: the assembly calls this in an effect, which would take a value as cleanup.
         onThreadChange={(id) => {
           thread.current = id;
         }}

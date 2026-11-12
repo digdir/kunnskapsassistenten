@@ -5,8 +5,7 @@
  * - `GET /me`: who is signed in, and which genki service and variant the page asks.
  * - `/genki/*`: a narrow proxy to the genki calls `createGenkiApi` makes, with the signed-in
  *   person's credential, as every call of apps/web is made (`backendHeaders`).
- * - `POST /feedback`: a rating of an answer, with the checks of apps/web's feedback route, and
- *   only with a person's token.
+ * - `POST /feedback`: a rating of an answer, as apps/web's, and only with a person's token.
  *
  * Mounted under `/api/*`, so the session, the sign-in check and the body limit in app.ts come
  * first. Nothing here imports apps/web, and apps/web's routes are not changed.
@@ -369,12 +368,7 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
     });
   });
 
-  /**
-   * Feedback on an answer, as apps/web's `POST /api/v2/feedback` takes it (`feedback.ts`): the run
-   * must be an answer in one of the caller's own threads. Unlike there, only with a person's
-   * token: with the service key genki records feedback from anyone holding the key, so local
-   * runs, e2e and agents never write it. The proxy below still refuses `/api/feedback`.
-   */
+  // apps/web's feedback checks (feedback.ts), and never with the service key (decisions/0013).
   next.post('/feedback', async (c) => {
     const caller: Caller = c.get('caller');
     if (!caller.token) return refused(c, 'not_allowed');

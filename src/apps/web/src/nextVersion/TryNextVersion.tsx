@@ -58,8 +58,7 @@ export function TryNextVersion({
           className="try-next-version"
           aria-busy={busy || undefined}
           onClick={() => {
-            // The next client was chosen, and this is one of apps/web's pages it links to
-            // (decisions/0013): its front page is the next client's.
+            // Chosen already: this is an info page the next client links to (decisions/0013).
             if (shown.chosen) return go('/');
             setBusy(true);
             chooseNext(fetcher, reload).catch(() => setBusy(false));

@@ -1,6 +1,4 @@
-// Feedback on an answer goes to this server's `POST /api/next/feedback`, never to genki through
-// the proxy: the server checks that the run is an answer in the person's own thread, and takes it
-// only with a person's token (decisions/0013).
+// Feedback goes to this server, which checks the run is in the person's thread (decisions/0013).
 import type { AssistantFeedback } from '@genai/ui-assembly';
 
 export const FEEDBACK_PATH = '/api/next/feedback';
