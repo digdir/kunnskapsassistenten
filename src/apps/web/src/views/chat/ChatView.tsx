@@ -1,7 +1,13 @@
 import { Heading, Paragraph } from '@digdir/designsystemet-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { corpusDisplayNameFor, corpusOption, createChatClient, type ChatClient } from '../../api';
+import {
+  corpusDisplayName,
+  corpusDisplayNameFor,
+  corpusOption,
+  createChatClient,
+  type ChatClient,
+} from '../../api';
 import { ErrorState, PageTitle } from '../../components';
 import { useAnswerSources } from '../../layout/useAnswerSources';
 import { useCitation } from '../../layout/useCitation';
@@ -72,7 +78,7 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
   // For the suggestions on the empty state: one naming documents the corpus
   // does not hold invites a question it cannot answer. Read here, or
   // `Kickstarters` needs a router in every preview that draws a greeting.
-  const { active: corpusKey } = useCorpus();
+  const { active: corpusKey, option: corpus } = useCorpus();
 
   // Which agent the question goes to, chosen in the compose field.
   const agentChoice = useAgents(chatClient);
@@ -498,7 +504,7 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
             setDraft(question);
             focusField();
           }}
-          questions={kickstartersFor(corpusKey)}
+          questions={kickstartersFor(corpusKey, corpus && corpusDisplayName(corpus))}
         />
       ) : null}
 
