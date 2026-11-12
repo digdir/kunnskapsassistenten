@@ -63,6 +63,15 @@ param kudosDocsCollection string = ''
 @description('What the capability probe would find, forced: `filters` or `no-filters`. Empty lets the probe decide.')
 param kaCapabilities string = ''
 
+@description('The next client (apps/web-next) beside apps/web: `1` offers it, empty keeps it off (decisions/0013).')
+param kaNext string = ''
+
+@description('The genki service and variant the next client asks, `<service>__<variant>`. Empty is `kunnskapsassistenten__default`.')
+param kaNextModel string = ''
+
+@description('The genki tenant the next client reads collections and facets from. Empty is `digdir`.')
+param kaNextTenant string = ''
+
 var appHost = empty(publicHost) ? '${name}.${containerEnv.properties.defaultDomain}' : publicHost
 var ansattporten = authMode == 'ansattporten'
 
@@ -173,6 +182,15 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             ],
             empty(kaDataset) ? [] : [
               { name: 'KA_DATASETS', value: '${digdirDatasetConfigKey}=${kaDataset}' }
+            ],
+            empty(kaNext) ? [] : [
+              { name: 'KA_NEXT', value: kaNext }
+            ],
+            empty(kaNextModel) ? [] : [
+              { name: 'KA_NEXT_MODEL', value: kaNextModel }
+            ],
+            empty(kaNextTenant) ? [] : [
+              { name: 'KA_NEXT_TENANT', value: kaNextTenant }
             ]
           )
           probes: [
