@@ -13,7 +13,7 @@ import type {
 } from '../../model';
 import { errorFromBackend, errorFromStatus } from '../backendErrors';
 import type { DatasetFilterFields } from '../filterFields';
-import { messagesFromApi, threadFromConversation } from '../live/conversations';
+import { citationCountIn, messagesFromApi, threadFromConversation } from '../live/conversations';
 import { citeAnswer, type CitedAnswer, type MarkerRef } from '../excerptCitations';
 import { relevanceFromRank } from '../live/mcp';
 import { publicUrl } from '../publicUrl';
@@ -140,6 +140,7 @@ export function threadDetailFromBff(
         return {
           ...message,
           content: cited.content,
+          citationCount: citationCountIn(cited.content),
           sources: cited.documents,
           citations: cited.citations,
         };

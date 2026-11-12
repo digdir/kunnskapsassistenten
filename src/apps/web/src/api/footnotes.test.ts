@@ -208,6 +208,13 @@ describe('issue 235: a service that cites by excerpt', () => {
     expect(reloaded.content).toBe(live.content ?? text);
   });
 
+  it('BFF: a reloaded answer counts the footnotes it shows, not a marker that named nothing', () => {
+    const reloaded = bffReload(`${text} Ukjent [9].`, withMarkers);
+
+    expect(reloaded.content).not.toContain('[9]');
+    expect(reloaded.citationCount).toBe(3);
+  });
+
   it('BFF: markers are renumbered in the order the answer first cites them, as in live mode', () => {
     const event = bffLive('FM [3] og ansatte [2].', withMarkers);
 
