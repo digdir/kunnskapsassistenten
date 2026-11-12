@@ -8,16 +8,25 @@ import {
   useNotice,
   useStoredColorScheme,
   type AssistantApi,
+  type AssistantFeedback,
 } from '@genai/ui-assembly';
-import { fromTemplate } from '@genai/ui-blocks';
-import { useMemo } from 'react';
+import { fromTemplate, withSetting } from '@genai/ui-blocks';
+import { useMemo, useRef } from 'react';
 import { genkiApi } from './api';
-import { BackToClassic } from './BackToClassic';
+import { sendFeedback } from './feedback';
+import { menuFor } from './menu';
 import { profileFor } from './profile';
 import type { Me } from './session';
+import { switchClient } from './switchClient';
 import { threadWrites } from './threadWrites';
 
-const layout = fromTemplate('knowledge-assistant-next').layout;
+// The template, with feedback under each answer: genki's option, off by default.
+const layout = withSetting(
+  fromTemplate('knowledge-assistant-next'),
+  'chat',
+  'feedback',
+  true,
+).layout;
 const storage = browserStorage('ka-next.');
 const paths = { home: '/', settings: '/innstillinger' };
 export const COLOR_SCHEME_KEY = 'ka-next.colorScheme';
@@ -30,12 +39,37 @@ export interface AppProps {
   onSwitchBack?: (() => Promise<void> | void) | undefined;
 }
 
-export const App = ({ me, api, onSwitchBack }: AppProps) => {
+export const App = ({ me, api, onSwitchBack = () => switchClient('classic') }: AppProps) => {
   const [scheme, setScheme] = useStoredColorScheme(COLOR_SCHEME_KEY);
   const [say, notice] = useNotice();
-  const profile = useMemo(() => profileFor(me), [me]);
+  // Kept in a ref, so a new function from the host does not draw the assistant again.
+  const switchBack = useRef(onSwitchBack);
+  switchBack.current = onSwitchBack;
+  const profile = useMemo(
+    () => ({
+      ...profileFor(me),
+      menu: menuFor(() => {
+        void Promise.resolve(switchBack.current()).catch(() =>
+          say('Fikk ikke byttet til gammel versjon. Prøv igjen.'),
+        );
+      }),
+    }),
+    [me, say],
+  );
   const genki = useMemo(() => api ?? genkiApi(me.tenant, profile), [api, me.tenant, profile]);
-  const writes = useMemo(() => (me.writes ? threadWrites() : {}), [me.writes]);
+  // The thread on screen, which feedback on its answers names.
+  const thread = useRef<string | undefined>(undefined);
+  // Writes, feedback included, only with a person's token: the server refuses them otherwise.
+  const writes = useMemo(
+    () =>
+      me.writes
+        ? {
+            ...threadWrites(),
+            onFeedback: (feedback: AssistantFeedback) => sendFeedback(thread.current, feedback),
+          }
+        : {},
+    [me.writes],
+  );
   return (
     <>
       <Assistant
@@ -51,10 +85,13 @@ export const App = ({ me, api, onSwitchBack }: AppProps) => {
         onNotice={say}
         colorScheme={scheme}
         onColorSchemeChange={setScheme}
+        // A block body: the assembly calls this in an effect, which would take a value as cleanup.
+        onThreadChange={(id) => {
+          thread.current = id;
+        }}
         {...writes}
       />
       {notice}
-      <BackToClassic {...(onSwitchBack ? { onSwitch: onSwitchBack } : {})} />
     </>
   );
 };

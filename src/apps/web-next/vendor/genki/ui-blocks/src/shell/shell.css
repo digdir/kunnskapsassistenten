@@ -778,6 +778,12 @@
     font-size: var(--genai-shell-profile-organisation-font-size, var(--ds-body-xs-font-size));
   }
 
+  /* A host's own icon, hidden from screen readers: its box sits where the menu's icons do. */
+  .uib-shell-profile-icon {
+    display: flex;
+    flex: 0 0 auto;
+  }
+
   /* The entry's words take the room, so the dot stands at the end. */
   .uib-shell-profile-label {
     flex: 1 1 auto;

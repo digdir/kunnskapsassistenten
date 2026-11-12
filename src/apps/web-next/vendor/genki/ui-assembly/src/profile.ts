@@ -53,9 +53,10 @@ export interface AssistantProfile {
   /**
    * The host's pages in the profile menu (next look), each a link or an action, after
    * «Innstillinger». One not given is not drawn, and «Endringslogg» has its dot only when `news`
-   * says something is new.
+   * says something is new. `extra` holds the host's own entries, in its words, before «Logg ut».
    */
-  menu?: Pick<ShellProfileProps, 'feedback' | 'changelog' | 'about' | 'contact'> | undefined;
+  menu?:
+    Pick<ShellProfileProps, 'feedback' | 'changelog' | 'about' | 'contact' | 'extra'> | undefined;
   /**
    * «Logg ut»: the host's sign-out, a full navigation to `href`. The assembly first forgets the
    * reader's choices kept in this browser, then calls `onSignOut`. Without it, no «Logg ut» is drawn.

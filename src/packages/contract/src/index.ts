@@ -308,6 +308,8 @@ export interface FeedbackRequest {
   conversationId: string;
   taskId: string;
   rating: 'up' | 'down';
+  /** The reasons picked with the rating, when the client offers them. */
+  reasons?: string[];
   comment?: string;
 }
 

@@ -19,6 +19,16 @@ export interface ShellProfileEntry {
   onSelect?: (() => void) | undefined;
 }
 
+/** One of the host's own entries, in its own words, such as a way back to an older client. */
+export interface ShellProfileHostEntry extends ShellProfileEntry {
+  /** Unique among the host's entries. */
+  id: string;
+  /** The entry's words, in the reader's language: the host's own, not the catalogue's. */
+  label: string;
+  /** Drawn before the words and hidden from screen readers, as the menu's own icons. */
+  icon?: ReactNode | undefined;
+}
+
 export interface ShellProfileProps {
   /** The reader's name, as they know themselves. Nothing is drawn without it. */
   name?: string | undefined;
@@ -34,6 +44,8 @@ export interface ShellProfileProps {
   about?: ShellProfileEntry | undefined;
   /** «Kontakt {to}», as «Kontakt Digdir». */
   contact?: (ShellProfileEntry & { to: string }) | undefined;
+  /** The host's own entries, in its order, after the pages above and before «Logg ut»'s line. */
+  extra?: readonly ShellProfileHostEntry[] | undefined;
   /**
    * «Logg ut», under a line: a full navigation to the host's sign-out. `onSignOut` runs first, so
    * the host forgets what this browser kept for the reader.
@@ -65,6 +77,7 @@ export const ShellProfile = ({
   changelog,
   about,
   contact,
+  extra,
   signOut,
   compact = false,
   className,
@@ -146,6 +159,19 @@ export const ShellProfile = ({
       contact,
       <EnvelopeClosedIcon aria-hidden />,
       t('shell.profileContact', { to: contact?.to ?? '' }),
+    ),
+    // Keyed apart from the menu's own, so a host's id never collides with «settings».
+    ...(extra ?? []).map((own) =>
+      entry(
+        `host-${own.id}`,
+        own,
+        own.icon ? (
+          <span aria-hidden className="uib-shell-profile-icon">
+            {own.icon}
+          </span>
+        ) : null,
+        own.label,
+      ),
     ),
   ].filter(Boolean);
 

@@ -2,6 +2,7 @@ import { apiErrorFrom, ApiError } from './errors.js';
 import { dataFrames } from './sse.js';
 import type {
   Answer,
+  AnswerMarker,
   AskHandlers,
   AskRequest,
   Conversation,
@@ -70,14 +71,22 @@ export const citedIndexes = (text: string): number[] => [
 export const sourceFor = (sources: Source[], index: number) =>
   sources.find((s) => s.index === index);
 
+const citedBy = (raw: unknown): { markers?: string[] } =>
+  Array.isArray(raw) ? { markers: raw.filter((m): m is string => typeof m === 'string') } : {};
+
 const sourceOf = (raw: unknown): Source[] => {
   if (!isRecord(raw)) return [];
   const excerpts = Array.isArray(raw.excerpts)
-    ? raw.excerpts.filter(isRecord).map((e) => ({
-        chunkId: str(e.chunk_id) ?? '',
-        text: str(e.text) ?? '',
-        ...(typeof e.position === 'number' ? { position: e.position } : {}),
-      }))
+    ? raw.excerpts.filter(isRecord).map((e) => {
+        const heading = str(e.heading);
+        return {
+          chunkId: str(e.chunk_id) ?? '',
+          text: str(e.text) ?? '',
+          ...(typeof e.position === 'number' ? { position: e.position } : {}),
+          ...(heading === undefined ? {} : { heading }),
+          ...citedBy(e.markers),
+        };
+      })
     : [];
   const legacy = isRecord(raw.source) ? raw.source : {};
   const url = str(raw.url);
@@ -92,6 +101,7 @@ const sourceOf = (raw: unknown): Source[] => {
       ...(url === undefined ? {} : { url }),
       ...(documentId === undefined ? {} : { documentId }),
       excerpts,
+      ...citedBy(raw.markers),
       ...(excerpt === undefined ? {} : { excerpt }),
       ...(version === undefined ? {} : { version }),
       ...(publishedAt === undefined ? {} : { publishedAt }),
@@ -100,6 +110,22 @@ const sourceOf = (raw: unknown): Source[] => {
 };
 
 const sourcesOf = (raw: unknown): Source[] => (Array.isArray(raw) ? raw.flatMap(sourceOf) : []);
+
+const markerOf = (raw: unknown): AnswerMarker[] => {
+  if (!isRecord(raw)) return [];
+  const marker = str(raw.marker);
+  const chunkId = str(raw.chunk_id);
+  const documentId = str(raw.document);
+  return marker === undefined || chunkId === undefined || documentId === undefined
+    ? []
+    : [{ marker, chunkId, documentId }];
+};
+
+// A list with no marker that names its excerpt counts as none, so `[N]` falls back to `index`.
+const markersOf = (raw: unknown): AnswerMarker[] | undefined => {
+  const markers = Array.isArray(raw) ? raw.flatMap(markerOf) : [];
+  return markers.length > 0 ? markers : undefined;
+};
 
 const citationsOf = (raw: unknown): string[] =>
   Array.isArray(raw) ? raw.filter((c): c is string => typeof c === 'string') : [];
@@ -132,6 +158,7 @@ class Accumulator {
   conversationId: string | undefined;
   sources: Source[] = [];
   citations: string[] = [];
+  markers: AnswerMarker[] | undefined;
   noAnswer = false;
   notice: string | undefined;
   table: unknown;
@@ -150,6 +177,7 @@ class Accumulator {
       ...(this.serviceVersion === undefined ? {} : { serviceVersion: this.serviceVersion }),
       sources: this.sources,
       citations: this.citations,
+      ...(this.markers === undefined ? {} : { markers: this.markers }),
       noAnswer: this.noAnswer,
       ...(this.notice === undefined ? {} : { notice: this.notice }),
       ...(this.table === undefined ? {} : { table: this.table }),
@@ -276,7 +304,13 @@ export const createClient = (options: ClientOptions) => {
       if (Array.isArray(chunk.sources) || Array.isArray(chunk.citations)) {
         acc.sources = sourcesOf(chunk.sources);
         acc.citations = citationsOf(chunk.citations);
-        yield { type: 'sources', sources: acc.sources, citations: acc.citations };
+        acc.markers = markersOf(chunk.markers);
+        yield {
+          type: 'sources',
+          sources: acc.sources,
+          citations: acc.citations,
+          ...(acc.markers === undefined ? {} : { markers: acc.markers }),
+        };
       }
       if (chunk.no_answer === true) {
         acc.noAnswer = true;
@@ -309,6 +343,7 @@ export const createClient = (options: ClientOptions) => {
       const serviceVersion = versionOf(response);
       const notice = str(body.notice);
       const csv = str(body.csv);
+      const markers = markersOf(body.markers);
       return {
         id: str(body.id) ?? '',
         text: str(message.content) ?? '',
@@ -317,6 +352,7 @@ export const createClient = (options: ClientOptions) => {
         ...(serviceVersion === undefined ? {} : { serviceVersion }),
         sources: sourcesOf(body.sources),
         citations: citationsOf(body.citations),
+        ...(markers === undefined ? {} : { markers }),
         noAnswer: body.no_answer === true,
         ...(notice === undefined ? {} : { notice }),
         ...(usage
@@ -341,7 +377,7 @@ export const createClient = (options: ClientOptions) => {
       if (event.type === 'text') handlers.onText?.(event.text);
       else if (event.type === 'retract') handlers.onRetract?.();
       else if (event.type === 'step') handlers.onStep?.(event.step);
-      else if (event.type === 'sources') handlers.onSources?.(event.sources);
+      else if (event.type === 'sources') handlers.onSources?.(event.sources, event.markers);
       else if (event.type === 'done') answer = event.answer;
     }
     if (!answer) throw new ApiError(502, 'The stream ended without an answer.');
@@ -349,6 +385,17 @@ export const createClient = (options: ClientOptions) => {
   };
 
   const conversationOf = (raw: unknown): Conversation => raw as Conversation;
+
+  const messageOf = (raw: unknown): ConversationMessage => {
+    const { sources, markers, ...rest }: Json = isRecord(raw) ? raw : {};
+    const read = sourcesOf(sources);
+    const cited = markersOf(markers);
+    return {
+      ...(rest as unknown as ConversationMessage),
+      ...(read.length > 0 ? { sources: read } : {}),
+      ...(cited === undefined ? {} : { markers: cited }),
+    };
+  };
 
   return {
     listServices: async (call?: CallOptions): Promise<Service[]> => {
@@ -394,8 +441,8 @@ export const createClient = (options: ClientOptions) => {
         id: string,
         params: { branches?: 'all'; diagnostics?: boolean } = {},
         call?: CallOptions,
-      ): Promise<{ conversation: Conversation; messages: ConversationMessage[] }> =>
-        (await json(
+      ): Promise<{ conversation: Conversation; messages: ConversationMessage[] }> => {
+        const body = await json(
           'GET',
           `/api/conversations/${encodeURIComponent(id)}${query({
             branches: params.branches,
@@ -403,7 +450,12 @@ export const createClient = (options: ClientOptions) => {
           })}`,
           undefined,
           call,
-        )) as unknown as { conversation: Conversation; messages: ConversationMessage[] },
+        );
+        return {
+          conversation: conversationOf(body.conversation),
+          messages: Array.isArray(body.messages) ? body.messages.map(messageOf) : [],
+        };
+      },
       update: async (
         id: string,
         changes: { title?: string; tags?: string[] },

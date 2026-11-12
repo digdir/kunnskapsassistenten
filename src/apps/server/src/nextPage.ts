@@ -27,6 +27,9 @@ export const threadLinkFor = (ui: 'next' | 'classic', path: string, query: URLSe
   return path === '/' && id && THREAD_ID.test(id) ? `/threads/${id}` : undefined;
 };
 
+/** apps/web's pages the next client's menu links to, served from apps/web whatever the cookie. */
+export const CLASSIC_PAGES: ReadonlySet<string> = new Set(['/endringslogg', '/om-prosjektet']);
+
 export function nextPage(classicRoot: string) {
   const root = config.next.webRoot;
   if (!config.next.enabled) return undefined;
@@ -45,7 +48,8 @@ export function nextPage(classicRoot: string) {
   };
 
   const page: MiddlewareHandler = async (c, next) => {
-    const res = await (uiOf(c) === 'next' ? nextIndex : classicIndex)(c, next);
+    const chosen = uiOf(c) === 'next' && !CLASSIC_PAGES.has(c.req.path) ? 'next' : 'classic';
+    const res = await (chosen === 'next' ? nextIndex : classicIndex)(c, next);
     // So a cache keeps the two clients' pages apart.
     (res ?? c.res).headers.append('Vary', 'Cookie');
     return res;
