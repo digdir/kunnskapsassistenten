@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { after, before, describe, test } from 'node:test';
+import { after, before, describe, mock, test } from 'node:test';
 
 /*
  * The next client built but not switched on, as the image is until `KA_NEXT=1` (decisions/0013):
@@ -22,10 +22,22 @@ process.env.DIGDIR_API_KEY ??= 'test-key';
 process.env.WEB_ROOT = classic;
 process.env.WEB_NEXT_ROOT = nextBuild;
 delete process.env.KA_NEXT;
+// Not used while KA_NEXT is off, so a mistake in it must not stop apps/web.
+process.env.KA_NEXT_MODEL = 'not a model!';
 
 let app: typeof import('./app.ts').app;
+let config: typeof import('./config.ts');
+const warnings: string[] = [];
 before(async () => {
-  ({ app } = await import('./app.ts'));
+  mock.method(console, 'warn', (...args: unknown[]) =>
+    warnings.push(args.map(String).join(' ')),
+  );
+  try {
+    ({ app } = await import('./app.ts'));
+    config = await import('./config.ts');
+  } finally {
+    mock.restoreAll();
+  }
 });
 after(() => rmSync(builds, { recursive: true, force: true }));
 
@@ -58,5 +70,32 @@ describe('with KA_NEXT off', () => {
   test("the next client's files are not served", async () => {
     const res = await app.request('/next-assets/index-next.js');
     assert.notEqual(await res.text(), '/* next */');
+  });
+
+  test('a malformed KA_NEXT_MODEL is warned about and replaced, and the server starts', () => {
+    assert.equal(config.config.next.model, 'kunnskapsassistenten__default');
+    assert.equal(config.config.next.service, 'kunnskapsassistenten');
+    assert.ok(
+      warnings.some((w) => w.includes('KA_NEXT_MODEL') && w.includes('not a model!')),
+      warnings.join('\n'),
+    );
+  });
+});
+
+describe('with KA_NEXT on', () => {
+  test('a malformed KA_NEXT_MODEL still refuses to start', () => {
+    const exit = mock.method(process, 'exit', (code?: number) => {
+      throw new Error(`exit ${code}`);
+    });
+    mock.method(console, 'error', () => {});
+    try {
+      assert.throws(
+        () => config.nextConfig({ KA_NEXT: '1', KA_NEXT_MODEL: 'not a model!' }),
+        /exit 1/,
+      );
+      assert.equal(exit.mock.callCount(), 1);
+    } finally {
+      mock.restoreAll();
+    }
   });
 });

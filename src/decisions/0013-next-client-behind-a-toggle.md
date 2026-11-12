@@ -56,8 +56,14 @@ sign-in check and the 64 kB body limit come first:
   they may carry, for this service only. Everything else is 403 and never forwarded, feedback
   included. Rename and delete pass only with a person's token, never with the service key.
   Answers stream through as they come, and «Stopp» ends the call to genki.
-- Writes need a JSON body type, `Sec-Fetch-Site: same-origin` when sent, and this site's `Origin`
-  when sent: Hono's `csrf()` checks only form posts.
+- A call genki refuses or fails reaches the page as a fixed sentence with genki's status and
+  code, never genki's own text, as in decision 0009; only the status is logged. An answer that
+  fails after it has begun to stream still carries genki's own error in the stream, as genki's
+  own clients get it. A redirect from genki is never followed: it is a 502. Proxied responses
+  are `no-store`, and their body type is JSON or an event stream, whatever genki says.
+- Writes are checked for `Sec-Fetch-Site: same-origin` when sent, and this site's `Origin` when
+  sent: Hono's `csrf()` checks only form posts. A write with a body also needs a JSON body type;
+  a delete carries no body, so it needs none.
 
 ## Consequences
 

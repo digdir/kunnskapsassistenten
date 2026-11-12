@@ -4,7 +4,7 @@ import { createServer, type IncomingMessage, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { after, before, beforeEach, describe, test } from 'node:test';
+import { after, before, beforeEach, describe, mock, test } from 'node:test';
 import { Hono } from 'hono';
 
 /*
@@ -34,6 +34,9 @@ const readBody = (req: IncomingMessage) =>
   });
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** What genki's own error text can say, which must reach neither the page nor the log. */
+const GENKI_TEXT = 'connect ECONNREFUSED 10.1.2.3:5432 (typesense.internal)';
 
 async function startGenki() {
   genki = createServer(async (req, res) => {
@@ -72,8 +75,38 @@ async function startGenki() {
       return;
     }
     if (path === '/api/conversations/missing') {
-      res.writeHead(404, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ detail: 'conversation not found' }));
+      res.writeHead(404, { 'content-type': 'application/problem+json' });
+      res.end(
+        JSON.stringify({
+          error: 'Conversation not found',
+          title: 'Conversation not found',
+          detail: 'Conversation not found',
+          code: 'conversation_not_found',
+        }),
+      );
+      return;
+    }
+    if (path === '/api/datasets/broken') {
+      res.writeHead(500, {
+        'content-type': 'application/json',
+        'x-genki-host': 'db-1.internal',
+      });
+      res.end(JSON.stringify({ error: { message: GENKI_TEXT, code: 'internal_error' } }));
+      return;
+    }
+    if (path === '/api/datasets/refused') {
+      res.writeHead(403, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: GENKI_TEXT, code: GENKI_TEXT }));
+      return;
+    }
+    if (path === '/api/datasets/moved') {
+      res.writeHead(302, { location: `${genkiBase}/api/stolen` });
+      res.end();
+      return;
+    }
+    if (path === '/api/datasets/html') {
+      res.writeHead(200, { 'content-type': 'text/html' });
+      res.end('<script>alert(1)</script>');
       return;
     }
     res.writeHead(200, { 'content-type': 'application/json' });
@@ -431,6 +464,10 @@ describe('the proxy', () => {
       [{ ...QUESTION, messages: [{ role: 'user', content: '   ' }] }, 400],
       [{ ...QUESTION, messages: [{ role: 'user', content: 'x'.repeat(4001) }] }, 413],
       [{ ...QUESTION, conversation_id: '../admin' }, 400],
+      // An id or key that only turns into one with String() is not one.
+      [{ ...QUESTION, conversation_id: ['c-1'] }, 400],
+      [{ ...QUESTION, conversation_id: 42 }, 400],
+      [{ ...QUESTION, dataset_config_key: ['kudos'] }, 400],
     ];
     for (const [body, status] of cases)
       assert.equal(
@@ -456,6 +493,7 @@ describe('the proxy', () => {
     assert.equal(res.headers.get('genai-service-version'), '3');
     assert.equal(res.headers.get('X-Accel-Buffering'), 'no');
     assert.match(res.headers.get('Cache-Control') ?? '', /no-transform/);
+    assert.match(res.headers.get('Cache-Control') ?? '', /no-store/);
     assert.doesNotMatch(
       res.headers.get('Set-Cookie') ?? '',
       /upstream=/,
@@ -494,16 +532,98 @@ describe('the proxy', () => {
     assert.ok(aborted, 'genki saw the call end');
   });
 
-  test("genki's own refusal passes through, and a locked environment is said in our words", async () => {
-    const missing = await proxied('/api/conversations/missing');
-    assert.equal(missing.status, 404);
-    assert.deepEqual(await missing.json(), { detail: 'conversation not found' });
+  test("genki's refusals and failures reach the page as a fixed sentence and a code, never genki's text", async () => {
+    const logged: string[] = [];
+    for (const name of ['log', 'error', 'warn'] as const)
+      mock.method(console, name, (...args: unknown[]) =>
+        logged.push(args.map(String).join(' ')),
+      );
+    try {
+      const missing = await proxied('/api/conversations/missing');
+      assert.equal(missing.status, 404);
+      // `conversation` in the sentence is how the page tells a thread that is gone.
+      assert.deepEqual(await missing.json(), {
+        error: 'Tjenesten svarte 404 (conversation_not_found).',
+        detail: 'Tjenesten svarte 404 (conversation_not_found).',
+        code: 'conversation_not_found',
+      });
 
-    const locked = await proxied('/api/facets?dataset-config-key=kudos&fields=locked');
-    assert.equal(locked.status, 403);
-    const body = (await locked.json()) as { code: string; detail: string };
-    assert.equal(body.code, 'locked_environment');
-    assert.match(body.detail, /Testmiljøet er låst/);
+      const broken = await proxied('/api/datasets/broken');
+      assert.equal(broken.status, 500);
+      assert.equal(broken.headers.get('x-genki-host'), null);
+      assert.deepEqual(await broken.json(), {
+        error: 'Tjenesten svarte 500 (internal_error).',
+        detail: 'Tjenesten svarte 500 (internal_error).',
+        code: 'internal_error',
+      });
+
+      // A code that is not an identifier is genki's text too, and is not passed on.
+      const refused = await proxied('/api/datasets/refused');
+      assert.equal(refused.status, 403);
+      assert.deepEqual(await refused.json(), {
+        error: 'Tjenesten svarte 403.',
+        detail: 'Tjenesten svarte 403.',
+        code: 'backend_http_403',
+      });
+
+      const locked = await proxied('/api/facets?dataset-config-key=kudos&fields=locked');
+      assert.equal(locked.status, 403);
+      const body = (await locked.json()) as { code: string; detail: string };
+      assert.equal(body.code, 'locked_environment');
+      assert.match(body.detail, /Testmiljøet er låst/);
+    } finally {
+      mock.restoreAll();
+    }
+    assert.ok(
+      logged.some((line) => / 500 /.test(line)),
+      'the status is logged',
+    );
+    for (const line of logged) {
+      assert.doesNotMatch(line, /ECONNREFUSED|10\.1\.2\.3|typesense|db-1/, line);
+      assert.doesNotMatch(line, /Conversation not found/, line);
+    }
+  });
+
+  test('a redirect from genki is never followed, and is a 502 with a fixed sentence', async () => {
+    const res = await proxied('/api/datasets/moved');
+    assert.equal(res.status, 502);
+    assert.equal(res.headers.get('location'), null);
+    assert.deepEqual(await res.json(), {
+      error: 'Tjenesten svarte med en videresending, som ikke følges.',
+      detail: 'Tjenesten svarte med en videresending, som ikke følges.',
+      code: 'backend_redirect',
+    });
+    assert.deepEqual(
+      seen.map((s) => s.url),
+      ['/api/datasets/moved'],
+      'the credential went nowhere else',
+    );
+  });
+
+  test('every proxied response, a refusal and a failure included, is kept in no cache', async () => {
+    for (const [path, status] of [
+      ['/api/datasets', 200],
+      ['/api/datasets/broken', 500],
+      ['/api/datasets/moved', 502],
+      ['/admin/services', 403],
+      ['/api/conversations/..x', 403],
+    ] as const) {
+      const res = await proxied(path);
+      assert.equal(res.status, status, path);
+      assert.match(res.headers.get('Cache-Control') ?? '', /\bno-store\b/, path);
+      await res.body?.cancel();
+    }
+  });
+
+  test("genki's body type passes only when it is JSON or an event stream", async () => {
+    const html = await proxied('/api/datasets/html');
+    assert.equal(html.status, 200);
+    assert.equal(html.headers.get('Content-Type'), 'application/json');
+    await html.body?.cancel();
+
+    const json = await proxied('/api/datasets');
+    assert.match(json.headers.get('Content-Type') ?? '', /^application\/json\b/);
+    await json.body?.cancel();
   });
 
   test('genki out of reach is a 502 the page can read', async () => {

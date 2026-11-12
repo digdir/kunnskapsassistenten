@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import type { Context, MiddlewareHandler } from 'hono';
 import { Hono } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { Env } from './apiShared.ts';
 import { readSessionId } from './auth.ts';
 import { backendHeaders, knownProblem, type Caller } from './backend.ts';
@@ -71,6 +72,7 @@ const refused = (c: Context, code: string) => c.json({ error: 'refused', code },
 
 /** An id in a path: starts with a letter or digit, so never `.` or `..`. */
 const ID = '[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}';
+const AN_ID = new RegExp(`^${ID}$`);
 const TITLE_MAX = 200;
 const TAGS_MAX = 5;
 const TAG = /^corpus:[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$/;
@@ -170,12 +172,15 @@ const RULES: readonly Rule[] = [
       if (message.content.length > settings.maxQueryLength)
         return { status: 413, error: 'The question is too long.' };
       const conversation = body.conversation_id;
-      if (conversation !== undefined && !new RegExp(`^${ID}$`).test(String(conversation)))
+      if (
+        conversation !== undefined &&
+        !(typeof conversation === 'string' && AN_ID.test(conversation))
+      )
         return bad('Not a conversation id.');
       if (body.filters !== undefined && !isRecord(body.filters))
         return bad('Filters must be an object.');
       const dataset = body.dataset_config_key;
-      if (dataset !== undefined && !new RegExp(`^${ID}$`).test(String(dataset)))
+      if (dataset !== undefined && !(typeof dataset === 'string' && AN_ID.test(dataset)))
         return bad('Not a dataset key.');
       return {
         body: {
@@ -217,6 +222,69 @@ export const ruleFor = (method: string, path: string) =>
 /** genki's headers the page reads, passed back as they came. */
 const PASSED_BACK = ['genai-task', 'genai-service-version', 'genai-conversation'];
 
+/** The body types the page reads; anything else genki sends goes back as JSON. */
+const PASSED_TYPE = /^(?:application\/json|text\/event-stream)\s*(?:;\s*charset=[\w.-]+\s*)?$/i;
+
+/** Answers and threads are the person's own: kept in no cache, and never transformed. */
+const NOT_STORED = 'no-store, no-transform';
+
+/**
+ * How much of a failed response is read, for its problem type and code only. genki's error
+ * text never reaches the page or the log (decisions/0009, as in mcp.ts): it can name hosts and
+ * replies from the model.
+ */
+const ERROR_BODY_MAX = 16 * 1024;
+
+/** genki's code is passed on only when it is an identifier, so it carries no text. */
+const CODE = /^[a-z][a-z0-9_]{0,63}$/;
+
+async function readCapped(res: Response, max: number): Promise<string> {
+  if (!res.body) return '';
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (size < max) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      size += value.byteLength;
+    }
+  } catch {
+    return '';
+  } finally {
+    void reader.cancel().catch(() => {});
+  }
+  return new TextDecoder().decode(Buffer.concat(chunks).subarray(0, max));
+}
+
+function codeOf(text: string): string | undefined {
+  try {
+    const body = JSON.parse(text) as unknown;
+    if (!isRecord(body)) return undefined;
+    const code = isRecord(body.error) ? body.error.code : body.code;
+    return typeof code === 'string' && CODE.test(code) ? code : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** A failed call to genki, as the page gets it: a fixed sentence and a code, with genki's status. */
+async function upstreamFailure(upstream: Response): Promise<{ message: string; code: string }> {
+  const text = await readCapped(upstream, ERROR_BODY_MAX);
+  const problem = await knownProblem(new Response(text, { status: upstream.status }));
+  if (problem) return problem;
+  const code = codeOf(text);
+  // The code in the sentence too: the page tells a thread that is gone by `conversation` in it.
+  return {
+    message: `Tjenesten svarte ${upstream.status}${code ? ` (${code})` : ''}.`,
+    code: code ?? `backend_http_${upstream.status}`,
+  };
+}
+
+const failed = (c: Context, status: number, message: string, code: string) =>
+  c.json({ error: message, detail: message, code }, status as ContentfulStatusCode);
+
 const LANGUAGE = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})?$/;
 
 export interface NextSettings {
@@ -256,6 +324,11 @@ const LOCAL_NAME = 'Lokal testbruker';
 /** The routes, against `settings`; app.ts mounts them with the server's own. */
 export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
   const next = new Hono<Env>();
+  // First, so a refusal from the checks below is not stored either.
+  next.use('/genki/*', async (c, run) => {
+    await run();
+    c.res.headers.set('Cache-Control', NOT_STORED);
+  });
   next.use('*', sameOriginWrites(settings.origin));
 
   /** For apps/web's «Prøv ny versjon», drawn only when this says the next client is offered. */
@@ -335,6 +408,8 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
         method,
         headers,
         ...(shaped.body ? { body: JSON.stringify(shaped.body) } : {}),
+        // Never followed: the credential would go with it, and the call is to genki only.
+        redirect: 'manual',
         // «Stopp», or a closed tab, ends the call to genki too.
         signal: c.req.raw.signal,
       });
@@ -354,22 +429,24 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
       Date.now() - started,
     );
 
-    const problem = await knownProblem(upstream.clone());
-    if (problem) {
-      void upstream.body?.cancel();
-      return c.json(
-        { error: problem.message, detail: problem.message, code: problem.code },
-        upstream.status as 401 | 403,
+    if (upstream.status >= 300 && upstream.status < 400) {
+      void upstream.body?.cancel().catch(() => {});
+      return failed(
+        c,
+        502,
+        'Tjenesten svarte med en videresending, som ikke følges.',
+        'backend_redirect',
       );
+    }
+    if (!upstream.ok) {
+      const failure = await upstreamFailure(upstream);
+      return failed(c, upstream.status, failure.message, failure.code);
     }
 
     // The body as it comes, never read, re-chunked or compressed here: an answer streams.
-    const out = new Headers({
-      'Cache-Control': 'no-cache, no-transform',
-      'X-Accel-Buffering': 'no',
-    });
+    const out = new Headers({ 'X-Accel-Buffering': 'no' });
     const type = upstream.headers.get('Content-Type');
-    if (type) out.set('Content-Type', type);
+    out.set('Content-Type', type && PASSED_TYPE.test(type) ? type : 'application/json');
     for (const name of PASSED_BACK) {
       const value = upstream.headers.get(name);
       if (value) out.set(name, value);
