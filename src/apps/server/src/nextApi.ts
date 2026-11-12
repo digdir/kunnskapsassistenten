@@ -5,6 +5,8 @@
  * - `GET /me`: who is signed in, and which genki service and variant the page asks.
  * - `/genki/*`: a narrow proxy to the genki calls `createGenkiApi` makes, with the signed-in
  *   person's credential, as every call of apps/web is made (`backendHeaders`).
+ * - `POST /feedback`: a rating of an answer, with the checks of apps/web's feedback route, and
+ *   only with a person's token.
  *
  * Mounted under `/api/*`, so the session, the sign-in check and the body limit in app.ts come
  * first. Nothing here imports apps/web, and apps/web's routes are not changed.
@@ -19,6 +21,8 @@ import type { Env } from './apiShared.ts';
 import { readSessionId } from './auth.ts';
 import { backendHeaders, knownProblem, type Caller } from './backend.ts';
 import { config } from './config.ts';
+import * as convos from './conversations.ts';
+import { cleanFeedback, ownsTask, sendFeedback } from './feedback.ts';
 import { getTokens } from './tokenStore.ts';
 
 // ── Which client ──
@@ -363,6 +367,26 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
       tenant: settings.tenant,
       writes: Boolean(c.get('caller').token),
     });
+  });
+
+  /**
+   * Feedback on an answer, as apps/web's `POST /api/v2/feedback` takes it (`feedback.ts`): the run
+   * must be an answer in one of the caller's own threads. Unlike there, only with a person's
+   * token: with the service key genki records feedback from anyone holding the key, so local
+   * runs, e2e and agents never write it. The proxy below still refuses `/api/feedback`.
+   */
+  next.post('/feedback', async (c) => {
+    const caller: Caller = c.get('caller');
+    if (!caller.token) return refused(c, 'not_allowed');
+    const feedback = cleanFeedback(await c.req.json().catch(() => undefined));
+    if (typeof feedback === 'string') return c.json({ error: feedback }, 400);
+    if (!(await ownsTask(caller, feedback)))
+      return c.json({ error: 'Fant ikke svaret i samtalen.' }, 404);
+    try {
+      return c.json(await sendFeedback(caller, feedback));
+    } catch (err) {
+      return c.json(convos.failure('Kunne ikke sende tilbakemeldingen.', err), 502);
+    }
   });
 
   next.all('/genki/*', async (c) => {
