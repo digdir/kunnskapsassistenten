@@ -43,6 +43,19 @@ export async function fetchSession(signal?: AbortSignal): Promise<Session | unde
   }
 }
 
+/** The genki environment `/api/me` names for a tester, or undefined for everyone else. */
+export async function fetchTestEnvironment(signal?: AbortSignal): Promise<string | undefined> {
+  if (kaEnv().VITE_API_MODE !== 'bff') return undefined;
+  try {
+    const response = await fetch(`${BFF_API}/me`, { credentials: 'same-origin', signal });
+    if (!response.ok) return undefined;
+    const { environment } = (await response.json()) as { environment?: unknown };
+    return typeof environment === 'string' && environment ? environment : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * What «Logg ut» clears, since answers, draft, agent, filter and corpus are kept
  * per browser and not per user (src/decisions/0008). Synchronous, so it is

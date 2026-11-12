@@ -36,6 +36,7 @@ import { useAttachments } from './useAttachments';
 import { useChat } from './useChat';
 import { useAgents } from './useAgents';
 import { AgentPicker } from './AgentPicker';
+import { TestEnvironmentTag } from './TestEnvironmentTag';
 import { ThreadLoading } from './ThreadLoading';
 import { Welcome } from './Welcome';
 import { Kickstarters } from './Kickstarters';
@@ -464,11 +465,14 @@ function ChatSession({ userName, thread, loading, client }: ChatViewProps) {
           ) : null
         }
         agentPicker={
-          <AgentPicker
-            agents={agentChoice.agents}
-            current={agentChoice.current}
-            onChoose={agentChoice.choose}
-          />
+          <>
+            <TestEnvironmentTag />
+            <AgentPicker
+              agents={agentChoice.agents}
+              current={agentChoice.current}
+              onChoose={agentChoice.choose}
+            />
+          </>
         }
         attachments={attachments}
         fieldRef={fieldRef}

@@ -134,6 +134,28 @@ export function nextConfig(env: NodeJS.ProcessEnv = process.env) {
   };
 }
 
+/** genki's rule for an environment name (genki ADR 0004). */
+const ENVIRONMENT_NAME = /^[a-z][a-z0-9-]{0,31}$/;
+
+/** Testers by session user id (`KA_TESTERS`), and the genki environment they get (#237). */
+export function testersConfig(env: NodeJS.ProcessEnv = process.env) {
+  const ids = new Set((env.KA_TESTERS ?? '').split(/[\s,]+/).filter(Boolean));
+  let environment = (env.KA_TEST_ENVIRONMENT ?? '').trim() || 'test';
+  if (!ENVIRONMENT_NAME.test(environment)) {
+    if (ids.size) {
+      console.error(
+        `KA_TEST_ENVIRONMENT must be a genki environment name. Got "${environment}".`,
+      );
+      process.exit(1);
+    }
+    console.warn(
+      `KA_TEST_ENVIRONMENT must be a genki environment name. Got "${environment}"; ignored while KA_TESTERS is empty.`,
+    );
+    environment = 'test';
+  }
+  return { ids: ids as ReadonlySet<string>, environment };
+}
+
 const auth = authConfig();
 
 export const config = {
@@ -166,6 +188,8 @@ export const config = {
   webRoot: process.env.WEB_ROOT ?? '',
 
   next: nextConfig(),
+
+  testers: testersConfig(),
 
   auth,
 } as const;

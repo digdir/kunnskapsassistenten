@@ -11,13 +11,26 @@ export interface Caller {
   actingFor?: string;
 }
 
+/** The genki environment a tester gets, or `undefined` for everyone else, who get genki's `prod`. */
+export function environmentFor(
+  userId: string,
+  testers: { ids: ReadonlySet<string>; environment: string } = config.testers,
+): string | undefined {
+  return testers.ids.has(userId) ? testers.environment : undefined;
+}
+
 export function backendHeaders(caller: Caller): Record<string, string> {
+  const environment = environmentFor(caller.userId);
+  const chosen: Record<string, string> = environment
+    ? { 'GenAI-Environment': environment }
+    : {};
   if (caller.token)
     return {
       Authorization: `Bearer ${caller.token}`,
       ...(caller.actingFor ? { 'GenAI-Acting-For': caller.actingFor } : {}),
+      ...chosen,
     };
-  return { 'X-API-Key': config.apiKey, 'X-User-Id': caller.userId };
+  return { 'X-API-Key': config.apiKey, 'X-User-Id': caller.userId, ...chosen };
 }
 
 /** As `backendHeaders`, but a service key is sent without `X-User-Id`, as before. */

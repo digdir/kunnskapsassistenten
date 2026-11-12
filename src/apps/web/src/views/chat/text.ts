@@ -154,6 +154,9 @@ export const AGENT_DEFAULT_LABEL = 'Standard';
 /** Over the list of agents. */
 export const AGENT_HEADING = 'Velg agent';
 
+/** Beside the send button, for a tester whose questions go to genki's test environment. */
+export const TEST_ENVIRONMENT_TAG = 'Testmiljø';
+
 /** Over a finished answer with no sources behind it. Without it, an answer
    with no sources looks exactly like one with them, and only the sources
    panel says otherwise. */
