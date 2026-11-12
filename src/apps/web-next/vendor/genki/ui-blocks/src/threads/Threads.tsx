@@ -49,7 +49,7 @@ export interface ThreadsProps {
   search?: boolean | undefined;
   /**
    * `links`, kunnskapsassistenten's: each row a link on one line, with its time under it. `nav`,
-   * the design's: titles in the text colour on up to two lines, with no time, the open row tinted,
+   * the design's: titles in the text colour on one line, with no time, the open row tinted,
    * small group names, «Ny tråd» across the panel, and a row's «…» only on hover or focus.
    */
   variant?: 'links' | 'nav' | undefined;

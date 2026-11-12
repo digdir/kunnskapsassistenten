@@ -266,11 +266,11 @@
     background: none;
   }
 
-  /* Up to two lines, then «…»; the box shows the rest. */
+  /* One line, then «…», so a long list stays calm; the box shows the rest on hover or focus. */
   .uib-threads[data-variant='nav'] .uib-threads-thread-title {
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: var(--genai-threads-title-lines, 2);
+    -webkit-line-clamp: var(--genai-threads-title-lines, 1);
     white-space: normal;
     overflow-wrap: anywhere;
   }
