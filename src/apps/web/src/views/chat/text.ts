@@ -36,10 +36,21 @@ export const GENERAL_KICKSTARTERS = [
 // NOT here: Kudos by name, but other agencies' reports.
 const CORPUS_WITH_OWN_KICKSTARTERS = 'mock';
 
+/** The general three with the collection named, since the model is not told which one it searches. */
+const namedKickstarters = (name: string): readonly string[] => [
+  `Hva handler dokumentene i ${name} om?`,
+  `Gi meg en oversikt over de viktigste temaene i ${name}.`,
+  `Oppsummer det viktigste i ${name} i noen få punkter.`,
+];
+
 /** The three suggestions to offer over `corpusKey`. Everything else gets the
     general three, which is the safe direction to be wrong in. */
-export function kickstartersFor(corpusKey: string | undefined): readonly string[] {
-  return corpusKey === CORPUS_WITH_OWN_KICKSTARTERS ? KICKSTARTERS : GENERAL_KICKSTARTERS;
+export function kickstartersFor(
+  corpusKey: string | undefined,
+  corpusName?: string,
+): readonly string[] {
+  if (corpusKey === CORPUS_WITH_OWN_KICKSTARTERS) return KICKSTARTERS;
+  return corpusName ? namedKickstarters(corpusName) : GENERAL_KICKSTARTERS;
 }
 
 /** Fixed for now, model generated later. The language is not consistent, but
