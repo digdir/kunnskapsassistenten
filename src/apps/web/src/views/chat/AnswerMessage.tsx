@@ -106,12 +106,19 @@ export function AnswerMessage({
   // every parent in the chain memoising its callback, and one inline
   // `onSelectSource` swaps the markers out again.
   const selectSource = useRef(onSelectSource);
+  const selectDocument = useRef(onSelectDocument);
   useEffect(() => {
     selectSource.current = onSelectSource;
-  }, [onSelectSource]);
+    selectDocument.current = onSelectDocument;
+  }, [onSelectSource, onSelectDocument]);
+  // A `[n]` that names a whole document opens the document, as its title below does.
   const activateCitation = useCallback(
-    (number: number) => selectSource.current(number, message.id),
-    [message.id],
+    (number: number) => {
+      const documentId = citations.find((target) => target.number === number)?.documentId;
+      if (documentId === undefined) selectSource.current(number, message.id);
+      else selectDocument.current?.(documentId, message.id);
+    },
+    [citations, message.id],
   );
 
   return (

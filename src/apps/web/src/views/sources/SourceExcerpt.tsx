@@ -1,12 +1,11 @@
-import { Button, Details, Heading, Link, Paragraph } from '@digdir/designsystemet-react';
+import { Details, Heading, Link, Paragraph } from '@digdir/designsystemet-react';
 import { ExternalLinkIcon } from '@navikt/aksel-icons';
 import { HighlightedText, type SearchHit } from '../../components';
-import { useState } from 'react';
-import { ShowUseIcon } from '../../components/icons';
 import { excerptDomId, type Excerpt } from '../../model';
 import { kudosLinkLabel, reachesPage } from './kudosLink';
 import { excerptName } from './excerptName';
 import { ReturnToAnswerButton } from './ReturnToAnswerButton';
+import { ShowUseButton } from './ShowUseButton';
 
 type SourceExcerptProps = {
   excerpt: Excerpt;
@@ -18,6 +17,8 @@ type SourceExcerptProps = {
   position: number;
   /** How many excerpts the document has, for naming an uncited one. */
   total: number;
+  /** Its document is cited whole: numbered within it, neither a footnote nor uncited. */
+  inCitedDocument?: { domId: string };
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Search hits inside this excerpt, in position order. */
@@ -40,7 +41,8 @@ type SourceExcerptProps = {
 export const EXCERPT_UNAVAILABLE = 'Utdraget er ikke tilgjengelig.';
 
 /**
- * One excerpt, Figma's `chunk`, as «Utdrag N» with N its `[n]` marker. The
+ * One excerpt, Figma's `chunk`, as «Utdrag N» with N its `[n]` marker, or as «Utdrag 2 av 4» in a
+ * document the answer cites as a whole. The
  * heading stays out of the summary, which some screen readers read as a button;
  * the two share a grid cell (`.source-excerpt` in sources.css).
  */
@@ -50,6 +52,7 @@ export function SourceExcerpt({
   corpusName,
   position,
   total,
+  inCitedDocument,
   open,
   onOpenChange,
   hits,
@@ -64,19 +67,13 @@ export function SourceExcerpt({
 
   // So a list of controls does not hold five buttons called «Åpne».
   const name = excerptName(citationNumber, position, total);
-
-  // The use the back-link last went to, 0 before the first press. Each press goes to the next and
-  // the last wraps to the first: one control, which says in its name where the reader is.
-  const [use, setUse] = useState(0);
-  const showsUses = cited && uses > 0 && onShowUse !== undefined;
-  const at = use === 0 ? 1 : use;
-  // «2/3», and the only place that shape is written: the name is built from the visible text
-  // (WCAG 2.5.3, label in name).
-  const useCount = `${at}/${uses}`;
-  const showUseName =
-    uses > 1
-      ? `Vis hvor svaret bruker utdrag ${citationNumber} (${useCount})`
-      : `Vis hvor svaret bruker utdrag ${citationNumber}`;
+  const showsUses = cited && uses > 0;
+  const title = cited
+    ? `Utdrag ${citationNumber}`
+    : inCitedDocument
+      ? `Utdrag ${position} av ${total}`
+      : 'Utdrag';
+  const uncited = !cited && inCitedDocument === undefined;
 
   // Only when it opens the page, since the document's own link is at the end.
   // See `kudosLink.ts`.
@@ -91,11 +88,10 @@ export function SourceExcerpt({
     // oxlint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
       className="source-excerpt ds-focus"
-      // Only a cited excerpt is a scroll target: the id is the one the `[n]`
-      // marker links to, and an excerpt with no number has no marker.
-      id={cited ? excerptDomId(citationNumber) : undefined}
+      // A footnote's target, or else an id for the search to scroll to.
+      id={cited ? excerptDomId(citationNumber) : inCitedDocument?.domId}
       data-active={active ? 'true' : undefined}
-      data-uncited={cited ? undefined : 'true'}
+      data-uncited={uncited ? 'true' : undefined}
       // Focus, not only scroll, so a screen reader says where the reader is.
       tabIndex={cited ? -1 : undefined}
       // Scoped to the box, so the search field keeps its own Escape.
@@ -112,29 +108,15 @@ export function SourceExcerpt({
       <div className="source-excerpt__head">
         <div className="source-excerpt__title">
           <Heading level={4} data-size="2xs" className="source-excerpt__number">
-            {cited ? `Utdrag ${citationNumber}` : 'Utdrag'}
+            {title}
           </Heading>
           {/* Back to where the answer uses this excerpt, beside the number so it works on a
-              closed row. An event to the host, never a link. */}
-          {showsUses && (
-            <Button
-              type="button"
-              variant="tertiary"
-              data-size="sm"
-              className="source-excerpt__uses"
-              aria-label={showUseName}
-              onClick={() => {
-                const next = (use % uses) + 1;
-                setUse(next);
-                onShowUse?.(next);
-              }}
-            >
-              <ShowUseIcon aria-hidden />
-              {uses > 1 && <span className="source-excerpt__use-count">{useCount}</span>}
-            </Button>
+              closed row. */}
+          {showsUses && onShowUse !== undefined && (
+            <ShowUseButton name={`utdrag ${citationNumber}`} uses={uses} onShowUse={onShowUse} />
           )}
         </div>
-        {!cited && (
+        {uncited && (
           <Paragraph data-size="xs" className="source-excerpt__uncited">
             Ikke vist til i svaret
           </Paragraph>

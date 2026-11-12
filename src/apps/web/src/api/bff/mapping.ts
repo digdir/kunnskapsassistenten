@@ -14,7 +14,8 @@ import type {
 import { errorFromBackend, errorFromStatus } from '../backendErrors';
 import type { DatasetFilterFields } from '../filterFields';
 import { messagesFromApi, threadFromConversation } from '../live/conversations';
-import { relevanceFromRank, toCitations } from '../live/mcp';
+import { citeAnswer, type CitedAnswer, type MarkerRef } from '../excerptCitations';
+import { relevanceFromRank } from '../live/mcp';
 import { publicUrl } from '../publicUrl';
 import { stepFindings } from '../stepFindings';
 import type {
@@ -51,24 +52,22 @@ export function filterBody(
 }
 
 /**
- * The BFF's sources as documents with excerpts. One entry per chunk arrives, with `marker` as the
- * answer's own `[n]`, grouped as in `toSourceDocuments`. A missing `excerpt` becomes
- * `textUnavailable`: the chunk was retrieved, but its text could not be looked up.
+ * The BFF's sources grouped by document, in order of first appearance, with no footnote numbers.
+ * A missing `excerpt` becomes `textUnavailable`.
  */
 export function sourceDocumentsFrom(sources: BffSource[] | undefined): SourceDocument[] {
   const list = sources ?? [];
   const documents = new Map<string, SourceDocument>();
 
   list.forEach((source, index) => {
-    const id = source.docNum || source.chunkId || `doc-${source.marker}`;
+    const id = source.docNum || source.chunkId || `doc-${index + 1}`;
     const url = publicUrl(source.url);
     const excerpt: Excerpt = {
-      id: source.chunkId ?? `${id}-${source.marker}`,
+      id: source.chunkId ?? `${id}-${index + 1}`,
       text: source.excerpt ?? '',
       ...(source.excerpt ? {} : { textUnavailable: true as const }),
       relevance: relevanceFromRank(index, list.length),
       ...(url ? { kudosUrl: url } : {}),
-      citationNumber: source.marker,
     };
 
     const existing = documents.get(id);
@@ -85,6 +84,22 @@ export function sourceDocumentsFrom(sources: BffSource[] | undefined): SourceDoc
   });
 
   return [...documents.values()];
+}
+
+/** The markers the BFF passed on, or undefined when the service cited by document. */
+function markersFrom(sources: BffSource[]): MarkerRef[] | undefined {
+  const markers = sources.flatMap((source) =>
+    source.chunkId === undefined
+      ? []
+      : (source.markers ?? []).map((marker) => ({ marker, chunkId: source.chunkId as string })),
+  );
+  return sources.some((source) => source.markers !== undefined) ? markers : undefined;
+}
+
+/** An answer and its sources with what each `[n]` names; live and reload share it. */
+export function citedAnswer(content: string, sources: BffSource[] | undefined): CitedAnswer {
+  const list = sources ?? [];
+  return citeAnswer(content, sourceDocumentsFrom(list), markersFrom(list));
 }
 
 /** A stored conversation as a thread. Same shape as the backend's own. */
@@ -106,13 +121,13 @@ export function threadDetailFromBff(
   // `status: 'error'` and no text, for both clients at once.
   const turns = messagesFromApi(detail.messages, corpusKey);
 
-  const documents = sourceDocumentsFrom(detail.sources);
   // The last ANSWER, not the last assistant turn: the BFF keeps one set of sources per
   // conversation, and they are the last answer's. Hanging them on a turn that failed would credit
   // it with excerpts it never had.
   const last = turns.findLastIndex(
     (message) => message.role === 'assistant' && message.status !== 'error',
   );
+  const kept = detail.sources ?? [];
 
   return {
     ...thread,
@@ -120,8 +135,14 @@ export function threadDetailFromBff(
     updatedAt: turns.at(-1)?.createdAt ?? thread.updatedAt,
     messages: turns.map((message, index) => {
       if (message.role !== 'assistant' || message.status === 'error') return message;
-      if (index === last && documents.length > 0) {
-        return { ...message, sources: documents, citations: toCitations(documents) };
+      if (index === last && kept.length > 0) {
+        const cited = citedAnswer(message.content, kept);
+        return {
+          ...message,
+          content: cited.content,
+          sources: cited.documents,
+          citations: cited.citations,
+        };
       }
       // Every other answer comes back without sources whether it had them or not, and so does the
       // last one after a restart. Not «none», but «not stored»: see `Message.sourcesNotStored`.
@@ -260,7 +281,8 @@ export class BffTurnState {
         ];
 
       case 'done': {
-        const documents = sourceDocumentsFrom(this.#sources);
+        const cited = citedAnswer(this.#text, this.#sources);
+        const documents = cited.documents;
         // Searched, found nothing, said nothing: an answer with no sources, not a failure. Same
         // test and same event as the live client.
         if (documents.length === 0 && this.#text === '') {
@@ -270,14 +292,15 @@ export class BffTurnState {
           {
             type: 'sources',
             documents,
-            citations: toCitations(documents),
+            citations: cited.citations,
             retrieval: {
-              // A hit is one chunk and a document is the grouping of them, so the two are counted
-              // apart. See `sourceDocumentsFrom`.
-              hitCount: documents.reduce((n, document) => n + document.excerpts.length, 0),
-              documentCount: documents.length,
+              // Counted over every chunk, before uncited excerpts are left out.
+              hitCount: this.#sources.length,
+              documentCount: sourceDocumentsFrom(this.#sources).length,
               keywords: this.#keywords,
             },
+            // The streamed text had genki's markers; the answer is shown with KA's.
+            ...(cited.content !== this.#text ? { content: cited.content } : {}),
           },
           {
             type: 'done',

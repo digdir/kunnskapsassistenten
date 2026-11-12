@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { citationTargets, type Message, type SourceDocument } from '../model';
 import { referenceList } from './chat/answerText';
@@ -120,6 +120,54 @@ describe('the sources panel, for an answer that cites documents', () => {
     expect(within(card).queryByText('Ikke vist til i svaret')).toBeNull();
     // No excerpt takes a footnote's place: `#excerpt-n` would be a footnote's target.
     expect(card.querySelector('[id^="excerpt-"]')).toBeNull();
+  });
+});
+
+describe('the sources panel, going to a document the answer cites', () => {
+  function Asked({ documentId, nonce }: { documentId?: string; nonce?: number }) {
+    return (
+      <SourcesView
+        answers={[{ messageId: 'a1', status: 'complete', documents }]}
+        activeDocumentId={documentId}
+        activeCitationNonce={nonce}
+        activeCitationMessageId={documentId === undefined ? undefined : 'a1'}
+      />
+    );
+  }
+
+  it('scrolls to the top of its card, so «Kilde 2» is in view, and focuses its title', async () => {
+    const scrolled: Element[] = [];
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (
+      this: Element,
+    ) {
+      scrolled.push(this);
+    });
+    const { rerender } = render(<Asked />);
+
+    rerender(<Asked documentId="33189" nonce={1} />);
+
+    await waitFor(() => expect(document.activeElement?.id).toBe('kilde-dokument-33189-tittel'));
+    expect(scrolled.map((element) => element.id)).toContain('kilde-dokument-33189');
+    scroll.mockRestore();
+  });
+
+  it('lets the search scroll to an excerpt that has no footnote number of its own', async () => {
+    const scrolled: Element[] = [];
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (
+      this: Element,
+    ) {
+      scrolled.push(this);
+    });
+    render(<Asked />);
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Søk i kildene' }), {
+      target: { value: 'Sitat 2 fra 2020' },
+    });
+
+    await waitFor(() =>
+      expect(scrolled.map((element) => element.id)).toContain('kilde-dokument-8652-utdrag-2'),
+    );
+    scroll.mockRestore();
   });
 });
 

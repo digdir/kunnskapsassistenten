@@ -3,50 +3,51 @@ import type { BffMessage, BffSource } from './contract';
 import { BffTurnState, sourceDocumentsFrom, threadDetailFromBff } from './mapping';
 
 /**
- * The BFF sends one source per chunk and the answer's `[n]` counts chunks, so
- * the numbers have to survive the grouping into documents. It used to send one
- * per document, and this file is what keeps it from drifting back.
+ * The BFF sends one source per chunk, in genki's order. The client groups them by document, in the
+ * order each first appears, which is the order genki numbered the documents in (issue 235).
  */
 describe('sourceDocumentsFrom', () => {
-  const source = (over: Partial<BffSource> & { marker: number }): BffSource => ({
+  const source = (over: Partial<BffSource> = {}): BffSource => ({
     docNum: '1',
     title: 'Tildelingsbrev',
     url: 'https://kudos.example/documents/1',
     ...over,
   });
 
-  it('groups chunks of one document, and every marker survives', () => {
+  it('groups chunks of one document, in order of first appearance, and keeps every excerpt', () => {
     const documents = sourceDocumentsFrom([
-      source({ marker: 1, chunkId: 'a', excerpt: 'først' }),
-      source({ marker: 2, chunkId: 'b', excerpt: 'så' }),
-      source({ marker: 3, chunkId: 'c', docNum: '2', title: 'Annen', excerpt: 'tredje' }),
+      source({ chunkId: 'a', excerpt: 'først' }),
+      source({ chunkId: 'c', docNum: '2', title: 'Annen', excerpt: 'tredje' }),
+      source({ chunkId: 'b', excerpt: 'så' }),
     ]);
 
-    expect(documents).toHaveLength(2);
-    expect(documents[0]?.excerpts.map((e) => e.citationNumber)).toEqual([1, 2]);
+    expect(documents.map((document) => document.id)).toEqual(['1', '2']);
     expect(documents[0]?.excerpts.map((e) => e.text)).toEqual(['først', 'så']);
-    expect(documents[1]?.excerpts.map((e) => e.citationNumber)).toEqual([3]);
+    expect(documents[1]?.excerpts.map((e) => e.text)).toEqual(['tredje']);
   });
 
-  it('the shape measured against kudos-full: eight chunks, one document, [1]..[8]', () => {
+  it('numbers nothing by position: a chunk is not a footnote', () => {
     const documents = sourceDocumentsFrom(
       Array.from({ length: 8 }, (_, i) =>
-        source({ marker: i + 1, chunkId: `c${i}`, docNum: '347922', excerpt: `bit ${i + 1}` }),
+        source({ chunkId: `c${i}`, docNum: '347922', excerpt: `bit ${i + 1}` }),
       ),
     );
 
     expect(documents).toHaveLength(1);
-    expect(documents[0]?.excerpts.map((e) => e.citationNumber)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(documents[0]?.citationNumber).toBeUndefined();
+    expect(documents[0]?.excerpts.map((e) => e.citationNumber)).toEqual(
+      new Array(8).fill(undefined),
+    );
   });
 
   it('a chunk whose passage is missing says so, rather than carrying an empty quote', () => {
-    const [document] = sourceDocumentsFrom([source({ marker: 1, chunkId: 'a' })]);
+    const [document] = sourceDocumentsFrom([source({ chunkId: 'a' })]);
     expect(document?.excerpts[0]?.text).toBe('');
     expect(document?.excerpts[0]?.textUnavailable).toBe(true);
   });
 
   it('a passage that did arrive is not flagged', () => {
-    const [document] = sourceDocumentsFrom([source({ marker: 1, chunkId: 'a', excerpt: 'tekst' })]);
+    const [document] = sourceDocumentsFrom([source({ chunkId: 'a', excerpt: 'tekst' })]);
     expect(document?.excerpts[0]?.textUnavailable).toBeUndefined();
   });
 
@@ -66,7 +67,7 @@ describe('sourceDocumentsFrom', () => {
     ['a path into this app', '/auth/logout'],
     ['nonsense', 'ikke en adresse'],
   ])('drops an address that is not http(s) (%s)', (_, url) => {
-    const [document] = sourceDocumentsFrom([source({ marker: 1, chunkId: 'a', url })]);
+    const [document] = sourceDocumentsFrom([source({ chunkId: 'a', url })]);
 
     expect(document?.url).toBeUndefined();
     expect(document?.excerpts[0]?.kudosUrl).toBeUndefined();
@@ -79,7 +80,7 @@ describe('sourceDocumentsFrom', () => {
     ['https', 'https://kudos.example/documents/1'],
     ['http', 'http://kudos.example/documents/1'],
   ])('keeps an %s address', (_, url) => {
-    const [document] = sourceDocumentsFrom([source({ marker: 1, chunkId: 'a', url })]);
+    const [document] = sourceDocumentsFrom([source({ chunkId: 'a', url })]);
 
     expect(document?.url).toBe(url);
     expect(document?.excerpts[0]?.kudosUrl).toBe(url);
@@ -90,10 +91,7 @@ describe('sourceDocumentsFrom', () => {
     state.read({ type: 'delta', text: 'Svar [1][2].' });
     state.read({
       type: 'sources',
-      sources: [
-        source({ marker: 1, chunkId: 'a', excerpt: 'en' }),
-        source({ marker: 2, chunkId: 'b', excerpt: 'to' }),
-      ],
+      sources: [source({ chunkId: 'a', excerpt: 'en' }), source({ chunkId: 'b', excerpt: 'to' })],
     });
     const out = state.read({ type: 'done', conversationId: 'c1', insufficient: false });
     const sources = out.find((event) => event.type === 'sources');
@@ -120,9 +118,7 @@ describe('threadDetailFromBff: sources the BFF did not keep', () => {
     { id: 'm3', role: 'user', text: 'Andre', created: 3 },
     { id: 'm4', role: 'assistant', text: 'Det siste svaret [1].', created: 4 },
   ];
-  const kept = [
-    { docNum: '1', title: 'Tildelingsbrev', url: '', marker: 1, chunkId: 'a', excerpt: 'x' },
-  ];
+  const kept = [{ docNum: '1', title: 'Tildelingsbrev', url: '', chunkId: 'a', excerpt: 'x' }];
 
   it('marks an earlier answer as not stored, markers or not', () => {
     const thread = threadDetailFromBff({
