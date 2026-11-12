@@ -73,6 +73,34 @@ test(
   },
 );
 
+test(
+  '«Velg alle» leaves one «Alle virksomheter» chip without the flag, which the keyboard reaches and removes',
+  MOCK,
+  async ({ page }, testInfo) => {
+    covers(testInfo, 'filtre kan velges og gir chips');
+    await page.goto('/');
+    const { field, input, list, chips } = organisations(page);
+
+    await field.getByRole('button', { name: 'Velg alle virksomheter' }).click();
+    await expect(chips).toHaveText(['Alle virksomheter']);
+
+    await input.click();
+    const options = await list.getByRole('option').count();
+    expect(options).toBeGreaterThan(1);
+    await expect(list.getByRole('option', { selected: true })).toHaveCount(options);
+
+    await page.keyboard.press('Escape');
+    await input.press('ArrowLeft');
+    const summary = field.getByRole('option', {
+      name: /^Alle virksomheter, Trykk for å fjerne alle/u,
+    });
+    await expect(summary).toBeFocused();
+    await page.keyboard.press('Backspace');
+    await expect(chips).toHaveCount(0);
+    await expect(input).toBeFocused();
+  },
+);
+
 test('«Velg alle» og «Tøm» leses opp i panelets statusregion', MOCK, async ({ page }, testInfo) => {
   covers(testInfo, 'filtre kan velges og gir chips');
   await page.goto('/');
