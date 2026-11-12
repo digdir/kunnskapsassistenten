@@ -12,8 +12,11 @@ this client's profile menu. Nothing here imports `apps/web`.
   kept in the browser use keys that start with `ka-next.`.
 - `src/profile.ts`: what KA knows that genki does not say: Kudos's fields and words, the
   suggestions, the document links and the experiments. UI text is Norwegian bokmål.
-- `src/BackToClassic.tsx`: «Tilbake til gammel versjon» in the profile menu, until genki's menu
-  takes host entries.
+- `src/menu.tsx`: KA's entries in genki's profile menu: «Endringslogg» and «Om prosjektet», which
+  are apps/web's pages (the server serves them from apps/web whichever client was chosen), and
+  «Tilbake til gammel versjon».
+- `src/feedback.ts`: feedback on an answer, to the server's `POST /api/next/feedback`, which
+  checks that the run is in the person's own thread and takes it only with a person's token.
 - `src/theme.css`: a copy of `apps/web/design-tokens-build/digdir.css`.
 - `vendor/genki`: genki's `client`, `i18n`, `ui-blocks` and `ui-assembly` as source, at the
   commit in `vendor/genki/GENKI_COMMIT`. Resolved by the aliases in `vite.config.ts` and the
@@ -49,7 +52,6 @@ node apps/web-next/scripts/check-bundle-size.mjs apps/web-next/dist
 
 ## Not here yet
 
-- Feedback on an answer: genki takes it by run, and the assembly does not carry an answer's run.
-- `apps/web`'s own pages, «Endringslogg», «Om prosjektet» and «Onboarding».
+- `apps/web`'s «Onboarding» page.
 - Choosing another organisation from the profile menu.
 - Thread titles on one line: genki's change, which comes with the next snapshot.

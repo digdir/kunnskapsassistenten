@@ -1,6 +1,7 @@
 # 0013 — The next client beside the current one, behind a toggle
 
-**Status:** accepted · **Date:** 2026-11-12
+**Status:** accepted · **Date:** 2026-11-12 · **Amended:** 2026-11-12 (feedback, profile menu,
+apps/web's pages)
 
 ## Context
 
@@ -26,7 +27,15 @@ session, sign-in and genki service serve both. A cookie chooses the page:
   gets `apps/web`.
 - `apps/web` shows «Prøv ny versjon» at the foot of the navigation panel when
   `GET /api/next/ui` says the next client is offered. The next client has
-  «Tilbake til gammel versjon» in its profile menu.
+  «Tilbake til gammel versjon» in its profile menu, as a host entry in genki's menu
+  (`profile.menu.extra`).
+- **apps/web's pages «Endringslogg» and «Om prosjektet» are apps/web's whichever client was
+  chosen:** `/endringslogg` and `/om-prosjektet` always get apps/web's page, and the next client's
+  profile menu links to them (`profile.menu.changelog`, and a host entry for «Om prosjektet», KA's
+  word for the page, where genki's own entry says «Om tjenesten»). The content is written once, in
+  `apps/web`. A person who chose the next client and opens one of them is in apps/web on that page;
+  «Prøv ny versjon» there goes to `/` without choosing again, and the next full load of any other
+  address is the next client.
 - A thread link opens in the chosen client: `/threads/:id` (and the older `/chat/:id`) goes to
   `/?t=:id` for the next client, and `/?t=:id` to `/threads/:id` for `apps/web`.
 - The two builds keep their files apart, `/assets/*` and `/next-assets/*`, so only the page
@@ -55,7 +64,22 @@ sign-in check and the 64 kB body limit come first:
   takes and the tenant is the server's; a new thread and a question are rebuilt from the fields
   they may carry, for this service only. Everything else is 403 and never forwarded, feedback
   included. Rename and delete pass only with a person's token, never with the service key.
+- `POST /feedback`: a rating of an answer, `{ conversationId, taskId, rating, reasons?, comment? }`,
+  with the checks of apps/web's `POST /api/v2/feedback` (`feedback.ts`): the body is cleaned, the
+  run must be an answer in one of the caller's own threads, asked of genki as the caller, and only
+  then is it sent to genki's `POST /api/feedback` as `{ task, rating, reasons, comment }`. It
+  passes only with a person's token: genki records feedback from anyone holding the service key,
+  so local runs, e2e and agents never write it. The page gets the run from genki's assembly
+  (`runId`, from the `genai-task` header the proxy passes back, or `task` on a stored answer), and
+  the thread from the assembly's `onThreadChange`; without a run nothing is sent. Feedback is
+  offered only to a person who may write (`writes` in `/me`).
+
+  Chosen over opening `POST /api/feedback` in the proxy: the proxy's rules shape one request and
+  never ask genki anything first, while the ownership check is a read of the thread before the
+  write. A route of its own keeps that check in one place, `feedback.ts`, shared with apps/web,
+  and keeps the proxy's list of writes to the thread calls.
   Answers stream through as they come, and «Stopp» ends the call to genki.
+
 - A call genki refuses or fails reaches the page as a fixed sentence with genki's status and
   code, never genki's own text, as in decision 0009; only the status is logged. An answer that
   fails after it has begun to stream still carries genki's own error in the stream, as genki's
@@ -69,11 +93,14 @@ sign-in check and the 64 kB body limit come first:
 
 - One rollout serves both clients, and every rollout signs everyone out, as before.
 - Threads are the same in both clients: genki keeps them for the service, and both read them
-  from it. Feedback is not offered in the next client until genki's assembly carries the run id
-  of an answer.
-- The next client's profile menu is genki's, and takes no host entries today, so
-  «Tilbake til gammel versjon» is put into it from `apps/web-next` through a portal. When genki's
-  menu takes host entries, it becomes one entry in the profile and the portal goes.
+  from it. Feedback from either client goes through `feedback.ts`; the next client's carries the
+  reasons picked with the rating too, which `FeedbackRequest` now names.
+- The next client's profile menu is genki's, with KA's entries in it as host entries; nothing is
+  put into genki's markup from outside.
+- Excerpt markers (genki's ADR 0052) come with the assembly, but KA's service cites by document,
+  so its answers carry none and read as before. When the service turns excerpt citing on, the
+  next client numbers footnotes by excerpt with no change here.
 - Removing the next client is removing `apps/web-next`, `nextApi.ts`, `nextPage.ts`, their tests,
   the mount in `app.ts`, `apps/web/src/nextVersion` and its line in `SidebarFooter.tsx`.
+  apps/web's pages and `feedback.ts` stay.
   Removing `apps/web` later is the reverse, and then the next client becomes `WEB_ROOT`.
