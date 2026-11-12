@@ -9,7 +9,7 @@ import type {
   Source,
 } from '@ka/contract';
 import { readSessionId } from './auth.ts';
-import { appHeaders, type Caller } from './backend.ts';
+import { appHeaders, environmentFor, type Caller } from './backend.ts';
 import { config } from './config.ts';
 import * as convos from './conversations.ts';
 import { cleanFeedback, ownsTask, sendFeedback } from './feedback.ts';
@@ -34,6 +34,7 @@ shared.get('/health', (c) => c.json({ ok: true }));
 shared.get('/me', async (c) => {
   const tokens =
     config.auth.mode === 'ansattporten' ? getTokens(await readSessionId(c)) : undefined;
+  const environment = environmentFor(c.get('userId'));
   return c.json({
     userId: c.get('userId'),
     user: c.get('user'),
@@ -44,6 +45,7 @@ shared.get('/me', async (c) => {
     ...(tokens
       ? { organisations: tokens.organisations, actingFor: tokens.actingFor ?? null }
       : {}),
+    ...(environment ? { environment } : {}),
   } satisfies MeResponse);
 });
 

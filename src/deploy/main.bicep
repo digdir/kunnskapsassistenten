@@ -72,6 +72,12 @@ param kaNextModel string = ''
 @description('The genki tenant the next client reads collections and facets from. Empty is `digdir`.')
 param kaNextTenant string = ''
 
+@description('Testers by session user id (`userId` in `/api/v2/me`), separated by commas or spaces: their calls to genki carry `GenAI-Environment` (decisions/0015). Empty: nobody is a tester.')
+param kaTesters string = ''
+
+@description('The genki environment testers get. Empty is `test`.')
+param kaTestEnvironment string = ''
+
 var appHost = empty(publicHost) ? '${name}.${containerEnv.properties.defaultDomain}' : publicHost
 var ansattporten = authMode == 'ansattporten'
 
@@ -191,6 +197,12 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             ],
             empty(kaNextTenant) ? [] : [
               { name: 'KA_NEXT_TENANT', value: kaNextTenant }
+            ],
+            empty(kaTesters) ? [] : [
+              { name: 'KA_TESTERS', value: kaTesters }
+            ],
+            empty(kaTestEnvironment) ? [] : [
+              { name: 'KA_TEST_ENVIRONMENT', value: kaTestEnvironment }
             ]
           )
           probes: [

@@ -815,6 +815,16 @@
   }
 }
 
+/* «Testmiljø» takes the picker's margin, so the two stand together by the send button. */
+.ka-test-environment {
+  flex-shrink: 0;
+  margin-inline-start: auto;
+}
+
+.ka-test-environment + .ka-agent-picker__trigger {
+  margin-inline-start: 0;
+}
+
 .ka-agent-picker__current {
   min-inline-size: 0;
   overflow: hidden;
