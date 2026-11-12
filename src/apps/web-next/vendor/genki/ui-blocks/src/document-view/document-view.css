@@ -1,0 +1,273 @@
+/* After Designsystemet's layers, every token read through a --genai-document-view-* variable. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  .uib-document-view {
+    /* Room over an excerpt scrolled to; the block sets it from the «Utdrag i svaret» row. */
+    --_scroll-room: var(--ds-size-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-document-view-gap, var(--ds-size-4));
+    inline-size: 100%;
+    container: uib-document-view / inline-size;
+    overflow-wrap: break-word;
+    font-family: var(--genai-document-view-font-family, var(--ds-font-family)), sans-serif;
+  }
+  .uib-document-view-title {
+    margin: 0;
+  }
+  .uib-document-view-back {
+    display: flex;
+    inline-size: fit-content;
+  }
+  .uib-document-view-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: var(--genai-document-view-empty-gap, var(--ds-size-2));
+    color: var(--genai-document-view-empty-color, var(--ds-color-text-subtle));
+  }
+  .uib-document-view-empty > * {
+    margin: 0;
+  }
+
+  /* Private defaults, so the container query changes a default and never a host's value. */
+  .uib-document-view-document {
+    --_head-padding: var(--ds-size-3);
+    --_body-padding: var(--ds-size-3);
+    --_passage-padding: var(--ds-size-3);
+    --dsc-card-border-width: 0;
+    --dsc-card-block-border-width: 0;
+    background: transparent;
+  }
+  .uib-document-view-head {
+    padding: var(--genai-document-view-head-padding, var(--_head-padding));
+    border: var(--genai-document-view-head-border-width, var(--ds-border-width-default)) solid
+      var(--genai-document-view-head-border-color, var(--ds-color-border-subtle));
+    border-start-start-radius: var(--genai-document-view-border-radius, var(--ds-border-radius-lg));
+    border-start-end-radius: var(--genai-document-view-border-radius, var(--ds-border-radius-lg));
+    hyphens: auto;
+    background: var(--genai-document-view-head-background, var(--ds-color-surface-tinted));
+    color: var(--genai-document-view-head-color, var(--ds-color-text-default));
+  }
+  .uib-document-view-document-title {
+    margin: 0;
+  }
+  .uib-document-view-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-document-view-body-gap, var(--ds-size-4));
+    padding: var(--genai-document-view-body-padding, var(--_body-padding));
+    border: var(--genai-document-view-body-border-width, var(--ds-border-width-default)) solid
+      var(--genai-document-view-body-border-color, var(--ds-color-border-subtle));
+    border-block-start: 0;
+    border-end-start-radius: var(--genai-document-view-border-radius, var(--ds-border-radius-lg));
+    border-end-end-radius: var(--genai-document-view-border-radius, var(--ds-border-radius-lg));
+    background: var(--genai-document-view-body-background, var(--ds-color-background-tinted));
+  }
+  .uib-document-view-body > * {
+    margin-block: 0;
+  }
+  .uib-document-view-subtitle,
+  .uib-document-view-no-link {
+    color: var(--genai-document-view-subtitle-color, var(--ds-color-text-subtle));
+  }
+  .uib-document-view-link {
+    display: inline-flex;
+    align-items: center;
+    inline-size: fit-content;
+  }
+  /* Pinned to neutral, as Sources' disclaimer: quiet lines, not the host's accent. */
+  .uib-document-view-scope,
+  .uib-document-view-disclaimer {
+    color: var(--genai-document-view-note-color, var(--ds-color-neutral-text-subtle));
+  }
+
+  /* «Utdrag i svaret»: sticky on the body's surface, its label and chips one wrapping line. */
+  .uib-document-view-jumps {
+    position: sticky;
+    inset-block-start: var(--genai-document-view-jumps-inset, 0);
+    z-index: 1;
+    padding-block: var(--genai-document-view-jumps-padding, var(--ds-size-1));
+    background: var(--genai-document-view-jumps-background, var(--ds-color-background-tinted));
+  }
+  .uib-document-view-jumps-label,
+  .uib-document-view-jump-doc {
+    margin-inline-end: var(--genai-document-view-jumps-gap, var(--ds-size-2));
+    font-size: var(--genai-document-view-jumps-label-font-size, var(--ds-body-sm-font-size));
+    color: var(--genai-document-view-jumps-label-color, var(--ds-color-text-subtle));
+  }
+  .uib-document-view-jump-list {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .uib-document-view-jump-item {
+    display: inline;
+  }
+  /* Designsystemet's chip; the current one pinned to accent, as the excerpt's own mark. */
+  .uib-document-view-jump {
+    --dsc-chip-padding-inline: var(--genai-document-view-jump-padding, var(--ds-size-1));
+    display: inline-flex;
+    align-items: center;
+    gap: var(--genai-document-view-jump-gap, var(--ds-size-1));
+    margin-block: var(--genai-document-view-jump-margin-block, var(--ds-size-1));
+    margin-inline-end: var(--genai-document-view-jump-list-gap, var(--ds-size-2));
+    vertical-align: middle;
+  }
+  .uib-document-view-jump[aria-current='true'] {
+    --dsc-chip-background: var(
+      --genai-document-view-jump-current-background,
+      var(--ds-color-accent-surface-tinted)
+    );
+    --dsc-chip-border-color: var(
+      --genai-document-view-jump-current-border-color,
+      var(--ds-color-accent-base-default)
+    );
+    --dsc-chip-border-width: var(--genai-document-view-jump-current-border-width, 2px);
+    font-weight: var(--genai-document-view-jump-current-font-weight, var(--ds-font-weight-medium));
+  }
+  .uib-document-view-jump-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: var(--genai-document-view-jump-number-size, var(--ds-size-6));
+    block-size: var(--genai-document-view-jump-number-size, var(--ds-size-6));
+    border-radius: var(
+      --genai-document-view-jump-number-border-radius,
+      var(--ds-border-radius-full)
+    );
+    background: var(
+      --genai-document-view-jump-number-background,
+      var(--ds-color-accent-surface-tinted)
+    );
+    color: var(--genai-document-view-jump-number-color, var(--ds-color-accent-text-default));
+    font-size: var(--genai-document-view-jump-number-font-size, var(--ds-body-xs-font-size));
+    font-weight: var(--genai-document-view-jump-number-font-weight, var(--ds-font-weight-semibold));
+  }
+  .uib-document-view-jump[aria-current='true'] .uib-document-view-jump-number {
+    background: var(
+      --genai-document-view-jump-current-number-background,
+      var(--ds-color-accent-base-default)
+    );
+    color: var(
+      --genai-document-view-jump-current-number-color,
+      var(--ds-color-accent-base-contrast-default)
+    );
+  }
+  .uib-document-view-jump-page {
+    padding-inline-end: var(--genai-document-view-jump-page-padding, var(--ds-size-1));
+  }
+
+  .uib-document-view-passages {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-document-view-passages-gap, var(--ds-size-3));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .uib-document-view-passages > li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-document-view-passages-gap, var(--ds-size-3));
+  }
+  /* «[…]»: the document goes on here, in text the view does not have. */
+  .uib-document-view-gap {
+    margin: 0;
+    text-align: center;
+    color: var(--genai-document-view-gap-color, var(--ds-color-text-subtle));
+  }
+  .uib-document-view-passage {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-document-view-passage-gap, var(--ds-size-2));
+    padding: var(--genai-document-view-passage-padding, var(--_passage-padding));
+    background: var(--genai-document-view-passage-background, var(--ds-color-surface-default));
+    border-radius: var(--genai-document-view-passage-border-radius, var(--ds-border-radius-lg));
+    /* Clear of «Utdrag i svaret» above when it is scrolled to. */
+    scroll-margin-block-start: var(
+      --genai-document-view-passage-scroll-margin,
+      var(--_scroll-room)
+    );
+  }
+  /* What focus lands on in an excerpt, or under the excerpts, stops clear of the row too. */
+  .uib-document-view-passage :is(a, button),
+  .uib-document-view-ask :is(input, button) {
+    scroll-margin-block-start: var(
+      --genai-document-view-passage-scroll-margin,
+      var(--_scroll-room)
+    );
+  }
+  .uib-document-view-passage > * {
+    margin-block: 0;
+  }
+  .uib-document-view-passage-title {
+    margin: 0;
+    min-inline-size: 0;
+  }
+  .uib-document-view-uncited {
+    color: var(--genai-document-view-uncited-color, var(--ds-color-text-subtle));
+  }
+  .uib-document-view-section {
+    color: var(--genai-document-view-section-color, var(--ds-color-text-default));
+  }
+  .uib-document-view-page {
+    color: var(--genai-document-view-page-color, var(--ds-color-text-subtle));
+  }
+  .uib-document-view-unavailable {
+    font-style: italic;
+    color: var(--genai-document-view-unavailable-color, var(--ds-color-text-subtle));
+  }
+  .uib-document-view-quote {
+    font-size: var(--genai-document-view-quote-font-size, var(--ds-body-sm-font-size));
+    line-height: var(--genai-document-view-quote-line-height, var(--ds-line-height-lg));
+    letter-spacing: var(
+      --genai-document-view-quote-letter-spacing,
+      var(--ds-body-sm-letter-spacing)
+    );
+  }
+  /* A blank line between paragraphs: one line of the quote's own text, which no token says. */
+  .uib-document-view-quote > * {
+    margin-block-end: var(--genai-document-view-quote-paragraph-gap, 1lh);
+  }
+  .uib-document-view-quote > :last-child {
+    margin-block-end: 0;
+  }
+  .uib-document-view-quote pre {
+    overflow-x: visible;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  /* The current excerpt: pinned to accent, as in Sources; an inset band, so nothing shifts. */
+  .uib-document-view-passage[data-current='true'] {
+    background: var(
+      --genai-document-view-passage-current-background,
+      var(--ds-color-accent-surface-tinted)
+    );
+    box-shadow: inset var(--genai-document-view-passage-current-marker-width, var(--ds-size-1)) 0 0
+      0 var(--genai-document-view-passage-current-marker-color, var(--ds-color-accent-base-default));
+  }
+
+  .uib-document-view-ask {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--genai-document-view-ask-gap, var(--ds-size-2));
+    padding-block-start: var(--genai-document-view-ask-padding, var(--ds-size-2));
+    border-block-start: var(--genai-document-view-ask-border-width, var(--ds-border-width-default))
+      solid var(--genai-document-view-ask-border-color, var(--ds-color-border-subtle));
+  }
+  .uib-document-view-ask-field {
+    flex: 1 1 var(--genai-document-view-ask-field-min-size, 12rem);
+  }
+
+  @container uib-document-view (inline-size >= 410px) {
+    .uib-document-view-document {
+      --_head-padding: var(--ds-size-4);
+      --_body-padding: var(--ds-size-6) var(--ds-size-6) var(--ds-size-8);
+      --_passage-padding: var(--ds-size-3) var(--ds-size-4) var(--ds-size-4);
+    }
+  }
+}

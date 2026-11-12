@@ -1,0 +1,180 @@
+/* The assembly's own arrangement: kunnskapsassistenten's chat column (views/chat/chat.css), as
+   the UI blocks preview draws it, and the design's filter strip. The blocks' looks are theirs, and
+   only the assembly's own classes are styled here. Every token through a --genai-assembly-*
+   variable, as the blocks do (V2-0009), and each one listed on docs/components/ui-assembly.html. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  /* The main column's content grows, so the chat can keep its field at the bottom. */
+  .uia-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-assembly-main-gap, var(--ds-size-6));
+    min-block-size: 100%;
+  }
+
+  .uia-main > .uia-main-chat {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+  }
+
+  /* While a document stands in the conversation's place. */
+  .uia-main > .uia-main-chat[hidden] {
+    display: none;
+  }
+
+  /* Fremgangsmåte at the head of «Innhold» without Chat: as wide as the strip under it, its note
+     under its heading. */
+  .uia-main-approach {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-assembly-approach-gap, var(--ds-size-2));
+    inline-size: 100%;
+    max-inline-size: var(--genai-assembly-chat-max-width, 728px);
+    margin-inline: auto;
+  }
+
+  /* Dokumentvisning in «Innhold»: as wide as the conversation. */
+  .uia-main-document {
+    inline-size: 100%;
+    max-inline-size: var(--genai-assembly-chat-max-width, 728px);
+    margin-inline: auto;
+  }
+
+  .uia-chat {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    gap: var(--genai-assembly-chat-gap, var(--ds-size-8));
+    inline-size: 100%;
+    max-inline-size: var(--genai-assembly-chat-max-width, 728px);
+    margin-inline: auto;
+  }
+
+  /* In the secondary panel the column is the panel: tighter, and the field follows the answer. */
+  .uia-chat[data-in-panel] {
+    gap: var(--genai-assembly-panel-chat-gap, var(--ds-size-5));
+  }
+
+  .uia-greeting {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-assembly-greeting-gap, var(--ds-size-6));
+    margin-block-start: auto;
+    padding-block-start: var(--genai-assembly-room-inset, var(--ds-size-3));
+  }
+
+  .uia-chat[data-in-panel] .uia-greeting {
+    margin-block-start: 0;
+  }
+
+  .uia-composer {
+    margin-block-start: auto;
+  }
+
+  /* The front page: greeting, field and suggestions as one group in the middle of the room, the
+     disclaimer alone at the foot. */
+  .uia-chat[data-start] .uia-composer {
+    margin-block-start: 0;
+  }
+
+  .uia-chat[data-start] .uia-suggestions {
+    margin-block-end: auto;
+    padding-block-end: var(--genai-assembly-room-inset, var(--ds-size-3));
+  }
+
+  .uia-disclaimer {
+    color: var(--genai-assembly-disclaimer-color, var(--ds-color-neutral-text-subtle));
+    text-align: center;
+  }
+
+  /* The field docks at the bottom edge of the main column, as kunnskapsassistenten's composer
+     area: it pulls itself into the main column's end padding and fills it with its own ground. The
+     padding is the shell's, read through the shell's own variable with the shell's fallback. Only
+     the main column docks its field (the composer's `sticky`). */
+  .uia-chat {
+    --_uia-main-end: calc(
+      var(--genai-shell-main-padding-block-end, var(--ds-size-8)) + env(safe-area-inset-bottom)
+    );
+  }
+
+  .uia-chat > .uia-composer[data-sticky] {
+    inset-block-end: calc(var(--_uia-main-end) * -1);
+    margin-block-end: calc(var(--_uia-main-end) * -1);
+    padding-block-end: var(--_uia-main-end);
+  }
+
+  /* Two views in one panel, as kunnskapsassistenten's stackedView.css: the filter over the tools. */
+  .uia-stacked {
+    inline-size: 100%;
+  }
+
+  .uia-stacked + .uia-stacked {
+    margin-block-start: var(--genai-assembly-stacked-gap, var(--ds-size-12));
+  }
+
+  .uia-frames {
+    margin: 0;
+    padding-inline-start: var(--genai-assembly-frames-indent, var(--ds-size-5));
+    font-size: var(--genai-assembly-frames-font-size, var(--ds-font-size-2));
+  }
+
+  .uia-quiet {
+    color: var(--genai-assembly-quiet-color, var(--ds-color-neutral-text-subtle));
+  }
+
+  /* The design's strip in the main column: «Leser fra … dokumenter i Kudos» and «Endre». */
+  .uia-filter-strip {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-assembly-strip-gap, var(--ds-size-4));
+    max-inline-size: var(--genai-assembly-chat-max-width, 728px);
+    margin-inline: auto;
+    inline-size: 100%;
+    box-sizing: border-box;
+    padding: var(--genai-assembly-strip-padding, var(--ds-size-3) var(--ds-size-4));
+    border: var(--genai-assembly-strip-border-width, var(--ds-border-width-default)) solid
+      var(--genai-assembly-strip-border-color, var(--ds-color-neutral-border-subtle));
+    border-radius: var(--genai-assembly-strip-radius, var(--ds-border-radius-lg));
+    background: var(--genai-assembly-strip-background, var(--ds-color-neutral-surface-default));
+  }
+
+  .uia-filter-strip-row {
+    display: flex;
+    gap: var(--genai-assembly-strip-gap, var(--ds-size-4));
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .uia-filter-strip-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-assembly-strip-text-gap, var(--ds-size-1));
+    min-inline-size: 0;
+  }
+
+  .uia-filter-strip-narrowed {
+    margin: 0;
+    color: var(--genai-assembly-quiet-color, var(--ds-color-neutral-text-subtle));
+  }
+
+  /* A host's notice (`useNotice`): at the foot of the page, centred over everything, as wide as
+     its words up to a reading width, and gone while it says nothing. */
+  .uia-notice {
+    position: fixed;
+    inset-block-end: var(--genai-assembly-notice-inset, var(--ds-size-4));
+    inset-inline-start: 50%;
+    translate: -50% 0;
+    z-index: var(--genai-assembly-notice-layer, 20);
+    inline-size: max-content;
+    max-inline-size: min(
+      var(--genai-assembly-notice-max-width, 560px),
+      calc(100% - 2 * var(--genai-assembly-notice-inset, var(--ds-size-4)))
+    );
+  }
+
+  .uia-notice:empty {
+    display: none;
+  }
+}

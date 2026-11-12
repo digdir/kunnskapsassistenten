@@ -1,0 +1,343 @@
+/* After Designsystemet's layers, every token read through a --genai-threads-* variable. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  .uib-threads {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: var(--genai-threads-gap, var(--ds-size-6));
+    inline-size: 100%;
+    font-family: var(--genai-threads-font-family, var(--ds-font-family)), sans-serif;
+  }
+  /* The buttons keep their own width, as the reference draws them; the search takes the panel's. */
+  .uib-threads-search,
+  .uib-threads-search form,
+  .uib-threads-search .ds-search {
+    inline-size: 100%;
+  }
+  .uib-threads-search-status:empty {
+    margin: 0;
+    block-size: 0;
+  }
+  /* Never display: none, which drops the alert region from the accessibility tree. */
+  .uib-threads-error:empty {
+    position: absolute;
+    block-size: 0;
+    inline-size: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+  .uib-threads-loading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-threads-loading-gap, var(--ds-size-2));
+    inline-size: 100%;
+  }
+  /* Pinned to neutral, as the reference draws it: a note about the search, not the brand. */
+  .uib-threads-no-matches {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: var(--genai-threads-no-matches-gap, var(--ds-size-2));
+    color: var(--genai-threads-no-matches-color, var(--ds-color-neutral-text-subtle));
+  }
+  .uib-threads-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-threads-group-gap, var(--ds-size-2));
+    inline-size: 100%;
+  }
+  /* Pinned to neutral, as the reference draws it: the label reads as a heading, not as the brand. */
+  .uib-threads-group-title {
+    color: var(--genai-threads-group-title-color, var(--ds-color-neutral-text-default));
+  }
+  .uib-threads-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-threads-list-gap, var(--ds-size-1));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .uib-threads-item {
+    display: flex;
+    flex-direction: column;
+  }
+  .uib-threads-row {
+    display: flex;
+    align-items: start;
+    gap: var(--genai-threads-row-gap, var(--ds-size-1));
+  }
+  /* Without min-inline-size the title's ellipsis would push the menu out of the panel. */
+  .uib-threads-row > .uib-threads-thread {
+    flex: 1;
+    min-inline-size: 0;
+  }
+  /* Above the whole-title box, or a pointer on its way to the menu would land on the box. */
+  .uib-threads-menu-trigger {
+    position: relative;
+    z-index: 4;
+    flex-shrink: 0;
+  }
+  .uib-threads-rename {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-threads-rename-gap, var(--ds-size-2));
+    inline-size: 100%;
+  }
+  .uib-threads-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--genai-threads-actions-gap, var(--ds-size-2));
+  }
+
+  /* A link without an underline, as Designsystemet's sidebar; the ring clears the text. */
+  .uib-threads-thread {
+    display: flex;
+    flex-direction: column;
+    padding: var(--genai-threads-thread-padding-block, var(--ds-size-1))
+      var(--genai-threads-thread-padding-inline, var(--ds-size-2))
+      var(--genai-threads-focus-width, var(--ds-border-width-focus));
+    border-radius: var(--genai-threads-thread-border-radius, var(--ds-border-radius-md));
+    text-decoration: none;
+  }
+  /* One line: titles are the person's own questions; the box shows the rest. */
+  .uib-threads-thread-title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .uib-threads-thread:hover {
+    background: var(--genai-threads-thread-hover-background, var(--ds-color-surface-hover));
+  }
+  /* The ring inside the row: rows are only a gap apart, so an outward ring would sit in the next. */
+  .uib-threads-thread:focus-visible {
+    outline-offset: calc(-1 * var(--genai-threads-focus-width, var(--ds-border-width-focus)));
+  }
+  /* The surface alone is too faint against the panel, so the weight carries the state too. */
+  .uib-threads-thread[aria-current='page'] {
+    background: var(--genai-threads-current-background, var(--ds-color-surface-active));
+    color: var(--genai-threads-current-color, var(--ds-color-text-default));
+    font-weight: var(--genai-threads-current-font-weight, var(--ds-font-weight-semibold));
+  }
+  /* The muted neutral is too faint on the active surface; the row's own colour is not. */
+  .uib-threads-thread[aria-current='page'] :is(.uib-threads-time, .uib-threads-dataset) {
+    color: inherit;
+  }
+  .uib-threads-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--genai-threads-meta-gap, var(--ds-size-2));
+  }
+  /* Pinned to neutral, as the reference draws it: context for the title, not the first thing read. */
+  .uib-threads-time,
+  .uib-threads-dataset {
+    color: var(--genai-threads-meta-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-threads-meta-font-size, var(--ds-font-size-1));
+  }
+
+  /* Fixed, to escape the panel's clipping inside the link; it takes the pointer (WCAG 1.4.13). */
+  .uib-threads-overlay {
+    position: fixed;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    inline-size: max-content;
+    padding: var(--genai-threads-overlay-padding-block, var(--ds-size-1))
+      var(--genai-threads-overlay-padding-inline, var(--ds-size-2));
+    border-radius: var(--genai-threads-thread-border-radius, var(--ds-border-radius-md));
+    background: var(--genai-threads-overlay-background, var(--ds-color-surface-hover));
+    color: var(--genai-threads-overlay-color, var(--ds-color-text-subtle));
+    box-shadow: var(--genai-threads-overlay-shadow, var(--ds-shadow-md));
+  }
+  /* The box hides the row's inset ring, so it draws its own; Designsystemet's cannot reach in. */
+  .uib-threads-thread:focus-visible > .uib-threads-overlay {
+    outline-color: var(--genai-threads-focus-color, var(--ds-color-focus-outer));
+    outline-style: solid;
+    outline-width: var(--genai-threads-focus-width, var(--ds-border-width-focus));
+    outline-offset: calc(-1 * var(--genai-threads-focus-width, var(--ds-border-width-focus)));
+  }
+  .uib-threads-overlay-title {
+    overflow-wrap: anywhere;
+  }
+
+  /* A line over who is signed in, pinned to neutral: a divider, not the brand. */
+  .uib-threads-signed-in {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--genai-threads-signed-in-gap, var(--ds-size-2));
+    inline-size: 100%;
+    padding-block-start: var(--genai-threads-signed-in-padding-block-start, var(--ds-size-4));
+    border-block-start: var(--genai-threads-signed-in-border-width, var(--ds-border-width-default))
+      solid var(--genai-threads-signed-in-border-color, var(--ds-color-neutral-border-subtle));
+  }
+  /* The name may be an e-mail address with no spaces in it; it wraps anyway. */
+  .uib-threads-user {
+    display: flex;
+    align-items: center;
+    gap: var(--genai-threads-user-gap, var(--ds-size-1));
+    min-inline-size: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* ── `variant="nav"`: the design's dev-trader board ── */
+
+  /* The parts as far apart as the board's panel draws them; the groups bring their own space. */
+  .uib-threads[data-variant='nav'] {
+    gap: var(--genai-threads-gap, var(--ds-size-4));
+  }
+
+  /* «Ny tråd» stays in view while the list scrolls under it, as on the dev-trader board. The band
+     reaches the gap's height under the button, so no row shows between the two; above the row's
+     menu and its whole-title box. Pinned to neutral, as the shell's card behind it is. */
+  .uib-threads[data-variant='nav'] > .uib-threads-top {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 5;
+    inline-size: 100%;
+    margin-block-end: calc(-1 * var(--genai-threads-gap, var(--ds-size-4)));
+    padding-block-end: var(--genai-threads-gap, var(--ds-size-4));
+    background: var(--genai-threads-new-band-background, var(--ds-color-neutral-surface-default));
+  }
+
+  /* What scrolls under it stops below it when reached by keyboard (WCAG 2.4.11). */
+  .uib-threads[data-variant='nav'] :is(a, button, input, [tabindex]):not(.uib-threads-new) {
+    scroll-margin-block-start: calc(
+      var(--genai-threads-new-size, var(--ds-size-11)) + var(--genai-threads-gap, var(--ds-size-4))
+    );
+  }
+
+  /* «Ny tråd» across the panel, the board's 44 high, with the rows' corners. */
+  .uib-threads[data-variant='nav'] .uib-threads-new {
+    --dsc-button-size: var(--genai-threads-new-size, var(--ds-size-11));
+    --dsc-button-border-radius: var(
+      --genai-threads-thread-border-radius,
+      var(--ds-border-radius-xl)
+    );
+
+    inline-size: 100%;
+    font-size: var(--genai-threads-new-font-size, var(--ds-font-size-3));
+  }
+
+  /* One list, as the board draws it: the space is above each heading, none between the groups. */
+  .uib-threads-groups {
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+  }
+
+  .uib-threads[data-variant='nav'] .uib-threads-group {
+    gap: var(--genai-threads-list-gap, var(--ds-size-1));
+  }
+
+  /* The period's name small over its rows, its text in line with theirs: a label, not a stop. */
+  .uib-threads[data-variant='nav'] .uib-threads-group-title {
+    padding: var(--genai-threads-group-title-padding-block-start, var(--ds-size-6))
+      var(--genai-threads-thread-padding-inline, var(--ds-size-3))
+      var(--genai-threads-group-title-padding-block-end, var(--ds-size-1));
+    color: var(--genai-threads-group-title-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-threads-group-title-font-size, var(--ds-font-size-1));
+    font-weight: var(--genai-threads-group-title-font-weight, var(--ds-font-weight-semibold));
+    line-height: var(--genai-threads-group-title-line-height, var(--ds-line-height-md));
+  }
+
+  /* The row holds the ground, so its «…» can stand on it. */
+  .uib-threads[data-variant='nav'] .uib-threads-row {
+    position: relative;
+    border-radius: var(--genai-threads-thread-border-radius, var(--ds-border-radius-xl));
+  }
+
+  /* Pinned to neutral, as the board draws it: a list to read, not a column of links. */
+  .uib-threads[data-variant='nav'] .uib-threads-thread {
+    padding: var(--genai-threads-thread-padding-block, var(--ds-size-1))
+      var(--genai-threads-thread-padding-inline, var(--ds-size-3));
+    border-radius: var(--genai-threads-thread-border-radius, var(--ds-border-radius-xl));
+    color: var(--genai-threads-thread-color, var(--ds-color-neutral-text-default));
+    font-size: var(--genai-threads-thread-font-size, var(--ds-font-size-3));
+    line-height: var(--genai-threads-thread-line-height, var(--ds-line-height-md));
+  }
+
+  .uib-threads[data-variant='nav'] .uib-threads-thread:is(:hover, [aria-current='page']) {
+    background: none;
+  }
+
+  /* Up to two lines, then «…»; the box shows the rest. */
+  .uib-threads[data-variant='nav'] .uib-threads-thread-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--genai-threads-title-lines, 2);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Pinned to neutral: a row under the pointer or in focus is not the open one, so not its tint. */
+  .uib-threads[data-variant='nav'] .uib-threads-row:is(:hover, :focus-within) {
+    background: var(--genai-threads-thread-hover-background, var(--ds-color-neutral-surface-hover));
+  }
+
+  /* The open row tinted in the host's colour, its text that colour's own; after the hover, so it
+     stays the open one under the pointer. */
+  .uib-threads[data-variant='nav'] .uib-threads-row:has(> [aria-current='page']) {
+    background: var(--genai-threads-current-background, var(--ds-color-background-tinted));
+  }
+
+  .uib-threads[data-variant='nav'] .uib-threads-thread[aria-current='page'] {
+    color: var(--genai-threads-current-color, var(--ds-color-text-default));
+    font-weight: var(--genai-threads-current-font-weight, var(--ds-font-weight-medium));
+  }
+
+  /* The box is the row it repeats, opened downward: its spacing, its corners, its pinned colours.
+     Never taller than where the list scrolls, which a title of more lines than that is cut at. */
+  .uib-threads[data-variant='nav'] .uib-threads-overlay {
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: var(--genai-threads-thread-padding-block, var(--ds-size-1))
+      var(--genai-threads-thread-padding-inline, var(--ds-size-3));
+    border-radius: var(--genai-threads-thread-border-radius, var(--ds-border-radius-xl));
+    background: var(--genai-threads-thread-hover-background, var(--ds-color-neutral-surface-hover));
+    color: var(--genai-threads-thread-color, var(--ds-color-neutral-text-default));
+  }
+
+  .uib-threads[data-variant='nav'] .uib-threads-thread[aria-current='page'] > .uib-threads-overlay {
+    background: var(--genai-threads-current-background, var(--ds-color-background-tinted));
+    color: var(--genai-threads-current-color, var(--ds-color-text-default));
+  }
+
+  .uib-threads[data-variant='nav'] .uib-threads-menu-trigger {
+    --dsc-button-size: var(--genai-threads-menu-size, var(--ds-size-8));
+  }
+
+  /* The «…» over its row's end, seen on hover or focus where a pointer can hover: the board draws
+     no menu, and one in every row would take the titles' width. It wears the row's ground. */
+  @media (hover: hover) {
+    .uib-threads[data-variant='nav'] .uib-threads-menu-trigger {
+      position: absolute;
+      inset-block: var(--genai-threads-menu-inset, var(--ds-size-0));
+      inset-inline-end: var(--genai-threads-menu-inset, var(--ds-size-0));
+      margin-block: auto;
+      background-color: inherit;
+    }
+
+    .uib-threads[data-variant='nav'] .uib-threads-menu-trigger:hover {
+      background-color: var(--genai-threads-menu-hover-background, var(--ds-color-surface-hover));
+    }
+
+    /* The whole title wraps clear of the «…» standing over the box. */
+    .uib-threads[data-variant='nav']
+      .uib-threads-row:has(> .uib-threads-menu-trigger)
+      .uib-threads-overlay {
+      padding-inline-end: var(--genai-threads-menu-size, var(--ds-size-8));
+    }
+
+    .uib-threads[data-variant='nav']
+      .uib-threads-row:not(:hover, :focus-within)
+      > .uib-threads-menu-trigger:not([aria-expanded='true']) {
+      opacity: 0;
+    }
+  }
+}

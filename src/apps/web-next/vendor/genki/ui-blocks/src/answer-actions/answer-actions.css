@@ -1,0 +1,105 @@
+/* After Designsystemet's layers, so a host's own CSS wins, and every token read through a
+   --genai-answer-actions-* variable at the point of use, listed on
+   docs/components/answer-actions.html. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  /* The rows span the column, so the actions start at its edge and the time stands at its far
+     end, as kunnskapsassistenten draws them, also where a wrapper around the block would centre
+     its items. */
+  .uib-answer-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--genai-answer-actions-gap, var(--ds-size-2));
+    font-family: var(--genai-answer-actions-font-family, var(--ds-font-family)), sans-serif;
+  }
+
+  /* The copy buttons, the app's own actions, and what sits at the far end. */
+  .uib-answer-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--genai-answer-actions-row-gap, var(--ds-size-2));
+  }
+
+  /* `auto` and not a fixed gap, because the row holds one or more buttons, and it gives way
+     when the row wraps. Pinned to neutral, as kunnskapsassistenten draws the answer's time. */
+  .uib-answer-actions-end {
+    margin-inline-start: auto;
+    color: var(--genai-answer-actions-end-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-answer-actions-end-font-size, var(--ds-font-size-minus-1));
+  }
+
+  /* A line of its own under the buttons. Pinned to neutral, as kunnskapsassistenten draws it.
+     A host with a sticky field under the conversation sets the scroll margin to its height. */
+  .uib-answer-actions-receipt {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--genai-answer-actions-receipt-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-answer-actions-receipt-font-size, var(--ds-font-size-minus-1));
+    scroll-margin-block-end: var(--genai-answer-actions-receipt-scroll-margin-block-end, 0);
+  }
+
+  /* The feedback, as genki's workspace draws it: a rule above, helper text, a form on a
+     tinted ground and its field on the page's ground, all pinned to neutral as there. */
+  .uib-answer-actions-feedback {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-answer-actions-feedback-gap, var(--ds-size-2));
+    padding-block-start: var(--genai-answer-actions-feedback-padding-block-start, var(--ds-size-2));
+    border-block-start: var(
+        --genai-answer-actions-feedback-border-width,
+        var(--ds-border-width-default)
+      )
+      solid var(--genai-answer-actions-feedback-border-color, var(--ds-color-neutral-border-subtle));
+  }
+  .uib-answer-actions-feedback-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--genai-answer-actions-feedback-row-gap, var(--ds-size-2));
+  }
+  .uib-answer-actions-question {
+    color: var(--genai-answer-actions-question-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-answer-actions-question-font-size, var(--ds-font-size-2));
+  }
+  .uib-answer-actions-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-answer-actions-form-gap, var(--ds-size-2));
+    padding: var(--genai-answer-actions-form-padding, var(--ds-size-3));
+    border-radius: var(--genai-answer-actions-form-border-radius, var(--ds-border-radius-md));
+    background: var(
+      --genai-answer-actions-form-background,
+      var(--ds-color-neutral-background-tinted)
+    );
+  }
+  .uib-answer-actions-reasons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--genai-answer-actions-reasons-gap, var(--ds-size-2));
+  }
+  .uib-answer-actions-comment {
+    --dsc-input-background: var(
+      --genai-answer-actions-comment-background,
+      var(--ds-color-neutral-background-default)
+    );
+  }
+  .uib-answer-actions-counter {
+    color: var(--genai-answer-actions-counter-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-answer-actions-counter-font-size, var(--ds-font-size-1));
+  }
+  .uib-answer-actions-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--genai-answer-actions-form-actions-gap, var(--ds-size-2));
+  }
+  .uib-answer-actions-status {
+    margin: 0;
+    color: var(--genai-answer-actions-status-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-answer-actions-status-font-size, var(--ds-font-size-2));
+  }
+}

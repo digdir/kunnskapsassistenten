@@ -1,0 +1,428 @@
+/* After Designsystemet's layers; tokens via --genai-filter-*; a [hidden] pair per `display`. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  .uib-filter {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    /* Wider than the gap in a field, following the window's height between two tokens. */
+    gap: clamp(
+      var(--genai-filter-gap-floor, var(--ds-size-6)),
+      var(--genai-filter-gap, 3.6dvh),
+      var(--genai-filter-gap-ceiling, var(--ds-size-8))
+    );
+    /* The slot lays its children out at the start, so the block claims the width itself. */
+    inline-size: 100%;
+    /* Text flush against the bottom of a scrolled panel reads as a rendering fault. */
+    padding-block-end: var(--genai-filter-padding-block-end, var(--ds-size-6));
+    font-family: var(--genai-filter-font-family, var(--ds-font-family)), sans-serif;
+  }
+  .uib-filter[hidden] {
+    display: none;
+  }
+
+  .uib-filter > .ds-btn,
+  .uib-filter > ds-field,
+  .uib-filter > section {
+    inline-size: 100%;
+  }
+
+  /* The heading and the controls that decide what every field counts, such as the corpus. */
+  /* Its own font too, since a host may pin it outside the block (`pinIn`). */
+  .uib-filter-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-filter-head-gap, var(--ds-size-3));
+    font-family: var(--genai-filter-font-family, var(--ds-font-family)), sans-serif;
+    inline-size: 100%;
+  }
+  .uib-filter-head[hidden] {
+    display: none;
+  }
+
+  /* The documents before or after the fields take the panel's width, as the fields do. */
+  .uib-filter-above,
+  .uib-filter-below {
+    inline-size: 100%;
+  }
+
+  /* Twice the field rhythm on each side: the gap plus an equal margin. */
+  .uib-filter-divider {
+    margin-block: clamp(
+      var(--genai-filter-gap-floor, var(--ds-size-6)),
+      var(--genai-filter-gap, 3.6dvh),
+      var(--genai-filter-gap-ceiling, var(--ds-size-8))
+    );
+  }
+
+  /* Out of flow and sizeless when empty; never `display: none`, so focus here is kept. */
+  .uib-filter-error:empty,
+  .uib-filter-unavailable:empty {
+    position: absolute;
+    block-size: 0;
+    inline-size: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  /* Full width, so the chips wrap at the panel's edge, not the heading's. */
+  .uib-filter-unavailable {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: var(--genai-filter-unavailable-gap, var(--ds-size-6));
+    inline-size: 100%;
+  }
+  .uib-filter-unavailable[hidden] {
+    display: none;
+  }
+
+  /* A normal state, not an error. */
+  .uib-filter-empty {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-filter-empty-gap, var(--ds-size-2));
+    align-items: start;
+    color: var(--genai-filter-empty-color, var(--ds-color-neutral-text-subtle));
+  }
+  .uib-filter-empty[hidden] {
+    display: none;
+  }
+
+  /* The note that the filter changed in a thread under way, with «Ny tråd». */
+  .uib-filter-changed {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: var(--genai-filter-changed-gap, var(--ds-size-2));
+    inline-size: 100%;
+  }
+  .uib-filter-changed[hidden] {
+    display: none;
+  }
+
+  .uib-filter-locked,
+  .uib-filter-active {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: var(--genai-filter-limit-gap, var(--ds-size-2));
+    inline-size: 100%;
+  }
+  .uib-filter-locked[hidden],
+  .uib-filter-active[hidden] {
+    display: none;
+  }
+
+  .uib-filter-locked-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--genai-filter-chips-gap, var(--ds-size-2));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .uib-filter-locked-values[hidden] {
+    display: none;
+  }
+
+  /* Full width, so «Tøm» ends the row as over each field. */
+  .uib-filter-active-head {
+    align-self: stretch;
+  }
+
+  /* A wrapping row: Designsystemet rules out chips in a vertical list. */
+  .uib-filter-active-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--genai-filter-chips-gap, var(--ds-size-2));
+  }
+  .uib-filter-active-chips[hidden] {
+    display: none;
+  }
+
+  /* A label and its actions on one line, over a field and over «Avgrenset til». */
+  .uib-filter-label-row,
+  .uib-filter-active-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--genai-filter-label-row-gap, var(--ds-size-2));
+  }
+  .uib-filter-label-row[hidden],
+  .uib-filter-active-head[hidden] {
+    display: none;
+  }
+
+  .uib-filter-field-actions {
+    display: flex;
+    gap: var(--genai-filter-actions-gap, var(--ds-size-1));
+  }
+  .uib-filter-field-actions[hidden] {
+    display: none;
+  }
+
+  /* A chip wraps, never cuts, since the name is the information (WCAG 1.4.4, 1.4.10). */
+  .uib-filter ds-suggestion > data {
+    max-inline-size: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    height: auto;
+    min-block-size: var(--dsc-suggestion-chip-height);
+  }
+
+  /* A chip drawn for several values hides Suggestion's chip per value (drawnChips.tsx). */
+  .uib-filter
+    ds-suggestion:has(> data > .uib-filter-drawn-chip)
+    > data:not(:has(> .uib-filter-drawn-chip)) {
+    display: none;
+  }
+
+  /* Only `width`, never `display`: u-combobox opens and closes the list with `hidden`. */
+  .uib-filter .ds-suggestion > u-datalist {
+    /* A percentage reads against the window here, as the list is in the top layer. */
+    width: var(--genai-filter-list-width, 26rem);
+    max-width: calc(100% - var(--genai-filter-list-margin, var(--ds-size-8)));
+  }
+
+  /* Over the years in the list: indented as an option's text, and muted. */
+  .uib-filter-years-hint {
+    padding: var(--dsc-suggestion-option-padding);
+    padding-inline-start: calc(
+      var(--dsc-suggestion-option-padding) + var(--dsc-suggestion-option-checkmark-size) +
+        var(--dsc-suggestion-option-gap)
+    );
+    color: var(--genai-filter-years-hint-color, var(--ds-color-neutral-text-subtle));
+  }
+
+  /* A field's width while the facets load (FieldPlaceholder). */
+  .uib-filter-placeholder {
+    inline-size: 100%;
+  }
+  .uib-filter-placeholder-input,
+  .uib-filter-placeholder-input .ds-input {
+    display: block;
+    inline-size: 100%;
+  }
+  .uib-filter-placeholder-input[hidden] {
+    display: none;
+  }
+
+  /* ── `variant="panel"`: the dev boards' filter beside the threads (dev-filter-panel) ── */
+
+  /* Tight, as a panel's parts are, and to the panel's foot, where the documents end. */
+  .uib-filter[data-variant='panel'] {
+    gap: var(--genai-filter-panel-gap, var(--ds-size-3));
+    padding-block-end: var(--genai-filter-panel-padding-block-end, 0);
+  }
+
+  .uib-filter-rows {
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+  }
+  .uib-filter-rows[hidden] {
+    display: none;
+  }
+
+  /* «Fjern alle filtre» at the end of its own line over the fields, which keeps its height. */
+  .uib-filter-clear-all {
+    display: flex;
+    justify-content: flex-end;
+    min-block-size: var(--genai-filter-clear-all-min-height, var(--ds-size-5));
+    font-size: var(--genai-filter-clear-all-font-size, var(--ds-font-size-2));
+    font-weight: var(--genai-filter-clear-all-font-weight, var(--ds-font-weight-medium));
+  }
+  .uib-filter-clear-all[hidden] {
+    display: none;
+  }
+
+  .uib-filter-clear-all > .ds-link {
+    text-decoration: none;
+  }
+
+  /* Each field a row under a hairline, as the design's. */
+  .uib-filter-row {
+    border-block-end: var(--genai-filter-row-border-width, var(--ds-border-width-default)) solid
+      var(--genai-filter-row-border-color, var(--ds-color-neutral-surface-tinted));
+  }
+
+  .uib-filter-row-heading {
+    margin: 0;
+    font: inherit;
+  }
+
+  /* The whole row opens the field: its name, what is chosen, and the chevron at the end. */
+  .uib-filter-row-toggle {
+    display: flex;
+    gap: var(--genai-filter-row-gap, var(--ds-size-2));
+    align-items: center;
+    inline-size: 100%;
+    padding: var(--genai-filter-row-padding-block, var(--ds-size-2))
+      var(--genai-filter-row-padding-inline, var(--ds-size-1));
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  .uib-filter-row-toggle[hidden] {
+    display: none;
+  }
+
+  .uib-filter-row-toggle:focus-visible {
+    outline: var(--genai-filter-row-focus-width, var(--ds-border-width-focus)) solid
+      var(--genai-filter-row-focus-color, var(--ds-color-focus-outer));
+    outline-offset: calc(-1 * var(--genai-filter-row-focus-width, var(--ds-border-width-focus)));
+  }
+
+  .uib-filter-row-text {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+  .uib-filter-row-text[hidden] {
+    display: none;
+  }
+
+  .uib-filter-row-name {
+    color: var(--genai-filter-row-name-color, var(--ds-color-neutral-text-default));
+    font-size: var(--genai-filter-row-name-font-size, var(--ds-font-size-3));
+    font-weight: var(--genai-filter-row-name-font-weight, var(--ds-font-weight-medium));
+    line-height: var(--genai-filter-row-line-height, var(--ds-line-height-md));
+  }
+
+  .uib-filter-row-chosen {
+    color: var(--genai-filter-row-chosen-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-filter-row-chosen-font-size, var(--ds-font-size-2));
+    line-height: var(--genai-filter-row-line-height, var(--ds-line-height-md));
+  }
+
+  .uib-filter-row-icon {
+    flex: 0 0 auto;
+    color: var(--genai-filter-row-icon-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-filter-row-icon-size, var(--ds-font-size-3));
+  }
+
+  .uib-filter-row-body {
+    padding: 0 var(--genai-filter-row-padding-inline, var(--ds-size-1))
+      var(--genai-filter-row-padding-block, var(--ds-size-2));
+  }
+
+  /* Two columns of ticks, each under a hairline, its count at the end. */
+  .uib-filter-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--genai-filter-checkboxes-gap, var(--ds-size-4));
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .uib-filter-checkboxes[hidden] {
+    display: none;
+  }
+
+  .uib-filter-checkbox {
+    inline-size: auto;
+    align-items: center;
+    padding-block: var(--genai-filter-checkbox-padding-block, var(--ds-size-2));
+    border-block-end: var(--genai-filter-row-border-width, var(--ds-border-width-default)) solid
+      var(--genai-filter-row-border-color, var(--ds-color-neutral-surface-tinted));
+  }
+
+  /* The board's 20 px box, on the input, which sets its own size. */
+  .uib-filter-checkbox > .ds-input {
+    --dsc-input-size--toggle: var(--genai-filter-checkbox-size, var(--ds-size-5));
+  }
+
+  .uib-filter-checkbox > label {
+    display: flex;
+    flex: 1 1 auto;
+    gap: var(--genai-filter-row-gap, var(--ds-size-2));
+    align-items: baseline;
+    justify-content: space-between;
+    min-inline-size: 0;
+    font-size: var(--genai-filter-checkbox-font-size, var(--ds-font-size-2));
+  }
+
+  .uib-filter-checkbox-label {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .uib-filter-checkbox-count {
+    flex: 0 0 auto;
+    color: var(--genai-filter-count-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-filter-count-font-size, var(--ds-font-size-1));
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── What an answer read from (FilterRead), and the line under the field (FilterNext) ── */
+
+  .uib-filter-read {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--genai-filter-read-gap, var(--ds-size-2));
+    align-items: center;
+  }
+  .uib-filter-read[hidden] {
+    display: none;
+  }
+
+  .uib-filter-read-lead {
+    display: inline-flex;
+    gap: var(--genai-filter-read-lead-gap, var(--ds-size-1));
+    align-items: center;
+    color: var(--genai-filter-read-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-filter-read-font-size, var(--ds-font-size-2));
+  }
+  .uib-filter-read-lead[hidden] {
+    display: none;
+  }
+
+  /* Chips alike, with no border and no emphasis, not controls («9 · Filtrering», choice 6). */
+  .uib-filter-read-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--genai-filter-read-gap, var(--ds-size-2));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .uib-filter-read-values[hidden] {
+    display: none;
+  }
+
+  .uib-filter-read-value {
+    padding: var(--genai-filter-chip-padding-block, var(--ds-size-1))
+      var(--genai-filter-chip-padding-inline, var(--ds-size-2));
+    border-radius: var(--genai-filter-chip-radius, var(--ds-border-radius-md));
+    background: var(--genai-filter-chip-background, var(--ds-color-neutral-surface-tinted));
+    color: var(--genai-filter-chip-color, var(--ds-color-neutral-text-default));
+    font-size: var(--genai-filter-chip-font-size, var(--ds-font-size-1));
+    line-height: var(--genai-filter-chip-line-height, var(--ds-line-height-md));
+  }
+
+  .uib-filter-next {
+    display: flex;
+    gap: var(--genai-filter-next-gap, var(--ds-size-2));
+    align-items: baseline;
+    margin: 0;
+    color: var(--genai-filter-next-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-filter-next-font-size, var(--ds-font-size-2));
+    line-height: var(--genai-filter-next-line-height, var(--ds-line-height-md));
+  }
+  .uib-filter-next[hidden] {
+    display: none;
+  }
+
+  .uib-filter-next-icon {
+    flex: 0 0 auto;
+    align-self: center;
+  }
+}

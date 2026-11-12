@@ -1,0 +1,57 @@
+/* After Designsystemet's layers, every token read through a --genai-states-* variable. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  /* Pinned to neutral: what is missing reads as quiet text in any colour family, while the action
+     beside it follows the host's. */
+  .uib-states-empty {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-states-empty-gap, var(--ds-size-2));
+    align-items: start;
+    color: var(--genai-states-empty-color, var(--ds-color-neutral-text-subtle));
+    font-family: var(--genai-states-font-family, var(--ds-font-family)), sans-serif;
+  }
+  .uib-states-error {
+    font-family: var(--genai-states-font-family, var(--ds-font-family)), sans-serif;
+  }
+  /* Never display: none, which takes the region out of the accessibility tree. Out of flow, and
+     still focusable for when the retry button goes. */
+  .uib-states-error:empty {
+    position: absolute;
+    block-size: 0;
+    inline-size: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  /* The page that stands where the app was. Pinned to neutral, as kunnskapsassistenten draws it:
+     nothing of the brand is left to act on. */
+  .uib-states-crash {
+    box-sizing: border-box;
+    min-block-size: 100%;
+    /* The main column's side padding in kunnskapsassistenten: a share of the window, between two
+       tokens. */
+    padding: var(--genai-states-crash-padding-block, var(--ds-size-15))
+      clamp(
+        var(--genai-states-crash-padding-inline-min, var(--ds-size-4)),
+        var(--genai-states-crash-padding-inline, 4vw),
+        var(--genai-states-crash-padding-inline-max, var(--ds-size-8))
+      );
+    background: var(--genai-states-crash-background, var(--ds-color-neutral-background-tinted));
+    font-family: var(--genai-states-font-family, var(--ds-font-family)), sans-serif;
+  }
+  /* A reading measure in characters, because no token is a line length. */
+  .uib-states-crash-body {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: var(--genai-states-crash-gap, var(--ds-size-4));
+    max-inline-size: var(--genai-states-crash-max-inline-size, 65ch);
+    margin-inline: auto;
+  }
+  /* The details box is drawn the width of its column, as Designsystemet draws it. */
+  .uib-states-crash-body > .ds-details {
+    align-self: stretch;
+  }
+}
