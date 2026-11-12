@@ -8,7 +8,6 @@ import {
   filterArguments,
   parseHeadingPath,
   relevanceFromRank,
-  toCitations,
   toSourceDocuments,
 } from './mcp';
 
@@ -187,12 +186,17 @@ describe('toSourceDocuments', () => {
     expect(blank.title).toBe('Uten tittel');
   });
 
-  it('groups excerpts per document and keeps the citation numbers', () => {
+  it('groups excerpts per document, in the order each first appears, with no footnote numbers', () => {
     const documents = toSourceDocuments(chunks);
 
     expect(documents.map((document) => document.id)).toEqual(['d1', 'd2']);
-    expect(documents[0].excerpts.map((excerpt) => excerpt.citationNumber)).toEqual([1, 3]);
-    expect(documents[1].excerpts[0].citationNumber).toBe(2);
+    expect(documents[0].excerpts).toHaveLength(2);
+    // What a `[n]` names is `citeAnswer`'s to say, never a chunk's place (issue 235).
+    expect(documents.flatMap((d) => d.excerpts).map((e) => e.citationNumber)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+    ]);
   });
 
   it('reads the heading out of the metadata string', () => {
@@ -231,7 +235,6 @@ describe('toSourceDocuments', () => {
       '3. Årets aktiviteter og resultater › Risiko',
       undefined,
     ]);
-    expect(document.excerpts.map((excerpt) => excerpt.citationNumber)).toEqual([1, 2]);
   });
 
   it('bygger lenka fra doc_num når bitene ikke har url (issue 92)', () => {
@@ -293,12 +296,6 @@ describe('toSourceDocuments', () => {
     expect(documents[0].url).toBeUndefined();
     expect(documents[0].excerpts[0].kudosUrl).toBeUndefined();
     expect(documents[1].excerpts[0].kudosUrl).toBe('https://kudos/2023');
-  });
-
-  it('numbers citations so [n] lands on chunk n-1', () => {
-    const citations = toCitations(toSourceDocuments(chunks));
-    expect(citations.map((citation) => citation.number).sort()).toEqual([1, 2, 3]);
-    expect(citations.find((citation) => citation.number === 2)?.documentId).toBe('d2');
   });
 });
 

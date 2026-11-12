@@ -1453,4 +1453,29 @@ describe('ChatView og valget av agent', () => {
     );
     expect(screen.queryByRole('button', { name: /^Agent: / })).toBeNull();
   });
+
+  it('shows a tester «Testmiljø» directly before the agent button, by the send button', async () => {
+    vi.stubEnv('VITE_API_MODE', 'bff');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url === '/api/v2/me'
+          ? Response.json({ environment: 'test' })
+          : new Response('', { status: 404 }),
+      ),
+    );
+    try {
+      render(
+        <Shell>
+          <ChatView client={clientWithAgents().client} />
+        </Shell>,
+      );
+
+      const tag = await screen.findByText('Testmiljø');
+      await waitFor(() => expect(tag.nextElementSibling).toBe(agentButton()));
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    }
+  });
 });

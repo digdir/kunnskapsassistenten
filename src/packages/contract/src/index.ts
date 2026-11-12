@@ -1,28 +1,17 @@
 /**
- * One retrieved chunk, in the order the agent retrieved them.
- *
- * ONE PER CHUNK, not one per document, because `[N]` in the answer is the
- * agent's 1-based index into its flat chunk list. Grouping the chunks by
- * document first and numbering the documents made the two agree only when
- * every document gave exactly one chunk: measured 2026-09-29 against
- * kudos-full, one question returned eight chunks of the same document and the
- * answer cited `[1]`..`[8]`, while the grouped form offered a single source
- * with marker 1 — so `[2]`..`[8]` pointed at nothing and `[1]` pointed at all
- * eight passages glued together.
- *
- * The client groups them back into documents for display, which is what it
- * already does for the chunks it reads straight from the backend.
+ * One retrieved chunk, in genki's order. `[N]` is never the chunk's place in this list (issue 235,
+ * decisions/0014): it is the chunk `markers` names, or else the N-th document by first appearance.
  */
 export interface Source {
   docNum: string;
   title: string;
   url: string;
-  /** 1-based, matching the `[N]` markers in the answer text. One per chunk. */
-  marker: number;
-  /** The chunk this marker points at, when the backend named it. */
+  /** The chunk, when the backend named it. */
   chunkId?: string;
   /** The passage itself. Absent when it could not be looked up. */
   excerpt?: string;
+  /** The answer's markers that name this chunk, when the service cites by excerpt. */
+  markers?: string[];
 }
 
 export type Stage = 'starting' | 'searching' | 'reading' | 'writing' | 'done';
@@ -303,6 +292,8 @@ export interface MeResponse {
   organisations?: Organisation[];
   /** With Ansattporten: the one chosen, when there are several. */
   actingFor?: string | null;
+  /** For a tester only: the genki environment the BFF asks with (`KA_TEST_ENVIRONMENT`). */
+  environment?: string;
 }
 
 export interface Organisation {

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { Source } from '@ka/contract';
 import { answerSources, recall } from './sourceStore.ts';
 
-const source: Source = { docNum: 'd1', title: 'Årsrapport 2023', url: 'https://x', marker: 1 };
+const source: Source = { docNum: 'd1', title: 'Årsrapport 2023', url: 'https://x' };
 const done = { type: 'done', conversationId: 'c', insufficient: false } as const;
 
 test('an answer without sources leaves none behind, not the answer before it', () => {

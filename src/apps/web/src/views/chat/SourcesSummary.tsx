@@ -41,9 +41,10 @@ export function SourcesSummary({ documents, onSelectDocument }: SourcesSummaryPr
           <List.Ordered className="ka-sources-summary__list" data-size="sm">
             {documents.map((document) => {
               const numbers = document.excerpts.map((excerpt) => excerpt.citationNumber);
-              const first = numbers
-                .filter((number) => number !== undefined)
-                .sort((a, b) => a - b)[0];
+              // A document cited whole has its own number and no excerpt numbers.
+              const first =
+                document.citationNumber ??
+                numbers.filter((number) => number !== undefined).sort((a, b) => a - b)[0];
               const range = excerptRange(numbers);
               /* An uploaded document's file name can look exactly like a
                corpus title, and this list is read out of context, so the

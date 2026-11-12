@@ -115,9 +115,7 @@ describe('threadDetailFromBff: a stored failure is not an answer', () => {
         { id: 'm3', role: 'user', text: 'Andre', created: 3 },
         { id: 'm4', role: 'assistant', text: 'LLM request failed at iteration 1', created: 4 },
       ],
-      sources: [
-        { docNum: '1', title: 'Tildelingsbrev', url: '', marker: 1, chunkId: 'a', excerpt: 'x' },
-      ],
+      sources: [{ docNum: '1', title: 'Tildelingsbrev', url: '', chunkId: 'a', excerpt: 'x' }],
     });
 
     expect(thread.messages.at(-1)?.sources).toBeUndefined();

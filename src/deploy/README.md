@@ -147,6 +147,38 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
 
 The template takes the same as `kaNext`, `kaNextModel` and `kaNextTenant`, empty by default.
 
+## Testers and genki's test environment
+
+`KA_TESTERS` names the testers by user id, separated by commas or spaces (`decisions/0015`).
+A tester's questions, threads and feedback, in both clients, go to genki with
+`GenAI-Environment: test`, and the chat shows «Testmiljø» beside the send button. Everyone else sends no header and gets the service's
+`prod`. `KA_TEST_ENVIRONMENT` names another environment than `test`. Without `KA_TESTERS` nobody
+is a tester and nothing changes.
+
+The user id is `userId` in `/api/v2/me`, which a tester opens on the site while signed in:
+with Ansattporten it is `ansattporten:` followed by Ansattporten's subject for KA's client.
+
+Add the `test` environment to the genki service first: until it has one, genki refuses a
+tester's questions with `409 environment_not_found`. A key or client bound to environments must
+allow `test` too. Then, about 30 seconds and no rebuild, type the ids separated by commas when
+the first command waits:
+
+```sh
+read -r TESTERS
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --set-env-vars "KA_TESTERS=$TESTERS" --revision-suffix testers$(date +%H%M%S)
+```
+
+Nobody is a tester again with:
+
+```sh
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --remove-env-vars KA_TESTERS --revision-suffix testers$(date +%H%M%S)
+```
+
+A new revision signs everyone out with Ansattporten, as every rollout does. The template takes
+the same as `kaTesters` and `kaTestEnvironment`, empty by default.
+
 ## Deploying from scratch
 
 Only needed if the resource group is gone.
