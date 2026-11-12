@@ -195,6 +195,19 @@
   margin-block: 0;
 }
 
+/* «Kilde N» and its back-link, over a document the answer cites whole. */
+.source-document__cite {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-size-1);
+}
+
+.source-document__number {
+  margin-block: 0;
+  font-weight: var(--ds-font-weight-semibold);
+  white-space: nowrap;
+}
+
 /* «Utdrag N» and the back-link to its uses, side by side. */
 .source-excerpt__title {
   display: flex;

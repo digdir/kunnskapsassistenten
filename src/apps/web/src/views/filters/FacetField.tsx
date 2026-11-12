@@ -21,8 +21,7 @@ import {
 /** What the view may do with a field from outside: put the keyboard in it. */
 export type FacetFieldHandle = { focus: () => void };
 
-/** Chosen values from which `compact-filter-chips` (digdir/kunnskapsassistenten#116) draws
- * one chip instead of one per value. All chosen always does. */
+/** Chosen values from which `compact-filter-chips` also draws one chip for a part of the field. */
 const COMPACT_FROM = 6;
 
 export type FacetFieldProps = {
@@ -57,11 +56,10 @@ export function FacetField({ ref, facet, selected, onChange }: FacetFieldProps) 
   const labelOf = (value: string) =>
     facet.values.find((candidate) => candidate.value === value)?.label ?? value;
 
-  // With all or many chosen, one chip («Alle dokumenttyper», «12 virksomheter») instead of
-  // hundreds, drawn over the chip per value (drawnChips.tsx), so the list still ticks them.
+  // One chip over those per value: «Alle virksomheter» from two values, «12 virksomheter» by flag.
   const compactFlag = useFlag('compact-filter-chips');
   const isCompact = (values: readonly string[]) =>
-    compactFlag && values.length > 0 && (everyListed(values) || values.length >= COMPACT_FROM);
+    (values.length > 1 && everyListed(values)) || (compactFlag && values.length >= COMPACT_FROM);
   const compact = isCompact(selected);
   const drawn = compact
     ? [
