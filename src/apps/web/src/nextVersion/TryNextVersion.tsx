@@ -13,30 +13,37 @@ import './tryNextVersion.css';
 
 export const TRY_NEXT_LABEL = 'Prøv ny versjon';
 
-const offered = async (fetcher: typeof fetch): Promise<boolean> => {
+/** `undefined` when not offered; else whether this browser already chose the next client. */
+const offered = async (fetcher: typeof fetch): Promise<{ chosen: boolean } | undefined> => {
   try {
     const response = await fetcher('/api/next/ui', { headers: { Accept: 'application/json' } });
-    if (!response.ok) return false;
-    const body = (await response.json()) as { available?: unknown };
-    return body.available === true;
+    if (!response.ok) return undefined;
+    const body = (await response.json()) as { available?: unknown; ui?: unknown };
+    return body.available === true ? { chosen: body.ui === 'next' } : undefined;
   } catch {
-    return false;
+    return undefined;
   }
 };
 
 interface Props {
   fetcher?: typeof fetch;
   reload?: () => void;
+  /** A full navigation, to the next client's front page. */
+  go?: (href: string) => void;
 }
 
 /** A list item for the foot of the navigation panel, or nothing. */
-export function TryNextVersion({ fetcher = fetch, reload }: Props) {
-  const [shown, setShown] = useState(false);
+export function TryNextVersion({
+  fetcher = fetch,
+  reload,
+  go = (href) => location.assign(href),
+}: Props) {
+  const [shown, setShown] = useState<{ chosen: boolean }>();
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let current = true;
-    void offered(fetcher).then((yes) => current && setShown(yes));
+    void offered(fetcher).then((found) => current && setShown(found));
     return () => {
       current = false;
     };
@@ -51,6 +58,9 @@ export function TryNextVersion({ fetcher = fetch, reload }: Props) {
           className="try-next-version"
           aria-busy={busy || undefined}
           onClick={() => {
+            // The next client was chosen, and this is one of apps/web's pages it links to
+            // (decisions/0013): its front page is the next client's.
+            if (shown.chosen) return go('/');
             setBusy(true);
             chooseNext(fetcher, reload).catch(() => setBusy(false));
           }}
