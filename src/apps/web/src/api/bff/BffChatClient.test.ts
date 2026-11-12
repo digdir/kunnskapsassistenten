@@ -138,9 +138,9 @@ describe('BffChatClient.ask, strømmen', () => {
       id: '372017',
       title: expect.stringMatching(/^Årsrapport Direktoratet for forvaltning og økonomi/),
     });
-    expect(sources.documents[0]?.excerpts[0]).toMatchObject({ citationNumber: 1 });
+    expect(sources.documents[0]).toMatchObject({ citationNumber: 1 });
     expect(sources.documents[0]?.excerpts[0]?.text).toHaveLength(8363);
-    expect(sources.citations).toEqual([{ number: 1, excerptId: '372017-1', documentId: '372017' }]);
+    expect(sources.citations).toEqual([{ number: 1, documentId: '372017' }]);
     // Søkeordene skrives ut, ikke leses av første steg: det steget er nå
     // «Jeg skriver svaret …», som ikke har noen. Ordene samles fortsatt fra
     // `stage`, som er alt denne fiksturen bærer.
@@ -579,7 +579,7 @@ describe('BffChatClient, tråden og samtalen', () => {
     expect(answer?.content).toHaveLength(790);
     expect(answer).toMatchObject({ citationCount: 1, corpusKey: 'kudos-full' });
     expect(answer?.sources?.map((document) => document.id)).toEqual(['372017']);
-    expect(answer?.citations).toEqual([{ number: 1, excerptId: '372017-1', documentId: '372017' }]);
+    expect(answer?.citations).toEqual([{ number: 1, documentId: '372017' }]);
   });
 
   it('gir null for en samtale som ikke finnes', async () => {

@@ -1,10 +1,11 @@
 import { Card, Heading, Link, Paragraph } from '@digdir/designsystemet-react';
 import { ExternalLinkIcon } from '@navikt/aksel-icons';
 import { hitsFor, type SearchHit } from '../../components';
-import type { SourceDocument } from '../../model';
+import { excerptDomId, type SourceDocument } from '../../model';
 import { SourceExcerpt } from './SourceExcerpt';
 import { ReturnToAnswerButton } from './ReturnToAnswerButton';
-import { documentDomId, documentHeadingDomId } from './ids';
+import { documentDomId, documentHeadingDomId, excerptInDocumentDomId } from './ids';
+import { ShowUseButton } from './ShowUseButton';
 import { documentLinkLabel } from './kudosLink';
 import { documentSubtitle, isOwnDocument, OWN_DOCUMENT_NO_LINK } from './origin';
 
@@ -24,10 +25,10 @@ type SourceDocumentCardProps = {
   activeCitationNumber?: number;
   /** Back to the marker; handed on only to the excerpt that marker points at. */
   onReturnToAnswer?: () => void;
-  /** How many places in the answer cite each excerpt, by number. */
+  /** How many places in the answer cite each excerpt, or each document cited whole, by number. */
   uses?: Record<number, number>;
-  /** Shows the reader one use of an excerpt in the answer, by its number and the use. */
-  onShowUse?: (citationNumber: number, use: number) => void;
+  /** Shows one use of a footnote in the answer, by the id its markers link to. */
+  onShowUse?: (targetId: string, use: number) => void;
   /**
    * This is the document a title in «Kilder brukt i svaret» asked for; «Tilbake til svaret» and
    * Escape go back to that title.
@@ -55,6 +56,9 @@ export function SourceDocumentCard({
 }: SourceDocumentCardProps) {
   const subtitle = documentSubtitle(source);
   const own = isOwnDocument(source);
+  // Set when the answer cites this document as a whole.
+  const number = source.citationNumber;
+  const documentUses = number === undefined ? 0 : (uses?.[number] ?? 0);
 
   return (
     <Card
@@ -77,6 +81,21 @@ export function SourceDocumentCard({
       }
     >
       <Card.Block className="source-document__head">
+        {/* «Kilde 2», as its footnote reads, with the back-link to its uses. */}
+        {number !== undefined && (
+          <div className="source-document__cite">
+            <Paragraph data-size="xs" className="source-document__number">
+              Kilde {number}
+            </Paragraph>
+            {documentUses > 0 && onShowUse !== undefined && (
+              <ShowUseButton
+                name={`kilde ${number}`}
+                uses={documentUses}
+                onShowUse={(use) => onShowUse(documentHeadingDomId(source.id), use)}
+              />
+            )}
+          </div>
+        )}
         {/* Where «Kilder brukt i svaret» lands: focus, not only scroll, so a
             screen reader says which document the reader came to. */}
         <Heading
@@ -118,6 +137,11 @@ export function SourceDocumentCard({
               // never cited.
               position={index + 1}
               total={source.excerpts.length}
+              inCitedDocument={
+                number === undefined
+                  ? undefined
+                  : { domId: excerptInDocumentDomId(source.id, index + 1) }
+              }
               open={openExcerptIds.has(excerpt.id)}
               onOpenChange={(open) => onExcerptOpenChange(excerpt.id, open)}
               hits={hitsFor(hits, excerpt.id)}
@@ -133,7 +157,7 @@ export function SourceDocumentCard({
               onShowUse={
                 onShowUse === undefined || excerpt.citationNumber === undefined
                   ? undefined
-                  : (use) => onShowUse(excerpt.citationNumber as number, use)
+                  : (use) => onShowUse(excerptDomId(excerpt.citationNumber as number), use)
               }
             />
           );

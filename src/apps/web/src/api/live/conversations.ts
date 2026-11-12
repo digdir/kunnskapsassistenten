@@ -2,7 +2,6 @@ import {
   emptyFilterSelection,
   filterDimensions,
   isEmptySelection,
-  type Citation,
   type FilterSelection,
   type Message,
   type SourceDocument,
@@ -12,6 +11,7 @@ import {
 } from '../../model';
 import { corpusKeyFromTags } from '../corpus';
 import { documentUrl } from '../documentUrls';
+import { citeAnswer } from '../excerptCitations';
 import { publicUrl } from '../publicUrl';
 
 // The conversation store behind `/api/conversations`, which lists and creates by `X-User-Id` (400
@@ -90,9 +90,8 @@ export function threadFromConversation(conversation: ApiConversation): Thread {
 }
 
 /**
- * The sources behind one stored answer, grouped per document, or undefined («nothing is known»)
- * when the message has no chunks, which is what the backend returns today. Links come from the
- * corpus's template (documentUrls.ts), because a stored chunk has no address.
+ * One stored answer's chunks grouped by document, or undefined when it has none. Links come from
+ * the corpus's template (documentUrls.ts), because a stored chunk has no address.
  */
 export function sourcesFromChunks(
   chunks: ApiChunk[] | null | undefined,
@@ -110,9 +109,8 @@ export function sourcesFromChunks(
     const excerpt = {
       id: chunk.chunkId ?? `${documentId}-${index}`,
       text: chunk.contentMarkdown ?? '',
-      // The backend's order is the ranking, and `[n]` in the answer is 1-indexed into it.
+      // The backend's order is the ranking.
       relevance: 'medium' as const,
-      citationNumber: index + 1,
       ...(url ? { kudosUrl: url } : {}),
     };
 
@@ -131,18 +129,6 @@ export function sourcesFromChunks(
   });
 
   return [...documents.values()];
-}
-
-function citationsFromSources(documents: SourceDocument[] | undefined): Citation[] {
-  return (documents ?? []).flatMap((document) =>
-    document.excerpts
-      .filter((excerpt) => excerpt.citationNumber !== undefined)
-      .map((excerpt) => ({
-        number: excerpt.citationNumber as number,
-        excerptId: excerpt.id,
-        documentId: document.id,
-      })),
-  );
 }
 
 /**
@@ -172,7 +158,10 @@ export function messagesFromApi(
     .filter((message) => message.role === 'user' || message.role === 'assistant')
     .filter((message) => (message.text ?? '').trim() !== '' || message.failed === true)
     .map((message) => {
-      const sources = sourcesFromChunks(message.chunks, corpusKey);
+      const listed = sourcesFromChunks(message.chunks, corpusKey);
+      // The store keeps no markers, so by document; `#withRemembered` adds this browser's.
+      const cited = listed ? citeAnswer(message.text ?? '', listed, undefined) : undefined;
+      const sources = cited?.documents;
       const role = message.role === 'user' ? ('user' as const) : ('assistant' as const);
       // The stored failure text was never written for a reader; `status: 'error'` makes the chat
       // draw its own sentence instead (`FAILED_NOTE`).
@@ -185,7 +174,7 @@ export function messagesFromApi(
         content: failed ? '' : (message.text ?? ''),
         createdAt: isoFrom(message.created, new Date(0).toISOString()),
         // A failed turn has no answer for a marker to point into.
-        citations: failed ? [] : citationsFromSources(sources),
+        citations: failed ? [] : (cited?.citations ?? []),
         // Only an answer cites; brackets in a question are just brackets.
         ...(role === 'assistant' && !failed
           ? { citationCount: citationCountIn(message.text) }

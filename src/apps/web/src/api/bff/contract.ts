@@ -8,12 +8,12 @@ export interface BffSource {
   docNum: string;
   title: string;
   url: string;
-  /** 1-based and one per CHUNK, which is what `[N]` in the answer counts. */
-  marker: number;
-  /** The chunk this marker points at, when the backend named it. */
+  /** The chunk, when the backend named it. */
   chunkId?: string;
   /** The passage. Absent when the BFF could not look it up. */
   excerpt?: string;
+  /** The answer's markers that name this chunk, when the service cites by excerpt. */
+  markers?: string[];
 }
 
 export type BffStage = 'starting' | 'searching' | 'reading' | 'writing' | 'done';

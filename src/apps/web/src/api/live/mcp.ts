@@ -1,6 +1,5 @@
 import { filterDimensions } from '../../model';
 import type {
-  Citation,
   Excerpt,
   FilterSelection,
   RelevanceLevel,
@@ -182,10 +181,7 @@ export function relevanceFromRank(index: number, total: number): RelevanceLevel 
   return 'low';
 }
 
-/**
- * Groups the chunks into documents. Each excerpt keeps its 1-indexed citation number, because
- * `[n]` in the answer points at `chunks[n-1]`.
- */
+/** Groups the chunks into documents by first appearance; `citeAnswer` numbers the footnotes. */
 export function toSourceDocuments(chunks: McpChunk[], dataset?: string): SourceDocument[] {
   const documents = new Map<string, SourceDocument>();
 
@@ -203,7 +199,6 @@ export function toSourceDocuments(chunks: McpChunk[], dataset?: string): SourceD
       heading: parseHeadingPath(chunk.metadata),
       relevance: relevanceFromRank(index, chunks.length),
       kudosUrl: url,
-      citationNumber: index + 1,
     };
 
     const existing = documents.get(documentId);
@@ -227,8 +222,8 @@ export function toSourceDocuments(chunks: McpChunk[], dataset?: string): SourceD
  * Which excerpt each marker in the answer means, when the service cites by excerpt
  * (digdir/genki#273, strategy config `citeBy: excerpt`): `structuredContent.markers`, one
  * `{ marker, chunk_id, document }` per marker, `marker` as written without its brackets. Undefined
- * when genki sends none, which is the service citing by document, as before: then `[n]` keeps
- * today's meaning. An entry that is not of that shape is skipped.
+ * when genki sends none, which is the service citing by document: then `[n]` is document n
+ * (`citeAnswer`). An entry that is not of that shape is skipped.
  */
 export function markerRefs(structured: { markers?: unknown } | undefined): MarkerRef[] | undefined {
   const list = structured?.markers;
@@ -246,18 +241,6 @@ export function markerRefs(structured: { markers?: unknown } | undefined): Marke
       },
     ];
   });
-}
-
-export function toCitations(documents: SourceDocument[]): Citation[] {
-  return documents.flatMap((document) =>
-    document.excerpts
-      .filter((excerpt) => excerpt.citationNumber !== undefined)
-      .map((excerpt) => ({
-        number: excerpt.citationNumber as number,
-        excerptId: excerpt.id,
-        documentId: document.id,
-      })),
-  );
 }
 
 /** The tool that writes the answer. Its step is the one that says the answer is on its way. */

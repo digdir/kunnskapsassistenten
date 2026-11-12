@@ -187,28 +187,27 @@ function documentUrl(chunk: ResultChunk): string {
   return '';
 }
 
-/**
- * The retrieved chunks as sources, one per chunk and in retrieval order.
- *
- * The marker is the position in this list. That assumes `[N]` in the answer
- * is the N-th chunk of the result, and it does not always hold: synthesis
- * numbers its own context and compacts what it cited to 1..k
- * (skills/builtin/synthesis.clj, `renumber-citations`), so an answer that
- * cited its context 2 and 5 says [1] and [2]. Nothing in the result says
- * which chunk an `[N]` is. A test in mcp.test.ts pins the assumption until
- * headless-rag sends that (digdir/digdir-headless-rag#36), and the mapping
- * then goes by `chunk_id`.
- *
- * Until then, nothing here may reorder the list, group it or drop an entry,
- * or the assumption fails also where it holds. An earlier version grouped by
- * document and numbered the documents, which shifted every marker as soon as
- * one document gave two chunks. A chunk without a `doc_num` keeps its place
- * with an empty `docNum` for the same reason, and the client names it by its
- * marker.
- */
+/** Which chunks genki's `structuredContent.markers` name (excerpt mode only); bad entries skipped. */
+function markersByChunk(raw: unknown): Map<string, string[]> {
+  const byChunk = new Map<string, string[]>();
+  if (!Array.isArray(raw)) return byChunk;
+  for (const item of raw) {
+    if (typeof item !== 'object' || item === null) continue;
+    const { marker, chunk_id: chunkId } = item as Record<string, unknown>;
+    if (typeof chunkId !== 'string' || chunkId === '') continue;
+    if (typeof marker !== 'string' && typeof marker !== 'number') continue;
+    const named = byChunk.get(chunkId) ?? [];
+    if (!named.includes(String(marker))) named.push(String(marker));
+    byChunk.set(chunkId, named);
+  }
+  return byChunk;
+}
+
+/** One source per chunk, in genki's order, which numbers its documents (decisions/0014). */
 export async function toSources(
   chunks: ResultChunk[] | undefined,
   lookup: (ids: string[]) => Promise<Map<string, string>> = excerpts,
+  markers?: unknown,
 ): Promise<Source[]> {
   if (!chunks?.length) return [];
 
@@ -216,16 +215,18 @@ export async function toSources(
   try {
     text = await lookup(chunks.flatMap((c) => (c.chunk_id ? [c.chunk_id] : [])));
   } catch {}
+  const named = markersByChunk(markers);
 
-  return chunks.map((chunk, i) => {
+  return chunks.map((chunk) => {
     const passage = chunk.chunk_id ? text.get(chunk.chunk_id) : undefined;
+    const own = chunk.chunk_id ? named.get(chunk.chunk_id) : undefined;
     return {
       docNum: chunk.doc_num ?? '',
       title: chunk.title || `Dokument ${chunk.doc_num ?? ''}`.trim(),
       url: documentUrl(chunk),
-      marker: i + 1,
       ...(chunk.chunk_id ? { chunkId: chunk.chunk_id } : {}),
       ...(passage ? { excerpt: passage } : {}),
+      ...(own ? { markers: own } : {}),
     };
   });
 }
@@ -394,7 +395,7 @@ export async function* ask(
           if (full) yield { type: 'delta', text: full };
         }
 
-        const sources = await toSources(sc.chunks);
+        const sources = await toSources(sc.chunks, excerpts, sc.markers);
         if (sources.length) yield { type: 'sources', sources };
         yield {
           type: 'done',
