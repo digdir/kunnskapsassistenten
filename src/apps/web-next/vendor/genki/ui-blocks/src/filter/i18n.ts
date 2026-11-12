@@ -1,0 +1,162 @@
+import { defineCatalogue, defineNamespace, type Translation } from '@genai/i18n';
+import { defineTranslations } from '@genai/i18n/react';
+
+// `{field}` is the field's label in lower case, inside a sentence: «Velg alle dokumenttyper».
+
+export const nbFilter = defineNamespace({
+  title: 'Filtrering',
+  loading: 'Henter filtre',
+  failed: 'Klarte ikke å hente filtrene.',
+  retry: 'Prøv igjen',
+  unavailable: 'Filtrering er ikke tilgjengelig ennå',
+  unavailableHint: 'Du kan stille spørsmål uten å avgrense dokumentene.',
+  changedInThread:
+    'Du har endret filteret i en tråd som er i gang. Nye spørsmål i tråden bruker det nye filteret.',
+  changedInThreadAsk: 'Vil du heller starte en ny tråd med det?',
+  newThread: 'Ny tråd',
+  limitedTo: 'Avgrenset til',
+  locked:
+    'Tråden er avgrenset til dette, og alle spørsmål i den bruker det. Vil du velge et annet filter, starter du en ny tråd.',
+  noField:
+    'Det finnes ikke noe felt for dette, men det gjelder fortsatt for spørsmålene dine. Du kan fjerne det.',
+  noFields:
+    'Filteret gjelder fortsatt for spørsmålene dine. Du kan fjerne det, men ikke endre det før filtrene kan hentes.',
+  removeValue: 'Fjern filter: {value}',
+  removedValue: 'Fjernet fra filteret: {value}',
+  clearLimit: 'Tøm avgrensningen',
+  clearedLimit: 'Avgrensningen er fjernet.',
+  selectAll: 'Velg alle',
+  selectAllIn: 'Velg alle {field}',
+  clear: 'Tøm',
+  clearIn: 'Tøm {field}',
+  stateNone: 'Ingen avgrensning',
+  stateAll: 'Alle {total} valgt, altså ingen avgrensning',
+  stateSome: '{count} av {total} valgt',
+  stateYears: { one: '{count} år valgt', other: '{count} år valgt' },
+  // The name of the button that opens a field's list. Designsystemet's own is «Valg», in bokmål only.
+  listToggle: 'Valg',
+  overLimit: 'Høyst {max} kan brukes i ett felt, og {count} er valgt. Fjern noen, eller velg alle.',
+  searchIn: 'Søk i {field}',
+  noMatches: 'Ingen treff',
+  allChosen: 'Alle {total} {field} er valgt.',
+  noneChosen: 'Ingen {field} er valgt.',
+  added: 'Lagt til {value}',
+  removed: 'Fjernet {value}',
+  compactAll: 'Alle {field}',
+  compactSome: '{count} {field}',
+  yearPlaceholder: 'Skriv et år eller en periode',
+  yearHint: 'Skriv et år eller en periode, som 2021 eller 2023–2028',
+  yearNotPeriod:
+    'Ikke et år eller en periode. Skriv et år eller en periode, som 2021 eller 2023–2028.',
+  yearAlreadyChosen: '{period} er alt valgt.',
+  // u-combobox's texts for chosen values, which Designsystemet leaves in English; `%d` counts.
+  srItems: 'Valgte verdier',
+  srEmpty: 'Ingen verdier er valgt',
+  srFound: '%d valgt, naviger bakover for å endre',
+  srFoundAll: '{count} valgt, naviger bakover for å fjerne alle',
+  srFoundYears: '{count} valgt, naviger bakover for å endre',
+  srAdded: 'Lagt til',
+  srRemoved: 'Fjernet',
+  srInvalid: 'Ugyldig verdi',
+  srOf: 'av',
+  srRemove: 'Trykk for å fjerne fra {field}',
+  srRemoveAll: 'Trykk for å fjerne alle fra {field}',
+  // The `panel` variant, the dev boards' filter beside the threads.
+  clearAll: 'Fjern alle filtre',
+  clearedAll: 'Alle filtre er fjernet.',
+  all: 'Alle',
+  appliesNext: 'Gjelder neste spørsmål',
+  // The filter in an answer and under the field, its values in the words of the rows.
+  changed: 'filteret er endret',
+  readFrom: { one: 'Leste fra {count} dokument', other: 'Leste fra {count} dokumenter' },
+  readFromNarrowed: {
+    one: 'Leste fra {count} dokument:',
+    other: 'Leste fra {count} dokumenter:',
+  },
+  readFromUncounted: 'Avgrenset til:',
+  inAnswer: 'Filteret dette svaret bygger på',
+  next: {
+    one: 'Neste spørsmål leser fra {count} dokument',
+    other: 'Neste spørsmål leser fra {count} dokumenter',
+  },
+  nextWhere: 'endres i filteret til venstre',
+  nextLine: '{reads} – {where}',
+});
+
+export const enFilter = {
+  title: 'Filter',
+  loading: 'Loading the filters',
+  failed: 'Could not load the filters.',
+  retry: 'Try again',
+  unavailable: 'Filtering is not available yet',
+  unavailableHint: 'You can ask questions without narrowing the documents.',
+  changedInThread:
+    'You changed the filter in a thread that is under way. New questions in the thread use the new filter.',
+  changedInThreadAsk: 'Would you rather start a new thread with it?',
+  newThread: 'New thread',
+  limitedTo: 'Limited to',
+  locked:
+    'The thread is limited to this, and every question in it uses it. To choose another filter, start a new thread.',
+  noField: 'There is no field for this, but it still applies to your questions. You can remove it.',
+  noFields:
+    'The filter still applies to your questions. You can remove it, but not change it until the filters can be loaded.',
+  removeValue: 'Remove filter: {value}',
+  removedValue: 'Removed from the filter: {value}',
+  clearLimit: 'Clear the limit',
+  clearedLimit: 'The limit is removed.',
+  selectAll: 'Select all',
+  selectAllIn: 'Select all {field}',
+  clear: 'Clear',
+  clearIn: 'Clear {field}',
+  stateNone: 'No limit',
+  stateAll: 'All {total} selected, so no limit',
+  stateSome: '{count} of {total} selected',
+  stateYears: { one: '{count} year selected', other: '{count} years selected' },
+  listToggle: 'Options',
+  overLimit:
+    'At most {max} can be used in one field, and {count} are selected. Remove some, or select all.',
+  searchIn: 'Search {field}',
+  noMatches: 'No matches',
+  allChosen: 'All {total} {field} are selected.',
+  noneChosen: 'No {field} are selected.',
+  added: 'Added {value}',
+  removed: 'Removed {value}',
+  compactAll: 'All {field}',
+  compactSome: '{count} {field}',
+  yearPlaceholder: 'Type a year or a period',
+  yearHint: 'Type a year or a period, such as 2021 or 2023–2028',
+  yearNotPeriod: 'Not a year or a period. Type a year or a period, such as 2021 or 2023–2028.',
+  yearAlreadyChosen: '{period} is already selected.',
+  srItems: 'Selected values',
+  srEmpty: 'No values are selected',
+  srFound: '%d selected, navigate back to change',
+  srFoundAll: '{count} selected, navigate back to remove all',
+  srFoundYears: '{count} selected, navigate back to change',
+  srAdded: 'Added',
+  srRemoved: 'Removed',
+  srInvalid: 'Invalid value',
+  srOf: 'of',
+  srRemove: 'Press to remove from {field}',
+  srRemoveAll: 'Press to remove all from {field}',
+  clearAll: 'Remove all filters',
+  clearedAll: 'All filters are removed.',
+  all: 'All',
+  appliesNext: 'Applies to the next question',
+  changed: 'the filter has changed',
+  readFrom: { one: 'Read from {count} document', other: 'Read from {count} documents' },
+  readFromNarrowed: { one: 'Read from {count} document:', other: 'Read from {count} documents:' },
+  readFromUncounted: 'Limited to:',
+  inAnswer: 'The filter this answer builds on',
+  next: {
+    one: 'The next question reads from {count} document',
+    other: 'The next question reads from {count} documents',
+  },
+  nextWhere: 'change it in the filter on the left',
+  nextLine: '{reads} – {where}',
+} satisfies Translation<typeof nbFilter>;
+
+/** The filter's own catalogue, apart from the shared one, so a host loads only its words. */
+export const nb = defineCatalogue({ filter: nbFilter });
+export const en = { filter: enFilter } satisfies Translation<typeof nb>;
+
+export const { useT, translator } = defineTranslations({ nb, en });

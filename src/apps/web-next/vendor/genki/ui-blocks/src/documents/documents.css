@@ -1,0 +1,252 @@
+/* After Designsystemet's layers, tokens via --genai-documents-*; muted neutral, failed danger. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  .uib-documents {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-documents-gap, var(--ds-size-2));
+    font-family: var(--genai-documents-font-family, var(--ds-font-family)), sans-serif;
+  }
+  .uib-documents[hidden] {
+    display: none;
+  }
+
+  /* Designsystemet draws the list; its block margin would add to the flex gap. */
+  .uib-documents-list {
+    margin-block: 0;
+  }
+
+  /* Muted: the count and the line under each title are about the row. */
+  .uib-documents-count,
+  .uib-documents-about,
+  .uib-documents-own-meta,
+  .uib-documents-own-refusal {
+    color: var(--genai-documents-muted-color, var(--ds-color-neutral-text-subtle));
+  }
+
+  .uib-documents-own-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--genai-documents-heading-gap, var(--ds-size-2));
+  }
+  .uib-documents-own-heading[hidden] {
+    display: none;
+  }
+
+  /* Switched off: Designsystemet's read-only look, keyed here on `disabled`; no pointer. */
+  .uib-documents-own-zone:has(> input:disabled) {
+    --dsc-file-upload-background: var(
+      --genai-documents-zone-off-background,
+      var(--ds-color-surface-tinted)
+    );
+    --dsc-file-upload-background--hover: var(
+      --genai-documents-zone-off-background,
+      var(--ds-color-surface-tinted)
+    );
+    pointer-events: none;
+  }
+
+  .uib-documents-own-icon {
+    font-size: var(--genai-documents-zone-icon-size, var(--ds-size-6));
+  }
+
+  .uib-documents-own-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-documents-own-list-gap, var(--ds-size-2));
+    inline-size: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .uib-documents-own-list[hidden] {
+    display: none;
+  }
+
+  /* The text column may shrink, so a long file name wraps instead of pushing «Fjern» out. */
+  .uib-documents-own-item {
+    display: flex;
+    align-items: start;
+    gap: var(--genai-documents-own-item-gap, var(--ds-size-2));
+    inline-size: 100%;
+  }
+  .uib-documents-own-item[hidden] {
+    display: none;
+  }
+
+  .uib-documents-own-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+  .uib-documents-own-text[hidden] {
+    display: none;
+  }
+
+  .uib-documents-own-name {
+    overflow-wrap: anywhere;
+  }
+
+  .uib-documents-own-error {
+    color: var(--genai-documents-error-color, var(--ds-color-danger-text-default));
+  }
+
+  /* ── «Dokumentene som blir med» (DocumentsInScope), dev-filter-panel ── */
+
+  /* A box under a hairline, its corners the design's cards'. */
+  .uib-documents-scope {
+    box-sizing: border-box;
+    inline-size: 100%;
+    border: var(--genai-documents-scope-border-width, var(--ds-border-width-default)) solid
+      var(--genai-documents-scope-border-color, var(--ds-color-neutral-surface-tinted));
+    border-radius: var(--genai-documents-scope-radius, var(--ds-border-radius-xl));
+  }
+
+  .uib-documents-scope-heading {
+    margin: 0;
+    padding: var(--genai-documents-scope-padding-block, var(--ds-size-3))
+      var(--genai-documents-scope-padding-inline, var(--ds-size-4)) 0;
+    font: inherit;
+  }
+
+  /* The title, and «Skjul» with its chevron at the end: the whole row folds the box. */
+  .uib-documents-scope-toggle {
+    display: flex;
+    gap: var(--genai-documents-scope-gap, var(--ds-size-2));
+    align-items: center;
+    justify-content: space-between;
+    inline-size: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  .uib-documents-scope-toggle[hidden] {
+    display: none;
+  }
+
+  .uib-documents-scope-toggle:focus-visible {
+    outline: var(--genai-documents-scope-focus-width, var(--ds-border-width-focus)) solid
+      var(--genai-documents-scope-focus-color, var(--ds-color-focus-outer));
+  }
+
+  .uib-documents-scope-title {
+    color: var(--genai-documents-scope-title-color, var(--ds-color-neutral-text-default));
+    font-size: var(--genai-documents-scope-title-font-size, var(--ds-font-size-3));
+    font-weight: var(--genai-documents-scope-title-font-weight, var(--ds-font-weight-semibold));
+  }
+
+  .uib-documents-scope-fold {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: var(--genai-documents-scope-fold-gap, var(--ds-size-1));
+    align-items: center;
+    color: var(--genai-documents-scope-fold-color, var(--ds-color-accent-text-subtle));
+    font-size: var(--genai-documents-scope-small-font-size, var(--ds-font-size-2));
+    font-weight: var(--genai-documents-scope-fold-font-weight, var(--ds-font-weight-medium));
+  }
+  .uib-documents-scope-fold[hidden] {
+    display: none;
+  }
+
+  .uib-documents-scope-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-documents-scope-gap, var(--ds-size-2));
+    padding: var(--genai-documents-scope-gap, var(--ds-size-2))
+      var(--genai-documents-scope-padding-inline, var(--ds-size-4))
+      var(--genai-documents-scope-padding-block, var(--ds-size-3));
+  }
+  .uib-documents-scope-body[hidden] {
+    display: none;
+  }
+
+  /* The count on a neutral ground, apart from the conversation's («9 · Filtrering», choice 7). */
+  .uib-documents-scope-summary {
+    margin: 0;
+    padding: var(--genai-documents-scope-summary-padding-block, var(--ds-size-2))
+      var(--genai-documents-scope-summary-padding-inline, var(--ds-size-3));
+    border-radius: var(--genai-documents-scope-summary-radius, var(--ds-border-radius-lg));
+    background: var(
+      --genai-documents-scope-summary-background,
+      var(--ds-color-neutral-background-tinted)
+    );
+    color: var(--genai-documents-scope-title-color, var(--ds-color-neutral-text-default));
+    font-size: var(--genai-documents-scope-small-font-size, var(--ds-font-size-2));
+  }
+
+  .uib-documents-scope-hint {
+    margin: 0;
+    color: var(--genai-documents-scope-quiet-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-documents-scope-tiny-font-size, var(--ds-font-size-1));
+  }
+
+  .uib-documents-scope-search {
+    --dsc-input-size: var(--genai-documents-scope-search-height, var(--ds-size-10));
+    --dsc-input-border-radius: var(
+      --genai-documents-scope-summary-radius,
+      var(--ds-border-radius-lg)
+    );
+
+    inline-size: 100%;
+  }
+
+  .uib-documents-scope-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .uib-documents-scope-document {
+    inline-size: auto;
+    align-items: start;
+    padding-block: var(--genai-documents-scope-document-padding-block, var(--ds-size-2));
+    border-block-end: var(--genai-documents-scope-border-width, var(--ds-border-width-default))
+      solid var(--genai-documents-scope-border-color, var(--ds-color-neutral-surface-tinted));
+  }
+
+  .uib-documents-scope-document > .ds-input {
+    --dsc-input-size--toggle: var(--genai-documents-scope-checkbox-size, var(--ds-size-5));
+  }
+
+  .uib-documents-scope-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-documents-scope-fold-gap, var(--ds-size-1));
+  }
+  .uib-documents-scope-text[hidden] {
+    display: none;
+  }
+
+  .uib-documents-scope-name {
+    font-size: var(--genai-documents-scope-small-font-size, var(--ds-font-size-2));
+    font-weight: var(--genai-documents-scope-name-font-weight, var(--ds-font-weight-medium));
+  }
+
+  .uib-documents-scope-about {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--genai-documents-scope-fold-gap, var(--ds-size-1))
+      var(--genai-documents-scope-gap, var(--ds-size-2));
+    align-items: center;
+    color: var(--genai-documents-scope-quiet-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-documents-scope-tiny-font-size, var(--ds-font-size-1));
+  }
+  .uib-documents-scope-about[hidden] {
+    display: none;
+  }
+
+  /* The type as a tag on the accent's light ground. */
+  .uib-documents-scope-type {
+    padding-inline: var(--genai-documents-scope-type-padding-inline, var(--ds-size-2));
+    border-radius: var(--genai-documents-scope-type-radius, var(--ds-border-radius-md));
+    background: var(--genai-documents-scope-type-background, var(--ds-color-accent-surface-tinted));
+    color: var(--genai-documents-scope-type-color, var(--ds-color-accent-text-default));
+  }
+}

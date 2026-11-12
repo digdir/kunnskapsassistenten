@@ -1,0 +1,213 @@
+/* After Designsystemet's layers, every token read through a --genai-approach-* variable. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  /* The Details inside the Card holds the padding. */
+  .uib-approach-card {
+    padding: var(--genai-approach-card-padding, 0);
+    overflow: hidden;
+  }
+  .uib-approach-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--genai-approach-summary-gap, var(--ds-size-2));
+  }
+  .uib-approach-steps {
+    margin: 0;
+  }
+  .uib-approach-step-title {
+    font-weight: var(--genai-approach-step-title-font-weight, var(--ds-font-weight-medium));
+  }
+  /* Grey whatever the host's colour family: these lines say how it went, they are not controls. */
+  .uib-approach-steps > li[data-status='waiting'] .uib-approach-step-title {
+    color: var(--genai-approach-waiting-color, var(--ds-color-neutral-text-subtle));
+    font-weight: var(--genai-approach-waiting-font-weight, var(--ds-font-weight-regular));
+  }
+  .uib-approach-step-status {
+    color: var(--genai-approach-step-status-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-approach-step-status-font-size, var(--ds-font-size-2));
+    font-weight: var(--genai-approach-step-status-font-weight, var(--ds-font-weight-regular));
+  }
+  .uib-approach-step-description {
+    margin: var(--genai-approach-step-spacing, var(--ds-size-1)) 0 0;
+    color: var(--genai-approach-step-description-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-approach-step-description-font-size, var(--ds-font-size-2));
+  }
+  .uib-approach-step-documents {
+    margin-top: var(--genai-approach-step-spacing, var(--ds-size-1));
+    font-size: var(--genai-approach-step-documents-font-size, var(--ds-font-size-2));
+  }
+  .uib-approach-step-link {
+    display: inline-block;
+    margin-top: var(--genai-approach-step-spacing, var(--ds-size-1));
+    font-size: var(--genai-approach-step-link-font-size, var(--ds-font-size-2));
+  }
+  .uib-approach-footer {
+    margin: var(--genai-approach-footer-spacing, var(--ds-size-3)) 0 0;
+    color: var(--genai-approach-footer-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-approach-footer-font-size, var(--ds-font-size-2));
+  }
+
+  /* ── `summary="totals"`: the dev boards' bar (dev-filter-panel), one line when folded ── */
+
+  /* Tinted, under a hairline, its corners those of the design's cards. Grey, as the card is. */
+  .uib-approach[data-summary='totals'] .uib-approach-card {
+    --dsc-card-border-color: var(
+      --genai-approach-bar-border-color,
+      var(--ds-color-neutral-surface-tinted)
+    );
+    --dsc-card-border-radius: var(--genai-approach-bar-radius, var(--ds-border-radius-xl));
+
+    background: var(--genai-approach-bar-ground, var(--ds-color-neutral-background-tinted));
+  }
+
+  /* On the Details itself, which sets its own and would hide the card's. */
+  .uib-approach[data-summary='totals'] .uib-approach-card > .ds-details {
+    --dsc-details-background: transparent;
+    --dsc-details-padding: var(--genai-approach-bar-padding-block, var(--ds-size-2))
+      var(--genai-approach-bar-padding-inline, var(--ds-size-4));
+    --dsc-details-size: auto;
+    --dsc-details-icon-size: var(--genai-approach-bar-icon-size, var(--ds-font-size-3));
+    --dsc-details-summary-background: var(
+      --genai-approach-bar-background,
+      var(--ds-color-neutral-surface-tinted)
+    );
+    --dsc-details-summary-background--hover: var(
+      --genai-approach-bar-hover-background,
+      var(--ds-color-neutral-surface-hover)
+    );
+    --dsc-details-summary-background--open: var(
+      --genai-approach-bar-background,
+      var(--ds-color-neutral-surface-tinted)
+    );
+  }
+
+  /* The chevron ends the row, as the design draws it, not before the title. */
+  .uib-approach[data-summary='totals'] summary::before {
+    order: 1;
+    align-self: center;
+    margin-inline-start: auto;
+    translate: none;
+  }
+
+  .uib-approach[data-summary='totals'] .uib-approach-summary {
+    flex-wrap: wrap;
+    column-gap: var(--genai-approach-bar-gap, var(--ds-size-2));
+    row-gap: 0;
+    font-size: var(--genai-approach-bar-font-size, var(--ds-font-size-2));
+  }
+
+  .uib-approach[data-summary='totals'] .uib-approach-summary > svg {
+    color: var(--genai-approach-bar-icon-color, var(--ds-color-neutral-text-subtle));
+  }
+
+  .uib-approach[data-summary='totals'] .uib-approach-title {
+    font-weight: var(--genai-approach-title-font-weight, var(--ds-font-weight-medium));
+  }
+
+  /* The totals and the note, quieter than the title. */
+  .uib-approach-subtitle {
+    color: var(--genai-approach-subtitle-color, var(--ds-color-neutral-text-subtle));
+    font-weight: var(--genai-approach-subtitle-font-weight, var(--ds-font-weight-regular));
+  }
+
+  /* «· filteret er endret»: stronger than the totals, in the accent's dark text. */
+  .uib-approach-note {
+    color: var(--genai-approach-note-color, var(--ds-color-accent-text-default));
+    font-weight: var(--genai-approach-note-font-weight, var(--ds-font-weight-medium));
+  }
+
+  .uib-approach[data-summary='totals'] .uib-approach-content {
+    margin: 0;
+    padding: var(--genai-approach-bar-padding-block, var(--ds-size-2))
+      var(--genai-approach-bar-padding-inline, var(--ds-size-4))
+      var(--genai-approach-bar-padding-block-end, var(--ds-size-3));
+    font-size: var(--genai-approach-bar-font-size, var(--ds-font-size-2));
+  }
+
+  /* ── `variant="list"`: the dev boards' «Fremgangsmåte» tool (dev-verktoy-1 to -3) ── */
+
+  .uib-approach[data-variant='list'] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-approach-list-gap, var(--ds-size-2));
+    inline-size: 100%;
+  }
+
+  .uib-approach-caption {
+    margin: 0;
+    color: var(--genai-approach-caption-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-approach-caption-font-size, var(--ds-font-size-2));
+    line-height: var(--genai-approach-caption-line-height, var(--ds-line-height-md));
+  }
+
+  .uib-approach-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* A step: its mark, then its title over its line, under a hairline. Grey, as the card is. */
+  .uib-approach-list > li {
+    display: flex;
+    gap: var(--genai-approach-list-item-gap, var(--ds-size-3));
+    align-items: start;
+    padding-block: var(--genai-approach-list-item-padding-block, var(--ds-size-2));
+    border-block-start: var(--genai-approach-scope-border-width, var(--ds-border-width-default))
+      solid var(--genai-approach-list-divider-color, var(--ds-color-neutral-surface-tinted));
+  }
+
+  /* Done is a check on success's tint, the design's green in the theme's own success tokens. */
+  .uib-approach-mark {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--genai-approach-mark-size, var(--ds-size-6));
+    block-size: var(--genai-approach-mark-size, var(--ds-size-6));
+    border-radius: var(--genai-approach-mark-radius, var(--ds-border-radius-full));
+    background: var(--genai-approach-mark-background, var(--ds-color-success-surface-tinted));
+    color: var(--genai-approach-mark-color, var(--ds-color-success-text-subtle));
+    font-size: var(--genai-approach-mark-icon-size, var(--ds-font-size-3));
+  }
+
+  .uib-approach-list > li:not([data-status='done']) > .uib-approach-mark {
+    background: var(
+      --genai-approach-mark-pending-background,
+      var(--ds-color-neutral-surface-tinted)
+    );
+    color: var(--genai-approach-mark-pending-color, var(--ds-color-neutral-text-subtle));
+  }
+
+  .uib-approach-entry {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-approach-entry-gap, var(--ds-size-1));
+    min-inline-size: 0;
+  }
+
+  .uib-approach-list .uib-approach-step-title {
+    color: var(--genai-approach-list-title-color, var(--ds-color-neutral-text-default));
+    font-size: var(--genai-approach-list-title-font-size, var(--ds-font-size-2));
+    line-height: var(--genai-approach-list-title-line-height, var(--ds-line-height-md));
+  }
+
+  .uib-approach-list > li[data-status='waiting'] .uib-approach-step-title {
+    color: var(--genai-approach-waiting-color, var(--ds-color-neutral-text-subtle));
+    font-weight: var(--genai-approach-waiting-font-weight, var(--ds-font-weight-regular));
+  }
+
+  .uib-approach-step-line {
+    color: var(--genai-approach-step-description-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-approach-step-description-font-size, var(--ds-font-size-2));
+    line-height: var(--genai-approach-list-line-height, var(--ds-line-height-md));
+  }
+
+  /* What the answer read from, over the steps, a line between. */
+  .uib-approach-scope {
+    padding-block-end: var(--genai-approach-scope-padding-block-end, var(--ds-size-2));
+    margin-block-end: var(--genai-approach-scope-margin-block-end, var(--ds-size-2));
+    border-block-end: var(--genai-approach-scope-border-width, var(--ds-border-width-default)) solid
+      var(--genai-approach-bar-border-color, var(--ds-color-neutral-surface-tinted));
+  }
+}

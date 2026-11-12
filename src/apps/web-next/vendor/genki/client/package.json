@@ -1,0 +1,26 @@
+{
+  "name": "@genai/client",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./contract": {
+      "source": "./src/contract-suite.ts",
+      "types": "./dist/contract-suite.d.ts",
+      "default": "./dist/contract-suite.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@genai/plugins": "0.0.0"
+  }
+}

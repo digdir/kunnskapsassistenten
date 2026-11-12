@@ -1,0 +1,88 @@
+import { defineCatalogue, defineNamespace, type Translation } from '@genai/i18n';
+import { defineTranslations } from '@genai/i18n/react';
+
+export const nbThreads = defineNamespace({
+  earlier: 'Tidligere tråder',
+  newThread: 'Ny tråd',
+  firstThread: 'Start din første tråd',
+  showFilters: 'Filtrer dokumenter',
+  search: 'Søk i tråder',
+  matches: { one: '{count} tråd', other: '{count} tråder' },
+  loading: 'Henter tråder',
+  loadFailed: 'Klarte ikke å hente trådene.',
+  retry: 'Prøv igjen',
+  noMatches: 'Ingen treff',
+  noMatchesHint: 'Ingen tråder passer til søket.',
+  untitled: 'Uten tittel',
+  today: 'I dag',
+  last7: 'Siste 7 dager',
+  last30: 'Siste 30 dager',
+  undated: 'Uten dato',
+  yesterday: 'i går',
+  dateAtClock: '{date} kl. {clock}',
+  more: 'Flere valg for {title}',
+  rename: 'Endre navn',
+  delete: 'Slett',
+  newName: 'Nytt navn på tråden',
+  nameRequired: 'Tråden må ha et navn.',
+  save: 'Lagre',
+  cancel: 'Avbryt',
+  renamed: 'Tråden heter nå «{title}».',
+  renameFailed: 'Klarte ikke å endre navnet. Tråden heter fortsatt «{title}».',
+  renameGone: '«{title}» finnes ikke lenger. Den kan være slettet et annet sted.',
+  deleteQuestion: 'Slette tråden?',
+  deleteWarning:
+    '«{title}» blir borte for godt, med alle spørsmålene og svarene i den. Det kan ikke angres.',
+  deleteConfirm: 'Slett tråden',
+  close: 'Lukk',
+  deleted: '«{title}» er slettet.',
+  deleteFailed: 'Klarte ikke å slette «{title}». Tråden er fortsatt her.',
+  signedInAs: 'Innlogget som',
+  signOut: 'Logg ut',
+});
+
+export const enThreads = {
+  earlier: 'Earlier threads',
+  newThread: 'New thread',
+  firstThread: 'Start your first thread',
+  showFilters: 'Filter documents',
+  search: 'Search threads',
+  matches: { one: '{count} thread', other: '{count} threads' },
+  loading: 'Loading threads',
+  loadFailed: 'Could not load the threads.',
+  retry: 'Try again',
+  noMatches: 'No matches',
+  noMatchesHint: 'No threads match the search.',
+  untitled: 'Untitled',
+  today: 'Today',
+  last7: 'Last 7 days',
+  last30: 'Last 30 days',
+  undated: 'No date',
+  yesterday: 'yesterday',
+  dateAtClock: '{date}, {clock}',
+  more: 'More options for {title}',
+  rename: 'Rename',
+  delete: 'Delete',
+  newName: 'New name for the thread',
+  nameRequired: 'The thread needs a name.',
+  save: 'Save',
+  cancel: 'Cancel',
+  renamed: 'The thread is now called “{title}”.',
+  renameFailed: 'Could not rename the thread. It is still called “{title}”.',
+  renameGone: '“{title}” no longer exists. It may have been deleted elsewhere.',
+  deleteQuestion: 'Delete the thread?',
+  deleteWarning:
+    '“{title}” will be gone for good, with all its questions and answers. This cannot be undone.',
+  deleteConfirm: 'Delete the thread',
+  close: 'Close',
+  deleted: '“{title}” is deleted.',
+  deleteFailed: 'Could not delete “{title}”. The thread is still here.',
+  signedInAs: 'Signed in as',
+  signOut: 'Sign out',
+} satisfies Translation<typeof nbThreads>;
+
+/** The thread list's own catalogue, apart from the shared one, so a host loads only its words. */
+export const nb = defineCatalogue({ threads: nbThreads });
+export const en = { threads: enThreads } satisfies Translation<typeof nb>;
+
+export const { useT, translator } = defineTranslations({ nb, en });

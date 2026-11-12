@@ -1,0 +1,33 @@
+/* After Designsystemet's layers, tokens via --genai-corpus-*; muted text pinned neutral. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  .uib-corpus-choice,
+  .uib-corpus-line {
+    font-family: var(--genai-corpus-font-family, var(--ds-font-family)), sans-serif;
+  }
+
+  /* Muted context, in a row that wraps, so «Vis mer» ends the name's line. */
+  .uib-corpus-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--genai-corpus-line-column-gap, var(--ds-size-2));
+    /* Only between the line and the opened detail, clear of the toggle's hit area. */
+    row-gap: var(--genai-corpus-line-row-gap, var(--ds-size-1));
+    color: var(--genai-corpus-line-color, var(--ds-color-neutral-text-subtle));
+  }
+  .uib-corpus-line[hidden] {
+    display: none;
+  }
+
+  /* A 24 px target (WCAG 2.5.8): padding grows it, a negative margin keeps the row's height. */
+  .uib-corpus-toggle {
+    padding-block-end: var(--genai-corpus-toggle-padding-block-end, var(--ds-size-1));
+    margin-block-end: calc(-1 * var(--genai-corpus-toggle-padding-block-end, var(--ds-size-1)));
+  }
+
+  .uib-corpus-detail {
+    flex-basis: 100%;
+  }
+}

@@ -1,0 +1,51 @@
+/* After Designsystemet's layers, every token read through a --genai-variant-picker-* variable. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  /* No frame, so the padding is only room to press. In a narrow row it shrinks, and a long name
+     ends in an ellipsis. */
+  .uib-variant-picker-trigger {
+    --dsc-button-padding: var(--genai-variant-picker-trigger-padding-block, var(--ds-size-1))
+      var(--genai-variant-picker-trigger-padding-inline, var(--ds-size-2));
+    --dsc-button-gap: var(--genai-variant-picker-trigger-gap, var(--ds-size-1));
+    flex-shrink: 1;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    font-family: var(--genai-variant-picker-font-family, var(--ds-font-family)), sans-serif;
+    font-weight: var(--genai-variant-picker-trigger-font-weight, var(--ds-font-weight-regular));
+  }
+  .uib-variant-picker-current {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* As wide as a line of description wants, and never wider than the window less its margins.
+     No Designsystemet token is that wide, so the width is a literal behind its variable. The list
+     is in the top layer, so 100% is the window. */
+  .uib-variant-picker-list {
+    inline-size: var(--genai-variant-picker-list-inline-size, 24rem);
+    max-inline-size: calc(100% - 2 * var(--genai-variant-picker-list-margin, var(--ds-size-4)));
+    font-family: var(--genai-variant-picker-font-family, var(--ds-font-family)), sans-serif;
+  }
+  .uib-variant-picker-option {
+    justify-content: space-between;
+    inline-size: 100%;
+    text-align: start;
+  }
+  .uib-variant-picker-text {
+    display: grid;
+    gap: var(--genai-variant-picker-option-gap, var(--ds-size-1));
+  }
+  .uib-variant-picker-name {
+    font-weight: var(--genai-variant-picker-name-font-weight, var(--ds-font-weight-medium));
+  }
+  .uib-variant-picker-description {
+    color: var(--genai-variant-picker-description-color, var(--ds-color-text-subtle));
+    font-size: var(--genai-variant-picker-description-font-size, var(--ds-body-xs-font-size));
+    font-weight: var(--genai-variant-picker-description-font-weight, var(--ds-font-weight-regular));
+  }
+  .uib-variant-picker-check {
+    flex-shrink: 0;
+  }
+}

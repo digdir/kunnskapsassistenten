@@ -1,0 +1,69 @@
+/* After Designsystemet's layers, every token read through a --genai-welcome-* variable. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  .uib-welcome {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-welcome-gap, var(--ds-size-1));
+    font-family: var(--genai-welcome-font-family, var(--ds-font-family)), sans-serif;
+  }
+
+  .uib-welcome-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-welcome-suggestions-gap, var(--ds-size-1));
+    inline-size: 100%;
+    container: uib-welcome-suggestions / inline-size;
+    font-family: var(--genai-welcome-font-family, var(--ds-font-family)), sans-serif;
+  }
+
+  /* A little air over «Forslag», half of it in a narrow column. */
+  .uib-welcome-suggestions-title {
+    --_title-padding: var(--ds-size-4);
+
+    padding-block-start: var(
+      --genai-welcome-suggestions-padding-block-start,
+      var(--_title-padding)
+    );
+  }
+
+  @container uib-welcome-suggestions (inline-size < 500px) {
+    .uib-welcome-suggestions-title {
+      --_title-padding: var(--ds-size-2);
+    }
+  }
+
+  .uib-welcome-suggestions-list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .uib-welcome-suggestions-list > li + li {
+    border-block-start: var(--genai-welcome-suggestion-border-width, var(--ds-border-width-default))
+      solid var(--genai-welcome-suggestion-border-color, var(--ds-color-border-subtle));
+  }
+
+  /* A tertiary button holding a whole question, so it wraps and reads as a row, one step quieter
+     than the field's text. */
+  .uib-welcome-suggestion {
+    inline-size: 100%;
+    justify-content: start;
+    align-items: start;
+    gap: var(--genai-welcome-suggestion-gap, var(--ds-size-3));
+    padding-block: var(--genai-welcome-suggestion-padding-block, var(--ds-size-3));
+    text-align: start;
+    white-space: normal;
+    font-size: var(--genai-welcome-suggestion-font-size, var(--ds-font-size-minus-1));
+    font-weight: var(--genai-welcome-suggestion-font-weight, var(--ds-font-weight-regular));
+  }
+
+  .uib-welcome-suggestion-icon {
+    flex-shrink: 0;
+    margin-block-start: var(--genai-welcome-suggestion-icon-offset, var(--ds-size-1));
+    color: var(--genai-welcome-suggestion-icon-color, var(--ds-color-text-subtle));
+  }
+}

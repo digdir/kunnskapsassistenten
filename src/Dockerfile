@@ -1,14 +1,17 @@
-# Node 24 runs the server's TypeScript directly, so only the client is built.
+# Node 24 runs the server's TypeScript directly, so only the clients are built: apps/web, and
+# apps/web-next, which the server offers only with KA_NEXT=1 (decisions/0013).
 FROM node:24.21.0-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/contract/package.json packages/contract/
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
+COPY apps/web-next/package.json apps/web-next/
 RUN npm ci
 COPY . .
 # apps/web reads VITE_API_MODE when it is built; a production build without it is bff.
 # Set here anyway, so the image does not depend on that default.
+# The root build builds apps/web-next too.
 RUN VITE_API_MODE=bff npm run build
 
 FROM node:24.21.0-alpine AS runtime
@@ -23,8 +26,10 @@ RUN npm ci --omit=dev --workspace apps/server --include-workspace-root \
 COPY packages/contract/src packages/contract/src
 COPY apps/server/src apps/server/src
 COPY --from=build /app/apps/web/dist apps/web/dist
+COPY --from=build /app/apps/web-next/dist apps/web-next/dist
 
 ENV WEB_ROOT=./apps/web/dist
+ENV WEB_NEXT_ROOT=./apps/web-next/dist
 ENV PORT=8787
 EXPOSE 8787
 

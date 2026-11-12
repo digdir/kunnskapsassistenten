@@ -98,6 +98,42 @@ function authConfig() {
 
 const datasetConfigKey = process.env.DIGDIR_DATASET_CONFIG_KEY ?? 'default';
 
+/** `1`, `true`, `on` or `yes`, in any case. Anything else, or nothing, is off. */
+const switchedOn = (raw: string | undefined) => /^(1|true|on|yes)$/i.test((raw ?? '').trim());
+
+const NEXT_MODEL = 'kunnskapsassistenten__default';
+
+/**
+ * The next client, apps/web-next, beside apps/web on the same host (decisions/0013). Off unless
+ * `KA_NEXT` turns it on: then `/api/next/*` is mounted, and a person who chose it gets its page.
+ * `model` is the genki service and variant it asks, `<service>__<variant>`.
+ *
+ * A malformed `KA_NEXT_MODEL` stops the server only when `KA_NEXT` is on. While it is off the
+ * model is not used, so a mistake in it is warned about and must not take apps/web down.
+ */
+export function nextConfig(env: NodeJS.ProcessEnv = process.env) {
+  const enabled = switchedOn(env.KA_NEXT);
+  let model = (env.KA_NEXT_MODEL ?? '').trim() || NEXT_MODEL;
+  if (!/^[a-z0-9][a-z0-9-]*(__[a-z0-9][a-z0-9-]*)?$/i.test(model)) {
+    if (enabled) {
+      console.error(`KA_NEXT_MODEL must be <service>__<variant>. Got "${model}".`);
+      process.exit(1);
+    }
+    console.warn(
+      `KA_NEXT_MODEL must be <service>__<variant>. Got "${model}"; ignored while KA_NEXT is off.`,
+    );
+    model = NEXT_MODEL;
+  }
+  return {
+    enabled,
+    model,
+    service: model.split('__')[0] ?? '',
+    tenant: (env.KA_NEXT_TENANT ?? '').trim() || 'digdir',
+    /** The build of apps/web-next. */
+    webRoot: env.WEB_NEXT_ROOT ?? '',
+  };
+}
+
 const auth = authConfig();
 
 export const config = {
@@ -128,6 +164,8 @@ export const config = {
 
   /** The build of apps/web. */
   webRoot: process.env.WEB_ROOT ?? '',
+
+  next: nextConfig(),
 
   auth,
 } as const;

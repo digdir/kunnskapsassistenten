@@ -123,6 +123,30 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
   --revision-suffix rollback$(date +%H%M%S)
 ```
 
+## The next client, behind a toggle
+
+The image holds two clients: `apps/web`, which everyone gets, and `apps/web-next`, built from
+genki's UI blocks (`decisions/0013`). `KA_NEXT=1` offers the next one: `apps/web` then shows
+«Prøv ny versjon» at the foot of the navigation panel, and a person who chooses it gets it on
+every load until they choose «Tilbake til gammel versjon» in its profile menu. The choice is a
+cookie per browser. Without `KA_NEXT` nothing of it shows, and the cookie is ignored.
+
+It uses the same sign-in and the same genki service as `apps/web`. `KA_NEXT_MODEL` names the
+variant it asks (default `kunnskapsassistenten__default`) and `KA_NEXT_TENANT` the tenant whose
+collections it reads (default `digdir`). On a running deployment, about 30 seconds and no
+rebuild:
+
+```sh
+# On
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --set-env-vars KA_NEXT=1 --revision-suffix next$(date +%H%M%S)
+# Off: everyone gets apps/web again
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --remove-env-vars KA_NEXT --revision-suffix classic$(date +%H%M%S)
+```
+
+The template takes the same as `kaNext`, `kaNextModel` and `kaNextTenant`, empty by default.
+
 ## Deploying from scratch
 
 Only needed if the resource group is gone.

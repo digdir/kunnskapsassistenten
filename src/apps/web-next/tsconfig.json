@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "types": ["vite/client", "node", "@digdir/designsystemet-react/react-types"],
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    "paths": {
+      "@genai/client": ["./vendor/genki/client/src/index.ts"],
+      "@genai/i18n": ["./vendor/genki/i18n/src/index.ts"],
+      "@genai/i18n/react": ["./vendor/genki/i18n/src/react.tsx"],
+      "@genai/ui-blocks": ["./vendor/genki/ui-blocks/src/index.ts"],
+      "@genai/ui-assembly": ["./vendor/genki/ui-assembly/src/index.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

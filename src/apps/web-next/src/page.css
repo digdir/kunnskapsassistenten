@@ -1,0 +1,29 @@
+/* The page around the assistant. The panels are the shell block's own (@genai/ui-blocks), and
+   the chat column, the docked field and the notice are @genai/ui-assembly's. Unlayered. */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ds-font-family), sans-serif;
+  font-feature-settings: 'cv05' 1;
+  overflow-wrap: anywhere;
+  background: var(--ds-color-neutral-background-tinted);
+  color: var(--ds-color-neutral-text-default);
+}
+
+.ka-next-session-error {
+  max-inline-size: 40rem;
+  margin: var(--ds-size-18) auto;
+  padding-inline: var(--ds-size-4);
+}
+
+.ka-next-session-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-size-3);
+}

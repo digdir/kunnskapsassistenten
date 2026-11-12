@@ -1,0 +1,10 @@
+/* «Prøv ny versjon» looks like the links beside it in the panel's foot, though it is a button: it
+   changes which client the server sends, and then reloads. Designsystemet gives a link that is a
+   button its parent's font (`.ds-link:is(button)`); the links beside it have their own size's. */
+.ds-link.try-next-version {
+  display: flex;
+  gap: var(--ds-size-2);
+  align-items: center;
+  font-size: var(--ds-body-md-font-size);
+  line-height: var(--ds-body-md-line-height);
+}
