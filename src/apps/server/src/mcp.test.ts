@@ -64,7 +64,7 @@ describe('frameData', () => {
 });
 
 describe('toSources', () => {
-  test('one source per chunk, so a document that gave two does not swallow a marker', async () => {
+  test('one source per chunk, so a document that gave two keeps both excerpts', async () => {
     const sources = await mcp.toSources(
       [
         { chunk_id: 'a', doc_num: '1', title: 'Rapport' },
@@ -73,47 +73,43 @@ describe('toSources', () => {
       ],
       noExcerpts,
     );
-    assert.equal(sources.length, 3);
     assert.deepEqual(
-      sources.map((s) => [s.chunkId, s.docNum, s.marker]),
+      sources.map((s) => [s.chunkId, s.docNum]),
       [
-        ['a', '1', 1],
-        ['b', '1', 2],
-        ['c', '2', 3],
+        ['a', '1'],
+        ['b', '1'],
+        ['c', '2'],
       ],
     );
   });
 
-  test('eight chunks of one document keep the markers the answer cites', async () => {
-    // The shape measured against kudos-full on 2026-09-29: one question,
-    // eight chunks, all from document 347922, and an answer citing [1]..[8].
-    const chunks = Array.from({ length: 8 }, (_, i) => ({
-      chunk_id: `c${i}`,
-      doc_num: '347922',
-      title: 'Tildelingsbrev Landbruksdirektoratet 2025',
-    }));
-    const sources = await mcp.toSources(chunks, noExcerpts);
-    assert.deepEqual(
-      sources.map((s) => s.marker),
-      [1, 2, 3, 4, 5, 6, 7, 8],
-    );
-  });
-
-  test('markers are 1-based and follow retrieval order', async () => {
+  test("keeps genki's order, which is the order it numbered the documents in", async () => {
     const sources = await mcp.toSources(
       [
-        { doc_num: '9', title: 'Ni' },
-        { doc_num: '4', title: 'Fire' },
+        { chunk_id: 'x', doc_num: '9', title: 'Ni' },
+        { chunk_id: 'y', doc_num: '4', title: 'Fire' },
+        { chunk_id: 'z', doc_num: '9', title: 'Ni' },
       ],
       noExcerpts,
     );
     assert.deepEqual(
-      sources.map((s) => [s.docNum, s.marker]),
-      [
-        ['9', 1],
-        ['4', 2],
-      ],
+      sources.map((s) => s.chunkId),
+      ['x', 'y', 'z'],
     );
+  });
+
+  test("a chunk's place in the list is not a footnote: no source claims an [n] by position", async () => {
+    const sources = await mcp.toSources(
+      [
+        { chunk_id: 'a', doc_num: '1' },
+        { chunk_id: 'b', doc_num: '1' },
+      ],
+      noExcerpts,
+    );
+    for (const source of sources) {
+      assert.equal('marker' in source, false);
+      assert.equal('markers' in source, false);
+    }
   });
 
   test('builds a Kudos url when the backend leaves url null', async () => {
@@ -168,17 +164,16 @@ describe('toSources', () => {
     assert.equal(sources[0]?.excerpt, undefined);
   });
 
-  test('a chunk with neither doc_num nor url keeps its place, or the markers shift', async () => {
+  test('a chunk with neither doc_num nor url keeps its place', async () => {
     const sources = await mcp.toSources(
       [{ chunk_id: 'orphan' }, { chunk_id: 'b', doc_num: '2', title: 'To' }],
       noExcerpts,
     );
-    assert.equal(sources.length, 2);
     assert.deepEqual(
-      sources.map((s) => [s.docNum, s.url, s.marker]),
+      sources.map((s) => [s.chunkId, s.docNum, s.url]),
       [
-        ['', '', 1],
-        ['2', 'https://kudos.example/documents/2', 2],
+        ['orphan', '', ''],
+        ['b', '2', 'https://kudos.example/documents/2'],
       ],
     );
   });
@@ -573,42 +568,91 @@ describe('ask: plan and answer', () => {
   });
 
   /*
-   * Pins an assumption that is known to fail, so it is changed on purpose.
-   *
-   * The BFF gives `[n]` the n-th chunk in `structuredContent.chunks`. That is
-   * right only when the answer numbers the chunks in that order. Synthesis
-   * numbers its own context and then compacts what it cited to 1..k
-   * (skills/builtin/synthesis.clj, `renumber-citations`), while the result
-   * lists the chunks in workspace order (mcp/tools.clj, `->structured-content`).
-   * An answer that cited its context 2 and 5 says [1] and [2], and the reader
-   * is shown chunks 1 and 2. Nothing in the result says which chunk an `[n]`
-   * is. When headless-rag sends that (digdir/digdir-headless-rag#36), the
-   * mapping goes by `chunk_id`, and this test is the one to change.
+   * genki-test, 12 November 2026: the MCP result for a question about Nkom 2020–2023, trimmed to
+   * the fields this server reads. The service cites by document (`citeBy: document`, genki's
+   * default), so `[2]` is the second document, the 2022 report, and the result has no `markers`.
+   * Read by position, `[2]` was chunk 2, an excerpt from the 2020 report (issue 235).
    */
-  test('[n] is the n-th chunk in the result, even when the answer cited others', async () => {
-    const chunks = ['c1', 'c2', 'c3', 'c4', 'c5'].map((id) => ({
-      chunk_id: id,
-      doc_num: '1',
-      title: 'Rapport',
-    }));
-    const body = `data: ${JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      result: {
-        content: [{ type: 'text', text: 'Det første [1]. Det andre [2].' }],
-        structuredContent: { chunks },
-      },
-    })}\n\n`;
-    const sources = (await eventsFrom(body)).find((e) => e.type === 'sources')?.sources as
-      Array<{ marker: number; chunkId?: string }> | undefined;
+  const byDocument = JSON.parse(
+    readFileSync(
+      new URL('../fixtures/genki-mcp-cite-by-document.json', import.meta.url),
+      'utf8',
+    ),
+  ) as {
+    result: {
+      content: { text: string }[];
+      structuredContent: { chunks: { chunk_id: string; doc_num: string }[] } & {
+        markers?: unknown;
+      };
+    };
+  };
+  const frameOf = (message: unknown) => `data: ${JSON.stringify(message)}\n\n`;
+
+  test('a service that cites by document: the sources name no excerpt for an [n]', async () => {
+    const sources = (await eventsFrom(frameOf(byDocument))).find((e) => e.type === 'sources')
+      ?.sources as Array<Record<string, unknown>> | undefined;
+
+    assert.equal(sources?.length, 20);
+    for (const source of sources ?? []) {
+      assert.equal('marker' in source, false);
+      assert.equal('markers' in source, false);
+    }
+    // In genki's order, so the client can number the documents as genki did: by first appearance.
     assert.deepEqual(
-      sources?.map((s) => [s.marker, s.chunkId]),
+      [...new Set(sources?.map((s) => s.docNum))],
+      ['8652', '33189', '88648', '370449'],
+    );
+  });
+
+  /*
+   * The same result as genki sends it when the service cites by excerpt (digdir/genki#273,
+   * ADR 0052): `structuredContent.markers`, one `{ marker, chunk_id, document }` per marker, in the
+   * shape of genki's own contract test. Each source carries the markers that name its chunk.
+   */
+  test('a service that cites by excerpt: each source carries the markers that name its chunk', async () => {
+    const byExcerpt = structuredClone(byDocument);
+    byExcerpt.result.content = [
+      { text: 'Bevilgning 2020 [1]. Ansatte 2022 [2]. FM 2023 [3].' },
+    ];
+    byExcerpt.result.structuredContent.markers = [
+      { marker: '1', chunk_id: 'a4e3ac6c71e9', document: '8652' },
+      { marker: '2', chunk_id: 'd280bbcbd4cc', document: '33189' },
+      { marker: '3', chunk_id: '1d1e3aac6044', document: '88648' },
+      // Not one of the chunks in the result, so it names nothing here.
+      { marker: '4', chunk_id: 'not-in-the-result', document: '1' },
+    ];
+
+    const sources = (await eventsFrom(frameOf(byExcerpt))).find((e) => e.type === 'sources')
+      ?.sources as Array<{ chunkId?: string; markers?: string[] }> | undefined;
+
+    assert.deepEqual(
+      sources?.filter((s) => s.markers).map((s) => [s.chunkId, s.markers]),
       [
-        [1, 'c1'],
-        [2, 'c2'],
-        [3, 'c3'],
-        [4, 'c4'],
-        [5, 'c5'],
+        ['a4e3ac6c71e9', ['1']],
+        ['d280bbcbd4cc', ['2']],
+        ['1d1e3aac6044', ['3']],
+      ],
+    );
+  });
+
+  test('a marker that is not a marker is skipped, and the rest still name their chunks', async () => {
+    const byExcerpt = structuredClone(byDocument);
+    byExcerpt.result.structuredContent.markers = [
+      'nonsense',
+      { marker: 1, chunk_id: 'a4e3ac6c71e9' },
+      { marker: '2' },
+      { marker: '3', chunk_id: 'ec6a4f5547cb' },
+      { marker: '3', chunk_id: 'ec6a4f5547cb' },
+    ];
+
+    const sources = (await eventsFrom(frameOf(byExcerpt))).find((e) => e.type === 'sources')
+      ?.sources as Array<{ chunkId?: string; markers?: string[] }> | undefined;
+
+    assert.deepEqual(
+      sources?.filter((s) => s.markers).map((s) => [s.chunkId, s.markers]),
+      [
+        ['ec6a4f5547cb', ['3']],
+        ['a4e3ac6c71e9', ['1']],
       ],
     );
   });

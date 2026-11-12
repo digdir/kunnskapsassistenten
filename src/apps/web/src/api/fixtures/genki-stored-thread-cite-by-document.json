@@ -1,0 +1,125 @@
+{
+  "conversation": {
+    "id": "fixture-conversation",
+    "topic": "Hvordan har Nkom brukt ressursene sine i årene 2020–2023?",
+    "created": 1794483804860,
+    "tags": []
+  },
+  "messages": [
+    {
+      "id": "fixture-conversation.1",
+      "role": "user",
+      "text": "Hvordan har Nkom brukt ressursene sine i årene 2020–2023?",
+      "created": 1794483804897,
+      "chunks": []
+    },
+    {
+      "id": "fixture-conversation.2",
+      "role": "assistant",
+      "text": "Kildene gir ikke et samlet bilde av ressursbruken for alle årene 2020–2023. De har særlig tall for økonomi i 2020, personellopplysninger for 2022 og eksempler på oppgaver i 2023. Det er ingen opplysninger om 2021 i utdragene.  \n\n- **2020:** Nkom hadde samlede bevilgninger på utgiftssiden på 712,4 millioner kroner, inkludert overføringer fra 2019. [1]  \n  - Til drift var bevilgningen 232,7 millioner kroner. Nkom brukte 227,3 millioner kroner. Av dette var 153,1 millioner kroner lønn og 79,6 millioner kroner øvrige driftsutgifter. Mindreforbruket var 5,4 millioner kroner. [1]  \n  - Til større utstyrsanskaffelser og vedlikehold, post 45, hadde Nkom 34,9 millioner kroner tilgjengelig. Nkom regnskapsførte 29 millioner kroner, hovedsakelig til utstyr for frekvensforvaltning og IT-relaterte anskaffelser. [1]  \n  - Til tilskudd til telesikkerhet og beredskap, post 70, var samlet bevilgning 444,8 millioner kroner, inkludert overførte midler. Nkom utbetalte 239 millioner kroner til tilskuddsavtaler. [1]  \n  - Nkom finansierte i hovedsak drifts- og investeringsutgiftene gjennom sektoravgifter og gebyrer. De inntektsførte sektoravgifter og gebyrer på 240,6 millioner kroner. [1]  \n\n- **2021:** Utdragene inneholder ikke informasjon om hvordan Nkom brukte ressursene dette året.  \n\n- **2022:** Utdraget beskriver først og fremst personalressurser, ikke økonomiske utgifter. Nkom hadde 169 ansatte ved utgangen av året, hvorav 64 prosent menn og 36 prosent kvinner. [2] Nkom hadde 17 ledere med personalansvar, og sju av dem var kvinner. [2] Virksomheten hadde også en lærling i IKT-fag og tok inn en person på arbeidspraksis gjennom NAV. [2]  \n\n- **2023:** Utdraget beskriver ressursbruk knyttet til forvaltningsoppgaver, men oppgir ikke beløp eller antall ansatte. Nkom avsluttet arbeidet med å utrede nye tillatelser til kringkasting i FM-båndet, etter at departementene hadde sagt at lokale FM-sendinger skulle fortsette. [3] Nkom brukte også ressurser på å forberede overtakelsen av ansvaret for postnummersystemet fra Posten Bring AS fra 1. januar 2024. Dette omfattet blant annet ansvarsfordeling med Posten Bring og Statens Kartverk, vedtak og interne rutiner. [3]",
+      "created": 1794483849014,
+      "chunks": [
+        {
+          "chunkId": "ec6a4f5547cb",
+          "docNum": "8652",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2020"
+        },
+        {
+          "chunkId": "a4e3ac6c71e9",
+          "docNum": "8652",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2020"
+        },
+        {
+          "chunkId": "f45bdb4b927c",
+          "docNum": "8652",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2020"
+        },
+        {
+          "chunkId": "c9aa5572afbb",
+          "docNum": "8652",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2020"
+        },
+        {
+          "chunkId": "a15476df2d7c",
+          "docNum": "33189",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2022"
+        },
+        {
+          "chunkId": "5101ff5f2619",
+          "docNum": "33189",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2022"
+        },
+        {
+          "chunkId": "d280bbcbd4cc",
+          "docNum": "33189",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2022"
+        },
+        {
+          "chunkId": "2594e17c707a",
+          "docNum": "33189",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2022"
+        },
+        {
+          "chunkId": "cd3324690fae",
+          "docNum": "88648",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2023"
+        },
+        {
+          "chunkId": "1d1e3aac6044",
+          "docNum": "88648",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2023"
+        },
+        {
+          "chunkId": "6c9d558fc6e4",
+          "docNum": "88648",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2023"
+        },
+        {
+          "chunkId": "73c7977a13a8",
+          "docNum": "88648",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2023"
+        },
+        {
+          "chunkId": "fd4055e71624",
+          "docNum": "88648",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2023"
+        },
+        {
+          "chunkId": "cf3175d7ad11",
+          "docNum": "88648",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2023"
+        },
+        {
+          "chunkId": "0eed3ee14bb8",
+          "docNum": "33189",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2022"
+        },
+        {
+          "chunkId": "87597319d88a",
+          "docNum": "88648",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2023"
+        },
+        {
+          "chunkId": "4df3996a9898",
+          "docNum": "370449",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2024"
+        },
+        {
+          "chunkId": "720d107df9b4",
+          "docNum": "33189",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2022"
+        },
+        {
+          "chunkId": "08f088e8f1fd",
+          "docNum": "33189",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2022"
+        },
+        {
+          "chunkId": "5a377f358e6a",
+          "docNum": "88648",
+          "docTitle": "Årsrapport Nasjonal kommunikasjonsmyndighet 2023"
+        }
+      ]
+    }
+  ]
+}

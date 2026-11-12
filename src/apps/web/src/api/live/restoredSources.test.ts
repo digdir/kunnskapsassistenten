@@ -170,8 +170,8 @@ describe('teksten i utdragene i et nytt svar', () => {
     expect(events.at(-1)?.type).toBe('done');
     const excerpts = sourcesOf(events).flatMap((document) => document.excerpts);
     expect(excerpts.map((excerpt) => excerpt.textUnavailable)).toEqual([true, true, true]);
-    // The numbers the answer's markers point at are untouched.
-    expect(excerpts.map((excerpt) => excerpt.citationNumber)).toEqual([1, 2, 3]);
+    // The numbers the answer's markers point at, the documents', are untouched.
+    expect(sourcesOf(events).map((document) => document.citationNumber)).toEqual([1, 2]);
   });
 
   it('sender svarteksten før kildene, så leseren ikke venter på oppslaget', async () => {
@@ -206,10 +206,10 @@ describe('kildene etter ny innlasting', () => {
       id: 'c1',
       text: 'Nkom nådde målene.',
       heading: 'II',
-      citationNumber: 1,
     });
+    expect(answer?.sources?.map((document) => document.citationNumber)).toEqual([1, 2]);
     expect(answer?.sources?.[0]?.excerpts[1]?.textUnavailable).toBe(true);
-    expect(answer?.citations?.map((citation) => citation.number)).toEqual([1, 2, 3]);
+    expect(answer?.citations?.map((citation) => citation.number)).toEqual([1, 2]);
     expect(excerptCalls()).toEqual(['/api/excerpts?dataset=kudos-full&ids=c1%2Cc2%2Cc3']);
   });
 

@@ -275,7 +275,7 @@ describe('sourcesFromChunks', () => {
     expect(sourcesFromChunks(null)).toBeUndefined();
   });
 
-  it('grupperer utdrag per dokument og beholder nummereringen', () => {
+  it('groups excerpts per document in order of first appearance, with no footnote numbers', () => {
     const documents = sourcesFromChunks([
       { chunkId: 'c1', docNum: '7', docTitle: 'Norge', contentMarkdown: 'Første utdrag' },
       { chunkId: 'c2', docNum: '7', docTitle: 'Norge', contentMarkdown: 'Andre utdrag' },
@@ -283,8 +283,12 @@ describe('sourcesFromChunks', () => {
     ]);
 
     expect(documents).toHaveLength(2);
-    expect(documents?.[0]?.excerpts.map((excerpt) => excerpt.citationNumber)).toEqual([1, 2]);
-    expect(documents?.[1]?.excerpts[0]?.citationNumber).toBe(3);
+    expect(documents?.map((document) => document.id)).toEqual(['7', '9']);
+    expect(documents?.flatMap((d) => d.excerpts).map((e) => e.citationNumber)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+    ]);
     // Teksten finnes her og ikke i strømmen: lagrede utdrag bærer
     // contentMarkdown, mens structuredContent.chunks bare har id og tittel.
     expect(documents?.[0]?.excerpts[0]?.text).toBe('Første utdrag');

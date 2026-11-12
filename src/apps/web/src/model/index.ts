@@ -21,6 +21,9 @@ export {
   citationAccessibleName,
   citationTargets,
   citationUses,
+  documentCitationAccessibleName,
+  documentDomId,
+  documentHeadingDomId,
   excerptDomId,
   relevanceLabels,
 } from './source';
