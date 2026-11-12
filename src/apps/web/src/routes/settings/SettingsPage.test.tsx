@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FLAGS_STORAGE_KEY, forgetFlags, isFlagOn } from '../../flags';
 import { getFooterMode, resetFooterMode } from '../../layout/footerMode';
 import { getDisplayLevel, resetDisplayLevel } from '../../views/chat/displayLevel';
@@ -35,6 +35,11 @@ beforeEach(() => {
   resetDisplayLevel();
   resetFooterMode();
   forgetFlags();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe('SettingsPage', () => {
@@ -79,6 +84,27 @@ describe('SettingsPage', () => {
     expect(isFlagOn('year-ranges')).toBe(true);
     // The switch shows what it did, not only the flag.
     expect(toggle.checked).toBe(true);
+  });
+
+  it('shows the switch «Fotnoter som viser til utdraget» only where the server offers it', async () => {
+    vi.stubEnv('VITE_API_MODE', 'bff');
+    const me = vi.fn<typeof fetch>(async () => Response.json({ authEnabled: true }));
+    vi.stubGlobal('fetch', me);
+    const excerptSwitch = () =>
+      screen.queryByRole('switch', { name: /Fotnoter som viser til utdraget/u });
+
+    open();
+    await waitFor(() => expect(me).toHaveBeenCalledWith('/api/v2/me', expect.anything()));
+    expect(screen.getByRole('switch', { name: /Årsfilter med perioder/u })).toBeTruthy();
+    expect(excerptSwitch()).toBeNull();
+
+    cleanup();
+    me.mockImplementation(async () => Response.json({ authEnabled: true, excerptTrial: true }));
+    open();
+    await waitFor(() => expect(excerptSwitch()).toBeTruthy());
+    fireEvent.click(excerptSwitch() as HTMLElement);
+
+    expect(isFlagOn('excerpt-citations')).toBe(true);
   });
 
   it('links to the issue for the experiment, in a new tab and said in words', () => {

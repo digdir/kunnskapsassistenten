@@ -294,6 +294,8 @@ export interface MeResponse {
   actingFor?: string | null;
   /** For a tester only: the genki environment the BFF asks with (`KA_TEST_ENVIRONMENT`). */
   environment?: string;
+  /** `true` when the server offers the excerpt trial (`KA_EXCERPT_ENVIRONMENT`); left out otherwise. */
+  excerptTrial?: boolean;
 }
 
 export interface Organisation {

@@ -4,6 +4,7 @@ import { BFF_API } from './bff/api';
 import { resetSignIn, toLogin } from './bff/signIn';
 import { apiMode } from './apiMode';
 import { keepDraft } from './session';
+import { trialHeaders } from './trials';
 
 /**
  * Rename and delete a thread; beside the ChatClient, as they share nothing with
@@ -91,7 +92,11 @@ function conversationPath(thread: Thread): string {
 }
 
 async function send(path: string, init: RequestInit): Promise<void> {
-  const response = await fetch(path, { credentials: 'same-origin', ...init });
+  const response = await fetch(path, {
+    credentials: 'same-origin',
+    ...init,
+    headers: { ...trialHeaders(), ...init.headers },
+  });
   // What is in the compose field outlives the sign-in (session.ts).
   if (response.status === 401) toLogin(keepDraft());
   if (!response.ok) throw new Error(`${init.method} ${path} ${response.status}`);

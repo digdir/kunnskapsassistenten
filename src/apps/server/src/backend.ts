@@ -9,6 +9,8 @@ export interface Caller {
   userId: string;
   token?: string;
   actingFor?: string;
+  /** The person turned the excerpt trial on, and this server offers it (decisions/0016). */
+  excerptTrial?: boolean;
 }
 
 /** The genki environment a tester gets, or `undefined` for everyone else, who get genki's `prod`. */
@@ -19,8 +21,19 @@ export function environmentFor(
   return testers.ids.has(userId) ? testers.environment : undefined;
 }
 
+/** The client's header while the person has the excerpt trial on; only `1` turns it on. */
+export const EXCERPT_TRIAL_HEADER = 'KA-Trial-Excerpt-Citations';
+
+/** The caller, marked for the excerpt trial when the request asks and the server offers it. */
+export function withExcerptTrial(caller: Caller, header: string | undefined): Caller {
+  return header === '1' && config.excerptEnvironment
+    ? { ...caller, excerptTrial: true }
+    : caller;
+}
+
 export function backendHeaders(caller: Caller): Record<string, string> {
-  const environment = environmentFor(caller.userId);
+  const trial = caller.excerptTrial ? config.excerptEnvironment : undefined;
+  const environment = environmentFor(caller.userId) ?? trial;
   const chosen: Record<string, string> = environment
     ? { 'GenAI-Environment': environment }
     : {};
