@@ -77,12 +77,16 @@ const citedBy = (raw: unknown): { markers?: string[] } =>
 const sourceOf = (raw: unknown): Source[] => {
   if (!isRecord(raw)) return [];
   const excerpts = Array.isArray(raw.excerpts)
-    ? raw.excerpts.filter(isRecord).map((e) => ({
-        chunkId: str(e.chunk_id) ?? '',
-        text: str(e.text) ?? '',
-        ...(typeof e.position === 'number' ? { position: e.position } : {}),
-        ...citedBy(e.markers),
-      }))
+    ? raw.excerpts.filter(isRecord).map((e) => {
+        const heading = str(e.heading);
+        return {
+          chunkId: str(e.chunk_id) ?? '',
+          text: str(e.text) ?? '',
+          ...(typeof e.position === 'number' ? { position: e.position } : {}),
+          ...(heading === undefined ? {} : { heading }),
+          ...citedBy(e.markers),
+        };
+      })
     : [];
   const legacy = isRecord(raw.source) ? raw.source : {};
   const url = str(raw.url);

@@ -159,6 +159,8 @@ interface WireSource {
     chunkId?: string;
     text?: string;
     position?: number;
+    /** Its own section path, which the Sources block titles the excerpt by. */
+    heading?: string;
     /** The markers that cite this excerpt, from a service that cites excerpts. */
     markers?: string[];
   }[];
@@ -208,10 +210,12 @@ export const sourceFromWire = (raw: WireSource, corpus?: CorpusProfile, at = 0):
     ...(raw.publishedAt ? { publishedAt: raw.publishedAt } : {}),
     excerpts: (raw.excerpts ?? []).map((e, i) => {
       const text = e.text ?? '';
+      const heading: unknown = e.heading;
       return {
         chunkId: e.chunkId || e.chunk_id || minted(i),
         text,
         ...(e.position !== undefined ? { position: e.position } : {}),
+        ...(typeof heading === 'string' ? { heading } : {}),
         ...(text ? {} : { textUnavailable: true }),
       };
     }),

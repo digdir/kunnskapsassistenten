@@ -37,6 +37,8 @@ export interface Excerpt {
   chunkId: string;
   text: string;
   position?: number;
+  /** Its own section path, levels joined by ` › `, when the index gives one. */
+  heading?: string;
   markers?: string[];
 }
 
