@@ -1,7 +1,7 @@
 # 0013 — The next client beside the current one, behind a toggle
 
 **Status:** accepted · **Date:** 2026-11-12 · **Amended:** 2026-11-12 (feedback, profile menu,
-apps/web's pages)
+apps/web's pages), 2026-11-13 (the way back from apps/web's pages)
 
 ## Context
 
@@ -33,9 +33,13 @@ session, sign-in and genki service serve both. A cookie chooses the page:
   chosen:** `/endringslogg` and `/om-prosjektet` always get apps/web's page, and the next client's
   profile menu links to them (`profile.menu.changelog`, and a host entry for «Om prosjektet», KA's
   word for the page, where genki's own entry says «Om tjenesten»). The content is written once, in
-  `apps/web`. A person who chose the next client and opens one of them is in apps/web on that page;
-  «Prøv ny versjon» there goes to `/` without choosing again, and the next full load of any other
-  address is the next client.
+  `apps/web`. A person who chose the next client and opens one of them is in apps/web on that page.
+  The menu opens it with the next client's address in `?fra=`, and the foot of the panel offers
+  «Tilbake til ny versjon» there instead of «Prøv ny versjon». It goes back to that address
+  without choosing again, only when it is the next client's front page (`/`, with its `?t=`), and
+  to `/` otherwise. The next full load of any other address is the next client. A person who has
+  not chosen it and picks «Prøv ny versjon» on one of apps/web's info pages («Onboarding» and
+  these two) goes to `/` once chosen, not to a reload, which would show apps/web again here.
 - A thread link opens in the chosen client: `/threads/:id` (and the older `/chat/:id`) goes to
   `/?t=:id` for the next client, and `/?t=:id` to `/threads/:id` for `apps/web`.
 - The two builds keep their files apart, `/assets/*` and `/next-assets/*`, so only the page

@@ -1,6 +1,8 @@
 import { Link } from '@digdir/designsystemet-react';
-import { SparklesIcon } from '@navikt/aksel-icons';
+import { ArrowUndoIcon, SparklesIcon } from '@navikt/aksel-icons';
 import { useEffect, useState } from 'react';
+import { infoPages } from '../routes/info/infoPages';
+import { backToNext, cameFrom } from './backToNext';
 import { chooseNext } from './chooseNext';
 import './tryNextVersion.css';
 
@@ -12,6 +14,10 @@ import './tryNextVersion.css';
  */
 
 export const TRY_NEXT_LABEL = 'Prøv ny versjon';
+export const BACK_TO_NEXT_LABEL = 'Tilbake til ny versjon';
+
+/** On an info page the way in is the next client's front page; a reload may keep this page. */
+const onInfoPage = () => infoPages.some(({ path }) => location.pathname === `/${path}`);
 
 /** `undefined` when not offered; else whether this browser already chose the next client. */
 const offered = async (fetcher: typeof fetch): Promise<{ chosen: boolean } | undefined> => {
@@ -28,8 +34,10 @@ const offered = async (fetcher: typeof fetch): Promise<{ chosen: boolean } | und
 interface Props {
   fetcher?: typeof fetch;
   reload?: () => void;
-  /** A full navigation, to the next client's front page. */
+  /** A full navigation, into the next client. */
   go?: (href: string) => void;
+  /** The next client's address the person came from, `?fra=` when the page loaded. */
+  from?: string | null;
 }
 
 /** A list item for the foot of the navigation panel, or nothing. */
@@ -37,6 +45,7 @@ export function TryNextVersion({
   fetcher = fetch,
   reload,
   go = (href) => location.assign(href),
+  from = cameFrom,
 }: Props) {
   const [shown, setShown] = useState<{ chosen: boolean }>();
   const [busy, setBusy] = useState(false);
@@ -50,6 +59,9 @@ export function TryNextVersion({
   }, [fetcher]);
 
   if (!shown) return null;
+  // Chosen already: this is an info page the next client links to (decisions/0013).
+  const back = shown.chosen;
+  const Icon = back ? ArrowUndoIcon : SparklesIcon;
   return (
     <li>
       <Link asChild data-size="sm">
@@ -58,14 +70,13 @@ export function TryNextVersion({
           className="try-next-version"
           aria-busy={busy || undefined}
           onClick={() => {
-            // Chosen already: this is an info page the next client links to (decisions/0013).
-            if (shown.chosen) return go('/');
+            if (back) return go(backToNext(from));
             setBusy(true);
-            chooseNext(fetcher, reload).catch(() => setBusy(false));
+            chooseNext(fetcher, onInfoPage() ? () => go('/') : reload).catch(() => setBusy(false));
           }}
         >
-          <SparklesIcon aria-hidden />
-          {TRY_NEXT_LABEL}
+          <Icon aria-hidden />
+          {back ? BACK_TO_NEXT_LABEL : TRY_NEXT_LABEL}
         </button>
       </Link>
     </li>

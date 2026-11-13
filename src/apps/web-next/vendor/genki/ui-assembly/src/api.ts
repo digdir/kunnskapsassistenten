@@ -224,20 +224,19 @@ export const sourceFromWire = (raw: WireSource, corpus?: CorpusProfile, at = 0):
   };
 };
 
-// A stored answer without `sources`: its chunks, in ranking order, are what `[n]` counts, one
-// excerpt each (kunnskapsassistenten's sourcesFromChunks).
-const fromChunks = (chunks: readonly ApiChunk[], corpus?: CorpusProfile) => {
+// A stored answer without `sources` or markers cites by document: `[n]` is its n-th document.
+const fromChunks = (chunks: readonly ApiChunk[], corpus?: CorpusProfile): SourceDocument[] => {
   const documents = new Map<
     string,
     SourceDocument & { excerpts: SourceDocument['excerpts'][number][] }
   >();
-  const markers: AnswerMarker[] = [];
   chunks.forEach((chunk, i) => {
     const documentId = chunk.docNum ?? chunk.chunkId;
     let document = documents.get(documentId);
     if (!document) {
       const url = chunk.docNum ? corpus?.documentUrl?.(chunk.docNum) : undefined;
       document = {
+        index: documents.size + 1,
         title: chunk.docTitle?.trim() ?? '',
         documentId,
         ...(url ? { url } : {}),
@@ -246,9 +245,8 @@ const fromChunks = (chunks: readonly ApiChunk[], corpus?: CorpusProfile) => {
       documents.set(documentId, document);
     }
     document.excerpts.push({ chunkId: chunk.chunkId, text: chunk.contentMarkdown, position: i });
-    markers.push({ marker: String(i + 1), chunkId: chunk.chunkId, documentId });
   });
-  return { sources: [...documents.values()], markers };
+  return [...documents.values()];
 };
 
 // The turn's own list; a marker that does not name its excerpt and document is left out.
@@ -302,8 +300,8 @@ const answerFromMessage = (message: ApiMessage, corpus?: CorpusProfile): AnswerD
     return { ...stored, sources, ...(markers ? { markers } : {}) };
   }
   if (message.chunks.length > 0) {
-    const { sources, markers } = fromChunks(message.chunks, corpus);
-    return { ...stored, sources, markers: keptMarkers ?? markers };
+    const sources = fromChunks(message.chunks, corpus);
+    return { ...stored, sources, ...(keptMarkers ? { markers: keptMarkers } : {}) };
   }
   return stored;
 };

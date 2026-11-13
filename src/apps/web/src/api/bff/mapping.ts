@@ -66,6 +66,9 @@ export function sourceDocumentsFrom(sources: BffSource[] | undefined): SourceDoc
       id: source.chunkId ?? `${id}-${index + 1}`,
       text: source.excerpt ?? '',
       ...(source.excerpt ? {} : { textUnavailable: true as const }),
+      ...(typeof source.heading === 'string' && source.heading.trim()
+        ? { heading: source.heading }
+        : {}),
       relevance: relevanceFromRank(index, list.length),
       ...(url ? { kudosUrl: url } : {}),
     };

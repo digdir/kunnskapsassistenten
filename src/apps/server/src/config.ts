@@ -1,14 +1,15 @@
 import { parseDataset, parseFilterFields } from './datasetConfig.ts';
+import { localOrigin } from './localOrigin.ts';
 
 function required(name: string): string {
   const v = process.env[name];
   if (!v) {
     console.error(
       [
-        `Mangler ${name}.`,
+        `${name} is missing.`,
         '',
         '  cp apps/server/.env.example apps/server/.env',
-        '  # fyll inn DIGDIR_API_KEY og DIGDIR_API_BASE',
+        '  # fill in DIGDIR_API_KEY and DIGDIR_API_BASE',
         '  npm run doctor',
       ].join('\n'),
     );
@@ -23,7 +24,7 @@ function authMode(entraReady: boolean): AuthMode {
   const asked = (process.env.AUTH_MODE ?? '').trim().toLowerCase();
   if (asked === 'entra' || asked === 'ansattporten' || asked === 'off') return asked;
   if (asked) {
-    console.error(`AUTH_MODE må være entra, ansattporten eller off. Fikk "${asked}".`);
+    console.error(`AUTH_MODE must be entra, ansattporten or off. Got "${asked}".`);
     process.exit(1);
   }
   return entraReady ? 'entra' : 'off';
@@ -45,7 +46,7 @@ function ansattportenConfig(mode: AuthMode) {
     !(ap.issuer && ap.clientId && ap.clientSecret && ap.altinnResource)
   ) {
     console.error(
-      'AUTH_MODE=ansattporten krever ANSATTPORTEN_ISSUER, ANSATTPORTEN_CLIENT_ID, ANSATTPORTEN_CLIENT_SECRET og ANSATTPORTEN_ALTINN_RESOURCE.',
+      'AUTH_MODE=ansattporten needs ANSATTPORTEN_ISSUER, ANSATTPORTEN_CLIENT_ID, ANSATTPORTEN_CLIENT_SECRET and ANSATTPORTEN_ALTINN_RESOURCE.',
     );
     process.exit(1);
   }
@@ -69,18 +70,18 @@ function authConfig() {
   const enabled = mode !== 'off';
   if (mode === 'entra' && !entraReady) {
     console.error(
-      'AUTH_MODE=entra krever AZURE_TENANT_ID, AZURE_CLIENT_ID og AZURE_CLIENT_SECRET.',
+      'AUTH_MODE=entra needs AZURE_TENANT_ID, AZURE_CLIENT_ID and AZURE_CLIENT_SECRET.',
     );
     process.exit(1);
   }
-  if (!enabled && !origin.startsWith('http://localhost')) {
+  if (!enabled && !localOrigin(origin)) {
     console.error(
-      `Innlogging er av, men APP_ORIGIN er ${origin}. AUTH_MODE=off er bare for localhost.`,
+      `Sign-in is off, but APP_ORIGIN is ${origin}. AUTH_MODE=off is only for localhost, 127.0.0.1 or [::1].`,
     );
     process.exit(1);
   }
   if (enabled && sessionSecret.length < 32) {
-    console.error('SESSION_SECRET må være minst 32 tegn når innlogging er slått på.');
+    console.error('SESSION_SECRET must be at least 32 characters when sign-in is on.');
     process.exit(1);
   }
   return {
