@@ -149,6 +149,20 @@ const RULES: readonly Rule[] = [
       return { query: kept };
     },
   },
+  // «Dokumentene som blir med»: the documents a filter keeps, a page of at most 100.
+  {
+    method: 'GET',
+    path: /^\/api\/documents$/,
+    shape: ({ query }, settings) => {
+      const kept = only(query, ['dataset-config-key', 'filter']);
+      const limit = integer(query.get('limit'), 1, 100);
+      const offset = integer(query.get('offset'), 0, 9999);
+      if (limit !== undefined) kept.set('limit', String(limit));
+      if (offset !== undefined) kept.set('offset', String(offset));
+      kept.set('tenant', settings.tenant);
+      return { query: kept };
+    },
+  },
   {
     method: 'POST',
     path: /^\/api\/conversations$/,

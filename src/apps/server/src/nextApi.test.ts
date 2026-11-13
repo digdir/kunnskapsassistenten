@@ -362,6 +362,7 @@ describe('the proxy', () => {
       '/api/datasets',
       '/api/datasets/kudos',
       '/api/facets?tenant=other&dataset-config-key=kudos&fields=type&filter=%7B%7D&extra=1',
+      '/api/documents?tenant=other&dataset-config-key=kudos&filter=%7B%7D&limit=50&offset=x&fields=all',
     ];
     for (const path of reads) {
       const res = await proxied(path, {
@@ -385,6 +386,7 @@ describe('the proxy', () => {
         '/api/datasets',
         '/api/datasets/kudos',
         '/api/facets?dataset-config-key=kudos&fields=type&filter=%7B%7D&tenant=digdir',
+        '/api/documents?dataset-config-key=kudos&filter=%7B%7D&limit=50&tenant=digdir',
       ],
     );
     for (const s of seen) {

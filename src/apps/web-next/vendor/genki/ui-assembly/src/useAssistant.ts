@@ -37,6 +37,7 @@ import {
   type CorpusOption,
   type DisplayLevel,
   type DocumentItem,
+  type DocumentInScope,
   type DocumentQuestion,
   type DocumentViewReturn,
   type FilterField,
@@ -147,6 +148,9 @@ interface Asking {
 // kunnskapsassistenten's threadHeading.ts: the first sentence, cut on a word at 80.
 // A stop then a space ends it. One character each and a scan for the stops at its end, never a
 // repeated stop in a pattern, so a question of nothing but «!» is read in linear time.
+/** «Dokumentene som blir med» lists the documents when the filter keeps at most this many. */
+export const IN_SCOPE_LISTED = 50;
+
 const stops = new Set(['.', '?', '!', '…']);
 export const shortTitle = (text: string) => {
   const flat = text.trim().replace(/\s+/g, ' ');
@@ -637,6 +641,41 @@ export const useAssistant = ({
     api.loadFacets({}, corpusKey, fields).then(setBaseFacets, () => {});
   }, [api, filterOn, baseFacets, chosenSelection, corpusKey, fields]);
 
+  // «Dokumentene som blir med»: the documents themselves, once the filter keeps few enough to read
+  // through. A host or a genki without the list keeps the count alone.
+  const narrowed = filterOn ? narrowing(selection, facets) : undefined;
+  const readsFrom = filterOn
+    ? documentCount(facets, narrowed ?? {}, corpusProfile?.typeField)
+    : undefined;
+  const narrowedKey = JSON.stringify(narrowed ?? null);
+  const [inScope, setInScope] = useState<{ key: string; documents: DocumentInScope[] }>();
+  useEffect(() => {
+    if (
+      !api.loadDocuments ||
+      !narrowed ||
+      !fields ||
+      !corpusKey ||
+      readsFrom === undefined ||
+      readsFrom === 0 ||
+      readsFrom > IN_SCOPE_LISTED
+    )
+      return;
+    let gone = false;
+    const key = `${corpusKey}:${narrowedKey}`;
+    api.loadDocuments(narrowed, corpusKey, fields, IN_SCOPE_LISTED).then(
+      (page) => {
+        if (!gone) setInScope({ key, documents: page.documents });
+      },
+      (error: Error) => {
+        if (!gone) console.warn('[assistant] documents in scope', error.message);
+      },
+    );
+    return () => {
+      gone = true;
+    };
+    // `narrowed` is new on every render; its key says when it changed.
+  }, [api, corpusKey, fields, narrowedKey, readsFrom]);
+
   const chooseCorpus = (key: string) => {
     // A new collection starts a new thread with an empty filter (kunnskapsassistenten's useCorpus).
     setChosenCorpus(key);
@@ -1097,9 +1136,14 @@ export const useAssistant = ({
     retryFacets: () => setFacetsKey((n) => n + 1),
     // How many documents the next question reads from, and the collection in all, exactly from the
     // facets; undefined while a count is missing.
-    readFrom: filterOn
-      ? documentCount(facets, narrowing(selection, facets), corpusProfile?.typeField)
-      : undefined,
+    readFrom: readsFrom,
+    // Only the list for the filter and collection on screen: an older one is not shown meanwhile.
+    inScope:
+      readsFrom !== undefined &&
+      readsFrom <= IN_SCOPE_LISTED &&
+      inScope?.key === `${corpusKey}:${narrowedKey}`
+        ? inScope.documents
+        : undefined,
     collectionSize: filterOn ? documentCount(baseFacets, {}, corpusProfile?.typeField) : undefined,
     documents,
     // threads

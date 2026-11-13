@@ -25,6 +25,8 @@ export interface CorpusProfile {
   typePlurals?: Readonly<Record<string, string>> | undefined;
   /** The field the document type is in, for the line above. */
   typeField?: string | undefined;
+  /** The field the publishing organisation is in, for the documents in «Dokumentene som blir med». */
+  organisationField?: string | undefined;
   /** Where a document lives, from its number, when the source carries no link. */
   documentUrl?: ((documentId: string) => string | undefined) | undefined;
   /**
