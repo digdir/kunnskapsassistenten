@@ -15,7 +15,7 @@ V2 is a library of assistant components (chat, threads, approach, sources, filte
 | `components/<id>/`          | One folder per component: the component, its CSS, its tests and a short README                          |
 | `components/data/`          | The only code that talks to genki: thin hooks over `@genai/client`                                      |
 | `playground/`               | Every component alone and together, with brand settings (#169)                                          |
-| `docs/components/<id>.html` | One page per component (#171)                                                                           |
+| `docs/components/<id>.html` | The first drafts of the component pages (#171), each pointing to its live page in genki                 |
 | `docs/kits/<id>.html`       | One page per kit, generated from `kits/`                                                                |
 
 ## The contract with genki
@@ -50,7 +50,7 @@ V2 talks to genki **only** through genki's frontend contract (`docs/frontend-con
 - **Accessibility is a requirement:** WCAG 2.x AA, every action by keyboard, one polite live region for status, visible focus, reduced motion respected, and 0 axe violations in light and dark.
 - **Phones first.** No sideways scrolling at 320 px. Side panels become drawers on narrow screens (#168).
 - **Words.** UI text in Norwegian bokmål with æøå. Where genki sends text (step labels, errors, notices), show genki's.
-- **Docs in the same PR.** A PR that changes a component updates its page in `docs/components/`: phase, variants, what we learned, and the change log on the landing page.
+- **Docs in the same PR.** A PR that changes a component updates its page in genki's `docs/components/`: phase, variants, what we learned, and the change log on the landing page.
 
 ## Working together
 

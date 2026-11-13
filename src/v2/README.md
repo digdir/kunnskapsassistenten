@@ -19,7 +19,7 @@ contract with genki, are in [CLAUDE.md](CLAUDE.md).
 | `kits/`            | One JSON file per kit: layout, core, optional components with defaults, and what each needs from the service. **A draft**: a first proposal, to check with the team and the service owners |
 | `components/`      | The component library, an npm workspace package. Empty for now                                                                                                                             |
 | `playground/`      | Every component alone and together (#169), a Vite app. Empty for now                                                                                                                       |
-| `docs/components/` | One page per component (#171), with `index.html` as the landing page. They open from disk                                                                                                  |
+| `docs/components/` | The first drafts of the component pages (#171), with `index.html` as the landing page. Each points to its live page in genki's `docs/components/`                                          |
 
 ## Commands
 
