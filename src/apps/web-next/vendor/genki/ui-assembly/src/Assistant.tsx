@@ -552,8 +552,12 @@ export const AssistantView = ({
   ) => (
     <Filter
       {...(pinIn !== undefined ? { pinIn } : {})}
-      yearPeriods={a.flags.has('year-ranges')}
-      compactChips={a.flags.has('compact-filter-chips')}
+      // Years as periods and many chosen values as one chip: standard since 13.11, no longer trials.
+      yearPeriods
+      compactChips
+      yearFields={(a.fields ?? [])
+        .filter((field) => field.kind === 'year')
+        .map((field) => field.id)}
       fields={a.facets}
       selection={a.selection}
       onChange={a.setSelection}

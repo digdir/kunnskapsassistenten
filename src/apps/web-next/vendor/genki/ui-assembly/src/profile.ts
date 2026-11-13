@@ -69,9 +69,10 @@ export interface AssistantProfile {
   family?: ((service: string) => boolean) | undefined;
   /**
    * The trials the reader may turn on in «Innstillinger», «Eksperimenter». The assembly knows what
-   * kunnskapsassistenten's do: `year-ranges` and `compact-filter-chips` in the filter,
-   * `filters-right-panel`, which puts the filter over the sources in the secondary panel, and
-   * `compact-filter`, the next look's filter panel 230 px wide with the threads taking the rest.
+   * kunnskapsassistenten's do: `filters-right-panel`, which puts the filter over the sources in the
+   * secondary panel, and `compact-filter`, the next look's filter panel 230 px wide with the
+   * threads taking the rest. Years as periods and many values as one chip are no longer trials:
+   * the filter always draws them.
    */
   experiments?: readonly AssistantExperiment[] | undefined;
   /** The note at the foot of «Innstillinger». */

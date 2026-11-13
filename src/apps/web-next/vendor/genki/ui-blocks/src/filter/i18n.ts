@@ -65,6 +65,7 @@ export const nbFilter = defineNamespace({
   clearAll: 'Fjern alle filtre',
   clearedAll: 'Alle filtre er fjernet.',
   all: 'Alle',
+  allYears: 'Alle år',
   appliesNext: 'Gjelder neste spørsmål',
   // The filter in an answer and under the field, its values in the words of the rows.
   changed: 'filteret er endret',
@@ -141,6 +142,7 @@ export const enFilter = {
   clearAll: 'Remove all filters',
   clearedAll: 'All filters are removed.',
   all: 'All',
+  allYears: 'All years',
   appliesNext: 'Applies to the next question',
   changed: 'the filter has changed',
   readFrom: { one: 'Read from {count} document', other: 'Read from {count} documents' },

@@ -57,6 +57,11 @@ export interface FilterProps {
   newThreadHref?: string | undefined;
   /** A field of kind `year` takes periods, and years in a row show as one chip. */
   yearPeriods?: boolean | undefined;
+  /**
+   * The ids of the fields whose values are years, for when the facets are missing: a filter in
+   * force then still shows its years as periods, «2020–2022», one chip each.
+   */
+  yearFields?: readonly string[] | undefined;
   /** One chip for six or more chosen values too; all of two or more listed always are. */
   compactChips?: boolean | undefined;
   /** The most values a field can send; more shows a warning. */
@@ -142,6 +147,7 @@ export const Filter = ({
   onNewThread,
   newThreadHref,
   yearPeriods = false,
+  yearFields,
   compactChips = false,
   maxValues = 100,
   title,
@@ -301,6 +307,10 @@ export const Filter = ({
             <ActiveFilter
               selection={selection}
               chosen={withoutField}
+              yearFields={[
+                ...(yearFields ?? []),
+                ...(fields ?? []).filter((field) => field.kind === 'year').map((field) => field.id),
+              ]}
               hasFields={(fields?.length ?? 0) > 0}
               level={sub}
               onChange={change}
