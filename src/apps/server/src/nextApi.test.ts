@@ -301,6 +301,18 @@ describe('the page', () => {
     }
   });
 
+  test('a thread link opens a genki id that starts with `_` or `-`, but never one that starts with `.` or `:`', async () => {
+    for (const id of ['_V1StGXR8Z5jdHi6BmyT', '-V1StGXR8Z5jdHi6BmyT']) {
+      const toNext = await page(`/threads/${id}`, 'ka_ui=next');
+      assert.equal(toNext.res.headers.get('Location'), `/?t=${id}`, id);
+      assert.equal((await page(`/?t=${id}`)).res.headers.get('Location'), `/threads/${id}`, id);
+    }
+    for (const id of ['.hidden', '..x', ':x']) {
+      assert.equal((await page(`/threads/${id}`, 'ka_ui=next')).res.status, 200, id);
+      assert.equal((await page(`/?t=${encodeURIComponent(id)}`)).res.status, 200, id);
+    }
+  });
+
   test('threadLinkFor maps the two forms', () => {
     const { threadLinkFor } = nextApiPage;
     assert.equal(threadLinkFor('next', '/threads/x1', new URLSearchParams()), '/?t=x1');
@@ -427,6 +439,34 @@ describe('the proxy', () => {
       assert.equal(res.status, 403, `${method} ${path}`);
     }
     assert.equal(seen.length, 0);
+  });
+
+  test('forwards a thread whose genki id starts with `_` or `-`, and refuses one that starts with `.` or `:`', async () => {
+    for (const id of ['_V1StGXR8Z5jdHi6BmyT', '-V1StGXR8Z5jdHi6BmyT'])
+      assert.equal((await proxied(`/api/conversations/${id}`)).status, 200, id);
+    const asked = await post('/v1/chat/completions', {
+      ...QUESTION,
+      conversation_id: '_V1StGXR8Z5jdHi6BmyT',
+    });
+    assert.equal(asked.status, 200);
+    await asked.body?.cancel();
+    assert.deepEqual(
+      seen.map((s) => s.url),
+      [
+        '/api/conversations/_V1StGXR8Z5jdHi6BmyT',
+        '/api/conversations/-V1StGXR8Z5jdHi6BmyT',
+        '/v1/chat/completions',
+      ],
+    );
+    assert.equal(JSON.parse(seen[2]?.body ?? '{}').conversation_id, '_V1StGXR8Z5jdHi6BmyT');
+    seen.length = 0;
+    for (const id of ['.hidden', '..x', ':x'])
+      assert.equal((await proxied(`/api/conversations/${id}`)).status, 403, id);
+    assert.equal(
+      (await post('/v1/chat/completions', { ...QUESTION, conversation_id: ':x' })).status,
+      400,
+    );
+    assert.deepEqual(seen, []);
   });
 
   test('refuses a write from another site, or without a JSON body type', async () => {

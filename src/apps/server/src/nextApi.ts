@@ -74,8 +74,8 @@ const refused = (c: Context, code: string) => c.json({ error: 'refused', code },
 
 // ── The proxy's rules ──
 
-/** An id in a path: starts with a letter or digit, so never `.` or `..`. */
-const ID = '[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}';
+/** An id in a path: starts as genki's ids may, with a letter, digit, `_` or `-`, never `.` or `:`. */
+const ID = '[A-Za-z0-9_-][A-Za-z0-9_.:-]{0,199}';
 const AN_ID = new RegExp(`^${ID}$`);
 const TITLE_MAX = 200;
 const TAGS_MAX = 5;

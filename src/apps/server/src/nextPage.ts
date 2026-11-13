@@ -9,7 +9,7 @@ import { config } from './config.ts';
 import { nextOffered, uiOf } from './nextApi.ts';
 
 /** A thread id in an address, as nextApi.ts takes one. */
-const THREAD_ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$/;
+const THREAD_ID = /^[A-Za-z0-9_-][A-Za-z0-9_.:-]{0,199}$/;
 
 /** apps/web's addresses for a thread: `/threads/:id`, and `/chat/:id` from before it. */
 const CLASSIC_THREAD = /^\/(?:threads|chat)\/([^/]+)$/;
