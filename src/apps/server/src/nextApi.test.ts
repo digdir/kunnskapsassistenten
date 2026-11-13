@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
+import { once } from 'node:events';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { createServer, type IncomingMessage, type Server } from 'node:http';
+import { createServer, request, type IncomingMessage, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, beforeEach, describe, mock, test } from 'node:test';
+import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 
 /*
@@ -742,6 +744,87 @@ describe('the proxy', () => {
     const res = await host.request('/api/next/genki/v1/models');
     assert.equal(res.status, 502);
     assert.equal(((await res.json()) as { code: string }).code, 'backend_unreachable');
+  });
+});
+
+describe('the proxy, with the path as the server receives it', () => {
+  let server: Server;
+  let port = 0;
+
+  before(async () => {
+    server = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' }) as Server;
+    await once(server, 'listening');
+    port = (server.address() as AddressInfo).port;
+  });
+
+  after(async () => {
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  });
+
+  /** The path exactly as written, as a client that resolves nothing in it sends it. */
+  const sent = (path: string) =>
+    new Promise<{ status: number; code?: string }>((resolve, reject) => {
+      const req = request({ host: '127.0.0.1', port, path, agent: false }, (res) => {
+        let body = '';
+        res.on('data', (chunk: Buffer) => (body += chunk.toString()));
+        res.on('end', () =>
+          resolve({
+            status: res.statusCode ?? 0,
+            code: (JSON.parse(body) as { code?: string }).code,
+          }),
+        );
+      });
+      req.on('error', reject);
+      req.end();
+    });
+
+  test('refuses with 400 a dot segment or an encoded slash or backslash, before the allow-list and genki', async () => {
+    const paths = [
+      '/api/next/genki/api/datasets/..%2Fconversations',
+      '/api/next/genki/api/datasets/..%2fconversations',
+      '/api/next/genki/api/datasets/%2E%2E%2Fconversations',
+      '/api/next/genki/api/datasets/%2E%2E/conversations',
+      '/api/next/genki/api/datasets/.%2e/conversations',
+      '/api/next/genki/api/datasets/../conversations',
+      '/api/next/genki/api/datasets/./kudos',
+      '/api/next/genki/api/datasets/%2E/kudos',
+      '/api/next/genki/api/datasets/..%5Cconversations',
+      '/api/next/genki/api/datasets/..%5cconversations',
+      '/api/next/genki/api/conversations/..%2F..%2Fapi%2Fdatasets',
+      '/api/next/genki/api/conversations/../../api/datasets',
+      '/api/next/x/../genki/api/conversations',
+    ];
+    for (const path of paths)
+      assert.deepEqual(await sent(path), { status: 400, code: 'bad_path' }, path);
+    assert.deepEqual(seen, []);
+  });
+
+  test('takes a double-encoded slash as text, which no rule allows, so genki is never asked', async () => {
+    assert.deepEqual(await sent('/api/next/genki/api/datasets/..%252Fconversations'), {
+      status: 403,
+      code: 'not_allowed',
+    });
+    assert.deepEqual(seen, []);
+  });
+
+  test('still forwards an allowed path, and an encoded slash in the query', async () => {
+    for (const path of [
+      '/api/next/genki/v1/models',
+      '/api/next/genki/api/datasets/kudos',
+      '/api/next/genki/api/conversations/c-1',
+      '/api/next/genki/api/facets?dataset-config-key=kudos&filter=%7B%22a%22%3A%22b%2Fc%22%7D',
+    ])
+      assert.equal((await sent(path)).status, 200, path);
+    assert.deepEqual(
+      seen.map((s) => s.url),
+      [
+        '/v1/models',
+        '/api/datasets/kudos',
+        '/api/conversations/c-1',
+        '/api/facets?dataset-config-key=kudos&filter=%7B%22a%22%3A%22b%2Fc%22%7D&tenant=digdir',
+      ],
+    );
   });
 });
 

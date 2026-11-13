@@ -223,6 +223,29 @@ const RULES: readonly Rule[] = [
 export const ruleFor = (method: string, path: string) =>
   RULES.find((rule) => rule.method === method && rule.path.test(path));
 
+const DOT_SEGMENT = /^(?:\.|%2e){1,2}$/i;
+
+/** The path as the client sent it, before the URL parser resolved its `.` and `..` segments. */
+const sentPath = (c: Context): string => {
+  const sent = (c.env as { incoming?: { url?: string } } | undefined)?.incoming?.url;
+  if (!sent) return new URL(c.req.url).pathname;
+  const start = sent.startsWith('/') ? 0 : sent.indexOf('/', sent.indexOf('//') + 2);
+  const path = start === -1 ? '/' : sent.slice(start);
+  const query = path.indexOf('?');
+  return query === -1 ? path : path.slice(0, query);
+};
+
+/** A `.` or `..` segment, raw or encoded, or an encoded slash or backslash anywhere in the path. */
+const unsafePath = (path: string) => {
+  const lower = path.toLowerCase();
+  return (
+    lower.includes('%2f') ||
+    lower.includes('%5c') ||
+    lower.includes('\\') ||
+    path.split('/').some((segment) => DOT_SEGMENT.test(segment))
+  );
+};
+
 /** genki's headers the page reads, passed back as they came. */
 const PASSED_BACK = ['genai-task', 'genai-service-version', 'genai-conversation'];
 
@@ -386,9 +409,14 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
 
   next.all('/genki/*', async (c) => {
     const url = new URL(c.req.url);
+    const method = c.req.method;
+    const sent = sentPath(c);
+    if (unsafePath(sent)) {
+      console.log('next proxy refused %s %s', method, JSON.stringify(sent));
+      return c.json({ error: 'refused', code: 'bad_path' }, 400);
+    }
     const prefix = url.pathname.indexOf('/genki/');
     const path = url.pathname.slice(prefix + '/genki'.length);
-    const method = c.req.method;
     const rule = ruleFor(method, path);
     const caller: Caller = c.get('caller');
     if (!rule || (rule.personOnly && !caller.token)) {
