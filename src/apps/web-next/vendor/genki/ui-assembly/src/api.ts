@@ -7,6 +7,7 @@ import type {
   AnswerMarker,
   AnswerStatus,
   CorpusOption,
+  DocumentInScope,
   FilterField,
   FilterSelection,
   ModelRow,
@@ -84,6 +85,16 @@ export interface AssistantApi {
   ): Promise<FilterField[]>;
   /** The line under a document's title in «Dokumenter», where the profile says how to find it. */
   loadAbout(dataset: string, documentId: string): Promise<readonly string[] | undefined>;
+  /**
+   * The first `limit` documents the selection keeps, for «Dokumentene som blir med». Without it,
+   * the box says how many and lists none.
+   */
+  loadDocuments?(
+    selection: FilterSelection,
+    dataset: string,
+    fields: readonly FieldSpec[],
+    limit: number,
+  ): Promise<{ documents: DocumentInScope[]; found?: number | undefined }>;
   /** Makes the thread first when there is none, then asks into it, as kunnskapsassistenten does. */
   ask(params: AskParams): AsyncGenerator<StreamEvent, void>;
 }
@@ -371,6 +382,23 @@ export const createGenkiApi = ({
 
   const aboutCache = new Map<string, Promise<readonly string[] | undefined>>();
 
+  // A document's field values as genki lists them: a value, or a list of them.
+  const valuesOf = (value: unknown): string[] =>
+    (Array.isArray(value) ? value : value === undefined || value === null ? [] : [value])
+      .map((v) => String(v).trim())
+      .filter(Boolean);
+  // «2024», or a period «2019–2021» for a document about several years.
+  const yearsOf = (value: unknown): string | undefined => {
+    const years = valuesOf(value)
+      .map(Number)
+      .filter(Number.isInteger)
+      .sort((a, b) => a - b);
+    const first = years[0];
+    const last = years.at(-1);
+    if (first === undefined || last === undefined) return undefined;
+    return first === last ? String(first) : `${first}–${last}`;
+  };
+
   return {
     loadModels: async () => (await getJson<{ data: ModelRow[] }>('/v1/models')).data,
 
@@ -477,6 +505,42 @@ export const createGenkiApi = ({
           };
         }),
       ),
+
+    loadDocuments: async (selection, dataset, fields, limit) => {
+      const own = corpusProfile(dataset);
+      const filter = filterSet(selection, fields);
+      const body = await getJson<{
+        documents: { id: string; title?: string; url?: string; fields?: Record<string, unknown> }[];
+        found?: number;
+      }>(
+        `/api/documents?${new URLSearchParams({
+          tenant,
+          'dataset-config-key': dataset,
+          limit: String(limit),
+          ...(filter ? { filter: JSON.stringify(filter) } : {}),
+        })}`,
+      );
+      const yearField = fields.find((f) => f.kind === 'year')?.id;
+      const join = (field: string | undefined, values: Record<string, unknown>) =>
+        field ? valuesOf(values[field]).join(', ') || undefined : undefined;
+      return {
+        documents: body.documents.map((d) => {
+          const values = d.fields ?? {};
+          const href = d.url ?? own?.documentUrl?.(d.id);
+          const organisation = join(own?.organisationField, values);
+          const year = yearField ? yearsOf(values[yearField]) : undefined;
+          return {
+            id: d.id,
+            title: d.title?.trim() || d.id,
+            ...(organisation ? { organisation } : {}),
+            ...(year ? { year } : {}),
+            ...(href ? { href } : {}),
+            included: true,
+          };
+        }),
+        ...(body.found === undefined ? {} : { found: body.found }),
+      };
+    },
 
     loadAbout: (dataset, documentId) => {
       const about = corpusProfile(dataset)?.about;

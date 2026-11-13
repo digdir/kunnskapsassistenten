@@ -582,12 +582,13 @@ export const AssistantView = ({
     >
       {a.option('filter', 'documents') ? (
         filterPanel ? (
-          // «Dokumentene som blir med»: the count from the facets. genki lists no documents for a
-          // filter and cannot leave one out, so the box draws no list and no ticks.
+          // «Dokumentene som blir med»: the count from the facets, and the documents themselves
+          // once the filter keeps few. genki cannot leave one out, so the list has no ticks.
           <DocumentsInScope
             count={a.readFrom}
             total={a.collectionSize}
             corpus={a.corpus}
+            documents={a.inScope}
             headingLevel={(headingLevel + 1) as 3 | 4}
           />
         ) : (

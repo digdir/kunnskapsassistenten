@@ -243,12 +243,4 @@
   .uib-documents-scope-about[hidden] {
     display: none;
   }
-
-  /* The type as a tag on the accent's light ground. */
-  .uib-documents-scope-type {
-    padding-inline: var(--genai-documents-scope-type-padding-inline, var(--ds-size-2));
-    border-radius: var(--genai-documents-scope-type-radius, var(--ds-border-radius-md));
-    background: var(--genai-documents-scope-type-background, var(--ds-color-accent-surface-tinted));
-    color: var(--genai-documents-scope-type-color, var(--ds-color-accent-text-default));
-  }
 }
