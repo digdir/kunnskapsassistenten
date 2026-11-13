@@ -1,7 +1,7 @@
 # Deploying to Azure Container Apps
 
 One container: the Hono server signs people in, keeps their tokens, talks to
-genki, and serves the built SPA from the same origin. Same origin is not
+genki, and serves the built clients from the same origin. Same origin is not
 cosmetic, it is what keeps the session cookie first-party.
 
 **Deployed and in use:** `https://qa.kunnskap.digdir.cloud`
@@ -20,8 +20,10 @@ Sign-in is Ansattporten, `AUTH_MODE=ansattporten`: the server signs the person
 in and calls genki with their token (`decisions/0011`). Who gets in is decided
 by Ansattporten and genki, and the app adds no check of its own. The app has no
 service key and no Entra ID settings. `AUTH_MODE=off` is for local
-development only: unsigned identity, anyone can be anyone, and the server
-refuses to start with it unless `APP_ORIGIN` is localhost.
+development only: unsigned identity, anyone can be anyone, the server refuses
+to start with it unless the host in `APP_ORIGIN` is exactly `localhost`,
+`127.0.0.1` or `[::1]`, and it listens only on
+127.0.0.1 unless `LISTEN_HOST` names another address.
 
 The app pulls its image with the managed identity `ka-app-id`, which has
 `AcrPull` on the registry.
@@ -73,19 +75,20 @@ tree, so nothing needs pushing to GitHub first.
 `.github/workflows/ci.yml` still runs format, typecheck, tests and build on
 pull requests.
 
-Code change, about three minutes. Commit first: `az acr build` uploads the
-working tree as it is, and the image is tagged with the commit. The first line
-prints nothing when there is nothing uncommitted.
+Code change, about three minutes. The test site runs `main`, so build from a
+clean checkout of it: `az acr build` uploads the working tree as it is, and the
+image is tagged with the commit. The first line prints nothing when the tree is
+clean.
 
 ```sh
 git status --short
-SHA=$(git rev-parse --short HEAD)
+SHA=$(git rev-parse --short=8 HEAD)
 
 az acr build --subscription Altinn-AI-Assistant --registry sharedregistryswc --image ka-app:$SHA \
   --file src/Dockerfile src
 az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
   --image sharedregistryswc.azurecr.io/ka-app:$SHA \
-  --revision-suffix sha$SHA
+  --revision-suffix main$SHA
 ```
 
 That swaps the image and nothing else. The variables and secrets stay as they
@@ -95,9 +98,8 @@ panel its fields and the dataset its name. To change a variable, add
 variables it names and leaves the others as they are. Quote a value with `|`
 in it, because `|` is a pipe to the shell.
 
-The image serves only the client in `apps/web` (`decisions/0012`).
-`KA_DEFAULT_CLIENT` is no longer set on the app, and a browser's `ka_klient`
-cookie no longer matters.
+The previous client is gone (`decisions/0012`): `KA_DEFAULT_CLIENT` is no
+longer set on the app, and a browser's `ka_klient` cookie no longer matters.
 
 Config or a secret, about 30 seconds and no rebuild. The app's secrets are
 `session-secret`, `ansattporten-client-secret` and `typesense-key`. This
@@ -125,6 +127,96 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
   --image sharedregistryswc.azurecr.io/ka-app:$OLDER \
   --revision-suffix rollback$(date +%H%M%S)
 ```
+
+## The next client, behind a toggle
+
+The image holds two clients: `apps/web`, which everyone gets, and `apps/web-next`, built from
+genki's UI blocks (`decisions/0013`). `KA_NEXT=1` offers the next one: `apps/web` then shows
+«Prøv ny versjon» at the foot of the navigation panel, and a person who chooses it gets it on
+every load until they choose «Tilbake til gammel versjon» in its profile menu. The choice is a
+cookie per browser. Without `KA_NEXT` nothing of it shows, and the cookie is ignored.
+
+It uses the same sign-in and the same genki service as `apps/web`. `KA_NEXT_MODEL` names the
+variant it asks (default `kunnskapsassistenten__default`) and `KA_NEXT_TENANT` the tenant whose
+collections it reads (default `digdir`). The test site has `KA_NEXT=1` and neither of the
+other two.
+
+On a running deployment, about 30 seconds and no rebuild, this turns it on:
+
+```sh
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --set-env-vars KA_NEXT=1 --revision-suffix next$(date +%H%M%S)
+```
+
+And this turns it off, so everyone gets `apps/web` again:
+
+```sh
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --remove-env-vars KA_NEXT --revision-suffix classic$(date +%H%M%S)
+```
+
+The template takes the same as `kaNext`, `kaNextModel` and `kaNextTenant`, empty by default.
+
+## Testers and genki's test environment
+
+`KA_TESTERS` names the testers by user id, separated by commas or spaces (`decisions/0015`).
+A tester's questions, threads and feedback, in both clients, go to genki with
+`GenAI-Environment: test`, and the chat shows «Testmiljø» beside the send button. Everyone else sends no header and gets the service's
+`prod`. `KA_TEST_ENVIRONMENT` names another environment than `test`. Without `KA_TESTERS` nobody
+is a tester and nothing changes.
+
+The user id is `userId` in `/api/v2/me`, which a tester opens on the site while signed in:
+with Ansattporten it is `ansattporten:` followed by Ansattporten's subject for KA's client.
+
+Add the `test` environment to the genki service first: until it has one, genki refuses a
+tester's questions with `409 environment_not_found`. A key or client bound to environments must
+allow `test` too. Then, about 30 seconds and no rebuild, type the ids separated by commas when
+the first command waits:
+
+```sh
+read -r TESTERS
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --set-env-vars "KA_TESTERS=$TESTERS" --revision-suffix testers$(date +%H%M%S)
+```
+
+Nobody is a tester again with:
+
+```sh
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --remove-env-vars KA_TESTERS --revision-suffix testers$(date +%H%M%S)
+```
+
+A new revision signs everyone out with Ansattporten, as every rollout does. The template takes
+the same as `kaTesters` and `kaTestEnvironment`, empty by default.
+
+## The excerpt trial
+
+`KA_EXCERPT_ENVIRONMENT` names a genki environment of the service whose version cites by
+excerpt (`decisions/0016`). With it set, Innstillinger in `apps/web` offers «Fotnoter som
+viser til utdraget», and the calls of a person who turns it on go to genki with `GenAI-Environment` set to
+that environment. Testers keep their own environment. Without it there is no switch and nothing
+changes.
+
+Add the environment to the genki service first: until it has one, genki refuses those questions
+with `409 environment_not_found`. A key or client bound to environments must allow it too. Then,
+about 30 seconds and no rebuild, type the environment's
+name when the first command waits:
+
+```sh
+read -r EXCERPT_ENVIRONMENT
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --set-env-vars "KA_EXCERPT_ENVIRONMENT=$EXCERPT_ENVIRONMENT" --revision-suffix excerpt$(date +%H%M%S)
+```
+
+The trial is gone again with:
+
+```sh
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --remove-env-vars KA_EXCERPT_ENVIRONMENT --revision-suffix excerpt$(date +%H%M%S)
+```
+
+A new revision signs everyone out with Ansattporten, as every rollout does. The template takes
+the same as `kaExcerptEnvironment`, empty by default.
 
 ## Deploying from scratch
 
@@ -200,8 +292,9 @@ They default to Kudos: `documentType:type|organisation:orgs_long|year:concerned_
 and `Kudos`. The year needs `integer`, or it finds nothing. Another dataset
 needs its own fields, and an empty `kaFilterFields` means no filter panel.
 
-The test site also has `kaCapabilities` and `typesenseApiKey` set, which the
-command above leaves out. Without `kaCapabilities` the filters are off.
+The test site also has `kaCapabilities`, `typesenseApiKey` and `kaNext` set,
+which the command above leaves out. Without `kaCapabilities` the filters are
+off, and without `kaNext` nobody is offered the next client.
 Typesense needs `typesenseHost`, `kudosDocsCollection` and `typesenseApiKey`
 together: without them the filter panel is empty and the sources show no
 excerpt.

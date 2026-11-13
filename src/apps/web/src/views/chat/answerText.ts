@@ -46,24 +46,37 @@ export function announcedText(markdown: string): string {
 /**
  * The reference list under a copied answer, Norwegian APA-like, with each
  * part dropped when the corpus lacks it. One line per CITED EXCERPT and not
- * per document: two excerpts from one report are on different pages.
+ * per document: two excerpts from one report are on different pages. A
+ * document cited whole is one line under its own number.
  */
 export function referenceList(documents: SourceDocument[]): string[] {
-  return documents
+  const excerpts = documents
     .flatMap((document) => document.excerpts.map((excerpt) => ({ document, excerpt })))
     .filter(({ excerpt }) => excerpt.citationNumber !== undefined)
-    .sort((a, b) => (a.excerpt.citationNumber ?? 0) - (b.excerpt.citationNumber ?? 0))
-    .map(({ document, excerpt }) => {
+    .map(({ document, excerpt }) => ({
+      number: excerpt.citationNumber as number,
+      document,
+      page: excerpt.page,
+      url: document.url ?? excerpt.kudosUrl,
+    }));
+  const wholeDocuments = documents
+    .filter((document) => document.citationNumber !== undefined)
+    .map((document) => ({
+      number: document.citationNumber as number,
+      document,
+      page: undefined,
+      url: document.url ?? document.excerpts[0]?.kudosUrl,
+    }));
+
+  return [...excerpts, ...wholeDocuments]
+    .sort((a, b) => a.number - b.number)
+    .map(({ number, document, page, url }) => {
       const author = [document.organisation, document.year && `(${document.year})`]
         .filter(Boolean)
         .join(' ');
-      const where =
-        excerpt.page === undefined ? document.title : `${document.title}, s. ${excerpt.page}`;
-      const url = document.url ?? excerpt.kudosUrl;
+      const where = page === undefined ? document.title : `${document.title}, s. ${page}`;
 
-      return [`[${excerpt.citationNumber}]`, author && `${author}.`, `${where}.`, url]
-        .filter(Boolean)
-        .join(' ');
+      return [`[${number}]`, author && `${author}.`, `${where}.`, url].filter(Boolean).join(' ');
     });
 }
 

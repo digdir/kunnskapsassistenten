@@ -20,9 +20,7 @@ export interface Excerpt {
   id: string;
   /** A literal quote from the document. MCP chunks carry no text; only `/v1` has it. */
   text: string;
-  /**
-   * Heading path, e.g. «Ressursbruk og måloppnåelse». Arrives as a Clojure map in a string.
-   */
+  /** The section path in the document, levels joined by ` › `; the last level titles the excerpt. */
   heading?: string;
   /** Page in the source document, when the corpus has pages. */
   page?: number;
@@ -33,9 +31,7 @@ export interface Excerpt {
    * The chunk text could not be fetched, so the panel says so in words. See src/decisions/0008.
    */
   textUnavailable?: boolean;
-  /**
-   * 1-indexed position in the flat excerpt list that `[n]` points at; undefined if never cited.
-   */
+  /** The `[n]` that names this excerpt; undefined if uncited or if its document is cited whole. */
   citationNumber?: number;
 }
 
@@ -54,6 +50,8 @@ export interface SourceDocument {
    * Where it came from, not guessed from the title: an upload has no Kudos link. Absent = `corpus`.
    */
   origin?: 'corpus' | 'user';
+  /** The `[n]` that names this document as a whole, when the service cites by document. */
+  citationNumber?: number;
   excerpts: Excerpt[];
 }
 
@@ -106,6 +104,16 @@ export function excerptDomId(citationNumber: number): string {
   return `excerpt-${citationNumber}`;
 }
 
+/** The id of a document card in the sources panel. */
+export function documentDomId(documentId: string): string {
+  return `kilde-dokument-${documentId}`;
+}
+
+/** The id of a document card's heading, where a title or a document's `[n]` sends the reader. */
+export function documentHeadingDomId(documentId: string): string {
+  return `${documentDomId(documentId)}-tittel`;
+}
+
 /**
  * The accessible name of a `[n]` marker, and its tooltip: «Utdrag 3: Årsrapport Nasjonal
  * kommunikasjonsmyndighet 2022» (Lars, 2026-11-03). Only the excerpt has a number, so the name
@@ -116,12 +124,17 @@ export function citationAccessibleName(citationNumber: number, documentTitle: st
   return `Utdrag ${citationNumber}: ${documentTitle}`;
 }
 
-/**
- * Every cited excerpt in a set of documents, as link targets for the answer.
- * Excerpts the answer did not cite carry no number and are skipped.
- */
+/** The accessible name of a `[n]` that names a whole document: «Kilde 2: Årsrapport …». */
+export function documentCitationAccessibleName(
+  citationNumber: number,
+  documentTitle: string,
+): string {
+  return `Kilde ${citationNumber}: ${documentTitle}`;
+}
+
+/** Every footnote, a cited excerpt or a document cited whole, as link targets for the answer. */
 export function citationTargets(documents: SourceDocument[]): CitationTarget[] {
-  return documents
+  const excerpts = documents
     .flatMap((document) => document.excerpts.map((excerpt) => ({ document, excerpt })))
     .filter(({ excerpt }) => excerpt.citationNumber !== undefined)
     .map(({ document, excerpt }) => {
@@ -131,16 +144,29 @@ export function citationTargets(documents: SourceDocument[]): CitationTarget[] {
         targetId: excerptDomId(number),
         label: citationAccessibleName(number, document.title),
       };
-    })
-    .sort((a, b) => a.number - b.number);
+    });
+  const wholeDocuments = documents
+    .filter((document) => document.citationNumber !== undefined)
+    .map((document) => {
+      const number = document.citationNumber as number;
+      return {
+        number,
+        targetId: documentHeadingDomId(document.id),
+        label: documentCitationAccessibleName(number, document.title),
+        documentId: document.id,
+      };
+    });
+  return [...excerpts, ...wholeDocuments].sort((a, b) => a.number - b.number);
 }
 
 /** A `[n]` marker's link target, ready for the markdown renderer. */
 export type CitationTarget = {
   /** 1-indexed, as written in the answer. */
   number: number;
-  /** DOM id of the excerpt this marker points at. */
+  /** DOM id of the excerpt, or of the document's heading, this marker points at. */
   targetId: string;
   /** Norwegian accessible name for the marker. */
   label: string;
+  /** Set when the marker names a whole document: activating it opens that document. */
+  documentId?: string;
 };

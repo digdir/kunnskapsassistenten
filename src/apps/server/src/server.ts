@@ -1,20 +1,25 @@
 import { serve } from '@hono/node-server';
 import { app, startUp } from './app.ts';
 import { config, typesenseConfigured } from './config.ts';
+import { listenHost } from './listen.ts';
 
-serve({ fetch: app.fetch, port: config.port }, (info) => {
-  console.log(`BFF på http://localhost:${info.port}  →  ${config.apiBase}`);
-  console.log(`verktøy: ${config.tool}`);
-  console.log(`datasett: ${config.tenant}/${config.datasetConfigKey}`);
+const hostname = listenHost(config.auth.enabled);
+
+serve({ fetch: app.fetch, port: config.port, hostname }, (info) => {
+  console.log(
+    `BFF on http://localhost:${info.port}, listening on ${hostname ?? 'every interface'}  →  ${config.apiBase}`,
+  );
+  console.log(`tool: ${config.tool}`);
+  console.log(`dataset: ${config.tenant}/${config.datasetConfigKey}`);
   console.log(
     config.auth.mode === 'entra'
-      ? `innlogging: Entra ID, tenant ${config.auth.tenantId}`
+      ? `sign-in: Entra ID, tenant ${config.auth.tenantId}`
       : config.auth.mode === 'ansattporten'
-        ? `innlogging: Ansattporten, ${config.auth.ansattporten.issuer}, personens token til backenden`
-        : 'innlogging: AV. Usignert utviklings-id, ikke bruk dette utenfor egen maskin.',
+        ? `sign-in: Ansattporten, ${config.auth.ansattporten.issuer}, the person's token to the backend`
+        : 'sign-in: OFF. Unsigned development id, do not use this outside your own machine.',
   );
   if (!typesenseConfigured) {
-    console.log('Typesense er ikke satt opp: ingen filtre og ingen utdrag i kildepanelet.');
+    console.log('Typesense is not set up: no filters and no excerpts in the sources panel.');
   }
   startUp();
 });

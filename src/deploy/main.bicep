@@ -63,6 +63,24 @@ param kudosDocsCollection string = ''
 @description('What the capability probe would find, forced: `filters` or `no-filters`. Empty lets the probe decide.')
 param kaCapabilities string = ''
 
+@description('The next client (apps/web-next) beside apps/web: `1` offers it, empty keeps it off (decisions/0013).')
+param kaNext string = ''
+
+@description('The genki service and variant the next client asks, `<service>__<variant>`. Empty is `kunnskapsassistenten__default`.')
+param kaNextModel string = ''
+
+@description('The genki tenant the next client reads collections and facets from. Empty is `digdir`.')
+param kaNextTenant string = ''
+
+@description('Testers by session user id (`userId` in `/api/v2/me`), separated by commas or spaces: their calls to genki carry `GenAI-Environment` (decisions/0015). Empty: nobody is a tester.')
+param kaTesters string = ''
+
+@description('The genki environment testers get. Empty is `test`.')
+param kaTestEnvironment string = ''
+
+@description('The genki environment that cites by excerpt, for people who turn the trial on in the app (decisions/0016). Empty: no trial.')
+param kaExcerptEnvironment string = ''
+
 var appHost = empty(publicHost) ? '${name}.${containerEnv.properties.defaultDomain}' : publicHost
 var ansattporten = authMode == 'ansattporten'
 
@@ -173,6 +191,24 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             ],
             empty(kaDataset) ? [] : [
               { name: 'KA_DATASETS', value: '${digdirDatasetConfigKey}=${kaDataset}' }
+            ],
+            empty(kaNext) ? [] : [
+              { name: 'KA_NEXT', value: kaNext }
+            ],
+            empty(kaNextModel) ? [] : [
+              { name: 'KA_NEXT_MODEL', value: kaNextModel }
+            ],
+            empty(kaNextTenant) ? [] : [
+              { name: 'KA_NEXT_TENANT', value: kaNextTenant }
+            ],
+            empty(kaTesters) ? [] : [
+              { name: 'KA_TESTERS', value: kaTesters }
+            ],
+            empty(kaTestEnvironment) ? [] : [
+              { name: 'KA_TEST_ENVIRONMENT', value: kaTestEnvironment }
+            ],
+            empty(kaExcerptEnvironment) ? [] : [
+              { name: 'KA_EXCERPT_ENVIRONMENT', value: kaExcerptEnvironment }
             ]
           )
           probes: [

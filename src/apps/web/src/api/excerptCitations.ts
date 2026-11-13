@@ -63,7 +63,7 @@ export function citeExcerpts(
     .replace(/\[(\d+)\](?:\[\1\])+/g, '[$1]');
 
   const cited = documents
-    .map((document) => ({
+    .map(({ citationNumber: _whole, ...document }) => ({
       ...document,
       excerpts: document.excerpts
         .filter((excerpt) => numberOf.has(excerpt.id))
@@ -84,4 +84,32 @@ export function citeExcerpts(
     .sort((a, b) => a.number - b.number);
 
   return { content: rewritten, documents: cited, citations };
+}
+
+/** By document (genki's default): `[n]` is document n by first appearance; no excerpt is numbered. */
+export function citeDocuments(content: string, documents: SourceDocument[]): CitedAnswer {
+  const numbered = documents.map((document, index) => ({
+    ...document,
+    citationNumber: index + 1,
+    excerpts: document.excerpts.map(({ citationNumber: _number, ...excerpt }) => excerpt),
+  }));
+  return {
+    content,
+    documents: numbered,
+    citations: numbered.map((document) => ({
+      number: document.citationNumber,
+      documentId: document.id,
+    })),
+  };
+}
+
+/** What each `[n]` names, for every path (decisions/0014): by markers, else by document. */
+export function citeAnswer(
+  content: string,
+  documents: SourceDocument[],
+  markers: MarkerRef[] | undefined,
+): CitedAnswer {
+  return markers === undefined
+    ? citeDocuments(content, documents)
+    : citeExcerpts(content, documents, markers);
 }

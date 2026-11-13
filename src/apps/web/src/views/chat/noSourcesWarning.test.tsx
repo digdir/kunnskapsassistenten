@@ -135,9 +135,7 @@ describe('advarselen etter ny innlasting fra bff', () => {
         { id: 'q3', role: 'user', text: 'Tredje', created: 5 },
         { id: 'a3', role: 'assistant', text: 'Det siste svaret.', created: 6 },
       ],
-      sources: [
-        { docNum: '1', title: 'Årsrapport', url: '', marker: 1, chunkId: 'a', excerpt: 'x' },
-      ],
+      sources: [{ docNum: '1', title: 'Årsrapport', url: '', chunkId: 'a', excerpt: 'x' }],
     });
 
     render(

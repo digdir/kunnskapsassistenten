@@ -1,15 +1,9 @@
-// `excerptDomId` is in `src/model/source.ts`. It stays `excerpt-n`, or links
-// readers have copied would break.
+import { documentDomId } from '../../model';
 
-/** The id of a document card. */
-export function documentDomId(documentId: string): string {
-  return `kilde-dokument-${documentId}`;
-}
+// In `src/model/source.ts`, where the answer's `[n]` finds them too.
+export { documentDomId, documentHeadingDomId } from '../../model';
 
-/**
- * The id of a document card's heading, where «Kilder brukt i svaret» sends the reader: to the
- * document, not to one of its excerpts.
- */
-export function documentHeadingDomId(documentId: string): string {
-  return `${documentDomId(documentId)}-tittel`;
+/** The id of an unnumbered excerpt in a document cited whole, for the search to scroll to. */
+export function excerptInDocumentDomId(documentId: string, position: number): string {
+  return `${documentDomId(documentId)}-utdrag-${position}`;
 }

@@ -6,3 +6,7 @@ apps/web/design-tokens/
 apps/web/design-tokens-build/
 apps/web/.tokens-verify/
 apps/web/src/api/mock/corpus/kudos-korpus.json
+# genki's source as it is at one commit (apps/web-next/scripts/sync-genki.sh).
+apps/web-next/vendor/
+# A copy of apps/web/design-tokens-build/digdir.css, as generated.
+apps/web-next/src/theme.css

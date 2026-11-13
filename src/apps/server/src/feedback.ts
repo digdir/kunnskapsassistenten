@@ -4,6 +4,9 @@ import { config } from './config.ts';
 import * as convos from './conversations.ts';
 
 export const MAX_FEEDBACK_COMMENT = 2000;
+/** As many reasons as genki keeps, each a short phrase picked in the client. */
+export const MAX_FEEDBACK_REASONS = 10;
+export const MAX_FEEDBACK_REASON = 200;
 
 export function cleanFeedback(body: unknown): FeedbackRequest | string {
   if (!body || typeof body !== 'object') return 'Ugyldig tilbakemelding.';
@@ -14,10 +17,24 @@ export function cleanFeedback(body: unknown): FeedbackRequest | string {
   const comment = typeof b.comment === 'string' ? b.comment.trim() : '';
   if (comment.length > MAX_FEEDBACK_COMMENT)
     return `Kommentaren er for lang (maks ${MAX_FEEDBACK_COMMENT} tegn).`;
+  if (
+    b.reasons !== undefined &&
+    !(Array.isArray(b.reasons) && b.reasons.every((r) => typeof r === 'string'))
+  )
+    return 'Ugyldige grunner.';
+  const reasons = ((b.reasons as string[] | undefined) ?? [])
+    .map((r) => r.trim())
+    .filter(Boolean);
+  if (
+    reasons.length > MAX_FEEDBACK_REASONS ||
+    reasons.some((r) => r.length > MAX_FEEDBACK_REASON)
+  )
+    return 'For mange eller for lange grunner.';
   return {
     conversationId: b.conversationId,
     taskId: b.taskId,
     rating: b.rating,
+    ...(reasons.length > 0 ? { reasons } : {}),
     ...(comment ? { comment } : {}),
   };
 }
@@ -45,6 +62,7 @@ export async function sendFeedback(
     body: JSON.stringify({
       task: feedback.taskId,
       rating: feedback.rating,
+      ...(feedback.reasons?.length ? { reasons: feedback.reasons } : {}),
       ...(feedback.comment ? { comment: feedback.comment } : {}),
     }),
   });

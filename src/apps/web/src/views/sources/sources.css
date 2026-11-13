@@ -195,6 +195,19 @@
   margin-block: 0;
 }
 
+/* «Kilde N» and its back-link, over a document the answer cites whole. */
+.source-document__cite {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-size-1);
+}
+
+.source-document__number {
+  margin-block: 0;
+  font-weight: var(--ds-font-weight-semibold);
+  white-space: nowrap;
+}
+
 /* «Utdrag N» and the back-link to its uses, side by side. */
 .source-excerpt__title {
   display: flex;
@@ -209,6 +222,18 @@
   white-space: nowrap;
 }
 
+/* «Utdrag N» over the section that titles the excerpt, as «Kilde N» over a document's title. */
+.source-excerpt__label {
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/* The section wraps; a word wider than the head breaks rather than running under «Åpne». */
+.source-excerpt__section {
+  overflow-wrap: break-word;
+  /* stylelint-disable-next-line plugin/browser-compat -- Safari 16 only breaks, without a hyphen. */
+  hyphens: auto;
+}
+
 /* The head lets clicks through to the summary under it; the back-link is the one control on it. */
 .source-excerpt__uses {
   pointer-events: auto;
@@ -221,7 +246,8 @@
 .source-excerpt__details {
   grid-area: 1 / 1;
   min-inline-size: 0;
-  --dsc-details-size: var(--ka-excerpt-row);
+  /* As tall as a head that a section made taller than the row (useBlockSize in SourceExcerpt). */
+  --dsc-details-size: var(--ka-excerpt-head, var(--ka-excerpt-row));
   /* Across only. Designsystemet's padding over and under makes the summary
      taller than the row, and the heading beside it stands off the label. */
   --dsc-details-padding: 0 var(--ds-size-2);

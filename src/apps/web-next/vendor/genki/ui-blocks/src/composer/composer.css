@@ -1,0 +1,252 @@
+/* After Designsystemet's layers, every token read through a --genai-composer-* variable. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  .uib-composer {
+    --_disclaimer-margin: var(--ds-size-4);
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-composer-gap, var(--ds-size-3));
+    inline-size: 100%;
+    container: uib-composer / inline-size;
+    font-family: var(--genai-composer-font-family, var(--ds-font-family)), sans-serif;
+  }
+
+  /* On the page's own ground, so the field looks fixed rather than boxed. */
+  .uib-composer[data-sticky] {
+    position: sticky;
+    inset-block-end: 0;
+    margin-block-start: auto;
+    padding-block: var(--genai-composer-sticky-padding-block-start, var(--ds-size-3))
+      var(--genai-composer-sticky-padding-block-end, var(--ds-size-3));
+    background: var(--genai-composer-sticky-background, var(--ds-color-background-tinted));
+  }
+
+  /* The seam over the field, so an answer scrolling under it does not stop dead mid-sentence. */
+  .uib-composer[data-sticky]::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 100%;
+    block-size: var(--genai-composer-fade-block-size, var(--ds-size-6));
+    background: linear-gradient(
+      to top,
+      var(--genai-composer-sticky-background, var(--ds-color-background-tinted)),
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  /* Out of the flow, so nothing moves when it comes and goes. */
+  .uib-composer-scroll {
+    --dsc-button-background: var(
+      --genai-composer-scroll-background,
+      var(--ds-color-background-default)
+    );
+    --dsc-button-border-radius: var(
+      --genai-composer-scroll-border-radius,
+      var(--ds-border-radius-full)
+    );
+
+    position: absolute;
+    inset-block-end: calc(100% + var(--genai-composer-scroll-gap, var(--ds-size-2)));
+    inset-inline-start: 50%;
+    translate: -50% 0;
+    inline-size: max-content;
+    box-shadow: var(--genai-composer-scroll-shadow, var(--ds-shadow-sm));
+  }
+
+  .uib-composer-frame {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-composer-frame-gap, var(--ds-size-2));
+    padding: var(--genai-composer-frame-padding, var(--ds-size-2));
+    container: uib-composer-frame / inline-size;
+    background: var(--genai-composer-frame-background, var(--ds-color-surface-default));
+    border: var(--genai-composer-frame-border-width, var(--ds-border-width-default)) solid
+      var(--genai-composer-frame-border-color, var(--ds-color-border-default));
+    border-radius: var(--genai-composer-frame-border-radius, var(--ds-border-radius-xl));
+  }
+
+  .uib-composer-frame:focus-within {
+    box-shadow: var(--dsc-focus-boxShadow);
+    outline: var(--dsc-focus-outline);
+    outline-offset: var(--genai-composer-focus-offset, var(--ds-border-width-focus));
+  }
+
+  /* Pinned to accent: the frame lights up for a file, as a pressable control does. */
+  .uib-composer-frame[data-dragging] {
+    border-color: var(
+      --genai-composer-frame-dragging-border-color,
+      var(--ds-color-accent-border-strong)
+    );
+  }
+
+  .uib-composer-field,
+  .uib-composer-field .ds-field-affixes {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  /* Room for a real question, never at the cost of a short screen: a tenth of its height, between
+     two tokens. The field grows with the question to the design's maximum. Its text starts where
+     the paperclip's icon does. */
+  .uib-composer-field textarea {
+    field-sizing: content;
+    min-block-size: clamp(
+      var(--genai-composer-field-min-block-size-floor, var(--ds-size-12)),
+      var(--genai-composer-field-min-block-size, 10dvh),
+      var(--genai-composer-field-min-block-size-ceiling, var(--ds-size-22))
+    );
+    max-block-size: var(--genai-composer-field-max-block-size, 274px);
+    padding-block: var(--genai-composer-field-padding-block, var(--ds-size-1));
+    padding-inline: var(--genai-composer-field-padding-inline-start, var(--ds-size-3)) 0;
+    overflow-y: auto;
+    resize: none;
+    background: transparent;
+    border: 0;
+  }
+
+  .uib-composer-field textarea:focus-visible {
+    box-shadow: none;
+    outline: none;
+  }
+
+  /* The paperclip at the start, the host's controls and send at the end. Send stays at the end
+     with no paperclip and no control beside it, as kunnskapsassistenten has it. */
+  .uib-composer-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--genai-composer-controls-gap, var(--ds-size-2));
+  }
+
+  .uib-composer-attach,
+  .uib-composer-send {
+    flex: 0 0 auto;
+  }
+
+  .uib-composer-attach {
+    margin-inline-end: auto;
+  }
+
+  .uib-composer-send {
+    --dsc-button-border-radius: var(
+      --genai-composer-send-border-radius,
+      var(--ds-border-radius-full)
+    );
+  }
+
+  .uib-composer-actions {
+    display: flex;
+    min-inline-size: 0;
+  }
+
+  .uib-composer-file-input {
+    display: none;
+  }
+
+  @container uib-composer-frame (inline-size < 400px) {
+    .uib-composer-attach-text {
+      display: none;
+    }
+  }
+
+  .uib-composer-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--genai-composer-attachments-gap, var(--ds-size-2));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .uib-composer-attachment {
+    display: flex;
+    align-items: center;
+    gap: var(--genai-composer-attachment-gap, var(--ds-size-1));
+  }
+
+  /* Pinned to danger: it says why a file was not attached. */
+  .uib-composer-attachment-error {
+    color: var(--genai-composer-attachment-error-color, var(--ds-color-danger-text-subtle));
+    font-size: var(--genai-composer-note-font-size, var(--ds-font-size-minus-1));
+  }
+
+  .uib-composer-drop-hint,
+  .uib-composer-refusal {
+    display: block;
+    margin: 0;
+    text-align: center;
+    font-size: var(--genai-composer-note-font-size, var(--ds-font-size-minus-1));
+  }
+
+  /* Pinned to accent, with the frame it describes. */
+  .uib-composer-drop-hint {
+    color: var(--genai-composer-drop-hint-color, var(--ds-color-accent-text-subtle));
+  }
+
+  .uib-composer-refusal {
+    color: var(--genai-composer-refusal-color, var(--ds-color-text-subtle));
+  }
+
+  /* Out of flow and sizeless when empty, so the gap is not reserved around nothing. Never
+     `display: none`, which drops the live region from the accessibility tree. */
+  .uib-composer-refusal:empty {
+    position: absolute;
+    block-size: 0;
+    inline-size: 0;
+    overflow: hidden;
+  }
+
+  /* What the docked field may not hide (WCAG 2.4.11): the rest of its column stops the field's
+     height above the foot when the browser scrolls to it. Not `scroll-padding` on the scroller,
+     which covers the field too, so every keystroke would walk the column down. The height is
+     measured by Composer.tsx, as kunnskapsassistenten measures its own. */
+  :has(> .uib-composer[data-sticky]) * {
+    scroll-margin-block-end: var(--uib-composer-block-size, 0);
+  }
+
+  .uib-composer[data-sticky],
+  .uib-composer[data-sticky] * {
+    scroll-margin-block-end: 0;
+  }
+
+  .uib-composer-follow-ups {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--genai-composer-follow-ups-gap, var(--ds-size-3));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Its own font, since a host may draw it outside the block. */
+  .uib-composer-disclaimer {
+    margin: 0;
+    color: var(--genai-composer-disclaimer-color, var(--ds-color-text-subtle));
+    text-align: center;
+    font-family: var(--genai-composer-font-family, var(--ds-font-family)), sans-serif;
+  }
+
+  .uib-composer > .uib-composer-disclaimer {
+    margin-block-start: var(
+      --genai-composer-disclaimer-margin-block-start,
+      var(--_disclaimer-margin)
+    );
+  }
+
+  @container uib-composer (inline-size < 500px) {
+    .uib-composer > .uib-composer-disclaimer {
+      --_disclaimer-margin: var(--ds-size-0);
+    }
+  }
+}

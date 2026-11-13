@@ -13,6 +13,8 @@ export type Flag = {
   description: string;
   /** The issue the trial answers. */
   issue: string;
+  /** Carried out by the BFF, so offered only where `/api/v2/me` says so (`api/trials.ts`). */
+  needsServer?: true;
 };
 
 /** A flag removed from here is ignored in storage and dropped on the next write. */
@@ -27,8 +29,7 @@ export const FLAGS = [
   {
     id: 'compact-filter-chips',
     title: 'Samlede merkelapper i filteret',
-    description:
-      'Når alle eller mange verdier er valgt, står én merkelapp, som «Alle dokumenttyper» eller «12 virksomheter».',
+    description: 'Når mange verdier er valgt, står én merkelapp, som «12 virksomheter».',
     issue: 'https://github.com/digdir/kunnskapsassistenten/issues/116',
   },
   {
@@ -37,6 +38,14 @@ export const FLAGS = [
     description:
       'Filtreringen står over kildene i høyre panel, så begge synes samtidig. Navigasjonspanelet har bare trådene.',
     issue: 'https://github.com/digdir/kunnskapsassistenten/issues/84',
+  },
+  {
+    id: 'excerpt-citations',
+    title: 'Fotnoter som viser til utdraget',
+    description:
+      'Fotnotene i svaret viser til selve utdraget, ikke bare dokumentet. Svarene kommer da fra testversjonen av tjenesten.',
+    issue: 'https://github.com/digdir/kunnskapsassistenten/issues/237',
+    needsServer: true,
   },
 ] as const satisfies readonly Flag[];
 

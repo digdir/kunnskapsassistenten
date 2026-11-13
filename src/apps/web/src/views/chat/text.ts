@@ -36,10 +36,21 @@ export const GENERAL_KICKSTARTERS = [
 // NOT here: Kudos by name, but other agencies' reports.
 const CORPUS_WITH_OWN_KICKSTARTERS = 'mock';
 
+/** The general three with the collection named, since the model is not told which one it searches. */
+const namedKickstarters = (name: string): readonly string[] => [
+  `Hva handler dokumentene i ${name} om?`,
+  `Gi meg en oversikt over de viktigste temaene i ${name}.`,
+  `Oppsummer det viktigste i ${name} i noen få punkter.`,
+];
+
 /** The three suggestions to offer over `corpusKey`. Everything else gets the
     general three, which is the safe direction to be wrong in. */
-export function kickstartersFor(corpusKey: string | undefined): readonly string[] {
-  return corpusKey === CORPUS_WITH_OWN_KICKSTARTERS ? KICKSTARTERS : GENERAL_KICKSTARTERS;
+export function kickstartersFor(
+  corpusKey: string | undefined,
+  corpusName?: string,
+): readonly string[] {
+  if (corpusKey === CORPUS_WITH_OWN_KICKSTARTERS) return KICKSTARTERS;
+  return corpusName ? namedKickstarters(corpusName) : GENERAL_KICKSTARTERS;
 }
 
 /** Fixed for now, model generated later. The language is not consistent, but
@@ -142,6 +153,9 @@ export const AGENT_PREFIX = 'Agent: ';
 export const AGENT_DEFAULT_LABEL = 'Standard';
 /** Over the list of agents. */
 export const AGENT_HEADING = 'Velg agent';
+
+/** Beside the send button, for a tester whose questions go to genki's test environment. */
+export const TEST_ENVIRONMENT_TAG = 'Testmiljø';
 
 /** Over a finished answer with no sources behind it. Without it, an answer
    with no sources looks exactly like one with them, and only the sources

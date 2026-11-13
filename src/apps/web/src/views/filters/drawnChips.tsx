@@ -3,7 +3,7 @@
 // u-combobox ticks the options, takes one value off when a ticked option is chosen, and reads
 // out and counts single values. The drawn chips come last, as `<data>` too: u-combobox gives
 // ArrowLeft and Backspace from the field to the last chip, and a hidden one cannot take focus.
-// `compact-filter-chips` draws one chip for the whole field; `year-ranges` draws one per period.
+// FacetField draws one per field (all chosen, or many behind a flag); `year-ranges` one per period.
 
 import type { ReactNode } from 'react';
 

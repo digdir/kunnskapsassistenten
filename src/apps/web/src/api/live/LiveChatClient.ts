@@ -23,11 +23,10 @@ import {
   datasetArguments,
   filterArguments,
   markerRefs,
-  toCitations,
   toSourceDocuments,
   type McpChunk,
 } from './mcp';
-import { citeExcerpts, type MarkerRef } from '../excerptCitations';
+import { citeAnswer, type MarkerRef } from '../excerptCitations';
 import { excerptIds, fetchExcerptTexts, withExcerptTexts } from './excerpts';
 import { answerFingerprint, recallThread, rememberAnswer } from './sourceStore';
 import { TurnRecorder } from './turnRecorder';
@@ -371,25 +370,25 @@ export class LiveChatClient implements ChatClient {
         // so on another device, or after the browser was cleared, it reads back as an answer
         // (headless-rag #41).
         if (answer.outcome === 'needs-clarification') restored.status = answer.outcome;
-        if (answer.markers?.length) {
-          // Cited by excerpt: the stored markers pair footnotes and excerpts again, over the
-          // backend's chunks when it kept them and this browser's otherwise.
-          const kept = message.sources?.length ? message.sources : undefined;
-          const listed = kept ?? toSourceDocuments(answer.chunks, detail.corpusKey);
-          const cited = citeExcerpts(message.content, listed, answer.markers);
+        // The same rule as live (`citeAnswer`), over the backend's chunks or else this browser's.
+        const kept = message.sources?.length ? message.sources : undefined;
+        const markers = answer.markers?.length ? answer.markers : undefined;
+        if (kept && markers) {
+          const cited = citeAnswer(message.content, kept, markers);
           restored.content = cited.content;
-          restored.sources = kept
-            ? cited.documents
-            : await this.#withTexts(cited.documents, detail.corpusKey);
+          restored.sources = cited.documents;
           restored.citations = cited.citations;
           restored.citationCount = cited.citations.length;
-        } else if (!message.sources?.length && answer.chunks.length > 0) {
-          const documents = await this.#withTexts(
+        } else if (!kept && answer.chunks.length > 0) {
+          const cited = citeAnswer(
+            message.content,
             toSourceDocuments(answer.chunks, detail.corpusKey),
-            detail.corpusKey,
+            markers,
           );
-          restored.sources = documents;
-          restored.citations = toCitations(documents);
+          restored.content = cited.content;
+          restored.sources = await this.#withTexts(cited.documents, detail.corpusKey);
+          restored.citations = cited.citations;
+          if (markers) restored.citationCount = cited.citations.length;
         }
         return restored;
       }),
@@ -510,10 +509,9 @@ async function* readFrame(
     return;
   }
 
-  // One excerpt per footnote, numbered as KA shows them: the answer's markers renumbered 1, 2, 3
-  // in the order they first cite an excerpt, and only the cited excerpts.
-  const byExcerpt = markers === undefined ? undefined : citeExcerpts(finalText, listed, markers);
-  const shownText = byExcerpt?.content ?? finalText;
+  // What each `[n]` names: the excerpt genki's marker names, or else document n (decisions/0014).
+  const cited = citeAnswer(finalText, listed, markers);
+  const shownText = cited.content;
 
   if (state.answerText === '' && shownText !== '') {
     yield { type: 'token', text: shownText };
@@ -545,17 +543,16 @@ async function* readFrame(
 
   // After the answer's text, so the reader is reading while the excerpts' text is looked up
   // (src/decisions/0008).
-  const shown = byExcerpt?.documents ?? listed;
-  const documents = hooks ? await hooks.withTexts(shown) : shown;
+  const documents = hooks ? await hooks.withTexts(cited.documents) : cited.documents;
 
   yield {
     type: 'sources',
     documents,
-    citations: byExcerpt?.citations ?? toCitations(documents),
+    citations: cited.citations,
     retrieval,
     // The streamed text had genki's markers; the answer is shown with KA's.
-    ...(byExcerpt && state.answerText !== '' && byExcerpt.content !== state.answerText
-      ? { content: byExcerpt.content }
+    ...(state.answerText !== '' && cited.content !== state.answerText
+      ? { content: cited.content }
       : {}),
   };
 

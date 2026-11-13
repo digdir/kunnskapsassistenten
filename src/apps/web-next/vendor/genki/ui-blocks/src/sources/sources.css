@@ -1,0 +1,409 @@
+/* After Designsystemet's layers, every token read through a --genai-sources-* variable. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  .uib-sources {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-sources-gap, var(--ds-size-12));
+    inline-size: 100%;
+    container: uib-sources / inline-size;
+    overflow-wrap: break-word;
+    font-family: var(--genai-sources-font-family, var(--ds-font-family)), sans-serif;
+  }
+  .uib-sources[data-variant='compact'] {
+    gap: var(--genai-sources-compact-gap, var(--ds-size-3));
+  }
+  .uib-sources-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-sources-title-gap, var(--ds-size-3));
+  }
+  /* A Designsystemet heading, «sm» in the panel as kunnskapsassistenten's «Kilder». */
+  .uib-sources-title {
+    margin: 0;
+  }
+  .uib-sources > .uib-sources-disclaimer {
+    margin: 0;
+    /* Pinned to neutral, as kunnskapsassistenten draws it: a quiet line, not the host's accent. */
+    color: var(--genai-sources-disclaimer-color, var(--ds-color-neutral-text-subtle));
+  }
+  .uib-sources-answers {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--genai-sources-answers-gap, var(--ds-size-2));
+  }
+  .uib-sources-answers-count {
+    margin: 0;
+    color: var(--genai-sources-answers-count-color, var(--ds-color-text-subtle));
+  }
+  .uib-sources-answers-steps {
+    display: flex;
+    gap: var(--genai-sources-answers-steps-gap, var(--ds-size-1));
+  }
+  .uib-sources-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: var(--genai-sources-empty-gap, var(--ds-size-2));
+    color: var(--genai-sources-empty-color, var(--ds-color-text-subtle));
+  }
+  .uib-sources-empty > * {
+    margin: 0;
+  }
+  .uib-sources-search-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-sources-search-gap, var(--ds-size-2));
+  }
+  .uib-sources-search-results {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--genai-sources-search-results-gap, var(--ds-size-2));
+    min-block-size: var(--genai-sources-search-results-min-block-size, var(--ds-size-8));
+  }
+  .uib-sources-search-status {
+    margin: 0;
+    color: var(--genai-sources-search-status-color, var(--ds-color-text-subtle));
+  }
+  .uib-sources-search-steps {
+    display: flex;
+    gap: var(--genai-sources-search-steps-gap, var(--ds-size-1));
+  }
+  /* Pinned to warning: a highlight that follows the host's colour family is not a highlight. */
+  .uib-sources-mark {
+    background: var(--genai-sources-mark-background, var(--ds-color-warning-surface-tinted));
+    color: var(--genai-sources-mark-color, var(--ds-color-warning-text-default));
+    border-radius: var(--genai-sources-mark-border-radius, var(--ds-border-radius-sm));
+  }
+  .uib-sources-mark[data-current='true'] {
+    background: var(--genai-sources-mark-current-background, var(--ds-color-warning-base-default));
+    color: var(--genai-sources-mark-current-color, var(--ds-color-warning-base-contrast-default));
+  }
+
+  .uib-sources-documents {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-sources-documents-gap, var(--ds-size-6));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .uib-sources[data-variant='compact'] .uib-sources-documents {
+    gap: var(--genai-sources-documents-gap, var(--ds-size-3));
+  }
+
+  /* Private defaults, so the container query changes a default and never a host's value. */
+  .uib-sources-document {
+    --_head-padding: var(--ds-size-3);
+    --_body-padding: var(--ds-size-3);
+    --_excerpt-padding: var(--ds-size-3);
+    --dsc-card-border-width: 0;
+    --dsc-card-block-border-width: 0;
+    background: transparent;
+  }
+  /* The controls under the title, so a long title keeps the card's width in a 336 px panel. */
+  .uib-sources-document-head {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--genai-sources-head-gap, var(--ds-size-2));
+    padding: var(--genai-sources-head-padding, var(--_head-padding));
+    border: var(--genai-sources-head-border-width, var(--ds-border-width-default)) solid
+      var(--genai-sources-head-border-color, var(--ds-color-border-subtle));
+    border-start-start-radius: var(--genai-sources-border-radius, var(--ds-border-radius-lg));
+    border-start-end-radius: var(--genai-sources-border-radius, var(--ds-border-radius-lg));
+    hyphens: auto;
+    background: var(--genai-sources-head-background, var(--ds-color-surface-tinted));
+    color: var(--genai-sources-head-color, var(--ds-color-text-default));
+  }
+  .uib-sources-document-head > * {
+    margin-block: 0;
+  }
+  .uib-sources-document-head > :first-child {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+  /* The chevron stays by the title's first line when the title wraps. */
+  .uib-sources-document-toggle {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--genai-sources-head-toggle-gap, var(--ds-size-2));
+    inline-size: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  /* Pinned to accent: in this block accent means interactive. */
+  .uib-sources-caret {
+    flex: none;
+    color: var(--genai-sources-toggle-color, var(--ds-color-accent-text-subtle));
+  }
+  :is(
+      .uib-sources-document-toggle,
+      .uib-sources-excerpt-toggle,
+      .uib-sources-passages-toggle
+    )[aria-expanded='true']
+    .uib-sources-caret {
+    rotate: 180deg;
+  }
+  .uib-sources-passages-toggle {
+    align-self: start;
+  }
+  .uib-sources-passages {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-sources-body-gap, var(--ds-size-4));
+  }
+  .uib-sources-passages[hidden] {
+    display: none;
+  }
+  .uib-sources-controls,
+  .uib-sources-excerpt-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--genai-sources-controls-gap, var(--ds-size-1));
+  }
+  .uib-sources-document-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-sources-body-gap, var(--ds-size-4));
+    padding: var(--genai-sources-body-padding, var(--_body-padding));
+    border: var(--genai-sources-body-border-width, var(--ds-border-width-default)) solid
+      var(--genai-sources-body-border-color, var(--ds-color-border-subtle));
+    border-block-start: 0;
+    border-end-start-radius: var(--genai-sources-border-radius, var(--ds-border-radius-lg));
+    border-end-end-radius: var(--genai-sources-border-radius, var(--ds-border-radius-lg));
+    background: var(--genai-sources-body-background, var(--ds-color-background-tinted));
+  }
+  .uib-sources-document-body > * {
+    margin-block: 0;
+  }
+  /* A layered `display: flex` beats the browser's own [hidden] rule. */
+  .uib-sources-document-body[hidden] {
+    display: none;
+  }
+  .uib-sources-subtitle {
+    color: var(--genai-sources-subtitle-color, var(--ds-color-text-subtle));
+  }
+  .uib-sources-link {
+    display: inline-flex;
+    align-items: center;
+    inline-size: fit-content;
+  }
+
+  .uib-sources-excerpt {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-sources-excerpt-gap, var(--ds-size-2));
+    padding: var(--genai-sources-excerpt-padding, var(--_excerpt-padding));
+    background: var(--genai-sources-excerpt-background, var(--ds-color-surface-default));
+    border-radius: var(--genai-sources-excerpt-border-radius, var(--ds-border-radius-lg));
+  }
+  .uib-sources-excerpt-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--genai-sources-excerpt-head-gap, var(--ds-size-4));
+  }
+  .uib-sources-excerpt-title {
+    margin: 0;
+    min-inline-size: 0;
+  }
+  /* Two size and weight steps over the links back beside it, so the two are told apart. */
+  .uib-sources-excerpt-number {
+    display: block;
+    font-size: var(--genai-sources-excerpt-number-font-size, var(--ds-body-md-font-size));
+    font-weight: var(--genai-sources-excerpt-number-font-weight, var(--ds-font-weight-semibold));
+    color: var(--genai-sources-excerpt-number-color, var(--ds-color-text-subtle));
+  }
+  /* The title, then one link back per footnote that cites the excerpt. */
+  .uib-sources-excerpt-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--genai-sources-uses-gap, var(--ds-size-2));
+  }
+  .uib-sources-excerpt-controls {
+    flex: none;
+  }
+  .uib-sources-uses {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--genai-sources-uses-gap, var(--ds-size-2));
+    font-size: var(--genai-sources-uses-font-size, var(--ds-body-xs-font-size));
+    font-weight: var(--genai-sources-uses-font-weight, var(--ds-font-weight-regular));
+  }
+  /* At least 24 px each way (WCAG 2.5.8); a literal, as size tokens shrink under data-size. */
+  .uib-sources-use {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: var(--genai-sources-use-min-size, 24px);
+    min-block-size: var(--genai-sources-use-min-size, 24px);
+    white-space: nowrap;
+    hyphens: none;
+  }
+  .uib-sources-excerpt-toggle {
+    --dsc-button-color: var(--genai-sources-toggle-color, var(--ds-color-accent-text-subtle));
+    --dsc-button-color--hover: var(
+      --genai-sources-toggle-color,
+      var(--ds-color-accent-text-subtle)
+    );
+  }
+  .uib-sources-uncited {
+    margin: 0;
+    color: var(--genai-sources-uncited-color, var(--ds-color-text-subtle));
+  }
+  .uib-sources-excerpt-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-sources-excerpt-body-gap, var(--ds-size-3));
+  }
+  .uib-sources-excerpt-body > * {
+    margin-block: 0;
+  }
+  .uib-sources-section {
+    color: var(--genai-sources-section-color, var(--ds-color-text-default));
+  }
+  .uib-sources-page {
+    color: var(--genai-sources-page-color, var(--ds-color-text-subtle));
+  }
+  .uib-sources-unavailable,
+  .uib-sources-fetching {
+    font-style: italic;
+    color: var(--genai-sources-unavailable-color, var(--ds-color-text-subtle));
+  }
+  .uib-sources-quote {
+    font-size: var(--genai-sources-quote-font-size, var(--ds-body-sm-font-size));
+    line-height: var(--genai-sources-quote-line-height, var(--ds-line-height-lg));
+    letter-spacing: var(--genai-sources-quote-letter-spacing, var(--ds-body-sm-letter-spacing));
+  }
+  /* A blank line between paragraphs: one line of the quote's own text, which no token says. */
+  .uib-sources-quote > * {
+    margin-block-end: var(--genai-sources-quote-paragraph-gap, 1lh);
+  }
+  .uib-sources-quote pre {
+    overflow-x: visible;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  /* A closed excerpt shows its first lines, as D1 draws it. A line count is not a token. */
+  .uib-sources-preview {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--genai-sources-preview-lines, 2);
+    overflow: hidden;
+  }
+  .uib-sources-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--genai-sources-actions-gap, var(--ds-size-1));
+  }
+  .uib-sources-back {
+    display: flex;
+    inline-size: fit-content;
+  }
+  /* Pinned to accent, or the mark would dissolve into the surface it marks. */
+  .uib-sources-excerpt[data-active='true'] {
+    background: var(
+      --genai-sources-excerpt-active-background,
+      var(--ds-color-accent-surface-tinted)
+    );
+    box-shadow: inset var(--genai-sources-excerpt-active-marker-width, var(--ds-size-1)) 0 0 0
+      var(--genai-sources-excerpt-active-marker-color, var(--ds-color-accent-base-default));
+  }
+  .uib-sources-info dl {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--genai-sources-info-row-gap, var(--ds-size-1))
+      var(--genai-sources-info-column-gap, var(--ds-size-3));
+    margin: 0;
+  }
+  .uib-sources-info dl > div {
+    display: contents;
+  }
+  .uib-sources-info dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  /* ── `variant="tool"`: the dev boards' «Kilder» tool (dev-kilder-hoyre) ── */
+
+  .uib-sources[data-variant='tool'],
+  .uib-sources[data-variant='tool'] > .uib-sources-head {
+    gap: var(--genai-sources-tool-gap, var(--ds-size-3));
+  }
+
+  /* The field alone: the line for the hits takes room only once there is something to say. */
+  .uib-sources[data-variant='tool'] .uib-sources-search-form {
+    gap: 0;
+  }
+  .uib-sources[data-variant='tool'] .uib-sources-search-results:not([data-empty]) {
+    margin-block-start: var(--genai-sources-search-gap, var(--ds-size-2));
+  }
+  .uib-sources[data-variant='tool'] .uib-sources-search-results[data-empty] {
+    min-block-size: 0;
+  }
+
+  /* «Utdrag svaret bygger på», a quiet line over the list. */
+  .uib-sources-caption {
+    margin: 0;
+    color: var(--genai-sources-caption-color, var(--ds-color-text-subtle));
+    font-size: var(--genai-sources-caption-font-size, var(--ds-font-size-2));
+    line-height: var(--genai-sources-caption-line-height, var(--ds-line-height-md));
+  }
+
+  /* An excerpt's title, its section or «Utdrag N», bold in the text's own colour. */
+  .uib-sources[data-variant='tool'] :is(.uib-sources-excerpt-title, .uib-sources-excerpt-number) {
+    font-size: var(--genai-sources-tool-excerpt-title-font-size, var(--ds-font-size-3));
+    font-weight: var(
+      --genai-sources-tool-excerpt-title-font-weight,
+      var(--ds-font-weight-semibold)
+    );
+    color: var(--genai-sources-tool-excerpt-title-color, var(--ds-color-text-default));
+  }
+
+  /* A closed excerpt is two lines of its text, its paragraphs run together, and the last line
+     fades into the excerpt's ground. */
+  .uib-sources[data-variant='tool'] .uib-sources-preview {
+    position: relative;
+    max-block-size: var(--genai-sources-preview-block-size, 2lh);
+  }
+  .uib-sources[data-variant='tool'] .uib-sources-preview > * {
+    margin-block-end: 0;
+  }
+  .uib-sources[data-variant='tool'] .uib-sources-preview::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    block-size: var(--genai-sources-preview-fade-block-size, 1lh);
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      var(--genai-sources-excerpt-background, var(--ds-color-surface-default))
+    );
+    pointer-events: none;
+  }
+
+  @container uib-sources (inline-size >= 410px) {
+    .uib-sources:not([data-variant='compact']) .uib-sources-document {
+      --_head-padding: var(--ds-size-4);
+      --_body-padding: var(--ds-size-6) var(--ds-size-6) var(--ds-size-8);
+      --_excerpt-padding: var(--ds-size-3) var(--ds-size-4) var(--ds-size-4);
+    }
+  }
+}

@@ -16,7 +16,7 @@ import { CorpusDisclaimer } from './CorpusDisclaimer';
 import { corpusKeyFor, isOwnDocument } from './origin';
 import { SourceDocumentCard } from './SourceDocumentCard';
 import { distinctTitles } from './distinctTitles';
-import { documentHeadingDomId } from './ids';
+import { documentDomId, documentHeadingDomId, excerptInDocumentDomId } from './ids';
 import { SourcesPlaceholder } from './SourcesPlaceholder';
 import { noAnswerYet, emptyStateFor, type SourcesEmptyState } from './emptyStates';
 import { readableDocuments } from './readableText';
@@ -59,6 +59,18 @@ function allExcerpts(sources: SourceDocument[]): Excerpt[] {
 function excerptOfHit(sources: SourceDocument[], hit: SearchHit | undefined): Excerpt | undefined {
   if (hit === undefined) return undefined;
   return allExcerpts(sources).find((excerpt) => excerpt.id === hit.itemId);
+}
+
+/** Where the search scrolls for an excerpt; undefined for one the answer never cited. */
+function scrollIdOf(sources: SourceDocument[], excerpt: Excerpt): string | undefined {
+  if (excerpt.citationNumber !== undefined) return excerptDomId(excerpt.citationNumber);
+  for (const source of sources) {
+    const index = source.excerpts.indexOf(excerpt);
+    if (index >= 0 && source.citationNumber !== undefined) {
+      return excerptInDocumentDomId(source.id, index + 1);
+    }
+  }
+  return undefined;
 }
 
 /** Stands in for a message id while the shell still holds one flat list. */
@@ -324,8 +336,14 @@ export function SourcesView({
       activated?.href === href ? activated : focused === null ? null : placeOf(focused);
 
     // Two frames, as for a marker: in case the panel had to be un-collapsed.
+    // The card's top, so «Kilde N» over the heading is in view too; focus on the heading.
     return afterRender(() =>
-      afterRender(() => scrollToAndFocus(documentHeadingDomId(activeDocumentId))),
+      afterRender(() => {
+        scrollTo(documentDomId(activeDocumentId));
+        document
+          .getElementById(documentHeadingDomId(activeDocumentId))
+          ?.focus({ preventScroll: true });
+      }),
     );
   }, [activeDocumentId, activeCitationNonce]);
 
@@ -360,18 +378,16 @@ export function SourcesView({
   }
 
   /**
-   * The back-link: use `use` of excerpt `citationNumber`, in the answer on screen. The answer is
-   * the chat's, so the panel only moves focus to its marker.
+   * The back-link: use `use` of the footnote whose markers link to `targetId`, in the answer on
+   * screen. The answer is the chat's, so the panel only moves focus to its marker.
    */
-  function showUse(citationNumber: number, use: number) {
+  function showUse(targetId: string, use: number) {
     const messageId = activeAnswer?.messageId;
     const scope =
       (messageId === undefined || messageId === LEGACY_ANSWER_ID
         ? null
         : document.getElementById(answerDomId(messageId))) ?? document.querySelector('main');
-    const markers = scope
-      ? [...scope.querySelectorAll<HTMLElement>(`a[href="#${excerptDomId(citationNumber)}"]`)]
-      : [];
+    const markers = scope ? [...scope.querySelectorAll<HTMLElement>(`a[href="#${targetId}"]`)] : [];
     const marker = markers[use - 1];
     if (marker !== undefined) goToMarker(marker);
   }
@@ -406,8 +422,9 @@ export function SourcesView({
     setCurrentHitIndex(0);
     setOpenExcerptIds((previous) => new Set([...previous, ...nextHits.map((hit) => hit.itemId)]));
 
-    if (first?.citationNumber !== undefined) {
-      afterRender(() => scrollTo(excerptDomId(first.citationNumber as number)));
+    const firstId = first === undefined ? undefined : scrollIdOf(documentList, first);
+    if (firstId !== undefined) {
+      afterRender(() => scrollTo(firstId));
     }
   }
 
@@ -419,8 +436,9 @@ export function SourcesView({
     setCurrentHitIndex(next);
     if (excerpt !== undefined) {
       setOpenExcerptIds((previous) => new Set(previous).add(excerpt.id));
-      if (excerpt.citationNumber !== undefined) {
-        afterRender(() => scrollTo(excerptDomId(excerpt.citationNumber as number)));
+      const excerptId = scrollIdOf(documentList, excerpt);
+      if (excerptId !== undefined) {
+        afterRender(() => scrollTo(excerptId));
       }
     }
   }

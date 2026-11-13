@@ -34,6 +34,25 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # The next client's first load against apps/web's budget (300 kB gzip).
+      - run: node apps/web-next/scripts/check-bundle-size.mjs apps/web-next/dist
+
+  # apps/web-next/vendor/genki is genki's source at the commit it names, and nothing else:
+  # taken again from digdir/genki (public), it must be the same, byte for byte.
+  web-next-vendor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Take the snapshot again from genki at the recorded commit
+        run: |
+          commit=$(sed -n 's/^commit: //p' apps/web-next/vendor/genki/GENKI_COMMIT)
+          branch=$(sed -n 's/^branch: //p' apps/web-next/vendor/genki/GENKI_COMMIT)
+          git clone --quiet --filter=blob:none --no-checkout https://github.com/digdir/genki.git "$RUNNER_TEMP/genki"
+          sh apps/web-next/scripts/sync-genki.sh "$RUNNER_TEMP/genki" "$commit" "$branch"
+          git status --short -- apps/web-next/vendor
+          git diff --exit-code -- apps/web-next/vendor
+          test -z "$(git status --porcelain -- apps/web-next/vendor)"
 
   # The client's own checks, beside `check` rather than in it, so the
   # end-to-end suite does not make the server's job slower. It runs in mock
@@ -84,10 +103,22 @@ jobs:
       - name: Start it and ask
         run: |
           docker run --detach --rm --name ka --publish 8787:8787 \
-            -e AUTH_MODE=off -e APP_ORIGIN=http://localhost:8787 -e DIGDIR_API_KEY=unused \
+            -e AUTH_MODE=off -e LISTEN_HOST=0.0.0.0 -e APP_ORIGIN=http://localhost:8787 \
+            -e DIGDIR_API_KEY=unused \
             ka:ci
           curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
           curl -fsS localhost:8787/ | grep -q '<html lang="nb"'
+          docker stop ka
+      - name: With the next client switched on, the cookie chooses it
+        run: |
+          docker run --detach --rm --name ka --publish 8787:8787 \
+            -e AUTH_MODE=off -e LISTEN_HOST=0.0.0.0 -e APP_ORIGIN=http://localhost:8787 \
+            -e DIGDIR_API_KEY=unused \
+            -e KA_NEXT=1 ka:ci
+          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
+          curl -fsS localhost:8787/api/next/ui | grep -q '"available":true'
+          curl -fsS localhost:8787/ | grep -q '/assets/'
+          curl -fsS -H 'Cookie: ka_ui=next' localhost:8787/ | grep -q '/next-assets/'
           docker stop ka
 
   # The client's own image for the test environment, built from src/ as

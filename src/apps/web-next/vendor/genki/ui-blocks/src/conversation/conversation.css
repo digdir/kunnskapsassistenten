@@ -1,0 +1,164 @@
+/* After Designsystemet's layers, so a host's own CSS wins, and every token read through a
+   --genai-conversation-* variable at the point of use, listed on
+   docs/components/conversation.html. Each answer is the Answer block, styled by answer.css. */
+@layer ds.theme, ds.base, ds.components, genai.components;
+
+@layer genai.components {
+  .uib-conversation {
+    font-family: var(--genai-conversation-font-family, var(--ds-font-family)), sans-serif;
+  }
+
+  .uib-conversation-turns {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-conversation-gap, var(--ds-size-8));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* One turn: the line about its scope, what the app puts over it, and the card. */
+  .uib-conversation-turn,
+  .uib-conversation-loading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-conversation-turn-gap, var(--ds-size-2));
+  }
+
+  /* The reader's own question, in a tinted box at the end of the line. Side, ground and width
+     tell it from the answer, so none of them carries it alone. No visible border: a bordered box
+     is what a button looks like. */
+  .uib-conversation-turn[data-kind='question'] {
+    align-items: end;
+  }
+  .uib-conversation-question {
+    --dsc-card-padding: var(--genai-conversation-question-padding-block, var(--ds-size-3))
+      var(--genai-conversation-question-padding-inline, var(--ds-size-4));
+    --dsc-card-border-color: var(
+      --genai-conversation-question-border-color,
+      var(--ds-color-surface-tinted)
+    );
+    max-inline-size: var(--genai-conversation-question-max-inline-size, 85%);
+    overflow-wrap: anywhere;
+  }
+  .uib-conversation-attachments {
+    margin-block-start: var(--genai-conversation-attachments-spacing, var(--ds-size-1));
+    color: var(--genai-conversation-attachments-color, var(--ds-color-text-subtle));
+  }
+
+  /* «Avgrenset til: Årsrapport · 2023» over an answer: a statement about a question already
+     asked, so not a chip, which is a control. */
+  /* The thread's name, with the column's gap under it, as kunnskapsassistenten's chat column. */
+  .uib-conversation-title {
+    margin: 0 0 var(--genai-conversation-title-spacing, var(--ds-size-8));
+    overflow-wrap: break-word;
+  }
+
+  .uib-conversation-slow {
+    margin-block: var(--genai-conversation-slow-spacing, var(--ds-size-4)) 0;
+    color: var(--genai-conversation-slow-color, var(--ds-color-text-subtle));
+  }
+
+  /* `answerVariant="plain"`: who answers, a small strong line over the answer (dev-kilder-hoyre). */
+  .uib-conversation-label {
+    margin: 0 0 var(--genai-conversation-label-spacing, var(--ds-size-1));
+    color: var(--genai-conversation-label-color, var(--ds-color-text-default));
+    font-size: var(--genai-conversation-label-font-size, var(--ds-font-size-2));
+    font-weight: var(--genai-conversation-label-font-weight, var(--ds-font-weight-semibold));
+    line-height: var(--genai-conversation-label-line-height, var(--ds-line-height-md));
+  }
+
+  .uib-conversation-scope {
+    margin: 0;
+    padding-inline: var(--genai-conversation-scope-padding-inline, var(--ds-size-2));
+    color: var(--genai-conversation-scope-color, var(--ds-color-text-subtle));
+    font-size: var(--genai-conversation-scope-font-size, var(--ds-font-size-minus-1));
+  }
+
+  /* A question back is read, not pressed, as an answer is. */
+  .uib-conversation-clarification {
+    cursor: auto;
+  }
+  .uib-conversation-clarification-label {
+    margin: 0;
+  }
+  .uib-conversation-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--genai-conversation-options-gap, var(--ds-size-2));
+  }
+
+  /* The stand-in question is set in from the card's edge. */
+  .uib-conversation-loading-question {
+    margin: 0;
+    padding-inline: var(--genai-conversation-loading-question-padding-inline, var(--ds-size-2));
+  }
+
+  /* When the answer came, at the far end of the row under it. `auto` and not a gap, since the
+     row holds one or more buttons, and it gives way when the row wraps. */
+  .uib-conversation-time {
+    margin-inline-start: auto;
+    color: var(--genai-conversation-time-color, var(--ds-color-text-subtle));
+    font-size: var(--genai-conversation-time-font-size, var(--ds-font-size-minus-1));
+  }
+
+  /* The search strip stays at the top while the conversation scrolls: inside the answer, it
+     would scroll under a sticky question field. The ground hides what passes behind it. A host
+     with a sticky band over the conversation sets the inset to its height. */
+  .uib-conversation-search {
+    position: sticky;
+    inset-block-start: var(--genai-conversation-search-inset-block-start, 0);
+    z-index: var(--genai-conversation-search-z-index, 1);
+    display: block;
+    margin-block-end: var(--genai-conversation-search-spacing, var(--ds-size-4));
+    padding-block: var(--genai-conversation-search-padding-block, var(--ds-size-3));
+    border-block-end: var(--genai-conversation-search-border-width, var(--ds-border-width-default))
+      solid var(--genai-conversation-search-border-color, var(--ds-color-border-default));
+    background: var(--genai-conversation-search-background, var(--ds-color-background-default));
+  }
+  .uib-conversation-search-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--genai-conversation-search-gap, var(--ds-size-2));
+  }
+  /* «Søk i svar 2 av 3», on the row: everything pinned here is taken from the reading area. */
+  .uib-conversation-search-label {
+    flex: 0 0 auto;
+    color: var(--genai-conversation-search-label-color, var(--ds-color-text-subtle));
+  }
+  /* Wide enough for a word or two, and no wider: it shares the row with the count. */
+  .uib-conversation-search-field {
+    flex: 1 1 var(--genai-conversation-search-field-inline-size, 14rem);
+    min-inline-size: 0;
+    max-inline-size: var(--genai-conversation-search-field-max-inline-size, 22rem);
+  }
+  .uib-conversation-search-count {
+    margin: 0;
+    color: var(--genai-conversation-search-count-color, var(--ds-color-text-subtle));
+    font-size: var(--genai-conversation-search-count-font-size, var(--ds-font-size-minus-1));
+  }
+  .uib-conversation-search-steps {
+    display: flex;
+    gap: var(--genai-conversation-search-steps-gap, var(--ds-size-1));
+  }
+
+  /* The marks Sources draws, on the same two grounds. Pinned to warning, as kunnskapsassistenten
+     marks them: the answer spends accent on its footnotes, and a mark in accent would read as one
+     more footnote. */
+  .uib-conversation-mark {
+    border-radius: var(--genai-conversation-mark-border-radius, var(--ds-border-radius-sm));
+    background: var(--genai-conversation-mark-background, var(--ds-color-warning-surface-tinted));
+    color: var(--genai-conversation-mark-color, var(--ds-color-warning-text-default));
+  }
+  .uib-conversation-mark[data-current='true'] {
+    background: var(
+      --genai-conversation-mark-current-background,
+      var(--ds-color-warning-base-default)
+    );
+    color: var(
+      --genai-conversation-mark-current-color,
+      var(--ds-color-warning-base-contrast-default)
+    );
+  }
+}
