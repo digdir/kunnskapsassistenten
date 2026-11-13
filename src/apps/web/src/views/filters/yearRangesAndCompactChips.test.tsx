@@ -119,13 +119,15 @@ describe('the year field with periods', () => {
     expect(screen.getByText('4 år valgt')).toBeTruthy();
   });
 
-  it('suggests the period from the text, with the document count from the facets', () => {
+  it('suggests the period from the text, with the years in it that have documents', () => {
     render(<Years />);
 
     type('20-22');
 
-    // 2020, 2021 and 2022 hold 2, 3 and 4 documents.
-    expect(screen.getByRole('option', { name: '2020–2022 (9)', hidden: true })).toBeTruthy();
+    // 2020, 2021 and 2022 hold 2, 3 and 4 documents, which may be the same document.
+    expect(
+      screen.getByRole('option', { name: '2020–2022 (3 år med dokumenter)', hidden: true }),
+    ).toBeTruthy();
   });
 
   it('suggests a year without documents with 0, and it can be chosen', () => {
@@ -144,7 +146,7 @@ describe('the year field with periods', () => {
     const { container } = render(<Years initial={['2019', '2020']} seen={seen} />);
 
     type('21-23');
-    choose('2021–2023 (12)');
+    choose('2021–2023 (3 år med dokumenter)');
 
     expect(seen.at(-1)).toEqual(['2019', '2020', '2021', '2022', '2023']);
     expect(chips(container)).toEqual(['2019–2023']);
@@ -217,13 +219,13 @@ describe('the year field with periods', () => {
 
     type('2020-2');
     expect(offered(container)).toEqual([
-      '2020–2021 (5)',
-      '2020–2022 (9)',
-      '2020–2023 (14)',
-      '2020–2024 (20)',
+      '2020–2021 (2 år med dokumenter)',
+      '2020–2022 (3 år med dokumenter)',
+      '2020–2023 (4 år med dokumenter)',
+      '2020–2024 (5 år med dokumenter)',
     ]);
 
-    choose('2020–2022 (9)');
+    choose('2020–2022 (3 år med dokumenter)');
     expect(seen.at(-1)).toEqual(['2020', '2021', '2022']);
   });
 
@@ -357,7 +359,7 @@ describe('the year list on a click', () => {
     expect(said.at(-1)).toBe('Lagt til 2023');
 
     type('19-21');
-    choose('2019–2021 (6)');
+    choose('2019–2021 (3 år med dokumenter)');
     expect(said.at(-1)).toBe('Lagt til 2019–2021');
   });
 
@@ -367,15 +369,72 @@ describe('the year list on a click', () => {
     render(<Years initial={['2020', '2021', '2022', '2023']} seen={seen} said={said} />);
 
     type('20-22');
-    choose('2020–2022 (9)');
+    choose('2020–2022 (3 år med dokumenter)');
     // Inside a longer period too.
     type('21-22');
-    choose('2021–2022 (7)');
+    choose('2021–2022 (2 år med dokumenter)');
 
     const before = ['2020', '2021', '2022', '2023'];
     expect(seen).toEqual([before, before]);
     expect(said).toEqual(['2020–2022 er alt valgt.', '2021–2022 er alt valgt.']);
     expect(input().value).toBe('');
+  });
+
+  it('takes only the years in a period that the field lists, not every calendar year', () => {
+    const seen: string[][] = [];
+    const facet = {
+      ...years,
+      values: [...years.values, { value: '1950', label: '1950', count: 2 }],
+    };
+    const { container } = render(<Years facet={facet} seen={seen} />);
+
+    type('1800-2020');
+    choose('1800–2020 (3 år med dokumenter)');
+
+    expect(seen.at(-1)).toEqual(['1950', '2019', '2020']);
+    expect(chips(container)).toEqual(['1950', '2019–2020']);
+  });
+
+  it('keeps a long period under the limit of values a field can send', () => {
+    const seen: string[][] = [];
+    render(<Years seen={seen} />);
+
+    type('1800-2200');
+    fireEvent.keyDown(input(), { key: 'Enter' });
+
+    expect(seen.at(-1)).toEqual(['2019', '2020', '2021', '2022', '2023', '2024']);
+    expect(screen.queryByText(/Høyst/u)).toBeNull();
+  });
+
+  it('keeps a chosen year the list does not have when a period is added', () => {
+    const seen: string[][] = [];
+    render(<Years initial={['2030']} seen={seen} />);
+
+    type('23-24');
+    choose('2023–2024 (2 år med dokumenter)');
+
+    expect(seen.at(-1)).toEqual(['2023', '2024', '2030']);
+  });
+
+  it('counts a period in years with documents, never a sum that can pass the documents there are', () => {
+    const { container } = render(<Years />);
+
+    type('2019-2024');
+
+    // The counts per year add up to 21, but a document with several years is in several.
+    expect(offered(container)).toEqual(['2019–2024 (6 år med dokumenter)']);
+  });
+
+  it('says a period with no listed years has no documents, and chooses nothing on Enter', () => {
+    const seen: string[][] = [];
+    const { container } = render(<Years seen={seen} />);
+
+    type('1700-1750');
+    fireEvent.keyDown(input(), { key: 'Enter' });
+
+    expect(offered(container)).toEqual(['Ingen dokumenter i 1700–1750.']);
+    expect(seen).toEqual([]);
+    expect(input().value).toBe('1700-1750');
   });
 
   it('counts the years for the screen reader, not the chips', () => {
@@ -763,8 +822,9 @@ describe('a period already chosen, in the panel', () => {
       );
     });
     const value =
-      screen.getByRole('option', { name: '2022–2023 (9)', hidden: true }).getAttribute('value') ??
-      '';
+      screen
+        .getByRole('option', { name: '2022–2023 (2 år med dokumenter)', hidden: true })
+        .getAttribute('value') ?? '';
     act(() => {
       field.value = value;
       field.dispatchEvent(

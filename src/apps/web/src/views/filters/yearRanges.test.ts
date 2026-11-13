@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   documentsIn,
   formatRange,
+  listedYearsIn,
   parseYearInput,
   rangeFromKey,
   rangeKey,
@@ -202,5 +203,19 @@ describe('dokumentene i en periode', () => {
 
   it('gir ingen tall når fasettene ikke har tall, som i live', () => {
     expect(documentsIn({ from: 2022, to: 2024 }, [{ value: '2024' }])).toBeUndefined();
+  });
+});
+
+describe('the years a period stands for', () => {
+  const values = [
+    { value: '2024', count: 10 },
+    { value: '2020', count: 2 },
+    { value: '2019', count: 0 },
+    { value: '1950' },
+  ];
+
+  it('are the listed years in it with documents, not every calendar year', () => {
+    expect(listedYearsIn({ from: 1800, to: 2200 }, values)).toEqual([1950, 2020, 2024]);
+    expect(listedYearsIn({ from: 2021, to: 2023 }, values)).toEqual([]);
   });
 });
