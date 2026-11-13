@@ -11,7 +11,7 @@ import {
 import { documentKeys, readingOrder } from '../sources/pairing.js';
 import { distinctNames, isOwn } from '../sources/Sources.js';
 import type { SourceDocument, SourceTarget } from '../sources/types.js';
-import { readFootnotes, type AnswerMarker } from './citations.js';
+import { documentNumbers, readFootnotes, type AnswerMarker } from './citations.js';
 import { useT } from './i18n.js';
 import { SourcesUsed, type UsedDocument } from './SourcesUsed.js';
 
@@ -71,6 +71,8 @@ export interface AnswerProps {
    * by excerpt only: without markers, `[N]` names a document, and no footnote is drawn for it.
    */
   markers?: readonly AnswerMarker[] | undefined;
+  /** Footnotes that name documents drawn with each document's number, 1, 2, 3 by first citation. */
+  documentFootnotes?: boolean | undefined;
   /** The text is the service's notice that it found nothing (`no_answer`), not an answer. */
   noAnswer?: boolean | undefined;
   /** A footnote was followed: its index in the answer's footnotes, and the item it cites. */
@@ -178,8 +180,8 @@ interface FootnoteProps {
   footnotes: Map<number, HTMLElement>;
 }
 
-// Always the excerpt's number in a round mark, as kunnskapsassistenten draws it, and never a
-// document's. A link named by what it cites and the document:
+// The excerpt's number in a round mark, as kunnskapsassistenten draws it, or with
+// `documentFootnotes` the document's. A link named by what it cites and the document:
 // a bare «[3]» tells a screen reader user nothing. The brackets stay in the text, out of sight,
 // so a copied answer still reads «[1]». With nowhere to go, it is a mark and not a link, which
 // would jump to the top of the page.
@@ -235,13 +237,14 @@ export const AnswerSkeleton = () => (
  * One answer: its text with footnotes, and what a reader can do with it. Each footnote leads to
  * the one excerpt it cites, and Sources leads back to it, from the same pairing. Only excerpts
  * are numbered, in the order the answer first cites them; a document is named by its title, and
- * an answer whose footnotes name only documents draws none.
+ * an answer whose footnotes name only documents draws none, unless `documentFootnotes`.
  */
 export const Answer = ({
   text,
   status = 'complete',
   sources,
   markers,
+  documentFootnotes = false,
   noAnswer = false,
   onOpenCitation,
   onOpenDocument,
@@ -291,6 +294,10 @@ export const Answer = ({
   const { pairing } = read;
   const byExcerpt = pairing.mode === 'excerpt';
   const keys = useMemo(() => documentKeys(sources ?? []), [sources]);
+  const byDocument = useMemo(
+    () => (documentFootnotes ? documentNumbers(pairing) : new Map<string, number>()),
+    [documentFootnotes, pairing],
+  );
   // The titles in «Kilder brukt i svaret», by document key, and its excerpt links, by chunk id,
   // for a way back to one of them.
   const usedLinks = useRef(new Map<string, HTMLElement>());
@@ -334,36 +341,47 @@ export const Answer = ({
     return () => cancelAnimationFrame(frame);
   }, [target]);
 
+  // What a footnote is drawn as: an excerpt's number, or with `documentFootnotes` its document's.
+  const footnoteOf = (citation: number) => {
+    const item = pairing.targets[citation];
+    if (item === undefined) return undefined;
+    const number = byExcerpt ? pairing.numbers.get(item) : byDocument.get(item);
+    const at = byExcerpt ? documentOf(item) : keys.indexOf(item);
+    const source = at === undefined || at < 0 ? undefined : sources?.[at];
+    if (number === undefined || at === undefined || !source) return undefined;
+    const title = names[at] ?? source.title;
+    const goal: SourceTarget = {
+      ...(byExcerpt ? { chunkId: item } : {}),
+      documentId: source.documentId,
+      index: source.index,
+    };
+    const label = byExcerpt
+      ? t('answer.footnote', { n: number, title })
+      : t('answer.footnoteDocument', { n: number, title });
+    return { number, goal, label };
+  };
+
   const cite: CiteRenderer = (n, key) => {
     const mark = read.marks.get(key);
     if (mark?.kind === 'dropped') return false;
     if (mark?.kind === 'footnote') {
-      // A footnote that names only a document has no number, and is not drawn.
-      const item = byExcerpt ? pairing.targets[mark.citation] : undefined;
-      const number = item === undefined ? undefined : pairing.numbers.get(item);
-      const at = item === undefined ? undefined : documentOf(item);
-      const source = at === undefined ? undefined : sources?.[at];
-      if (item === undefined || number === undefined || at === undefined || !source) return false;
-      const name = names[at] ?? source.title;
-      const goal: SourceTarget = {
-        chunkId: item,
-        documentId: source.documentId,
-        index: source.index,
-      };
+      // A footnote that names only a document has no number without `documentFootnotes`.
+      const drawn = footnoteOf(mark.citation);
+      if (!drawn) return false;
       return (
         <Footnote
           key={key}
           citation={mark.citation}
-          number={number}
-          label={t('answer.footnote', { n: number, title: name })}
-          href={href?.(goal)}
+          number={drawn.number}
+          label={drawn.label}
+          href={href?.(drawn.goal)}
           id={citationId?.(mark.citation)}
           onOpen={
             onOpenCitation
               ? (event) => {
                   // The app moves to the item; following the address could reload its route.
                   event.preventDefault();
-                  onOpenCitation(mark.citation, goal);
+                  onOpenCitation(mark.citation, drawn.goal);
                 }
               : undefined
           }
@@ -393,7 +411,13 @@ export const Answer = ({
   // times a second.
   const used = useMemo((): UsedDocument[] => {
     const order = readingOrder(sources ?? [], pairing);
-    return order.documents.flatMap((i) => {
+    // With document footnotes, in the order of their numbers, so the list's 1, 2, 3 are the marks'.
+    const documents = byDocument.size
+      ? order.documents.toSorted(
+          (a, b) => (byDocument.get(keys[a] ?? '') ?? 0) - (byDocument.get(keys[b] ?? '') ?? 0),
+        )
+      : order.documents;
+    return documents.flatMap((i) => {
       const source = sources?.[i];
       if (!source) return [];
       const key = keys[i] ?? `@${i}`;
@@ -408,7 +432,7 @@ export const Answer = ({
         ? [{ key, source, name: names[i] ?? source.title, own: isOwn(source), excerpts }]
         : [];
     });
-  }, [sources, pairing, byExcerpt, keys, names]);
+  }, [sources, pairing, byExcerpt, byDocument, keys, names]);
 
   const told =
     failed && failure ? failureText(t, failure, assistantName ?? t('answer.assistant')) : undefined;

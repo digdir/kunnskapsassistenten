@@ -28,6 +28,8 @@ export interface ApproachStep {
   sourcesUsed?: readonly number[];
   /** The step says what the assistant did not find, and can link to more about it. */
   missing?: boolean;
+  /** How long the step took, in milliseconds, when the platform said; drawn beside its title. */
+  duration?: number;
 }
 
 export interface ApproachProps {
@@ -58,9 +60,9 @@ export interface ApproachProps {
    * boards' bar: tinted, its chevron at the end. Left out, the totals stand in the foot.
    */
   summary?: 'totals' | undefined;
-  /** After the totals in the head, stronger, such as «filteret er endret». */
+  /** After the totals in the head, or over the list's scope, stronger: «filteret er endret». */
   note?: string | undefined;
-  /** At the top of the open card, before the steps, such as what the answer read from. */
+  /** Before the steps, in the open card or the list, such as what the answer read from. */
   scope?: ReactNode;
   /**
    * `list`: the steps as the dev boards' «Fremgangsmåte» tool (dev-verktoy-1 to -3), with no card
@@ -103,6 +105,24 @@ const useOwnOpen = (working: boolean) => {
 };
 
 type T = ReturnType<typeof useT>;
+
+/** How long a line took, «2,4 s», with the duration in ISO 8601 for the machine. */
+const StepTime = ({ ms, lead = '' }: { ms: number; lead?: string }) => {
+  const t = useT();
+  const f = useFormat();
+  const seconds = ms / 1000;
+  const shown = seconds < 10 ? f.decimal(seconds, 1) : f.number(Math.round(seconds));
+  return (
+    <span className="uib-approach-step-time">
+      {lead}
+      <time dateTime={`PT${seconds.toFixed(1)}S`}>
+        {ms < 50
+          ? t('approach.stepTimeUnder', { seconds: f.decimal(0.1, 1) })
+          : t('approach.stepTime', { seconds: shown })}
+      </time>
+    </span>
+  );
+};
 
 /** A line's words: the excerpts a reading run read, or the title with how many times it ran. */
 const titleOf = (line: ApproachLine, t: T) =>
@@ -249,6 +269,8 @@ export const Approach = ({
     return (
       <div className="uib-approach" data-variant="list">
         <p className="uib-approach-caption">{t('approach.caption')}</p>
+        {note ? <p className="uib-approach-note">{note}</p> : null}
+        {scope ? <div className="uib-approach-scope">{scope}</div> : null}
         <ol className="uib-approach-list" aria-label={t('approach.title')}>
           {lines.map((line) => {
             const { step } = line;
@@ -285,10 +307,16 @@ export const Approach = ({
                     <span className="uib-approach-step-line">{detail}</span>
                   ) : null}
                 </span>
+                {line.duration !== undefined && step.status !== 'waiting' ? (
+                  <StepTime ms={line.duration} />
+                ) : null}
               </li>
             );
           })}
         </ol>
+        {read !== undefined || used !== undefined ? (
+          <p className="uib-approach-footer">{footer}</p>
+        ) : null}
         {live}
       </div>
     );
@@ -329,6 +357,9 @@ export const Approach = ({
                     aria-current={step.status === 'active' ? 'step' : undefined}
                   >
                     <span className="uib-approach-step-title">{titleOf(line, t)}</span>
+                    {line.duration !== undefined && step.status !== 'waiting' ? (
+                      <StepTime ms={line.duration} lead=" · " />
+                    ) : null}
                     {step.status === 'done' ? (
                       <span className="uib-visually-hidden">
                         {' '}

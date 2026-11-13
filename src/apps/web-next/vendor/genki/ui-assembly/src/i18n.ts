@@ -37,6 +37,7 @@ const nbAssembly = defineNamespace({
   corpusChanged: 'Byttet til {corpus}. Du har fått en ny tråd, og filteret er tømt.',
   tabTitle: '{page} – {assistant}',
   aboutDocument: 'Om «{title}»: {question}',
+  filterTooLarge: '{field}: for mange er valgt. Velg høyst {max}, eller alle unntatt høyst {max}.',
   // What a host that only tries the assistant says in place of sending (`useLogOnly`).
   logOnlyFeedback: 'Ville sendt tilbakemelding: {rating}. Ikke sendt i forhåndsvisningen.',
   logOnlyFeedbackReasons:
@@ -84,6 +85,7 @@ const enAssembly = {
   corpusChanged: 'Switched to {corpus}. You have a new thread, and the filter is cleared.',
   tabTitle: '{page} – {assistant}',
   aboutDocument: 'About “{title}”: {question}',
+  filterTooLarge: '{field}: too many are selected. Select at most {max}, or all but at most {max}.',
   logOnlyFeedback: 'Would have sent feedback: {rating}. Not sent in the preview.',
   logOnlyFeedbackReasons:
     'Would have sent feedback: {rating} ({reasons}). Not sent in the preview.',

@@ -203,6 +203,37 @@
     line-height: var(--genai-approach-list-line-height, var(--ds-line-height-md));
   }
 
+  /* How long a step took: quiet, its digits aligned, at the end of the list's row. */
+  .uib-approach-step-time {
+    color: var(--genai-approach-step-time-color, var(--ds-color-neutral-text-subtle));
+    font-size: var(--genai-approach-step-time-font-size, var(--ds-font-size-2));
+    font-weight: var(--genai-approach-step-time-font-weight, var(--ds-font-weight-regular));
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .uib-approach-list > li > .uib-approach-step-time {
+    flex: none;
+    margin-inline-start: auto;
+    line-height: var(--genai-approach-list-title-line-height, var(--ds-line-height-md));
+  }
+
+  /* In the list, the note and the foot are lines of their own; the first step's line divides. */
+  .uib-approach[data-variant='list'] > .uib-approach-note {
+    margin: 0;
+    font-size: var(--genai-approach-list-note-font-size, var(--ds-font-size-2));
+  }
+
+  .uib-approach[data-variant='list'] > .uib-approach-footer {
+    margin: 0;
+  }
+
+  .uib-approach[data-variant='list'] > .uib-approach-scope {
+    padding: 0;
+    margin: 0;
+    border: 0;
+  }
+
   /* What the answer read from, over the steps, a line between. */
   .uib-approach-scope {
     padding-block-end: var(--genai-approach-scope-padding-block-end, var(--ds-size-2));

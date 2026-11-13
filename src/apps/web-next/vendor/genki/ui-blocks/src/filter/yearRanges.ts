@@ -107,6 +107,14 @@ export const suggestPeriods = (
   return [...found.values()].sort((a, b) => b.from - a.from || a.to - b.to);
 };
 
+/**
+ * The years a period stands for: those in it that the field lists with documents. Not every
+ * calendar year, so «1800-2015» is as many values as the collection has years, never more than
+ * the field holds.
+ */
+export const listedYearsIn = (range: YearRange, values: Counted): number[] =>
+  yearsWithDocuments(values).filter((year) => year >= range.from && year <= range.to);
+
 /** Every year in a period, in order. */
 export const yearsIn = ({ from, to }: YearRange): number[] =>
   Array.from({ length: to - from + 1 }, (_, index) => from + index);
@@ -138,7 +146,10 @@ export const rangeFromKey = (key: string): YearRange | undefined => {
   return from <= to ? { from, to } : undefined;
 };
 
-/** Documents in a period from the facet's counts; undefined without counts. */
+/**
+ * Documents in a period from the facet's counts; undefined without counts. Exact for a year; for
+ * longer periods it is the sum over its years, and a document with several years counts in each.
+ */
 export const documentsIn = (range: YearRange, values: Counted): number | undefined => {
   if (values.length > 0 && values.every((value) => value.count === undefined)) return undefined;
   let total = 0;

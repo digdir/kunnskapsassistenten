@@ -102,6 +102,8 @@ export interface ConversationProps {
   onStalled?: ((turn: ConversationAnswer) => void) | undefined;
   /** «Kilder brukt i svaret» under a finished answer. */
   sourcesUsed?: boolean | undefined;
+  /** `Answer`'s `documentFootnotes`: marks per cited document until a service cites excerpts. */
+  documentFootnotes?: boolean | undefined;
   /** «Er det noe mer jeg kan hjelpe deg med?» under a finished answer. */
   closingQuestion?: boolean | undefined;
   /** Who answers, for a screen reader. Without it, the AI assistant. */
@@ -117,6 +119,8 @@ export interface ConversationProps {
    * `assistantName`, over what the `header` puts there, and with no card (`Answer`'s `plain`).
    */
   answerVariant?: 'card' | 'plain' | undefined;
+  /** `false` leaves out the label over a `plain` answer, as the newer dev boards draw it. */
+  answerLabel?: boolean | undefined;
   /** Designsystemet's `data-color` for the block, set only when given. */
   color?: string | undefined;
   /** The moment an answer's «i dag» and «i går» are counted from. */
@@ -208,12 +212,14 @@ export const Conversation = ({
   stalledAfter = STALLED_ANSWER_MS,
   onStalled,
   sourcesUsed,
+  documentFootnotes,
   closingQuestion,
   assistantName,
   headingLevel = 3,
   questionColor,
   answerColor,
   answerVariant = 'card',
+  answerLabel: labelled = true,
   color,
   now,
   className,
@@ -221,12 +227,13 @@ export const Conversation = ({
   const t = useT();
   const plain = answerVariant === 'plain';
   // For the eye: the answer's own line, «… svarte:», still tells a screen reader who answered.
-  const answerLabel = plain ? (
-    // In the answers' family, as the answer it names.
-    <p aria-hidden="true" className="uib-conversation-label" data-color={answerColor}>
-      {assistantName ?? t('answer.assistant')}
-    </p>
-  ) : null;
+  const answerLabel =
+    plain && labelled ? (
+      // In the answers' family, as the answer it names.
+      <p aria-hidden="true" className="uib-conversation-label" data-color={answerColor}>
+        {assistantName ?? t('answer.assistant')}
+      </p>
+    ) : null;
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLOListElement>(null);
   const fieldRef = useRef<HTMLInputElement>(null);
@@ -571,6 +578,7 @@ export const Conversation = ({
           target={target?.turnId === turn.id ? answerTarget : undefined}
           highlight={turn.id === searchedId ? highlight : undefined}
           sourcesUsed={sourcesUsed}
+          documentFootnotes={documentFootnotes}
           closingQuestion={closingQuestion}
           onRegenerate={onRegenerate && (() => regenerate(turn, question))}
           failure={turn.failure}

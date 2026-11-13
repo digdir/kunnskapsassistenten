@@ -75,8 +75,8 @@ export interface ShellPanel {
   /** What the folded panel shows at its bottom, such as the reader's avatar. Not in the top row. */
   railFoot?: ReactNode;
   /**
-   * What the folded panel shows under its button, such as one button per tool that opens the
-   * panel on it (dev-verktoy-4), on a drawer's rail as well. Not in the top row.
+   * What the folded panel shows under its button, such as «Ny tråd» (dev-navbar), on a drawer's
+   * rail as well. Not in the top row.
    */
   rail?: ReactNode;
   /** The design's width, the floor and the ceiling, in CSS pixels. */
@@ -645,7 +645,7 @@ const Side = ({
           {railed ? null : <div className="uib-shell-head">{panel.head}</div>}
           {toggleLast && !withCompanion ? toggleButton : null}
         </div>
-        {/* On the rail a drawer leaves too, so a tool is one click away in a narrow window. */}
+        {/* On the rail a drawer leaves too, so its parts are one click away in a narrow window. */}
         {railed && panel.rail != null ? <div className="uib-shell-rail">{panel.rail}</div> : null}
         {drawer ? null : panelContent}
         {railed || footScrolls ? null : foot}

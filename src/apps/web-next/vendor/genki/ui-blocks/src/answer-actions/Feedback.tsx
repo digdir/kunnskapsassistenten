@@ -30,27 +30,55 @@ interface FeedbackProps {
   onSend: (feedback: AnswerFeedback) => void;
 }
 
-/** «Var svaret nyttig?», generalised from genki's workspace. */
+/**
+ * «Var svaret nyttig?», generalised from genki's workspace. A click on a thumb sends the rating at
+ * once; the reasons and the comment are optional and come after, sent with the rating again. The
+ * platform keeps the latest feedback on a run, so each send replaces the one before.
+ */
 export const Feedback = ({ status, onSend }: FeedbackProps) => {
   const t = useT();
   const [rating, setRating] = useState<AnswerRating>();
   const [picked, setPicked] = useState<string[]>([]);
   const [comment, setComment] = useState('');
+  // The details last sent, which a new rating is sent with, as the platform takes the whole.
+  const [details, setDetails] = useState<{ reasons: string[]; comment: string }>({
+    reasons: [],
+    comment: '',
+  });
+  // Whether the last send had the details, which decides what the status line says.
   const [withDetails, setWithDetails] = useState(false);
-  // A new rating after a failed send puts the failure behind the person, as in the workspace.
-  const [changed, setChanged] = useState(false);
+  const [open, setOpen] = useState(false);
+  // Sent, and the app has not said how it went since: the status is about an earlier send.
+  const [awaiting, setAwaiting] = useState(false);
+  useEffect(() => setAwaiting(false), [status]);
+  const result = awaiting ? undefined : status;
   const commentId = useId();
   const counterId = useId();
-  const sent = status === 'sent';
   const busy = status === 'sending';
   const form = useRef<HTMLDivElement>(null);
+  const thumbs = useRef<Partial<Record<AnswerRating, HTMLButtonElement | null>>>({});
   const opened = useRef(false);
 
+  const send = (feedback: AnswerFeedback, full: boolean) => {
+    setWithDetails(full);
+    setAwaiting(true);
+    onSend(feedback);
+  };
+
+  // The same thumb again only sends again when the last send failed; the other one changes it.
   const choose = (value: AnswerRating) => {
-    if (sent) return;
-    opened.current = rating === undefined;
+    if (busy || (value === rating && result !== 'failed')) return;
+    opened.current = !open;
     setRating(value);
-    setChanged(true);
+    setOpen(true);
+    send(
+      {
+        rating: value,
+        reasons: value === 'down' ? details.reasons : [],
+        comment: details.comment,
+      },
+      false,
+    );
   };
 
   // The form opens under the answer, often at the foot of the column, where a docked question
@@ -62,31 +90,42 @@ export const Feedback = ({ status, onSend }: FeedbackProps) => {
     form.current?.scrollIntoView?.({ block: 'nearest' });
   }, [rating]);
 
-  const submit = (details: boolean) => {
-    if (!rating || busy || sent) return;
-    setWithDetails(details);
-    setChanged(false);
-    onSend({
-      rating,
-      reasons: details && rating === 'down' ? picked : [],
-      comment: details ? comment : '',
-    });
+  // Closing the form takes away the button that had focus, so focus goes to the chosen thumb.
+  const close = () => {
+    if (form.current?.contains(document.activeElement) && rating) thumbs.current[rating]?.focus();
+    setOpen(false);
   };
 
-  const message = sent
-    ? withDetails
-      ? t('answerActions.thanksDetails')
-      : t('answerActions.thanks')
-    : status === 'failed' && !changed
-      ? t('answerActions.notSent')
-      : '';
+  // The form closes once the details are sent. The effect runs on the render that saw them sent.
+  const detailsSent = result === 'sent' && withDetails;
+  useEffect(() => {
+    if (detailsSent) close();
+  }, [detailsSent]);
+
+  const submit = () => {
+    if (!rating || busy) return;
+    const reasons = rating === 'down' ? picked : [];
+    setDetails({ reasons, comment });
+    send({ rating, reasons, comment }, true);
+  };
+
+  const message =
+    result === 'sent'
+      ? withDetails
+        ? t('answerActions.thanksDetails')
+        : t('answerActions.thanks')
+      : result === 'failed'
+        ? t('answerActions.notSent')
+        : '';
 
   const thumb = (value: AnswerRating) => (
     <Button
       variant={rating === value ? 'primary' : 'secondary'}
       data-size="sm"
       aria-pressed={rating === value}
-      aria-disabled={sent || undefined}
+      ref={(button) => {
+        thumbs.current[value] = button;
+      }}
       onClick={() => choose(value)}
     >
       {value === 'up' ? <ThumbUpIcon aria-hidden /> : <ThumbDownIcon aria-hidden />}
@@ -105,7 +144,7 @@ export const Feedback = ({ status, onSend }: FeedbackProps) => {
         {thumb('up')}
         {thumb('down')}
       </div>
-      {rating && !sent ? (
+      {rating && open ? (
         <div className="uib-answer-actions-form" ref={form}>
           {rating === 'down' ? (
             <Fieldset data-size="sm">
@@ -149,10 +188,10 @@ export const Feedback = ({ status, onSend }: FeedbackProps) => {
             </span>
           </Field>
           <div className="uib-answer-actions-form-actions">
-            <Button data-size="sm" loading={busy} onClick={() => submit(true)}>
+            <Button data-size="sm" loading={busy && withDetails} onClick={submit}>
               {t('answerActions.send')}
             </Button>
-            <Button variant="tertiary" data-size="sm" onClick={() => submit(false)}>
+            <Button variant="tertiary" data-size="sm" onClick={close}>
               {t('answerActions.skip')}
             </Button>
           </div>

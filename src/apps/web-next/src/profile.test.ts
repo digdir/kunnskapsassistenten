@@ -33,12 +33,9 @@ describe('the experiments', () => {
     expect(narrower?.description).toBe('Filteret tar mindre plass, og tråder får resten.');
   });
 
-  it('describe the gathered chips by the case they still try, many values, since all is one chip without them', () => {
-    const gathered = profileFor(ME).experiments?.find(
-      ({ id }) => id === 'compact-filter-chips',
-    );
-    expect(gathered?.description).toBe(
-      'Når mange verdier er valgt, står én merkelapp, som «12 virksomheter».',
-    );
+  it('no longer offer years as periods or gathered chips: they are the standard', () => {
+    const ids = (profileFor(ME).experiments ?? []).map(({ id }) => id);
+    expect(ids).not.toContain('year-ranges');
+    expect(ids).not.toContain('compact-filter-chips');
   });
 });

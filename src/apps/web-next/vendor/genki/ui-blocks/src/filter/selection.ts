@@ -46,6 +46,12 @@ export const everyListed = (field: FilterField, values: readonly string[]) => {
   return field.options.length > 0 && field.options.every((option) => ticked.has(option.value));
 };
 
+/** How many values a field lists that are not ticked. */
+export const untickedCount = (field: FilterField, values: readonly string[]) => {
+  const ticked = new Set(values);
+  return field.options.filter((option) => !ticked.has(option.value)).length;
+};
+
 /** Whether a field's chosen values show as one «Alle»: it lists two or more, and all are ticked. */
 export const showsAsAll = (field: FilterField, values: readonly string[]) =>
   field.options.length > 1 && everyListed(field, values);

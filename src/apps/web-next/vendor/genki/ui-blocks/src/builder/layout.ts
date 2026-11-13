@@ -6,10 +6,12 @@ import {
   blockSpec,
   defaultZone,
   isBlockId,
+  placesOf,
   zones,
   type BlockId,
   type BlockOption,
   type Need,
+  type Place,
   type Zone,
 } from './catalogue.js';
 
@@ -35,7 +37,7 @@ export interface AssistantLayout {
  */
 export interface BuilderState {
   layout: AssistantLayout;
-  chosen: Partial<Record<BlockId, Zone>>;
+  chosen: Partial<Record<BlockId, Place>>;
   /**
    * The blocks a change of service turned off, each with its zone and options, so a service that
    * can back them again puts them back (`fitService`). Screen state too; a template forgets them.
@@ -60,9 +62,19 @@ const orderIn = (zone: Zone, id: BlockId) => blockSpec(id).order[zone] ?? 0;
 const sorted = (zone: Zone, placed: readonly PlacedBlock[]) =>
   [...placed].sort((a, b) => orderIn(zone, a.block) - orderIn(zone, b.block));
 
-/** Where the block stands, or `undefined` when it is off. */
+/** Where the block stands, the first of its zones when it stands in two, or `undefined` when off. */
 export const zoneOf = (layout: AssistantLayout, id: BlockId): Zone | undefined =>
   zones.find((zone) => layout.zones[zone].some((placed) => placed.block === id));
+
+/** Every zone the block stands in, in the zones' order. */
+export const zonesOf = (layout: AssistantLayout, id: BlockId): Zone[] =>
+  zones.filter((zone) => layout.zones[zone].some((placed) => placed.block === id));
+
+/** Where the block stands as the builder offers it: its zone, `both`, or `undefined` when off. */
+export const placedAt = (layout: AssistantLayout, id: BlockId): Place | undefined => {
+  const at = zonesOf(layout, id);
+  return at.length > 1 ? 'both' : at[0];
+};
 
 export const isOn = (layout: AssistantLayout, id: BlockId) => zoneOf(layout, id) !== undefined;
 
@@ -71,8 +83,8 @@ export const blocksIn = (layout: AssistantLayout, zone: Zone): BlockId[] =>
   sorted(zone, layout.zones[zone]).map((placed) => placed.block);
 
 /** Where a block stands, else where it was chosen to go, else its default zone. */
-export const placeOf = (state: BuilderState, id: BlockId): Zone =>
-  zoneOf(state.layout, id) ?? state.chosen[id] ?? defaultZone(id);
+export const placeOf = (state: BuilderState, id: BlockId): Place =>
+  placedAt(state.layout, id) ?? state.chosen[id] ?? defaultZone(id);
 
 const without = (layout: AssistantLayout, id: BlockId) =>
   Object.fromEntries(
@@ -82,11 +94,13 @@ const without = (layout: AssistantLayout, id: BlockId) =>
 const findPlaced = (layout: AssistantLayout, id: BlockId) =>
   zones.flatMap((zone) => layout.zones[zone]).find((placed) => placed.block === id);
 
-/** Puts the block in the zone, out of any other: a block stands in one place at a time. */
-const put = (layout: AssistantLayout, id: BlockId, zone: Zone): AssistantLayout => {
+/** Puts the block in the zone, or in both its zones, and out of any other, its options kept. */
+const put = (layout: AssistantLayout, id: BlockId, place: Place): AssistantLayout => {
   const kept = findPlaced(layout, id) ?? { block: id };
   const rest = without(layout, id);
-  return { ...layout, zones: { ...rest, [zone]: sorted(zone, [...rest[zone], kept]) } };
+  const into = place === 'both' ? blockSpec(id).zones : [place];
+  for (const zone of into) rest[zone] = sorted(zone, [...rest[zone], kept]);
+  return { ...layout, zones: rest };
 };
 
 /** On, where it stood last or was chosen to go. A block that is on stays where it is. */
@@ -95,7 +109,7 @@ export const turnOn = (state: BuilderState, id: BlockId): BuilderState =>
 
 /** Off. A movable block remembers where it stood, for when it is turned on again. */
 export const turnOff = (state: BuilderState, id: BlockId): BuilderState => {
-  const at = zoneOf(state.layout, id);
+  const at = placedAt(state.layout, id);
   if (!at) return state;
   return {
     ...state,
@@ -108,12 +122,12 @@ export const turnOff = (state: BuilderState, id: BlockId): BuilderState => {
  * To another zone it may stand in; a zone it may not stand in changes nothing. A block that is
  * off is not turned on, but goes there when it is.
  */
-export const moveTo = (state: BuilderState, id: BlockId, zone: Zone): BuilderState => {
-  if (!blockSpec(id).zones.includes(zone)) return state;
+export const moveTo = (state: BuilderState, id: BlockId, place: Place): BuilderState => {
+  if (!placesOf(id).includes(place)) return state;
   return {
     ...state,
-    layout: isOn(state.layout, id) ? put(state.layout, id, zone) : state.layout,
-    chosen: { ...state.chosen, [id]: zone },
+    layout: isOn(state.layout, id) ? put(state.layout, id, place) : state.layout,
+    chosen: { ...state.chosen, [id]: place },
   };
 };
 
@@ -127,12 +141,16 @@ export const fitService = (
   offered: (id: BlockId) => boolean,
 ): { state: BuilderState; dropped: BlockId[]; restored: BlockId[] } => {
   const dropped: BlockId[] = [];
-  const held: HeldBlock[] = [...(state.held ?? [])];
+  let held: HeldBlock[] = [...(state.held ?? [])];
   let layout = state.layout;
   for (const zone of zones) {
     for (const placed of state.layout.zones[zone]) {
       if (offered(placed.block)) continue;
-      dropped.push(placed.block);
+      // Held where it stands now, in each of its zones, and no longer where it stood before.
+      if (!dropped.includes(placed.block)) {
+        dropped.push(placed.block);
+        held = held.filter((entry) => entry.placed.block !== placed.block);
+      }
       held.push({ zone, placed });
       layout = { ...layout, zones: without(layout, placed.block) };
     }
@@ -141,16 +159,18 @@ export const fitService = (
   const kept: HeldBlock[] = [];
   for (const entry of held) {
     const id = entry.placed.block;
-    if (dropped.includes(id) || !offered(id) || isOn(layout, id)) {
+    // A block held in both its zones comes back to both.
+    const back = restored.includes(id);
+    if (!back && (dropped.includes(id) || !offered(id) || isOn(layout, id))) {
       if (!isOn(layout, id)) kept.push(entry);
       continue;
     }
-    const rest = without(layout, id);
+    const rest = layout.zones[entry.zone].filter((placed) => placed.block !== id);
     layout = {
       ...layout,
-      zones: { ...rest, [entry.zone]: sorted(entry.zone, [...rest[entry.zone], entry.placed]) },
+      zones: { ...layout.zones, [entry.zone]: sorted(entry.zone, [...rest, entry.placed]) },
     };
-    restored.push(id);
+    if (!back) restored.push(id);
   }
   return {
     state: { ...state, layout, ...(kept.length > 0 ? { held: kept } : { held: undefined }) },
@@ -160,8 +180,8 @@ export const fitService = (
 };
 
 /** On, in the zone given: what a drop into a zone does. A zone it may not stand in changes nothing. */
-export const placeIn = (state: BuilderState, id: BlockId, zone: Zone): BuilderState =>
-  blockSpec(id).zones.includes(zone) ? moveTo(turnOn(state, id), id, zone) : state;
+export const placeIn = (state: BuilderState, id: BlockId, place: Place): BuilderState =>
+  placesOf(id).includes(place) ? moveTo(turnOn(state, id), id, place) : state;
 
 /** The value of each option, the defaults filled in. */
 export const settingsOf = (layout: AssistantLayout, id: BlockId): BlockSettings => {
@@ -179,20 +199,20 @@ export const withSetting = (
   value: boolean | string,
 ): BuilderState => {
   const spec = blockSpec(id).options.find((o) => o.id === option);
-  const zone = zoneOf(state.layout, id);
-  if (!spec || !zone) return state;
-  const placed = state.layout.zones[zone].map((p) => {
-    if (p.block !== id) return p;
-    const rest = Object.fromEntries(
-      Object.entries(p.settings ?? {}).filter(([key]) => key !== option),
-    );
-    const settings = value === spec.default ? rest : { ...rest, [option]: value };
-    return Object.keys(settings).length > 0 ? { block: id, settings } : { block: id };
-  });
-  return {
-    ...state,
-    layout: { ...state.layout, zones: { ...state.layout.zones, [zone]: placed } },
-  };
+  const at = zonesOf(state.layout, id);
+  if (!spec || at.length === 0) return state;
+  // A block in both its zones has one set of options, kept alike in each.
+  const zoneMap = { ...state.layout.zones };
+  for (const zone of at)
+    zoneMap[zone] = zoneMap[zone].map((p) => {
+      if (p.block !== id) return p;
+      const rest = Object.fromEntries(
+        Object.entries(p.settings ?? {}).filter(([key]) => key !== option),
+      );
+      const settings = value === spec.default ? rest : { ...rest, [option]: value };
+      return Object.keys(settings).length > 0 ? { block: id, settings } : { block: id };
+    });
+  return { ...state, layout: { ...state.layout, zones: zoneMap } };
 };
 
 // The secondary panel's rule is the shell's: the builder reads the blocks, never the other way.
@@ -231,7 +251,7 @@ const storedOn = (layout: AssistantLayout, id: BlockId): BlockOption[] => {
 /**
  * Every rule a layout breaks, each with the rule's name, as genki reports a problem elsewhere:
  * - every block is in the catalogue and stands in a zone it may;
- * - no block is placed twice;
+ * - no block is placed twice, but one that may stand in both its zones, once in each;
  * - a block that is not built is not placed;
  * - a block, and each option the layout turns on, comes with the blocks it depends on
  *   (`component:*`);
@@ -242,7 +262,7 @@ export const layoutProblems = (
   met?: (need: Need) => boolean,
 ): LayoutProblem[] => {
   const problems: LayoutProblem[] = [];
-  const seen = new Set<BlockId>();
+  const seen = new Map<BlockId, Zone[]>();
   for (const zone of zones) {
     for (const placed of layout.zones[zone]) {
       const id: unknown = placed.block;
@@ -250,14 +270,17 @@ export const layoutProblems = (
         problems.push({ rule: 'unknown-block', block: String(id), zone });
         continue;
       }
-      if (seen.has(id)) problems.push({ rule: 'placed-twice', block: id });
-      seen.add(id);
       const spec = blockSpec(id);
+      const at = seen.get(id) ?? [];
+      // Twice is once too many, except a block that may stand in both its zones, once in each.
+      if (at.length > 0 && (!spec.both || at.includes(zone)))
+        problems.push({ rule: 'placed-twice', block: id });
+      seen.set(id, [...at, zone]);
       if (!spec.zones.includes(zone)) problems.push({ rule: 'zone-not-allowed', block: id, zone });
       if (spec.status === 'planned') problems.push({ rule: 'not-built', block: id });
     }
   }
-  for (const id of seen) {
+  for (const id of seen.keys()) {
     const check = (needs: readonly Need[], option?: string) => {
       for (const need of needs) {
         const [partner, ...others] = partnersOf(need);

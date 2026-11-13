@@ -167,7 +167,7 @@ describe('feedback on an answer', () => {
     expect(screen.queryByRole('group', { name: 'Tilbakemelding på svaret' })).toBeNull();
   });
 
-  it('a reloaded thread that cites documents reads as before: no excerpt markers, so no footnote, and its source by document', async () => {
+  it('a reloaded thread that cites documents marks each document it cites, and lists its source by document', async () => {
     const sources = [
       {
         index: 1,
@@ -192,13 +192,17 @@ describe('feedback on an answer', () => {
       },
     ]);
     render(<App me={me} api={api} />);
-    // genki draws footnotes only for excerpt markers; `[1]` naming a document is left out.
+    // The next look marks each cited document until genki cites excerpts.
     await waitFor(() =>
       expect(document.querySelector('.uib-answer-text')?.textContent).toBe(
-        'Ventetiden gikk ned.',
+        'Ventetiden gikk ned [1].',
       ),
     );
-    expect(document.querySelector('.uib-answer-footnote')).toBeNull();
+    expect(
+      document
+        .querySelector('.uib-answer-footnote .uib-answer-mark')
+        ?.getAttribute('aria-label'),
+    ).toBe('Kilde 1: Årsrapport 2023');
     expect(screen.getAllByText('Årsrapport 2023').length).toBeGreaterThan(0);
   });
 });
