@@ -4,7 +4,7 @@ import type { Excerpt, SourceDocument } from '../../model';
 // since the search counts hits by offsets in this string. Only drawn as a text
 // node, so not a sanitiser; tags go because they are noise.
 
-const HEADING_SEPARATOR = ' › ';
+export const HEADING_SEPARATOR = ' › ';
 
 // Backslash escapes become noncharacters (U+FDD0 on) until the end, so an
 // escaped `*` or `|` is never markup. Not private-use: Kudos has some in its text.
