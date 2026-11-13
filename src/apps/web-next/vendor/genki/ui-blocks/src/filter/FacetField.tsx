@@ -9,7 +9,7 @@ import { useImperativeHandle, useRef, type Ref } from 'react';
 import { renderChip, removedDrawnChip, valuesAfter, withDrawnChips } from './drawnChips.js';
 import { useT } from './i18n.js';
 import { chosenFirst, useChosenFirst, useListFollowsField } from './listBehaviour.js';
-import { everyListed, showsAsAll } from './selection.js';
+import { everyListed, showsAsAll, untickedCount } from './selection.js';
 import type { FilterField } from './types.js';
 
 /** What the filter may do with a field from outside: put the keyboard in it. */
@@ -119,8 +119,8 @@ export const FacetField = ({
         ? t('filter.stateAll', { total })
         : t('filter.stateSome', { count: chosen, total });
 
-  // The question would be turned away. The way out is in the message: fewer, or all.
-  const overLimit = chosen > max && !allChosen;
+  // genki takes at most `max` values, chosen or left out; the message says the way out.
+  const overLimit = chosen > max && untickedCount(field, selected) > max;
 
   // Cleared after a pick, or the next open shows «Ingen treff»; dispatched so both filters see it.
   const clearQuery = () => {
@@ -214,7 +214,9 @@ export const FacetField = ({
 
       {/* Above the chips, so a hundred chips cannot push it out of sight. */}
       {overLimit && (
-        <ValidationMessage>{t('filter.overLimit', { max, count: chosen })}</ValidationMessage>
+        <ValidationMessage>
+          {t('filter.overLimit', { max, count: chosen, total })}
+        </ValidationMessage>
       )}
 
       <Suggestion

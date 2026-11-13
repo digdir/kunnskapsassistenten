@@ -81,6 +81,8 @@ export interface AssistantApi {
     selection: FilterSelection,
     dataset: string,
     fields: readonly FieldSpec[],
+    /** The values each field has, for a field with more chosen than genki takes. */
+    lists?: readonly FilterField[],
   ): Promise<FilterField[]>;
   /** The line under a document's title in «Dokumenter», where the profile says how to find it. */
   loadAbout(dataset: string, documentId: string): Promise<readonly string[] | undefined>;
@@ -120,21 +122,48 @@ export const failureOf = (error: unknown): AnswerFailure => {
   }
 };
 
-/** The fields the question is narrowed by, in genki's filter shape. */
+/** The longest facets address sent: Node answers 431 past 16 KB of headers, token included. */
+export const FACETS_URL_LIMIT = 8_000;
+
+/** The most values genki's filter takes in a field (`maxOptions` in adapter-rest). */
+export const FILTER_VALUES_LIMIT = 100;
+
+/** A field with more values chosen, and more left out, than genki's filter takes. */
+export class FilterTooLarge extends Error {
+  constructor(readonly field: string) {
+    super(`filter field ${field} has too many values chosen and left out to send`);
+  }
+}
+
+/** The fields asked with, in genki's shape; past the limit, the values `lists` has left out. */
 export const filterSet = (
   selection: FilterSelection,
   fields: readonly FieldSpec[],
+  lists?: readonly FilterField[],
 ): FilterSet | undefined => {
-  const chosen = fields
-    .filter((f) => (selection[f.id]?.length ?? 0) > 0)
-    .map((f) => ({
-      field: f.id,
-      type: 'multiselect' as const,
-      'value-type': f.integer ? ('integer' as const) : ('string' as const),
-      'selected-options': f.integer
-        ? (selection[f.id] ?? []).map(Number)
-        : [...(selection[f.id] ?? [])],
-    }));
+  const chosen = fields.flatMap((f) => {
+    const values = selection[f.id] ?? [];
+    if (values.length === 0) return [];
+    const ticked = new Set(values);
+    const leftOut = lists
+      ?.find((list) => list.id === f.id)
+      ?.options.map((option) => option.value)
+      .filter((value) => !ticked.has(value));
+    const asLeftOut = values.length > FILTER_VALUES_LIMIT;
+    if (asLeftOut && (!leftOut || leftOut.length > FILTER_VALUES_LIMIT))
+      throw new FilterTooLarge(f.id);
+    // Every value it has is chosen: it narrows nothing.
+    if (asLeftOut && leftOut?.length === 0) return [];
+    const sent = asLeftOut && leftOut ? leftOut : values;
+    return [
+      {
+        field: f.id,
+        type: asLeftOut ? ('not-in-set' as const) : ('multiselect' as const),
+        'value-type': f.integer ? ('integer' as const) : ('string' as const),
+        'selected-options': f.integer ? sent.map(Number) : [...sent],
+      },
+    ];
+  });
   return chosen.length > 0 ? { fields: chosen } : undefined;
 };
 
@@ -361,13 +390,21 @@ export const createGenkiApi = ({
     return (await response.json()) as T;
   };
 
-  const facetsQuery = (dataset: string, fields: string, filter?: FilterSet | object) =>
-    new URLSearchParams({
+  const getFacets = <T>(dataset: string, fields: string, filter?: FilterSet | object) => {
+    const query = new URLSearchParams({
       tenant,
       'dataset-config-key': dataset,
       fields,
       ...(filter ? { filter: JSON.stringify(filter) } : {}),
     });
+    const path = `/api/facets?${query}`;
+    const length = `${baseUrl}${path}`.length;
+    if (length > FACETS_URL_LIMIT)
+      return Promise.reject(
+        new HttpError(431, `facets address of ${length} characters, over ${FACETS_URL_LIMIT}`),
+      );
+    return getJson<T>(path);
+  };
 
   const aboutCache = new Map<string, Promise<readonly string[] | undefined>>();
 
@@ -453,15 +490,15 @@ export const createGenkiApi = ({
     },
 
     // One call per field, narrowed by the other fields only: each count is «given the others».
-    loadFacets: (selection, dataset, fields) =>
+    loadFacets: (selection, dataset, fields, lists) =>
       Promise.all(
         fields.map(async (field) => {
           const others = Object.fromEntries(
             Object.entries(selection).filter(([id]) => id !== field.id),
           );
-          const body = await getJson<{
+          const body = await getFacets<{
             fields: { field: string; options: { value: string; count: number }[] }[];
-          }>(`/api/facets?${facetsQuery(dataset, field.id, filterSet(others, fields))}`);
+          }>(dataset, field.id, filterSet(others, fields, lists));
           const options = (body.fields.find((f) => f.field === field.id)?.options ?? []).map(
             (o) => ({
               value: String(o.value),
@@ -495,9 +532,9 @@ export const createGenkiApi = ({
           },
         ],
       };
-      const found = getJson<{
+      const found = getFacets<{
         fields: { field: string; options: { value: string | number; count: number }[] }[];
-      }>(`/api/facets?${facetsQuery(dataset, about.fields.join(','), filter)}`).then(
+      }>(dataset, about.fields.join(','), filter).then(
         (body) => {
           const values = (field: string) =>
             (body.fields.find((f) => f.field === field)?.options ?? [])

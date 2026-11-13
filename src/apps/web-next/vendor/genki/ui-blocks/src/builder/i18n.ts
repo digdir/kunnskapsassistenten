@@ -6,6 +6,7 @@ export const nbBuilder = defineNamespace({
   zonePrimary: 'Venstre panel',
   zoneMain: 'Innhold',
   zoneSecondary: 'Høyre panel',
+  zoneBoth: 'Begge steder',
   planned: 'kommer',
 
   projects: 'Prosjekter',
@@ -20,6 +21,8 @@ export const nbBuilder = defineNamespace({
   filterHelp: 'Hvilke dokumenter tråden leser fra',
   approach: 'Fremgangsmåte',
   approachHelp: 'Hvordan assistenten jobbet',
+  approachPlacesHelp:
+    'Som kort over hvert svar i innholdet, som verktøy med flere detaljer i høyre panel, eller begge steder',
   sources: 'Kilder',
   sourcesHelp: 'Utdragene svaret bygger på',
   documentView: 'Dokumentvisning',
@@ -86,6 +89,7 @@ export const enBuilder = {
   zonePrimary: 'Left panel',
   zoneMain: 'Content',
   zoneSecondary: 'Right panel',
+  zoneBoth: 'Both places',
   planned: 'coming',
 
   projects: 'Projects',
@@ -100,6 +104,8 @@ export const enBuilder = {
   filterHelp: 'Which documents the thread reads from',
   approach: 'Approach',
   approachHelp: 'How the assistant worked',
+  approachPlacesHelp:
+    'As a card over each answer in the content, as a tool with more detail in the right panel, or both',
   sources: 'Sources',
   sourcesHelp: 'The excerpts the answer builds on',
   documentView: 'Document view',

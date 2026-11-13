@@ -72,6 +72,8 @@ export interface BlockSpec {
   id: BlockId;
   /** The zones it may stand in, the default first. */
   zones: readonly Zone[];
+  /** It may also stand in both its zones at once, drawn in each its own way. */
+  both?: true;
   /** Its place among the blocks in each zone, from the top: lower comes first. */
   order: Partial<Record<Zone, number>>;
   /** Drawn in the panel's foot, not among its content: Innstillinger «nederst». */
@@ -176,6 +178,8 @@ export const blockCatalogue: readonly BlockSpec[] = [
     zones: ['main', 'secondary'],
     order: { main: 0, secondary: 0 },
     members: ['Approach'],
+    // The card over each answer in the main column, the tool in the secondary panel, or both.
+    both: true,
     needs: ['service:steps'],
     options: [
       { id: 'level', kind: 'choice', choices: ['standard', 'detailed'], default: 'standard' },
@@ -228,6 +232,15 @@ export const blockSpec = (id: BlockId): BlockSpec => byId.get(id) as BlockSpec;
 /** Where the block stands when it is turned on and nobody chose: its first zone. */
 export const defaultZone = (id: BlockId): Zone => blockSpec(id).zones[0] as Zone;
 
+/** Where the builder may put a block: one zone, or `both` of its zones where it allows. */
+export type Place = Zone | 'both';
+
+/** The places the builder offers a block: each of its zones, then both where it allows. */
+export const placesOf = (id: BlockId): Place[] => {
+  const spec = blockSpec(id);
+  return spec.both ? [...spec.zones, 'both'] : [...spec.zones];
+};
+
 /** The blocks that can stand in more than one zone, which the builder asks where to put. */
 export const movableBlocks = blockCatalogue.filter((spec) => spec.zones.length > 1);
 
@@ -279,6 +292,12 @@ export const settingsSchema = (id: BlockId) => {
 };
 
 const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** The catalogue key of a place's name: a zone's, or «Begge steder». */
+export const placeKey = (place: Place) => `builder.zone${capital(place)}` as BuilderKey;
+
+/** The catalogue key of what each place draws, for a block that may stand in both. */
+export const placesHelpKey = (id: BlockId) => `${nameKey(id)}PlacesHelp` as BuilderKey;
 
 /** The catalogue key of an option's label. */
 export const optionKey = (id: BlockId, option: string) =>

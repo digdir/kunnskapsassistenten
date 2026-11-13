@@ -74,6 +74,8 @@ export const nbSources = defineNamespace({
   // The `tool` variant's search and the caption over its list, the dev boards' words.
   searchExcerpts: 'Søk i utdragene',
   excerptsCaption: 'Utdrag svaret bygger på',
+  otherSources: 'Andre kilder som ble lest ({count})',
+  otherSourcesList: 'Andre kilder som ble lest',
   clearSearch: 'Tøm søket',
   searchMin: 'Skriv minst {n} tegn',
   searchNone: 'Ingen treff',
@@ -157,6 +159,8 @@ export const enSources = {
   searchPlaceholder: 'Search',
   searchExcerpts: 'Search the excerpts',
   excerptsCaption: 'Excerpts the answer builds on',
+  otherSources: 'Other sources that were read ({count})',
+  otherSourcesList: 'Other sources that were read',
   clearSearch: 'Clear the search',
   searchMin: 'Type at least {n} characters',
   searchNone: 'No matches',

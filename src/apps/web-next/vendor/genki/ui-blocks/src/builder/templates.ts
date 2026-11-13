@@ -35,7 +35,8 @@ export const templates: Readonly<Record<TemplateId, Readonly<Record<Zone, readon
   'knowledge-assistant-next': {
     primary: ['threads', 'filter', 'settings'],
     main: ['approach', 'chat'],
-    secondary: ['sources', 'notes'],
+    // Fremgangsmåte also as the tool (dev-verktoy-1), beside its bar over each answer.
+    secondary: ['approach', 'sources', 'notes'],
   },
   'sources-only': { primary: ['threads', 'filter'], main: ['chat'], secondary: ['sources'] },
   'approach-only': { primary: ['threads'], main: ['chat'], secondary: ['approach'] },

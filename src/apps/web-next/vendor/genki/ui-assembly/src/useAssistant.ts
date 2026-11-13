@@ -16,6 +16,7 @@ import {
   blockSpec,
   documentCount,
   factsFromModels,
+  fieldValueLabels,
   isDisplayLevel,
   isEmptySelection,
   isOn,
@@ -27,6 +28,7 @@ import {
   settingsOf,
   templateLook,
   zoneOf,
+  zonesOf,
   type AssistantLayout,
   type BlockId,
   type Channel,
@@ -47,11 +49,14 @@ import {
   type ShellRequest,
   type SourceTarget,
   type VariantOption,
+  type Zone,
 } from '@genai/ui-blocks';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   failureOf,
+  FILTER_VALUES_LIMIT,
   filterSet,
+  FilterTooLarge,
   HttpError,
   sourceFromWire,
   type AnswerData,
@@ -193,7 +198,12 @@ const firstSentence = (text: string | undefined) => {
   return sentence && sentence.length <= 140 ? sentence : undefined;
 };
 
-const threadInAddress = () => new URLSearchParams(location.search).get('t') ?? undefined;
+/** A thread id as genki makes them (21 of `[A-Za-z0-9_-]`, or a UUID), so `?t=` names no path. */
+const THREAD_ID = /^[\w-]{1,200}$/;
+const threadInAddress = () => {
+  const id = new URLSearchParams(location.search).get('t');
+  return id && THREAD_ID.test(id) ? id : undefined;
+};
 
 /** The answer with the markers its sources came with: `[N]` names an excerpt only with them. */
 const withMarkers = (
@@ -275,6 +285,8 @@ export const useAssistant = ({
     [layout, met],
   );
   const where = (id: BlockId) => (has(id) ? zoneOf(layout, id) : undefined);
+  /** Whether the block stands in the zone, also when it stands in both its zones. */
+  const standsIn = (id: BlockId, zone: Zone) => has(id) && zonesOf(layout, id).includes(zone);
   const option = (id: BlockId, name: string) => has(id) && optionInForce(layout, id, name, met);
 
   const threadsOn = has('threads');
@@ -479,6 +491,8 @@ export const useAssistant = ({
   const leave = useCallback(
     (id: string | undefined) => {
       abort.current?.abort();
+      // A thread the reader leaves is read from genki when they come back, whoever made it.
+      ownThread.current = undefined;
       setRequest({ action: 'close-drawers' });
       go(id);
     },
@@ -564,6 +578,8 @@ export const useAssistant = ({
     if (!filterOn || !corpusKey) return;
     let gone = false;
     setFields(undefined);
+    // The values another collection has say nothing of this one's.
+    setBaseFacets(undefined);
     api.loadFields(corpusKey).then(
       (found) => !gone && setFields(found),
       (error: Error) => {
@@ -603,39 +619,49 @@ export const useAssistant = ({
   useEffect(() => {
     if (!threadFiltersOn || !currentId) return;
     const kept = threadFilters.get(currentId);
-    if (kept && !sameSelection(kept, chosenSelection)) setSelection(kept);
+    // Kept as asked, so a field with every value chosen is empty there and means the same.
+    const asked = narrowing(chosenSelection, facets ?? baseFacets);
+    if (kept && !sameSelection(kept, chosenSelection) && !sameSelection(kept, asked))
+      setSelection(kept);
     // Only when another thread opens: a change made in the thread stays.
   }, [currentId, threadFiltersOn]);
   const [facets, setFacets] = useState<FilterField[]>();
   const [baseFacets, setBaseFacets] = useState<FilterField[]>();
-  const [facetsFailed, setFacetsFailed] = useState(false);
+  const [facetsFailed, setFacetsFailed] = useState<boolean | string>(false);
+  const tooLarge = (error: FilterTooLarge) =>
+    t('assembly.filterTooLarge', {
+      field: fields?.find((field) => field.id === error.field)?.label ?? error.field,
+      max: FILTER_VALUES_LIMIT,
+    });
   const [facetsKey, setFacetsKey] = useState(0);
   useEffect(() => {
     if (!filterOn || !fields || !corpusKey) return;
     let gone = false;
     setFacetsFailed(false);
-    api.loadFacets(selection, corpusKey, fields).then(
-      (found) => {
-        if (gone) return;
-        setFacets(found);
-        if (isEmptySelection(selection)) setBaseFacets(found);
-      },
+    const load = async () => {
+      if (isEmptySelection(selection)) {
+        const found = await api.loadFacets(selection, corpusKey, fields);
+        if (!gone) setBaseFacets(found);
+        return found;
+      }
+      // A field with every value in the collection (the facets of nothing) chosen narrows nothing.
+      const base = baseFacets ?? (await api.loadFacets({}, corpusKey, fields));
+      if (!gone && !baseFacets) setBaseFacets(base);
+      return api.loadFacets(narrowing(selection, base), corpusKey, fields, base);
+    };
+    load().then(
+      (found) => !gone && setFacets(found),
       (error: Error) => {
         if (gone) return;
         console.error('[assistant] facets', error.message);
-        setFacetsFailed(true);
+        setFacetsFailed(error instanceof FilterTooLarge ? tooLarge(error) : true);
       },
     );
     return () => {
       gone = true;
     };
-    // `selection` is new on every render without Filter; with it, it is the state.
+    // `selection` is new on every render without Filter; `baseFacets` is set here, not a cause.
   }, [api, filterOn, chosenSelection, facetsKey, corpusKey, fields]);
-  useEffect(() => {
-    if (!filterOn || baseFacets || isEmptySelection(chosenSelection) || !fields || !corpusKey)
-      return;
-    api.loadFacets({}, corpusKey, fields).then(setBaseFacets, () => {});
-  }, [api, filterOn, baseFacets, chosenSelection, corpusKey, fields]);
 
   const chooseCorpus = (key: string) => {
     // A new collection starts a new thread with an empty filter (kunnskapsassistenten's useCorpus).
@@ -755,18 +781,21 @@ export const useAssistant = ({
     const question = aboutTitle
       ? t('assembly.aboutDocument', { title: aboutTitle, question: typed })
       : typed;
+    // A field with every value it lists chosen narrows nothing, so it is neither sent nor said.
+    const narrowed = filterOn ? narrowing(selection, facets ?? baseFacets) : undefined;
     const narrowedTo =
       toDocument && aboutTitle
         ? [aboutTitle]
-        : (facets ?? []).flatMap((field) => [...(selection[field.id] ?? [])]);
-    const filters =
+        : (facets ?? []).flatMap((field) => fieldValueLabels(field, narrowed?.[field.id] ?? []));
+    // Built as the question goes, so a filter genki cannot take fails it before any request.
+    const filtersOf = () =>
       toDocument && documentId
         ? filterSet({ [toDocument.id]: [documentId] }, [toDocument])
-        : filterOn
-          ? filterSet(narrowing(selection, facets), fields ?? [])
+        : narrowed
+          ? filterSet(narrowed, fields ?? [], facets ?? baseFacets)
           : undefined;
     // What the filter was, and how many documents it read from, for the answer's «Fremgangsmåte».
-    const askedWith = filterOn && !toDocument ? narrowing(selection, facets) : undefined;
+    const askedWith = toDocument ? undefined : narrowed;
     const readFrom = askedWith
       ? documentCount(facets, askedWith, corpusProfile?.typeField)
       : undefined;
@@ -780,6 +809,7 @@ export const useAssistant = ({
         t.approach ? { ...t, approach: { ...t.approach, finishedAt: Date.now() } } : t,
       );
     let frames = 0;
+    let opened = false;
     setWorking(true);
     // Only a question sent from the field empties it, and only of what was sent.
     if (fromField) setDraft((draft) => (draft.trim() === typed.trim() ? '' : draft));
@@ -810,13 +840,15 @@ export const useAssistant = ({
         question,
         model,
         conversationId: startedIn,
-        filters,
+        filters: filtersOf(),
         dataset: corpusKey ? { tenant: ownDataset?.tenant || tenant, key: corpusKey } : undefined,
         steps: approachOn,
         signal: controller.signal,
       })) {
         if (!alive.current) break;
-        if (event.type === 'conversation' && !startedIn) {
+        // genki names a new thread twice (POST, then stream): only the first opens it.
+        if (event.type === 'conversation' && !startedIn && !opened) {
+          opened = true;
           if (askedWith) keepFilter(event.conversationId, askedWith);
           ownThread.current = event.conversationId;
           go(event.conversationId, true);
@@ -865,7 +897,14 @@ export const useAssistant = ({
         ...a,
         status: aborted ? 'aborted' : 'failed',
         error: (error as Error).message,
-        ...(aborted ? {} : { failure: failureOf(error) }),
+        ...(aborted
+          ? {}
+          : {
+              failure:
+                error instanceof FilterTooLarge
+                  ? { kind: 'filter' as const, message: tooLarge(error) }
+                  : failureOf(error),
+            }),
       }));
       if (!aborted) reloadThreads();
     } finally {
@@ -1074,6 +1113,7 @@ export const useAssistant = ({
     retryModels,
     has,
     where,
+    standsIn,
     option,
     footnotes,
     assistantName,
@@ -1094,7 +1134,8 @@ export const useAssistant = ({
     facets,
     baseFacets,
     facetsFailed,
-    retryFacets: () => setFacetsKey((n) => n + 1),
+    // A filter genki cannot take fails the same way again: it is changed, not retried.
+    retryFacets: typeof facetsFailed === 'string' ? undefined : () => setFacetsKey((n) => n + 1),
     // How many documents the next question reads from, and the collection in all, exactly from the
     // facets; undefined while a count is missing.
     readFrom: filterOn
@@ -1223,11 +1264,6 @@ export const useAssistant = ({
     onShellLayout: (next: ShellLayout) => storage?.write('layout', next),
     tool,
     setTool,
-    /** A tool's own button on the folded panel (dev-verktoy-4): the panel opens on that tool. */
-    showTool: (id: string) => {
-      setTool(id);
-      setRequest({ action: 'open', side: 'secondary' });
-    },
     // settings
     level,
     setLevel,
