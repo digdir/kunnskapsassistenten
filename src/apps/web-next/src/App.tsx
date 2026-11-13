@@ -10,7 +10,7 @@ import {
   type AssistantApi,
   type AssistantFeedback,
 } from '@genai/ui-assembly';
-import { fromTemplate, withSetting } from '@genai/ui-blocks';
+import { fromTemplate } from '@genai/ui-blocks';
 import { useMemo, useRef } from 'react';
 import { genkiApi } from './api';
 import { sendFeedback } from './feedback';
@@ -20,13 +20,8 @@ import type { Me } from './session';
 import { switchClient } from './switchClient';
 import { threadWrites } from './threadWrites';
 
-// The template, with feedback under each answer: genki's option, off by default.
-const layout = withSetting(
-  fromTemplate('knowledge-assistant-next'),
-  'chat',
-  'feedback',
-  true,
-).layout;
+// The template as it is: the next look, feedback under each answer and no follow-ups.
+export const layout = fromTemplate('knowledge-assistant-next').layout;
 const storage = browserStorage('ka-next.');
 const paths = { home: '/', settings: '/innstillinger' };
 export const COLOR_SCHEME_KEY = 'ka-next.colorScheme';
