@@ -266,13 +266,15 @@
     background: none;
   }
 
-  /* One line, then «…», so a long list stays calm; the box shows the rest on hover or focus. */
-  .uib-threads[data-variant='nav'] .uib-threads-thread-title {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: var(--genai-threads-title-lines, 1);
-    white-space: normal;
-    overflow-wrap: anywhere;
+  /* A host's two or more lines, then «…» after a word; one line keeps the row's cut at its end. */
+  @container style(--genai-threads-title-lines) and (not style(--genai-threads-title-lines: 1)) {
+    .uib-threads[data-variant='nav'] .uib-threads-thread-title {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: var(--genai-threads-title-lines, 1);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
   }
 
   /* Pinned to neutral: a row under the pointer or in focus is not the open one, so not its tint. */

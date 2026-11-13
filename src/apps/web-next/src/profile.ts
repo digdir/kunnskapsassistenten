@@ -66,6 +66,11 @@ const EXPERIMENTS = [
       'Filtreringen står over kildene i høyre panel, så begge synes samtidig. Navigasjonspanelet har bare trådene.',
     ...issue(84),
   },
+  {
+    id: 'compact-filter',
+    title: 'Smalere filter',
+    description: 'Filteret tar mindre plass, og tråder får resten.',
+  },
 ];
 
 /** The profile for the person `me` names. */

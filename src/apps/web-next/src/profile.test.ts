@@ -25,3 +25,11 @@ describe('the suggestions', () => {
       expect(question).not.toMatch(/denne samlingen/i);
   });
 });
+
+describe('the experiments', () => {
+  it('offer the narrower filter beside the threads, under the id genki’s assembly reads', () => {
+    const narrower = profileFor(ME).experiments?.find(({ id }) => id === 'compact-filter');
+    expect(narrower?.title).toBe('Smalere filter');
+    expect(narrower?.description).toBe('Filteret tar mindre plass, og tråder får resten.');
+  });
+});

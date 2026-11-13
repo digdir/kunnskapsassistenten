@@ -313,10 +313,10 @@
       var(--genai-filter-row-padding-block, var(--ds-size-2));
   }
 
-  /* Two columns of ticks, each under a hairline, its count at the end. */
+  /* Two columns of ticks by default, each under a hairline, its count at the end. */
   .uib-filter-checkboxes {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--genai-filter-checkboxes-columns, 2), minmax(0, 1fr));
     column-gap: var(--genai-filter-checkboxes-gap, var(--ds-size-4));
     min-inline-size: 0;
     margin: 0;
