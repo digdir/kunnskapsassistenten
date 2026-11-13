@@ -307,6 +307,7 @@ export const useAssistant = ({
           id: row.id,
           title: row._variant_title ?? row.title ?? row.id,
           ...(description ? { description } : {}),
+          ...(row._service_title ? { service: row._service_title } : {}),
         };
       });
   }, [models, facts]);

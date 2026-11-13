@@ -7,7 +7,7 @@ import { ChevronDownIcon, ChevronRightIcon } from '@navikt/aksel-icons';
 import { useId, useImperativeHandle, useRef, useState, type Ref } from 'react';
 import { FacetField, type FieldHandle } from './FacetField.js';
 import { useT } from './i18n.js';
-import { fieldValueLabels, isEmptySelection } from './selection.js';
+import { fieldValueLabels, isEmptySelection, showsAsAll } from './selection.js';
 import type { FilterField, FilterSelection } from './types.js';
 import { YearRangeField } from './YearRangeField.js';
 
@@ -139,7 +139,9 @@ export const FilterRows = ({
                   <span className="uib-filter-row-name">{field.heading ?? field.label}</span>
                   {/* A space between the two in the button's name, whatever lays them out. */}{' '}
                   <span className="uib-filter-row-chosen">
-                    {chosen.length === 0 ? t('filter.all') : chosen.join(', ')}
+                    {chosen.length === 0 || showsAsAll(field, selected)
+                      ? t('filter.all')
+                      : chosen.join(', ')}
                   </span>
                 </span>
                 {isOpen ? (

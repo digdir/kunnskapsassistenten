@@ -40,6 +40,16 @@ export const valuesWithoutField = (
     (chosen) => !fields?.some((field) => field.id === chosen.field),
   );
 
+/** Whether every value a field lists is ticked, which narrows nothing. */
+export const everyListed = (field: FilterField, values: readonly string[]) => {
+  const ticked = new Set(values);
+  return field.options.length > 0 && field.options.every((option) => ticked.has(option.value));
+};
+
+/** Whether a field's chosen values show as one «Alle»: it lists two or more, and all are ticked. */
+export const showsAsAll = (field: FilterField, values: readonly string[]) =>
+  field.options.length > 1 && everyListed(field, values);
+
 /** What a question is asked with: a field with every listed value ticked is left out. */
 export const narrowing = (
   selection: FilterSelection,
@@ -49,9 +59,7 @@ export const narrowing = (
   const asked: Record<string, readonly string[]> = { ...selection };
   for (const field of fields ?? []) {
     const chosen = selection[field.id] ?? [];
-    if (field.options.length === 0 || chosen.length === 0) continue;
-    const ticked = new Set(chosen);
-    if (field.options.every((option) => ticked.has(option.value))) {
+    if (everyListed(field, chosen)) {
       asked[field.id] = [];
       changed = true;
     }

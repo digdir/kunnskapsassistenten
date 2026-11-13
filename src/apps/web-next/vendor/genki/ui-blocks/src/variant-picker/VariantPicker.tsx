@@ -1,6 +1,6 @@
 import { Dropdown } from '@digdir/designsystemet-react';
 import { CheckmarkIcon, ChevronDownIcon } from '@navikt/aksel-icons';
-import { useId, useRef, useState } from 'react';
+import { Fragment, useId, useRef, useState } from 'react';
 import { useT } from './i18n.js';
 
 export interface VariantOption {
@@ -10,7 +10,20 @@ export interface VariantOption {
   title: string;
   /** One line on what the variant is for. */
   description?: string | undefined;
+  /** The service it belongs to, the platform's `_service_title`, which heads its variants. */
+  service?: string | undefined;
 }
+
+/** The variants under their service, in the order each service first comes. */
+const byService = (variants: readonly VariantOption[]) => {
+  const groups: { service: string | undefined; variants: VariantOption[] }[] = [];
+  for (const variant of variants) {
+    const group = groups.find(({ service }) => service === variant.service);
+    if (group) group.variants.push(variant);
+    else groups.push({ service: variant.service, variants: [variant] });
+  }
+  return groups;
+};
 
 export interface VariantPickerProps {
   /** The variants a person may pick, the platform's `_pickable` rows of one service. */
@@ -28,11 +41,7 @@ export interface VariantPickerProps {
    * kunnskapsassistenten draws its picker in the question field.
    */
   color?: string | undefined;
-  /**
-   * «Velg variant» as a heading at this level. None by default: the picker sits in another
-   * block's slot, such as the question field, where a heading would break the page's outline. It
-   * names the list either way.
-   */
+  /** The list's titles as headings at this level; none by default, so the outline stays whole. */
   headingLevel?: 2 | 3 | 4 | 5 | 6 | undefined;
   /** On the button, for the block it sits in to place it. */
   className?: string | undefined;
@@ -93,38 +102,44 @@ export const VariantPicker = ({
         open={open}
         placement="top-end"
       >
-        {/* Drawn as Designsystemet's list heading either way; an outline entry only when asked. */}
-        <Dropdown.Heading
-          id={titleId}
-          level={headingLevel ?? 2}
-          role={headingLevel === undefined ? 'none' : undefined}
-        >
-          {t('variantPicker.heading')}
-        </Dropdown.Heading>
-        <Dropdown.List aria-labelledby={titleId}>
-          {variants.map((variant) => {
-            const isChosen = variant.id === chosen;
-            return (
-              <Dropdown.Item key={variant.id}>
-                <Dropdown.Button
-                  aria-current={isChosen ? 'true' : undefined}
-                  className="uib-variant-picker-option"
-                  onClick={() => choose(variant.id)}
-                >
-                  <span className="uib-variant-picker-text">
-                    <span className="uib-variant-picker-name">{variant.title}</span>
-                    {variant.description ? (
-                      <span className="uib-variant-picker-description">{variant.description}</span>
-                    ) : null}
-                  </span>
-                  {isChosen ? (
-                    <CheckmarkIcon aria-hidden className="uib-variant-picker-check" />
-                  ) : null}
-                </Dropdown.Button>
-              </Dropdown.Item>
-            );
-          })}
-        </Dropdown.List>
+        {byService(variants).map((group, index) => (
+          <Fragment key={`${index}:${group.service ?? ''}`}>
+            {/* Designsystemet's list heading either way; an outline entry only when asked. */}
+            <Dropdown.Heading
+              id={`${titleId}-${index}`}
+              level={headingLevel ?? 2}
+              role={headingLevel === undefined ? 'none' : undefined}
+            >
+              {group.service ?? t('variantPicker.heading')}
+            </Dropdown.Heading>
+            <Dropdown.List aria-labelledby={`${titleId}-${index}`}>
+              {group.variants.map((variant) => {
+                const isChosen = variant.id === chosen;
+                return (
+                  <Dropdown.Item key={variant.id}>
+                    <Dropdown.Button
+                      aria-current={isChosen ? 'true' : undefined}
+                      className="uib-variant-picker-option"
+                      onClick={() => choose(variant.id)}
+                    >
+                      <span className="uib-variant-picker-text">
+                        <span className="uib-variant-picker-name">{variant.title}</span>
+                        {variant.description ? (
+                          <span className="uib-variant-picker-description">
+                            {variant.description}
+                          </span>
+                        ) : null}
+                      </span>
+                      {isChosen ? (
+                        <CheckmarkIcon aria-hidden className="uib-variant-picker-check" />
+                      ) : null}
+                    </Dropdown.Button>
+                  </Dropdown.Item>
+                );
+              })}
+            </Dropdown.List>
+          </Fragment>
+        ))}
       </Dropdown>
     </Dropdown.TriggerContext>
   );
