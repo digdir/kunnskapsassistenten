@@ -108,6 +108,8 @@ export interface ShellCompanion {
    * columns; the panel's own column keeps the rest, and a narrower panel narrows the companion.
    */
   width: number;
+  /** Keeps `width` whatever the panel's width, so the panel's own column takes every change. */
+  keepWidth?: boolean | undefined;
 }
 
 /** Something the host asks of a panel, once per object: `open`, `offer` or `close-drawers`. */
@@ -603,9 +605,11 @@ const Side = ({
         <div className="uib-shell-content">{companion.children}</div>
       </section>
     ) : null;
-  const leadWidth = companion
-    ? Math.max((geometry.panels[side]?.width ?? width) - companion.width, 0)
-    : undefined;
+  const leadWidth = companion?.keepWidth
+    ? `calc(100% - ${companion.width}px)`
+    : companion
+      ? `${Math.max((geometry.panels[side]?.width ?? width) - companion.width, 0)}px`
+      : undefined;
   const withCompanion = companion !== undefined && !railed;
 
   return (
@@ -631,9 +635,7 @@ const Side = ({
         className="uib-shell-box"
         data-companion={withCompanion || undefined}
         style={
-          withCompanion
-            ? ({ '--uib-shell-lead-width': `${leadWidth}px` } as CSSProperties)
-            : undefined
+          withCompanion ? ({ '--uib-shell-lead-width': leadWidth } as CSSProperties) : undefined
         }
       >
         {/* Outside the scroller, so the button never scrolls out of sight. */}

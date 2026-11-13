@@ -112,9 +112,10 @@
     font: inherit;
   }
 
-  /* The title, and «Skjul» with its chevron at the end: the whole row folds the box. */
+  /* The title, and «Skjul» at its end, or under it in a narrow box: the whole row folds the box. */
   .uib-documents-scope-toggle {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--genai-documents-scope-gap, var(--ds-size-2));
     align-items: center;
     justify-content: space-between;
@@ -145,6 +146,7 @@
   .uib-documents-scope-fold {
     display: inline-flex;
     flex: 0 0 auto;
+    margin-inline-start: auto;
     gap: var(--genai-documents-scope-fold-gap, var(--ds-size-1));
     align-items: center;
     color: var(--genai-documents-scope-fold-color, var(--ds-color-accent-text-subtle));

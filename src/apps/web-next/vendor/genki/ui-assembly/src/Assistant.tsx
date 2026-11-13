@@ -89,6 +89,9 @@ const sourcesTool = {
   inlineSize: '100%',
 } as CSSProperties;
 
+// `compact-filter`: a field's ticks in one column, so the filter fits its narrow panel.
+const oneColumnTicks = { '--genai-filter-checkboxes-columns': '1' } as CSSProperties;
+
 // The tools' icons in the next look, as the dev-verktoy boards draw them: Fremgangsmåte's robot,
 // Kilder's page. Notater's pencil waits for the block.
 const toolIcons: Record<string, ReactNode> = {
@@ -329,6 +332,8 @@ export const AssistantView = ({
   // The next look draws the filter as its own panel beside the threads, in their card
   // (dev-filter-panel; «9 · Filtrering» A), not as a second view of the same panel.
   const filterPanel = next && threadsOn && filterZone === 'primary' && !filtersBeside;
+  // `compact-filter`: that panel 230 wide at every width of the card, and the threads the rest.
+  const compactFilter = filterPanel && a.flags.has('compact-filter');
   const twoViews = threadsOn && filterZone === 'primary' && !filtersBeside && !filterPanel;
 
   const [atEnd, setAtEnd] = useState(true);
@@ -766,13 +771,19 @@ export const AssistantView = ({
       // it: «Filter», «Gjelder neste spørsmål», and the card's button on its row.
       ...(filterPanel
         ? {
-            size: { width: 660, minWidth: 660 },
+            // With `compact-filter`, no narrower than the threads' 220 beside the filter's 230.
+            size: { width: 660, minWidth: compactFilter ? 220 + 230 : 660 },
             companion: {
               label: t('assembly.filterForThread'),
               title: t('builder.filter'),
               subtitle: t('filter.appliesNext'),
-              width: 440,
-              children: filter(undefined, 2),
+              width: compactFilter ? 230 : 440,
+              ...(compactFilter
+                ? {
+                    keepWidth: true,
+                    children: <div style={oneColumnTicks}>{filter(undefined, 2)}</div>,
+                  }
+                : { children: filter(undefined, 2) }),
             },
           }
         : {}),

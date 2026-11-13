@@ -55,4 +55,3 @@ node apps/web-next/scripts/check-bundle-size.mjs apps/web-next/dist
 
 - `apps/web`'s «Onboarding» page.
 - Choosing another organisation from the profile menu.
-- Thread titles on one line: genki's change, which comes with the next snapshot.
