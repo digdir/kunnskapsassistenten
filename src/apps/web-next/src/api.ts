@@ -3,6 +3,7 @@
 // the session ran out sends the person to the sign-in, and back here afterwards.
 import { createGenkiApi, type AssistantApi, type AssistantProfile } from '@genai/ui-assembly';
 import { sessionGone, signInHref } from './session';
+import { withYearBounds } from './years';
 
 export const GENKI_BASE = '/api/next/genki';
 
@@ -50,4 +51,4 @@ export function withSignIn(
 }
 
 export const genkiApi = (tenant: string, profile: AssistantProfile) =>
-  withSignIn(createGenkiApi({ baseUrl: GENKI_BASE, tenant, profile }));
+  withSignIn(withYearBounds(createGenkiApi({ baseUrl: GENKI_BASE, tenant, profile })));
