@@ -20,9 +20,7 @@ export interface Excerpt {
   id: string;
   /** A literal quote from the document. MCP chunks carry no text; only `/v1` has it. */
   text: string;
-  /**
-   * Heading path, e.g. «Ressursbruk og måloppnåelse». Arrives as a Clojure map in a string.
-   */
+  /** The section path in the document, levels joined by ` › `; the last level titles the excerpt. */
   heading?: string;
   /** Page in the source document, when the corpus has pages. */
   page?: number;

@@ -1,11 +1,14 @@
 import { Details, Heading, Link, Paragraph } from '@digdir/designsystemet-react';
 import { ExternalLinkIcon } from '@navikt/aksel-icons';
+import { useRef, type CSSProperties } from 'react';
 import { HighlightedText, type SearchHit } from '../../components';
 import { excerptDomId, type Excerpt } from '../../model';
 import { kudosLinkLabel, reachesPage } from './kudosLink';
 import { excerptName } from './excerptName';
+import { excerptSection, headingContext } from './excerptSection';
 import { ReturnToAnswerButton } from './ReturnToAnswerButton';
 import { ShowUseButton } from './ShowUseButton';
+import { useBlockSize } from './useBlockSize';
 
 type SourceExcerptProps = {
   excerpt: Excerpt;
@@ -41,8 +44,9 @@ type SourceExcerptProps = {
 export const EXCERPT_UNAVAILABLE = 'Utdraget er ikke tilgjengelig.';
 
 /**
- * One excerpt, Figma's `chunk`, as «Utdrag N» with N its `[n]` marker, or as «Utdrag 2 av 4» in a
- * document the answer cites as a whole. The
+ * One excerpt, Figma's `chunk`, titled by its section in the document with «Utdrag N» over it
+ * (N its `[n]` marker, or «Utdrag 2 av 4» in a document the answer cites as a whole), or by
+ * that label alone when it has no section. The
  * heading stays out of the summary, which some screen readers read as a button;
  * the two share a grid cell (`.source-excerpt` in sources.css).
  */
@@ -68,12 +72,18 @@ export function SourceExcerpt({
   // So a list of controls does not hold five buttons called «Åpne».
   const name = excerptName(citationNumber, position, total);
   const showsUses = cited && uses > 0;
-  const title = cited
+  const label = cited
     ? `Utdrag ${citationNumber}`
     : inCitedDocument
       ? `Utdrag ${position} av ${total}`
       : 'Utdrag';
   const uncited = !cited && inCitedDocument === undefined;
+  const section = excerptSection(heading);
+  const context = headingContext(heading);
+
+  // A section can wrap, so the summary under the head is made as tall as the head.
+  const headRef = useRef<HTMLDivElement>(null);
+  const headSize = useBlockSize(headRef, section !== undefined);
 
   // Only when it opens the page, since the document's own link is at the end.
   // See `kudosLink.ts`.
@@ -92,6 +102,11 @@ export function SourceExcerpt({
       id={cited ? excerptDomId(citationNumber) : inCitedDocument?.domId}
       data-active={active ? 'true' : undefined}
       data-uncited={uncited ? 'true' : undefined}
+      style={
+        headSize === undefined
+          ? undefined
+          : ({ '--ka-excerpt-head': `${headSize}px` } as CSSProperties)
+      }
       // Focus, not only scroll, so a screen reader says where the reader is.
       tabIndex={cited ? -1 : undefined}
       // Scoped to the box, so the search field keeps its own Escape.
@@ -105,17 +120,29 @@ export function SourceExcerpt({
             }
       }
     >
-      <div className="source-excerpt__head">
+      <div className="source-excerpt__head" ref={headRef}>
         <div className="source-excerpt__title">
-          <Heading level={4} data-size="2xs" className="source-excerpt__number">
-            {title}
-          </Heading>
+          {/* Over a section as «Kilde N» is over a title: «Kilder brukt i svaret» lists it. */}
+          {section === undefined ? (
+            <Heading level={4} data-size="2xs" className="source-excerpt__number">
+              {label}
+            </Heading>
+          ) : (
+            <Paragraph data-size="xs" className="source-excerpt__label">
+              {label}
+            </Paragraph>
+          )}
           {/* Back to where the answer uses this excerpt, beside the number so it works on a
               closed row. */}
           {showsUses && onShowUse !== undefined && (
             <ShowUseButton name={`utdrag ${citationNumber}`} uses={uses} onShowUse={onShowUse} />
           )}
         </div>
+        {section !== undefined && (
+          <Heading level={4} data-size="2xs" className="source-excerpt__section">
+            {section}
+          </Heading>
+        )}
         {uncited && (
           <Paragraph data-size="xs" className="source-excerpt__uncited">
             Ikke vist til i svaret
@@ -135,12 +162,11 @@ export function SourceExcerpt({
           <span className="ds-sr-only"> {name}</span>
         </Details.Summary>
         <Details.Content>
-          {/* The first line of the quote in Figma: the section heading from
-              the source document, in bold, with the page after it. */}
-          {(heading !== undefined || page !== undefined) && (
+          {/* Figma's first line of the quote: the path when it adds to the title, and the page. */}
+          {(context !== undefined || page !== undefined) && (
             <Paragraph data-size="xs" className="source-excerpt__quote-heading">
-              {heading !== undefined && <strong>{heading}</strong>}
-              {heading !== undefined && page !== undefined && ' · '}
+              {context !== undefined && <strong>{context}</strong>}
+              {context !== undefined && page !== undefined && ' · '}
               {page !== undefined && <span className="source-excerpt__page">side {page}</span>}
             </Paragraph>
           )}

@@ -182,6 +182,56 @@ describe('toSources', () => {
     assert.deepEqual(await mcp.toSources(undefined, noExcerpts), []);
     assert.deepEqual(await mcp.toSources([], noExcerpts), []);
   });
+
+  test("gives each source its own chunk's section path, top level first, joined by ›", async () => {
+    const sources = await mcp.toSources(
+      [
+        {
+          chunk_id: 'a',
+          doc_num: '1',
+          metadata: { 'Header 2': 'Digitalt utenforskap', 'Header 1': 'Samlet vurdering' },
+        },
+        {
+          chunk_id: 'b',
+          doc_num: '1',
+          metadata: { 'Header 1': 'Vurdering av framtidsutsikter' },
+        },
+      ],
+      noExcerpts,
+    );
+    assert.deepEqual(
+      sources.map((s) => s.heading),
+      ['Samlet vurdering › Digitalt utenforskap', 'Vurdering av framtidsutsikter'],
+    );
+  });
+
+  test('leaves the heading out when the chunk has no section headings', async () => {
+    const sources = await mcp.toSources(
+      [
+        { chunk_id: 'a', doc_num: '1' },
+        { chunk_id: 'b', doc_num: '1', metadata: null },
+        { chunk_id: 'c', doc_num: '1', metadata: {} },
+        { chunk_id: 'd', doc_num: '1', metadata: { 'Header 1': '  ', 'Header 2': 7 } },
+        { chunk_id: 'e', doc_num: '1', metadata: '{"Header 1" "Mål"}' },
+      ],
+      noExcerpts,
+    );
+    for (const source of sources) assert.equal('heading' in source, false, source.chunkId);
+  });
+
+  test('reads only the Header levels, so no other metadata reaches the heading', async () => {
+    const [source] = await mcp.toSources(
+      [
+        {
+          chunk_id: 'a',
+          doc_num: '1',
+          metadata: { url: 'https://kudos.example/x', 'Header 1': 'Mål', title: 'Rapport' },
+        },
+      ],
+      noExcerpts,
+    );
+    assert.equal(source?.heading, 'Mål');
+  });
 });
 
 describe('documentUrl safety', () => {

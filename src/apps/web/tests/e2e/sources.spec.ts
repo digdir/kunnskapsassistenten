@@ -240,7 +240,9 @@ test.describe('kildepanelet', () => {
 
       // The excerpts carry the `[n]` numbers. The documents are numbered in
       // «Kilder brukt i svaret» under the answer now, not in the panel (#113).
-      await expect(panel.getByRole('heading', { name: 'Utdrag 1' })).toBeVisible();
+      await expect(
+        panel.locator('#excerpt-1').getByText('Utdrag 1', { exact: true }),
+      ).toBeVisible();
 
       // Every marker in the answer has an excerpt to point at.
       const markers = await page

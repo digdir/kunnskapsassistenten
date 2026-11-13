@@ -152,6 +152,25 @@ export interface ResultChunk {
   chunk_index?: number;
   title?: string;
   url?: string;
+  /** genki's section headings for the chunk, `{ "Header 1": …, "Header 2": … }`; unchecked. */
+  metadata?: unknown;
+}
+
+const HEADER_KEY = /^Header (\d{1,2})$/;
+
+/** The chunk's section path, top level first, joined by ` › ` as genki's `/v1` writes it. */
+export function headingPath(metadata: unknown): string | undefined {
+  if (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata))
+    return undefined;
+  const levels = Object.entries(metadata)
+    .flatMap(([key, value]) => {
+      const level = HEADER_KEY.exec(key)?.[1];
+      const text = typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+      return level !== undefined && text ? [{ level: Number(level), text }] : [];
+    })
+    .sort((a, b) => a.level - b.level)
+    .map(({ text }) => text);
+  return levels.length > 0 ? levels.join(' › ') : undefined;
 }
 
 function safeHttpUrl(value: string): string {
@@ -220,12 +239,14 @@ export async function toSources(
   return chunks.map((chunk) => {
     const passage = chunk.chunk_id ? text.get(chunk.chunk_id) : undefined;
     const own = chunk.chunk_id ? named.get(chunk.chunk_id) : undefined;
+    const heading = headingPath(chunk.metadata);
     return {
       docNum: chunk.doc_num ?? '',
       title: chunk.title || `Dokument ${chunk.doc_num ?? ''}`.trim(),
       url: documentUrl(chunk),
       ...(chunk.chunk_id ? { chunkId: chunk.chunk_id } : {}),
       ...(passage ? { excerpt: passage } : {}),
+      ...(heading ? { heading } : {}),
       ...(own ? { markers: own } : {}),
     };
   });

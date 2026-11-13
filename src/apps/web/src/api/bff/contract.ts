@@ -12,6 +12,8 @@ export interface BffSource {
   chunkId?: string;
   /** The passage. Absent when the BFF could not look it up. */
   excerpt?: string;
+  /** The chunk's section path in its document, levels joined by ` › `. Absent without headings. */
+  heading?: string;
   /** The answer's markers that name this chunk, when the service cites by excerpt. */
   markers?: string[];
 }
