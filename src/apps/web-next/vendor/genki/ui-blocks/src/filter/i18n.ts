@@ -49,6 +49,8 @@ export const nbFilter = defineNamespace({
   yearNotPeriod:
     'Ikke et år eller en periode. Skriv et år eller en periode, som 2021 eller 2023–2028.',
   yearAlreadyChosen: '{period} er alt valgt.',
+  yearNoneIn: 'Ingen dokumenter i {period}.',
+  periodYears: { one: '{count} år med dokumenter', other: '{count} år med dokumenter' },
   // u-combobox's texts for chosen values, which Designsystemet leaves in English; `%d` counts.
   srItems: 'Valgte verdier',
   srEmpty: 'Ingen verdier er valgt',
@@ -128,6 +130,8 @@ export const enFilter = {
   yearHint: 'Type a year or a period, such as 2021 or 2023–2028',
   yearNotPeriod: 'Not a year or a period. Type a year or a period, such as 2021 or 2023–2028.',
   yearAlreadyChosen: '{period} is already selected.',
+  yearNoneIn: 'No documents in {period}.',
+  periodYears: { one: '{count} year with documents', other: '{count} years with documents' },
   srItems: 'Selected values',
   srEmpty: 'No values are selected',
   srFound: '%d selected, navigate back to change',
