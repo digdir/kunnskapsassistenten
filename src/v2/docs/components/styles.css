@@ -444,6 +444,16 @@ td.no {
   color: var(--muted);
   font-style: italic;
 }
+.moved {
+  background: var(--open-bg);
+  color: var(--open-text);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 0 0 16px;
+}
+.moved p {
+  margin: 0;
+}
 .open-questions {
   background: var(--open-bg);
   color: var(--open-text);
