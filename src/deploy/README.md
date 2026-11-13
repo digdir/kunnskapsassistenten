@@ -18,7 +18,8 @@ Sign-in is Entra ID, app registration `altinn-ai-assistant-ka-sso`, single
 tenant, with admin consent granted. Only accounts that exist in the tenant can
 sign in, and the app adds no check of its own. `AUTH_MODE=off` is for local
 development only: unsigned identity, anyone can be anyone, the server refuses
-to start with it unless `APP_ORIGIN` is localhost, and it listens only on
+to start with it unless the host in `APP_ORIGIN` is exactly `localhost`,
+`127.0.0.1` or `[::1]`, and it listens only on
 127.0.0.1 unless `LISTEN_HOST` names another address.
 
 A new public host needs its `https://<host>/auth/callback` added to the app
