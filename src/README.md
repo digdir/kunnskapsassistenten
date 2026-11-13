@@ -320,7 +320,8 @@ set, otherwise `off`. The server prints which mode it runs in at every startup.
 
 No token reaches the browser, only a signed cookie. `/api/v2/*` answers 401
 without sign-in, and `/api/health` and `/api/v2/health` are open. Who gets in is decided by Entra ID, not by
-the app. `AUTH_MODE=off` refuses to start if `APP_ORIGIN` is not localhost, and
+the app. `AUTH_MODE=off` refuses to start unless the host in `APP_ORIGIN` is
+exactly `localhost`, `127.0.0.1` or `[::1]`, over http or https, and
 the server then listens only on 127.0.0.1, so no one else on the network can use
 it as you. `LISTEN_HOST` names another address, such as `0.0.0.0` inside a
 container, whose published port then decides who can reach it.
