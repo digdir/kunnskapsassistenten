@@ -1,8 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { MemoryRouter } from 'react-router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetFlags, setFlag } from '../../flags/flags';
+import { describe, expect, it, vi } from 'vitest';
 import { AnswerSourcesContext, inertAnswerSources } from '../../layout/answerSourcesContext';
 import { FilterContext } from '../../layout/filterContext';
 import { emptyFilterSelection, type FilterFacet } from '../../model';
@@ -112,20 +111,15 @@ function choose(name: string) {
   });
 }
 
-beforeEach(() => {
-  localStorage.clear();
-  resetFlags();
-});
-
-describe('årsfilteret med perioder (year-ranges)', () => {
-  it('viser år på rad som én merkelapp, og et hull som to', () => {
+describe('the year field with periods', () => {
+  it('shows consecutive years as one chip, and a gap as two', () => {
     const { container } = render(<Years initial={['2022', '2023', '2024', '2019']} />);
 
     expect(chips(container)).toEqual(['2019', '2022–2024']);
     expect(screen.getByText('4 år valgt')).toBeTruthy();
   });
 
-  it('foreslår perioden fra teksten, med antall dokumenter fra fasettene', () => {
+  it('suggests the period from the text, with the document count from the facets', () => {
     render(<Years />);
 
     type('20-22');
@@ -134,7 +128,7 @@ describe('årsfilteret med perioder (year-ranges)', () => {
     expect(screen.getByRole('option', { name: '2020–2022 (9)', hidden: true })).toBeTruthy();
   });
 
-  it('foreslår et år uten dokumenter med 0, og det kan velges', () => {
+  it('suggests a year without documents with 0, and it can be chosen', () => {
     const seen: string[][] = [];
     const { container } = render(<Years seen={seen} />);
 
@@ -145,7 +139,7 @@ describe('årsfilteret med perioder (year-ranges)', () => {
     expect(chips(container)).toEqual(['2030']);
   });
 
-  it('sender fortsatt en liste med år, og samler en periode som henger sammen med en annen', () => {
+  it('still sends a list of years, and joins a period that touches another', () => {
     const seen: string[][] = [];
     const { container } = render(<Years initial={['2019', '2020']} seen={seen} />);
 
@@ -156,7 +150,7 @@ describe('årsfilteret med perioder (year-ranges)', () => {
     expect(chips(container)).toEqual(['2019–2023']);
   });
 
-  it('velger perioden med Enter, rett fra teksten som ble skrevet', () => {
+  it('chooses the period with Enter, straight from the typed text', () => {
     // u-combobox chooses on Enter the option whose label is what the field
     // holds, so the option's label is the text as typed.
     const seen: string[][] = [];
@@ -169,7 +163,7 @@ describe('årsfilteret med perioder (year-ranges)', () => {
     expect(chips(container)).toEqual(['2023–2024']);
   });
 
-  it('tømmer teksten etter et valg, så neste periode kan skrives', () => {
+  it('clears the text after a choice, so the next period can be typed', () => {
     render(<Years />);
 
     type('2024');
@@ -178,7 +172,7 @@ describe('årsfilteret med perioder (year-ranges)', () => {
     expect((screen.getByRole('combobox') as HTMLInputElement).value).toBe('');
   });
 
-  it('fjerner en periode som én', () => {
+  it('removes a period as one', () => {
     const seen: string[][] = [];
     const { container } = render(<Years initial={['2019', '2022', '2023', '2024']} seen={seen} />);
 
@@ -188,11 +182,11 @@ describe('årsfilteret med perioder (year-ranges)', () => {
     expect(chips(container)).toEqual(['2019']);
   });
 
-  it('foreslår årene med dokumenter mens et år skrives, og et kan velges', () => {
+  it('suggests the years with documents while a year is typed, and one can be chosen', () => {
     const seen: string[][] = [];
     const { container } = render(<Years seen={seen} />);
 
-    // Newest first, as the year field without the flag.
+    // Newest first, as the facets list them.
     type('2');
     expect(offered(container)).toEqual([
       '2024 (6)',
@@ -217,7 +211,7 @@ describe('årsfilteret med perioder (year-ranges)', () => {
     expect(chips(container)).toEqual(['2021']);
   });
 
-  it('foreslår periodene mens slutten skrives', () => {
+  it('suggests the periods while the end is typed', () => {
     const seen: string[][] = [];
     const { container } = render(<Years seen={seen} />);
 
@@ -233,7 +227,7 @@ describe('årsfilteret med perioder (year-ranges)', () => {
     expect(seen.at(-1)).toEqual(['2020', '2021', '2022']);
   });
 
-  it('lar teksten stå når Enter trykkes og ingenting passer, som de andre feltene', () => {
+  it('keeps the text when Enter is pressed and nothing matches, as the other fields do', () => {
     // Enter chooses the option whose label is the text, and the hint carries
     // the text as its label with the value ''. That emptied the field.
     const seen: string[][] = [];
@@ -246,7 +240,7 @@ describe('årsfilteret med perioder (year-ranges)', () => {
     expect(input().value).toBe('abc');
   });
 
-  it('viser hintet bare når ingenting passer', () => {
+  it('shows the hint only when nothing matches', () => {
     const hint =
       'Ikke et år eller en periode. Skriv et år eller en periode, som 2021 eller 2023–2028.';
     const { container } = render(<Years />);
@@ -259,7 +253,7 @@ describe('årsfilteret med perioder (year-ranges)', () => {
     expect(screen.queryByText(hint)).toBeNull();
   });
 
-  it('gir et hint i stedet for en gjetning når teksten ikke er en periode', () => {
+  it('gives a hint instead of a guess when the text is not a period', () => {
     render(<Years />);
 
     expect(screen.getByText('Skriv et år eller en periode, som 2021 eller 2023–2028')).toBeTruthy();
@@ -274,7 +268,7 @@ describe('årsfilteret med perioder (year-ranges)', () => {
     ).toBeTruthy();
   });
 
-  it('har «Velg alle» og «Tøm» som de andre feltene', () => {
+  it('has «Velg alle» and «Tøm» as the other fields do', () => {
     const seen: string[][] = [];
     const { container } = render(<Years seen={seen} />);
 
@@ -288,10 +282,10 @@ describe('årsfilteret med perioder (year-ranges)', () => {
   });
 });
 
-describe('årslista ved klikk (year-ranges)', () => {
+describe('the year list on a click', () => {
   const hint = 'Skriv et år eller en periode, som 2021 eller 2023–2028';
 
-  it('viser årene med dokumenter før noe er skrevet, med hintet over dem', () => {
+  it('shows the years with documents before anything is typed, with the hint above them', () => {
     const facet = {
       ...years,
       values: [...years.values, { value: '2018', label: '2018', count: 0 }],
@@ -312,7 +306,7 @@ describe('årslista ved klikk (year-ranges)', () => {
     expect(screen.getByRole('button', { name: 'Valg' })).toBeTruthy();
   });
 
-  it('krysser av de valgte årene, også inne i en periode, og setter dem først', () => {
+  it('ticks the chosen years, also inside a period, and puts them first', () => {
     const { container } = render(<Years initial={['2020', '2022', '2023']} />);
 
     expect(chips(container)).toEqual(['2020', '2022–2023']);
@@ -327,7 +321,7 @@ describe('årslista ved klikk (year-ranges)', () => {
     ]);
   });
 
-  it('setter de valgte årene først også mens et år skrives', () => {
+  it('puts the chosen years first also while a year is typed', () => {
     const { container } = render(<Years initial={['2021']} />);
 
     type('202');
@@ -341,7 +335,7 @@ describe('årslista ved klikk (year-ranges)', () => {
     ]);
   });
 
-  it('tar et år ut av perioden når det velges igjen, og sier fra', () => {
+  it('takes a year out of its period when it is chosen again, and says so', () => {
     const seen: string[][] = [];
     const said: (string | undefined)[] = [];
     const { container } = render(
@@ -355,7 +349,7 @@ describe('årslista ved klikk (year-ranges)', () => {
     expect(said.at(-1)).toBe('Fjernet 2023');
   });
 
-  it('sier hva som ble lagt til, også når det slår seg sammen med en periode', () => {
+  it('says what was added, also when it joins a period', () => {
     const said: (string | undefined)[] = [];
     render(<Years initial={['2022']} said={said} />);
 
@@ -367,7 +361,7 @@ describe('årslista ved klikk (year-ranges)', () => {
     expect(said.at(-1)).toBe('Lagt til 2019–2021');
   });
 
-  it('endrer ingenting når en periode som alt er valgt, velges igjen, men sier fra', () => {
+  it('changes nothing when a period already chosen is chosen again, but says so', () => {
     const seen: string[][] = [];
     const said: (string | undefined)[] = [];
     render(<Years initial={['2020', '2021', '2022', '2023']} seen={seen} said={said} />);
@@ -384,13 +378,13 @@ describe('årslista ved klikk (year-ranges)', () => {
     expect(input().value).toBe('');
   });
 
-  it('teller årene for skjermleseren, ikke merkelappene', () => {
+  it('counts the years for the screen reader, not the chips', () => {
     render(<Years initial={['2022', '2023', '2024']} />);
 
     expect(input().getAttribute('aria-description')).toBe('3 valgt, naviger bakover for å endre');
   });
 
-  it('flytter fokus til neste periode, og så til feltet, når perioder fjernes med tastaturet', () => {
+  it('moves focus to the next period, then to the field, when periods are removed with the keyboard', () => {
     const seen: string[][] = [];
     const said: (string | undefined)[] = [];
     render(<Years initial={['2019', '2020', '2022', '2023']} seen={seen} said={said} />);
@@ -414,8 +408,8 @@ describe('årslista ved klikk (year-ranges)', () => {
   });
 });
 
-describe('årsfeltet når lista har færre år enn det som er valgt', () => {
-  it('sier at alle er valgt når hvert år i lista er valgt, også med et år utenfor', () => {
+describe('the year field when the list has fewer years than are chosen', () => {
+  it('says all are chosen when every listed year is chosen, also with a year outside', () => {
     // 2030 holds no documents (question 4), and the six listed years are all
     // ticked: the question leaves the field out, and the field says the same.
     render(<Years initial={['2019', '2020', '2021', '2022', '2023', '2024', '2030']} />);
@@ -424,7 +418,7 @@ describe('årsfeltet når lista har færre år enn det som er valgt', () => {
     expect(screen.queryByRole('button', { name: 'Velg alle år' })).toBeNull();
   });
 
-  it('legger til med «Velg alle» og beholder år som ikke står i lista', () => {
+  it('adds with «Velg alle» and keeps years not in the list', () => {
     const seen: string[][] = [];
     render(<Years initial={['2030']} seen={seen} />);
 
@@ -442,7 +436,7 @@ describe('årsfeltet når lista har færre år enn det som er valgt', () => {
   });
 });
 
-describe('samlede merkelapper (compact-filter-chips)', () => {
+describe('one chip for many chosen values', () => {
   function Organisations({
     initial,
     seen,
@@ -467,13 +461,7 @@ describe('samlede merkelapper (compact-filter-chips)', () => {
   }
   const first = (count: number) => organisations.values.slice(0, count).map((v) => v.value);
 
-  it('viser én merkelapp per verdi når flagget er av', () => {
-    const { container } = render(<Organisations initial={first(12)} />);
-
-    expect(chips(container)).toHaveLength(12);
-  });
-
-  it('draws one «Alle virksomheter» chip after «Velg alle», not one per value, without the flag', () => {
+  it('draws one «Alle virksomheter» chip after «Velg alle», not one per value', () => {
     const { container } = render(<Organisations initial={[]} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Velg alle virksomheter' }));
@@ -481,19 +469,16 @@ describe('samlede merkelapper (compact-filter-chips)', () => {
     expect(chips(container)).toEqual(['Alle virksomheter']);
   });
 
-  it('keeps a lone chosen value as its own chip when it is the only one listed, with or without the flag', () => {
+  it('keeps a lone chosen value as its own chip when it is the only one listed', () => {
     const one: FilterFacet = { ...organisations, values: organisations.values.slice(0, 1) };
-    const { container, rerender } = render(
+    const { container } = render(
       <FacetField facet={one} selected={first(1)} onChange={() => {}} />,
     );
-    expect(chips(container)).toEqual(first(1));
 
-    act(() => setFlag('compact-filter-chips', true));
-    rerender(<FacetField facet={one} selected={first(1)} onChange={() => {}} />);
     expect(chips(container)).toEqual(first(1));
   });
 
-  it('clears the field when the «Alle virksomheter» chip is removed, without the flag', () => {
+  it('clears the field when the «Alle virksomheter» chip is removed', () => {
     const seen: string[][] = [];
     const { container } = render(<Organisations initial={first(20)} seen={seen} />);
 
@@ -505,29 +490,25 @@ describe('samlede merkelapper (compact-filter-chips)', () => {
     expect(chips(container)).toEqual([]);
   });
 
-  it('samler mange valgte verdier i én merkelapp', () => {
-    setFlag('compact-filter-chips', true);
+  it('shows many chosen values as one chip without any flag', () => {
     const { container } = render(<Organisations initial={first(12)} />);
 
     expect(chips(container)).toEqual(['12 virksomheter']);
   });
 
-  it('sier «Alle» når alle er valgt', () => {
-    setFlag('compact-filter-chips', true);
+  it('says «Alle» when all are chosen', () => {
     const { container } = render(<Organisations initial={first(20)} />);
 
     expect(chips(container)).toEqual(['Alle virksomheter']);
   });
 
-  it('lar noen få valgte verdier stå hver for seg', () => {
-    setFlag('compact-filter-chips', true);
+  it('keeps a few chosen values as a chip each', () => {
     const { container } = render(<Organisations initial={first(5)} />);
 
     expect(chips(container)).toEqual(first(5));
   });
 
-  it('fjerner hele valget når den samlede merkelappen fjernes', () => {
-    setFlag('compact-filter-chips', true);
+  it('removes the whole choice when the one chip is removed', () => {
     const seen: string[][] = [];
     const { container } = render(<Organisations initial={first(12)} seen={seen} />);
 
@@ -537,8 +518,7 @@ describe('samlede merkelapper (compact-filter-chips)', () => {
     expect(chips(container)).toEqual([]);
   });
 
-  it('legger en ny verdi til valget bak den samlede merkelappen', () => {
-    setFlag('compact-filter-chips', true);
+  it('adds a new value to the choice behind the one chip', () => {
     const seen: string[][] = [];
     const { container } = render(<Organisations initial={first(12)} seen={seen} />);
 
@@ -548,16 +528,14 @@ describe('samlede merkelapper (compact-filter-chips)', () => {
     expect(chips(container)).toEqual(['13 virksomheter']);
   });
 
-  it('krysser av hver valgte verdi i lista mens den samlede merkelappen står', () => {
+  it('ticks every chosen value in the list while the one chip stands', () => {
     // Measured 12.10 on 220fa83: the list ticked none, as the one chip was the only one.
-    setFlag('compact-filter-chips', true);
     const { container } = render(<Organisations initial={first(12)} />);
 
     expect(ticked(container)).toEqual(first(12));
   });
 
-  it('tar bort én verdi når en avkrysset verdi velges igjen', () => {
-    setFlag('compact-filter-chips', true);
+  it('removes one value when a ticked value is chosen again', () => {
     const seen: string[][] = [];
     const { container } = render(<Organisations initial={first(12)} seen={seen} />);
 
@@ -567,8 +545,7 @@ describe('samlede merkelapper (compact-filter-chips)', () => {
     expect(chips(container)).toEqual(['11 virksomheter']);
   });
 
-  it('teller verdiene, ikke merkelappene, for skjermleseren', () => {
-    setFlag('compact-filter-chips', true);
+  it('counts the values for the screen reader, not the chips', () => {
     render(<Organisations initial={first(12)} />);
 
     expect(input().getAttribute('aria-description')).toBe(
@@ -576,10 +553,9 @@ describe('samlede merkelapper (compact-filter-chips)', () => {
     );
   });
 
-  it('sier selv fra om verdien som gjør merkelappene til én, og om den som deler dem igjen', () => {
+  it('tells itself of the value that makes the chips one, and of the one that splits them again', () => {
     // u-combobox reads out a change only when one chip comes or goes, and here the drawn
     // chip comes or goes as well.
-    setFlag('compact-filter-chips', true);
     const said: (string | undefined)[] = [];
     render(<Organisations initial={first(5)} said={said} />);
 
@@ -594,8 +570,7 @@ describe('samlede merkelapper (compact-filter-chips)', () => {
     expect(said.at(-1)).toBe('Fjernet Virksomhet 6');
   });
 
-  it('flytter fokus til feltet og sier fra når den samlede merkelappen fjernes med tastaturet', () => {
-    setFlag('compact-filter-chips', true);
+  it('moves focus to the field and says so when the one chip is removed with the keyboard', () => {
     const seen: string[][] = [];
     const said: (string | undefined)[] = [];
     const { container } = render(<Organisations initial={first(12)} seen={seen} said={said} />);
@@ -615,7 +590,7 @@ describe('samlede merkelapper (compact-filter-chips)', () => {
   });
 });
 
-describe('«Velg alle» og «Tøm» for skjermleseren', () => {
+describe('«Velg alle» and «Tøm» for the screen reader', () => {
   /** What the field gives the view's live region, one entry per change. */
   function Organisations({ initial, said }: { initial: string[]; said: (string | undefined)[] }) {
     const [selected, setSelected] = useState(initial);
@@ -647,7 +622,7 @@ describe('«Velg alle» og «Tøm» for skjermleseren', () => {
 
   const all = organisations.values.map((value) => value.value);
 
-  it('sier hva knappene gjorde når mange verdier endres', () => {
+  it('says what the buttons did when many values change', () => {
     const said: (string | undefined)[] = [];
     render(<Organisations initial={[]} said={said} />);
 
@@ -667,15 +642,7 @@ describe('«Velg alle» og «Tøm» for skjermleseren', () => {
     expect(said).toEqual([undefined]);
   });
 
-  it('says «Velg alle» in the panel when it adds one value and the «Alle» chip comes, without the flag', () => {
-    const said: (string | undefined)[] = [];
-    render(<Organisations initial={all.slice(1)} said={said} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Velg alle virksomheter' }));
-    expect(said).toEqual(['Alle 20 virksomheter er valgt.']);
-  });
-
-  it('lar u-combobox si fra alene også bak den samlede merkelappen, som blir stående', () => {
-    setFlag('compact-filter-chips', true);
+  it('lets u-combobox alone tell it also behind the one chip, which stays', () => {
     const said: (string | undefined)[] = [];
     render(<Organisations initial={all.slice(1)} said={said} />);
 
@@ -685,9 +652,8 @@ describe('«Velg alle» og «Tøm» for skjermleseren', () => {
     expect(chips(document.body)).toEqual(['Alle virksomheter']);
   });
 
-  it('sier fra når den samlede merkelappen kommer, også om bare én verdi kom til', () => {
+  it('says so when the one chip comes, even if only one value was added', () => {
     // Four of five: the chips are four, and «Velg alle» makes them one drawn chip.
-    setFlag('compact-filter-chips', true);
     const five: FilterFacet = { ...organisations, values: organisations.values.slice(0, 5) };
     const said: (string | undefined)[] = [];
     function Five() {
@@ -710,7 +676,7 @@ describe('«Velg alle» og «Tøm» for skjermleseren', () => {
     expect(said).toEqual(['Alle 5 virksomheter er valgt.']);
   });
 
-  it('sier fra selv i årsfeltet, der et år og perioden det står i, er hver sin merkelapp', () => {
+  it('says so itself in the year field, where a year and its period are a chip each', () => {
     // u-combobox counts the chips Suggestion holds: one per year, hidden, and one per period.
     const said: (string | undefined)[] = [];
     render(<Years initial={['2019', '2022']} said={said} />);
@@ -723,7 +689,7 @@ describe('«Velg alle» og «Tøm» for skjermleseren', () => {
     expect(said.at(-1)).toBe('Ingen år er valgt.');
   });
 
-  it('sier fra i panelet også når de samme ordene kommer to ganger etter hverandre', () => {
+  it('says so in the panel also when the same words come twice in a row', () => {
     // A live region speaks when its text changes; the second «Ingen … er valgt.» gets a
     // no-break space so it does.
     function View() {
@@ -775,9 +741,8 @@ describe('«Velg alle» og «Tøm» for skjermleseren', () => {
   });
 });
 
-describe('en periode som alt er valgt, i panelet', () => {
-  it('sier fra i panelet uten å sette filteret på nytt, som ville hentet fasettene', () => {
-    setFlag('year-ranges', true);
+describe('a period already chosen, in the panel', () => {
+  it('says so in the panel without setting the filter again, which would fetch the facets', () => {
     const setSelection = vi.fn();
     const { container } = render(
       <MemoryRouter>
@@ -814,7 +779,7 @@ describe('en periode som alt er valgt, i panelet', () => {
   });
 });
 
-describe('panelet med flaggene', () => {
+describe('the year field in the panel', () => {
   /* As FiltersView.test.tsx mounts it. */
   function renderView() {
     return render(
@@ -828,15 +793,7 @@ describe('panelet med flaggene', () => {
     );
   }
 
-  it('har årsfeltet som før når flagget er av', () => {
-    renderView();
-
-    expect(screen.getByPlaceholderText('Søk i år')).toBeTruthy();
-    expect(screen.queryByPlaceholderText('Skriv et år eller en periode')).toBeNull();
-  });
-
-  it('bytter til perioder når year-ranges er på', () => {
-    setFlag('year-ranges', true);
+  it('takes a period without any flag', () => {
     renderView();
 
     expect(screen.getByPlaceholderText('Skriv et år eller en periode')).toBeTruthy();

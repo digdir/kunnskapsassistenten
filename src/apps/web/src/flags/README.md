@@ -10,19 +10,17 @@ deletes them (`beforeLogout` in `src/api/session.ts`).
 - **The page:** «Eksperimenter» on Innstillinger (`/innstillinger`), linked
   from the foot of the navigation panel. One switch per flag. The old address
   `#feature-flags` lands there.
-- **A link:** `?flagg=year-ranges`, or several with commas (`?flagg=a,b`). The
+- **A link:** `?flagg=filters-right-panel`, or several with commas (`?flagg=a,b`). The
   link only turns flags on. The parameter is taken out of the address and
   Innstillinger opens, so whoever got the link sees what was turned on and can
   turn it off. Unknown ids do nothing.
 
 ## The flags
 
-| Id                     | What                                                                                         | Issue                                                                                        |
-| ---------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `year-ranges`          | The year field takes periods, such as 2021 or 2023–2028, and consecutive years are one tag   | [digdir/kunnskapsassistenten#115](https://github.com/digdir/kunnskapsassistenten/issues/115) |
-| `compact-filter-chips` | One tag when many values in a field are chosen; all chosen is one tag without the flag       | [digdir/kunnskapsassistenten#116](https://github.com/digdir/kunnskapsassistenten/issues/116) |
-| `filters-right-panel`  | The filters above the sources in the sources panel, the navigation panel with threads only   | [digdir/kunnskapsassistenten#84](https://github.com/digdir/kunnskapsassistenten/issues/84)   |
-| `excerpt-citations`    | Answers from the genki environment that cites by excerpt; offered only where the BFF has one | [digdir/kunnskapsassistenten#237](https://github.com/digdir/kunnskapsassistenten/issues/237) |
+| Id                    | What                                                                                         | Issue                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `filters-right-panel` | The filters above the sources in the sources panel, the navigation panel with threads only   | [digdir/kunnskapsassistenten#84](https://github.com/digdir/kunnskapsassistenten/issues/84)   |
+| `excerpt-citations`   | Answers from the genki environment that cites by excerpt; offered only where the BFF has one | [digdir/kunnskapsassistenten#237](https://github.com/digdir/kunnskapsassistenten/issues/237) |
 
 ## Flags the server carries out
 
@@ -49,6 +47,8 @@ decides what that means; the browser never names a genki environment.
 
 ## Retired ids
 
-| Id               | Outcome                                                                                                                                                     |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mobile-top-row` | Standard below 774 px: the panel buttons in a row at the top ([digdir/kunnskapsassistenten#120](https://github.com/digdir/kunnskapsassistenten/issues/120)) |
+| Id                     | Outcome                                                                                                                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mobile-top-row`       | Standard below 774 px: the panel buttons in a row at the top ([digdir/kunnskapsassistenten#120](https://github.com/digdir/kunnskapsassistenten/issues/120))                                         |
+| `year-ranges`          | Standard: the year field takes periods, such as 2021 or 2023–2028, and consecutive years are one tag ([digdir/kunnskapsassistenten#115](https://github.com/digdir/kunnskapsassistenten/issues/115)) |
+| `compact-filter-chips` | Standard: one tag when six or more values in a field are chosen, such as «12 virksomheter» ([digdir/kunnskapsassistenten#116](https://github.com/digdir/kunnskapsassistenten/issues/116))           |

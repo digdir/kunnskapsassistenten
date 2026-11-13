@@ -127,10 +127,10 @@ test.describe('navigasjonspanelet', () => {
     await page.keyboard.press('Enter');
 
     const field = input.locator('xpath=ancestor::ds-field');
-    const chips = field.locator('ds-suggestion > data');
-    await expect(chips).toHaveText(['2024']);
-    await expect(chips).toHaveAttribute('value', '2024');
-    await expect(field.getByText(SELECTED_ONE)).toBeVisible();
+    // The year field draws a chip per period over a hidden chip per year, which holds the value.
+    await expect(field.locator('ds-suggestion > data:visible')).toHaveText(['2024']);
+    await expect(field.locator('ds-suggestion > data[value="2024"]')).toHaveCount(1);
+    await expect(field.getByText('1 år valgt')).toBeVisible();
     await expect(input).toHaveValue('');
   });
 

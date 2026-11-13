@@ -39,38 +39,40 @@ describe('the feature flags', () => {
   });
 
   it('are off when nothing is stored', () => {
-    expect(isFlagOn('year-ranges')).toBe(false);
+    expect(isFlagOn('filters-right-panel')).toBe(false);
   });
 
   it('remember a flag that is turned on, also after a reload', () => {
-    setFlag('year-ranges', true);
+    setFlag('filters-right-panel', true);
 
-    expect(JSON.parse(localStorage.getItem(FLAGS_STORAGE_KEY) ?? 'null')).toEqual(['year-ranges']);
+    expect(JSON.parse(localStorage.getItem(FLAGS_STORAGE_KEY) ?? 'null')).toEqual([
+      'filters-right-panel',
+    ]);
     reload();
-    expect(isFlagOn('year-ranges')).toBe(true);
+    expect(isFlagOn('filters-right-panel')).toBe(true);
   });
 
   it('remove the key when the last flag is turned off', () => {
-    setFlag('year-ranges', true);
-    setFlag('year-ranges', false);
+    setFlag('filters-right-panel', true);
+    setFlag('filters-right-panel', false);
 
     expect(localStorage.getItem(FLAGS_STORAGE_KEY)).toBeNull();
     reload();
-    expect(isFlagOn('year-ranges')).toBe(false);
+    expect(isFlagOn('filters-right-panel')).toBe(false);
   });
 
   it('read unknown ids and broken storage as off', () => {
     localStorage.setItem(FLAGS_STORAGE_KEY, JSON.stringify(['finnes-ikke']));
     reload();
-    expect(isFlagOn('year-ranges')).toBe(false);
+    expect(isFlagOn('filters-right-panel')).toBe(false);
 
     localStorage.setItem(FLAGS_STORAGE_KEY, '{ikke json');
     reload();
-    expect(isFlagOn('year-ranges')).toBe(false);
+    expect(isFlagOn('filters-right-panel')).toBe(false);
 
-    localStorage.setItem(FLAGS_STORAGE_KEY, JSON.stringify({ 'year-ranges': true }));
+    localStorage.setItem(FLAGS_STORAGE_KEY, JSON.stringify({ 'filters-right-panel': true }));
     reload();
-    expect(isFlagOn('year-ranges')).toBe(false);
+    expect(isFlagOn('filters-right-panel')).toBe(false);
   });
 
   it('work for the page even when storage throws', () => {
@@ -78,8 +80,8 @@ describe('the feature flags', () => {
       throw new Error('QuotaExceededError');
     });
     try {
-      setFlag('year-ranges', true);
-      expect(isFlagOn('year-ranges')).toBe(true);
+      setFlag('filters-right-panel', true);
+      expect(isFlagOn('filters-right-panel')).toBe(true);
     } finally {
       setItem.mockRestore();
     }
@@ -89,10 +91,10 @@ describe('the feature flags', () => {
     const listener = vi.fn();
     const stop = subscribeToFlags(listener);
 
-    setFlag('year-ranges', true);
-    setFlag('year-ranges', true);
+    setFlag('filters-right-panel', true);
+    setFlag('filters-right-panel', true);
     stop();
-    setFlag('year-ranges', false);
+    setFlag('filters-right-panel', false);
 
     expect(listener).toHaveBeenCalledTimes(1);
   });
@@ -121,15 +123,18 @@ describe('the retired flag mobile-top-row', () => {
   });
 
   it('leaves the flags stored beside it on, and is dropped on the next write', () => {
-    localStorage.setItem(FLAGS_STORAGE_KEY, JSON.stringify(['mobile-top-row', 'year-ranges']));
+    localStorage.setItem(
+      FLAGS_STORAGE_KEY,
+      JSON.stringify(['mobile-top-row', 'filters-right-panel']),
+    );
     reload();
-    expect(flagsOn()).toEqual(['year-ranges']);
+    expect(flagsOn()).toEqual(['filters-right-panel']);
 
-    setFlag('compact-filter-chips', true);
+    setFlag('excerpt-citations', true);
 
     expect(JSON.parse(localStorage.getItem(FLAGS_STORAGE_KEY) ?? 'null')).toEqual([
-      'year-ranges',
-      'compact-filter-chips',
+      'filters-right-panel',
+      'excerpt-citations',
     ]);
   });
 
@@ -141,15 +146,49 @@ describe('the retired flag mobile-top-row', () => {
   });
 });
 
+/**
+ * `year-ranges` (#115) and `compact-filter-chips` (#116) were flags until their behaviour became
+ * standard. Browsers that tried them still have them stored, and links to them are still around.
+ */
+describe('the retired flags year-ranges and compact-filter-chips', () => {
+  const retired = ['year-ranges', 'compact-filter-chips'];
+
+  it('are no longer flags', () => {
+    for (const id of retired) expect(isFlagId(id), id).toBe(false);
+  });
+
+  it('read as off when stored, leave the flags beside them on, and are dropped on the next write', () => {
+    localStorage.setItem(FLAGS_STORAGE_KEY, JSON.stringify([...retired, 'filters-right-panel']));
+    reload();
+    expect(flagsOn()).toEqual(['filters-right-panel']);
+
+    setFlag('excerpt-citations', true);
+
+    expect(JSON.parse(localStorage.getItem(FLAGS_STORAGE_KEY) ?? 'null')).toEqual([
+      'filters-right-panel',
+      'excerpt-citations',
+    ]);
+  });
+
+  it('turn nothing on from a link, and write nothing', () => {
+    expect(turnOnFromLink(['year-ranges,compact-filter-chips'])).toEqual([]);
+
+    expect(flagsOn()).toEqual([]);
+    expect(localStorage.getItem(FLAGS_STORAGE_KEY)).toBeNull();
+  });
+});
+
 describe('the link that turns a flag on', () => {
   it('turns on the flag the link names', () => {
-    expect(turnOnFromLink(['year-ranges'])).toEqual(['year-ranges']);
-    expect(isFlagOn('year-ranges')).toBe(true);
+    expect(turnOnFromLink(['filters-right-panel'])).toEqual(['filters-right-panel']);
+    expect(isFlagOn('filters-right-panel')).toBe(true);
   });
 
   it('takes several flags by comma or repeated parameter, and skips unknown ones', () => {
-    expect(turnOnFromLink(['finnes-ikke, year-ranges', 'heller-ikke'])).toEqual(['year-ranges']);
-    expect(isFlagOn('year-ranges')).toBe(true);
+    expect(turnOnFromLink(['finnes-ikke, filters-right-panel', 'heller-ikke'])).toEqual([
+      'filters-right-panel',
+    ]);
+    expect(isFlagOn('filters-right-panel')).toBe(true);
   });
 
   it('does nothing with a link that names no known flag', () => {
@@ -160,18 +199,18 @@ describe('the link that turns a flag on', () => {
 
 describe('«Logg ut»', () => {
   it('forgets the flags, so the next reader in the browser starts with all off', () => {
-    setFlag('year-ranges', true);
+    setFlag('filters-right-panel', true);
 
     beforeLogout();
 
     expect(localStorage.getItem(FLAGS_STORAGE_KEY)).toBeNull();
-    expect(isFlagOn('year-ranges')).toBe(false);
+    expect(isFlagOn('filters-right-panel')).toBe(false);
     reload();
-    expect(isFlagOn('year-ranges')).toBe(false);
+    expect(isFlagOn('filters-right-panel')).toBe(false);
   });
 
   it('tells a listener, so a page that is open draws again', () => {
-    setFlag('year-ranges', true);
+    setFlag('filters-right-panel', true);
     const listener = vi.fn();
     const stop = subscribeToFlags(listener);
 

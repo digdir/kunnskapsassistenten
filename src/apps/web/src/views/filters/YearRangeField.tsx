@@ -59,7 +59,7 @@ function rangeOf(value: string): YearRange | undefined {
   return /^\d+$/u.test(value) ? { from: Number(value), to: Number(value) } : rangeFromKey(value);
 }
 
-/** FacetField for years, behind `year-ranges` (digdir/kunnskapsassistenten#115). Before anything
+/** FacetField for years, which takes periods (digdir/kunnskapsassistenten#115). Before anything
  * is typed, the list is the years with documents; then what the text can become
  * (`suggestPeriods`), hence `filter={false}`, and a period with 0 documents can still be chosen.
  * Suggestion holds the chosen years, and the chips are drawn as periods, removed whole. */

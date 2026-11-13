@@ -1,4 +1,4 @@
-/** Years as periods for the `year-ranges` flag (digdir/kunnskapsassistenten#115); pure, for
+/** Years as periods for the year field (digdir/kunnskapsassistenten#115); pure, for
  * unit tests. The filter stays a list of years, which is what the backend takes; periods are
  * only how the field reads and draws it. */
 

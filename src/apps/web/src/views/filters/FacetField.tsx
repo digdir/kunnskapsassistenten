@@ -6,7 +6,6 @@ import {
   ValidationMessage,
 } from '@digdir/designsystemet-react';
 import { useImperativeHandle, useRef, type Ref } from 'react';
-import { useFlag } from '../../flags';
 import type { FilterFacet } from '../../model';
 import { chosenFirst, useChosenFirst } from './chosenFirst';
 import { renderChip, removedDrawnChip, valuesAfter, withDrawnChips } from './drawnChips';
@@ -21,7 +20,7 @@ import {
 /** What the view may do with a field from outside: put the keyboard in it. */
 export type FacetFieldHandle = { focus: () => void };
 
-/** Chosen values from which `compact-filter-chips` also draws one chip for a part of the field. */
+/** Chosen values from which one chip is also drawn for a part of the field (#116). */
 const COMPACT_FROM = 6;
 
 export type FacetFieldProps = {
@@ -56,10 +55,10 @@ export function FacetField({ ref, facet, selected, onChange }: FacetFieldProps) 
   const labelOf = (value: string) =>
     facet.values.find((candidate) => candidate.value === value)?.label ?? value;
 
-  // One chip over those per value: «Alle virksomheter» from two values, «12 virksomheter» by flag.
-  const compactFlag = useFlag('compact-filter-chips');
+  // One chip over those per value: «Alle virksomheter» from two values, «12 virksomheter» from
+  // COMPACT_FROM.
   const isCompact = (values: readonly string[]) =>
-    (values.length > 1 && everyListed(values)) || (compactFlag && values.length >= COMPACT_FROM);
+    (values.length > 1 && everyListed(values)) || values.length >= COMPACT_FROM;
   const compact = isCompact(selected);
   const drawn = compact
     ? [

@@ -3,7 +3,7 @@ import { covers } from './a11y';
 import { MOCK } from './helpers';
 
 /**
- * The year filter as periods, behind the `year-ranges` flag (#115), in a
+ * The year filter as periods (#115), standard without any flag, in a
  * real browser: what the list offers from the first digit, and that a click
  * in it chooses.
  *
@@ -16,14 +16,11 @@ import { MOCK } from './helpers';
  * No `@mock` tag: it asks only for some year from 2000 on with documents,
  * which any corpus has, and reads the year it clicked.
  */
-test('årsfilteret med perioder foreslår år fra første siffer, og et klikk gir merkelappen', async ({
+test('the year field takes periods without any flag: it suggests years from the first digit, and a click gives the chip', async ({
   page,
 }, testInfo) => {
   covers(testInfo, 'filtre kan velges og gir chips');
 
-  await page.addInitScript(() => {
-    localStorage.setItem('ka.flags.v1', JSON.stringify(['year-ranges']));
-  });
   await page.goto('/');
 
   const field = page.locator('.year-range-field');
@@ -48,14 +45,11 @@ test('årsfilteret med perioder foreslår år fra første siffer, og et klikk gi
 });
 
 test(
-  'årsfilteret med perioder viser årene ved klikk og krysser av de valgte',
+  'the year field shows the years on a click and ticks the chosen ones',
   MOCK,
   async ({ page }, testInfo) => {
     covers(testInfo, 'filtre kan velges og gir chips');
 
-    await page.addInitScript(() => {
-      localStorage.setItem('ka.flags.v1', JSON.stringify(['year-ranges']));
-    });
     await page.goto('/');
 
     const field = page.locator('.year-range-field');
