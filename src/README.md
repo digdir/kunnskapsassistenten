@@ -233,12 +233,14 @@ same origin.
 
 ```sh
 docker build --tag ka .
-docker run --rm --detach --name ka --publish 8787:8787 -e AUTH_MODE=off -e APP_ORIGIN=http://localhost:8787 -e DIGDIR_API_KEY=unused ka
+docker run --rm --detach --name ka --publish 127.0.0.1:8787:8787 -e AUTH_MODE=off -e LISTEN_HOST=0.0.0.0 -e APP_ORIGIN=http://localhost:8787 -e DIGDIR_API_KEY=unused ka
 curl -fsS --retry 15 --retry-all-errors --retry-delay 1 http://localhost:8787/api/health
 docker stop ka
 ```
 
-`curl` should print `{"ok":true}`.
+`curl` should print `{"ok":true}`. Without sign-in the server listens only on
+127.0.0.1, which a published port does not reach, hence `LISTEN_HOST=0.0.0.0`;
+`127.0.0.1:` in `--publish` keeps it on this machine.
 
 The image serves the client in `apps/web`, which calls the API under
 `/api/v2/*`. `/api/health` answers beside it for the readiness probe and the
@@ -318,7 +320,10 @@ set, otherwise `off`. The server prints which mode it runs in at every startup.
 
 No token reaches the browser, only a signed cookie. `/api/v2/*` answers 401
 without sign-in, and `/api/health` and `/api/v2/health` are open. Who gets in is decided by Entra ID, not by
-the app. `AUTH_MODE=off` refuses to start if `APP_ORIGIN` is not localhost.
+the app. `AUTH_MODE=off` refuses to start if `APP_ORIGIN` is not localhost, and
+the server then listens only on 127.0.0.1, so no one else on the network can use
+it as you. `LISTEN_HOST` names another address, such as `0.0.0.0` inside a
+container, whose published port then decides who can reach it.
 Setup in [`deploy/README.md`](deploy/README.md).
 
 ### Ansattporten
