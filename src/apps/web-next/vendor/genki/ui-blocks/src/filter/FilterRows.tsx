@@ -140,7 +140,7 @@ export const FilterRows = ({
                   {/* A space between the two in the button's name, whatever lays them out. */}{' '}
                   <span className="uib-filter-row-chosen">
                     {chosen.length === 0 || showsAsAll(field, selected)
-                      ? t('filter.all')
+                      ? t(field.kind === 'year' ? 'filter.allYears' : 'filter.all')
                       : chosen.join(', ')}
                   </span>
                 </span>

@@ -21,12 +21,12 @@ import { chosenFirst, useChosenFirst, useListFollowsField } from './listBehaviou
 import {
   documentsIn,
   formatRange,
+  listedYearsIn,
   parseYearInput,
   rangeFromKey,
   rangeKey,
   suggestPeriods,
   toRanges,
-  yearsIn,
   type YearRange,
 } from './yearRanges.js';
 
@@ -78,6 +78,9 @@ export const YearRangeField = ({
   );
 
   const typed = parseYearInput(query);
+  // A period is the years in it the field lists, so one with none of them adds nothing.
+  const isEmptyPeriod = (range: YearRange) =>
+    range.from !== range.to && listedYearsIn(range, field.options).length === 0;
   // Nothing typed: every year with documents, as listed. No count counts as some.
   const offered =
     query.trim() === ''
@@ -85,8 +88,19 @@ export const YearRangeField = ({
           .filter((option) => option.count === undefined || option.count > 0)
           .map((option) => rangeOf(option.value))
           .filter((range) => range !== undefined)
-      : suggestPeriods(query, field.options);
+      : suggestPeriods(query, field.options).filter((range) => !isEmptyPeriod(range));
   const options = chosenFirst(offered, (range) => first.has(optionValue(range)));
+
+  // A year with its documents; a period with its years, as a document with several years would
+  // count once in each and the sum could pass the documents there are.
+  const optionText = (range: YearRange) => {
+    if (range.from !== range.to) {
+      const count = listedYearsIn(range, field.options).length;
+      return `${formatRange(range)} (${t('filter.periodYears', { count })})`;
+    }
+    const count = documentsIn(range, field.options);
+    return count === undefined ? formatRange(range) : `${formatRange(range)} (${count})`;
+  };
 
   // u-combobox counts its chips, here a year's each and a period's; the count is the years.
   const screenReaderTexts = {
@@ -116,13 +130,17 @@ export const YearRangeField = ({
   const told = (next: readonly string[]) =>
     changedChips(chipValues(selected, drawn), chipValues(next, periodsOf(next))) === 1;
 
-  // Years and periods back into years; '' is the hint, not a choice, as in FacetField.
+  // Years and periods back into years; '' is the hint, not a choice, as in FacetField. A year
+  // stays as chosen, listed or not; a period brings only the years in it the field lists, so it
+  // never sends more values than the collection has years (genki takes at most 100 per field).
   const change = (items: { value: string; label: string }[]) => {
     if (items.some((item) => item.value === '')) return;
     const years = new Set<number>();
     for (const value of valuesAfter(items, drawn)) {
       const range = rangeOf(value);
-      if (range) for (const year of yearsIn(range)) years.add(year);
+      if (!range) continue;
+      if (range.from === range.to) years.add(range.from);
+      else for (const year of listedYearsIn(range, field.options)) years.add(year);
     }
     const next = [...years].sort((a, b) => a - b).map(String);
     keepFocusFromDrawnChip(items, drawn, inputRef.current);
@@ -226,7 +244,6 @@ export const YearRangeField = ({
           {/* Options or the hint, never both; the text's period is labelled as typed. */}
           {options.length > 0 || query.trim() === '' ? (
             options.map((range) => {
-              const count = documentsIn(range, field.options);
               const asTyped = typed !== undefined && rangeKey(typed) === rangeKey(range);
               return (
                 <Suggestion.Option
@@ -234,12 +251,16 @@ export const YearRangeField = ({
                   value={optionValue(range)}
                   label={asTyped ? query.trim() : formatRange(range)}
                 >
-                  {count === undefined ? formatRange(range) : `${formatRange(range)} (${count})`}
+                  {optionText(range)}
                 </Suggestion.Option>
               );
             })
           ) : (
-            <Suggestion.Empty>{t('filter.yearNotPeriod')}</Suggestion.Empty>
+            <Suggestion.Empty>
+              {typed
+                ? t('filter.yearNoneIn', { period: formatRange(typed) })
+                : t('filter.yearNotPeriod')}
+            </Suggestion.Empty>
           )}
         </Suggestion.List>
       </Suggestion>

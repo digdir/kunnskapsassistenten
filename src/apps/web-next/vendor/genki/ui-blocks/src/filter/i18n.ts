@@ -49,6 +49,8 @@ export const nbFilter = defineNamespace({
   yearNotPeriod:
     'Ikke et år eller en periode. Skriv et år eller en periode, som 2021 eller 2023–2028.',
   yearAlreadyChosen: '{period} er alt valgt.',
+  yearNoneIn: 'Ingen dokumenter i {period}.',
+  periodYears: { one: '{count} år med dokumenter', other: '{count} år med dokumenter' },
   // u-combobox's texts for chosen values, which Designsystemet leaves in English; `%d` counts.
   srItems: 'Valgte verdier',
   srEmpty: 'Ingen verdier er valgt',
@@ -65,6 +67,7 @@ export const nbFilter = defineNamespace({
   clearAll: 'Fjern alle filtre',
   clearedAll: 'Alle filtre er fjernet.',
   all: 'Alle',
+  allYears: 'Alle år',
   appliesNext: 'Gjelder neste spørsmål',
   // The filter in an answer and under the field, its values in the words of the rows.
   changed: 'filteret er endret',
@@ -127,6 +130,8 @@ export const enFilter = {
   yearHint: 'Type a year or a period, such as 2021 or 2023–2028',
   yearNotPeriod: 'Not a year or a period. Type a year or a period, such as 2021 or 2023–2028.',
   yearAlreadyChosen: '{period} is already selected.',
+  yearNoneIn: 'No documents in {period}.',
+  periodYears: { one: '{count} year with documents', other: '{count} years with documents' },
   srItems: 'Selected values',
   srEmpty: 'No values are selected',
   srFound: '%d selected, navigate back to change',
@@ -141,6 +146,7 @@ export const enFilter = {
   clearAll: 'Remove all filters',
   clearedAll: 'All filters are removed.',
   all: 'All',
+  allYears: 'All years',
   appliesNext: 'Applies to the next question',
   changed: 'the filter has changed',
   readFrom: { one: 'Read from {count} document', other: 'Read from {count} documents' },

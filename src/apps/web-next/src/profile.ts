@@ -44,20 +44,9 @@ const issue = (n: number) => ({
   hrefLabel: `Sak ${n}`,
 });
 
+// Years as periods (#115) and many values as one chip (#116) were trials until 13.11; genki's
+// assembly now always draws them.
 const EXPERIMENTS = [
-  {
-    id: 'year-ranges',
-    title: 'Årsfilter med perioder',
-    description:
-      'Skriv et år eller en periode, som 2021 eller 2023–2028. År på rad står som én merkelapp.',
-    ...issue(115),
-  },
-  {
-    id: 'compact-filter-chips',
-    title: 'Samlede merkelapper i filteret',
-    description: 'Når mange verdier er valgt, står én merkelapp, som «12 virksomheter».',
-    ...issue(116),
-  },
   {
     id: 'filters-right-panel',
     title: 'Filtreringen i høyre panel',
