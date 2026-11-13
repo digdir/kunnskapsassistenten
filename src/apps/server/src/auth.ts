@@ -5,6 +5,7 @@ import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie';
 import type { User } from '@ka/contract';
 import { config } from './config.ts';
 import { entraLoginPage } from './authPages.ts';
+import { localOrigin } from './localOrigin.ts';
 import { dropTokens, getTokens } from './tokenStore.ts';
 
 const MAX_AGE = 60 * 60 * 8;
@@ -23,8 +24,8 @@ const msal =
       })
     : null;
 
-export const secure = () => !config.auth.origin.startsWith('http://localhost');
-// __Host- needs Secure, which a plain-http localhost cannot have.
+export const secure = () => localOrigin(config.auth.origin)?.protocol !== 'http:';
+// __Host- needs Secure, which plain http on this machine cannot have.
 const SESSION = secure() ? '__Host-ka_session' : 'ka_session';
 export const RETURN_TO = secure() ? '__Host-ka_return_to' : 'ka_return_to';
 
