@@ -305,8 +305,8 @@ export const AssistantView = ({
   const documentOn = a.has('document-view');
   const settingsOn = a.has('settings');
   const name = a.assistantName;
-  // The dev boards' look (`knowledge-assistant-next`): cards, every panel titled, the thread's
-  // title as the `h1`, and the reader at the primary panel's foot with the profile menu.
+  // The dev boards' look, the layout's `next`: cards, every panel titled, the thread's title as
+  // the `h1`, and the reader at the primary panel's foot with the profile menu.
   const next = a.look === 'next';
   // The document stands where the conversation was, with Dokumentvisning beside Chat in «Innhold».
   const chatHidden = a.documentOverChat && !!a.openDoc;
@@ -469,8 +469,8 @@ export const AssistantView = ({
       );
     }
     const suggestions = a.option('chat', 'suggestions') ? (a.profile?.suggestions ?? []) : [];
-    // The next look offers no follow-ups under an answer: no board draws them.
-    const followUps = a.option('chat', 'followUps') && !next ? a.profile?.followUps : undefined;
+    // The catalogue keeps follow-ups to the current look.
+    const followUps = a.option('chat', 'followUps') ? a.profile?.followUps : undefined;
     const disclaimer = a.option('chat', 'disclaimer');
     // While a question is written, the next look hides the greeting and suggestions in place.
     const typing = next && start && a.draft !== '';

@@ -11,8 +11,21 @@ export interface FieldSpec {
   /** The field's name over its row in the next look's filter, singular: «Dokumenttype». */
   heading?: string | undefined;
   kind?: 'year' | undefined;
+  /** For a field of `kind: 'year'`, the years it offers. Without it, 1900 up to this year. */
+  years?: YearBounds | undefined;
   /** The values are integers on the wire. */
   integer?: boolean | undefined;
+}
+
+/**
+ * The years a year field offers, newest first. Anything else it holds, such as page numbers or a
+ * year centuries ahead, is left out, but a value the reader has chosen is always kept.
+ */
+export interface YearBounds {
+  /** The first year offered; 1900 without it. */
+  first?: number | undefined;
+  /** The last year offered; the year it is in Norway without it. */
+  last?: number | undefined;
 }
 
 export interface CorpusProfile {
@@ -25,8 +38,10 @@ export interface CorpusProfile {
   typePlurals?: Readonly<Record<string, string>> | undefined;
   /** The field the document type is in, for the line above. */
   typeField?: string | undefined;
-  /** Where a document lives, from its number, when the source carries no link. */
+  /** Where a document lives, from its number, when the source carries no link. Goes first. */
   documentUrl?: ((documentId: string) => string | undefined) | undefined;
+  /** The same as data: an address per kind of number, `{id}` where it goes. */
+  documentLinks?: Readonly<Partial<Record<DocumentIdPattern, string>>> | undefined;
   /**
    * The facets that describe one document, read by its number for the line under its title in
    * «Dokumenter»: the field holding the number, and the fields to show.
@@ -87,3 +102,6 @@ export interface AssistantExperiment {
   href?: string | undefined;
   hrefLabel?: string | undefined;
 }
+
+/** The kinds of document number a link is chosen by, tried in this order. */
+export type DocumentIdPattern = 'digits' | 'uuid' | 'any';

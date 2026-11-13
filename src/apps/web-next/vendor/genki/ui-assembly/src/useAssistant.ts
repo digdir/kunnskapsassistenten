@@ -26,7 +26,7 @@ import {
   sameSelection,
   serviceOf,
   settingsOf,
-  templateLook,
+  lookOf,
   zoneOf,
   zonesOf,
   type AssistantLayout,
@@ -68,6 +68,7 @@ import { useT } from './i18n.js';
 import type { StepFrame } from './procedure.js';
 import type { AssistantProfile, FieldSpec } from './profile.js';
 import { useStoredValue, type AssistantStorage } from './storage.js';
+import { currentYear, withinYears } from './years.js';
 
 export interface AssistantFeedback {
   answerId: string;
@@ -124,6 +125,8 @@ export interface AssistantOptions {
   onThreadChange?: ((id: string | undefined) => void) | undefined;
   /** An answer asked with steps came back with them, or without any. */
   onStepsReported?: ((reported: boolean) => void) | undefined;
+  /** The clock, for the year a year field's values run up to; tests give a fixed one. */
+  now?: (() => Date) | undefined;
 }
 
 export type View = 'new' | 'loading' | 'ready' | 'notfound' | 'error';
@@ -235,6 +238,7 @@ export const useAssistant = ({
   onDelete,
   onThreadChange,
   onStepsReported,
+  now = () => new Date(),
 }: AssistantOptions) => {
   // ── What the service can back, and what the layout holds ──
   const t = useT();
@@ -605,7 +609,7 @@ export const useAssistant = ({
   // In the next look the filter belongs to the thread («9 · Filtrering», choices 1 to 3): the filter
   // of each thread's last question asked here is kept, and opening the thread brings it back.
   // genki keeps no filter with a turn, so a thread asked elsewhere leaves the filter as it is.
-  const look = templateLook(layout.template);
+  const look = lookOf(layout);
   const threadFiltersOn = look === 'next' && filterOn;
   const [threadFilters, setThreadFilters] = useStoredValue(
     storage,
@@ -638,16 +642,32 @@ export const useAssistant = ({
     if (!filterOn || !fields || !corpusKey) return;
     let gone = false;
     setFacetsFailed(false);
+    // Year fields bounded everywhere, so «Velg alle» on the years narrows nothing, as «Alle år».
+    const thisYear = currentYear(now());
+    const facetsOf = async (
+      asked: FilterSelection,
+      keep: FilterSelection,
+      lists?: readonly FilterField[],
+    ) =>
+      withinYears(
+        await (lists
+          ? api.loadFacets(asked, corpusKey, fields, lists)
+          : api.loadFacets(asked, corpusKey, fields)),
+        fields,
+        keep,
+        thisYear,
+      );
     const load = async () => {
       if (isEmptySelection(selection)) {
-        const found = await api.loadFacets(selection, corpusKey, fields);
+        const found = await facetsOf(selection, selection);
         if (!gone) setBaseFacets(found);
         return found;
       }
       // A field with every value in the collection (the facets of nothing) chosen narrows nothing.
-      const base = baseFacets ?? (await api.loadFacets({}, corpusKey, fields));
+      const base = baseFacets ?? (await facetsOf({}, {}));
       if (!gone && !baseFacets) setBaseFacets(base);
-      return api.loadFacets(narrowing(selection, base), corpusKey, fields, base);
+      // The reader's own choices are kept in the list, also those narrowing leaves out.
+      return facetsOf(narrowing(selection, base), selection, base);
     };
     load().then(
       (found) => !gone && setFacets(found),
@@ -1103,7 +1123,7 @@ export const useAssistant = ({
   return {
     // what is placed
     layout,
-    // The template's look: `next` draws the dev boards' frame, titles and profile menu.
+    // The layout's look: `next` draws the dev boards' frame, titles and profile menu.
     look,
     facts,
     modelsFailed,

@@ -36,7 +36,7 @@ export const nbBuilder = defineNamespace({
   chatSuggestions: 'Forslag til spørsmål',
   chatSuggestionsHelp: 'Tre spørsmål å starte med under feltet',
   chatFollowUps: 'Forslag til oppfølging',
-  chatFollowUpsHelp: 'Knapper over feltet etter et svar',
+  chatFollowUpsHelp: 'Knapper over feltet etter et svar. Ikke i utseendet «Ny utgave».',
   chatDisclaimer: 'Merknad om feil',
   chatDisclaimerHelp:
     'Under feltet: «Assistenten kan gjøre feil. Husk å sjekke viktig informasjon.», med assistentens navn',
@@ -70,6 +70,11 @@ export const nbBuilder = defineNamespace({
   templateWithoutSecondary: 'Uten høyre sidepanel',
   templateWithoutPrimary: 'Uten venstre sidepanel',
   templateChatOnly: 'Bare chat',
+
+  look: 'Utseende',
+  lookHelp: 'Hvordan blokkene tegnes',
+  lookCurrent: 'Dagens',
+  lookNext: 'Ny utgave',
 
   // Why a block or an option is not offered, one per need the service does not meet.
   needServiceChat: 'Tjenesten svarer ikke i en chat.',
@@ -119,7 +124,7 @@ export const enBuilder = {
   chatSuggestions: 'Suggested questions',
   chatSuggestionsHelp: 'Three questions to start with under the field',
   chatFollowUps: 'Suggested follow-ups',
-  chatFollowUpsHelp: 'Buttons over the field after an answer',
+  chatFollowUpsHelp: 'Buttons over the field after an answer. Not in the “Next edition” look.',
   chatDisclaimer: 'Note on mistakes',
   chatDisclaimerHelp:
     'Under the field: “The assistant can make mistakes. Remember to check important information.”, with the assistant’s name',
@@ -153,6 +158,11 @@ export const enBuilder = {
   templateWithoutSecondary: 'Without right panel',
   templateWithoutPrimary: 'Without left panel',
   templateChatOnly: 'Chat only',
+
+  look: 'Look',
+  lookHelp: 'How the blocks are drawn',
+  lookCurrent: 'Current',
+  lookNext: 'Next edition',
 
   needServiceChat: 'The service does not answer in a chat.',
   needServiceSources: 'The service does not search documents.',
