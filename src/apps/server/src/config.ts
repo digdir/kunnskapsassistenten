@@ -124,6 +124,12 @@ const NEXT_MODEL = 'kunnskapsassistenten__default';
  * pages and API are not served. It needs `KA_NEXT` and the next client's build: without `KA_NEXT`
  * it is warned about and ignored, as `KA_NEXT_MODEL` is; without the build the server stops,
  * since there would be no client to serve. Unset, apps/web stays the default, as before.
+ *
+ * `byDefault` (`KA_NEXT_DEFAULT`) makes the next client what a browser that has not chosen gets,
+ * while apps/web stays for a browser that chose it (decisions/0018). It needs `KA_NEXT`, and is
+ * warned about and ignored without it, as `KA_NEXT_ONLY` is. Without the build, the next client
+ * is not offered, and a browser gets apps/web as with a `next` cookie. Unset, a browser that has
+ * not chosen gets apps/web, as before.
  */
 export function nextConfig(env: NodeJS.ProcessEnv = process.env) {
   const enabled = switchedOn(env.KA_NEXT);
@@ -132,6 +138,11 @@ export function nextConfig(env: NodeJS.ProcessEnv = process.env) {
   if (only && !enabled) {
     console.warn('KA_NEXT_ONLY is on, but KA_NEXT is off; ignored, so apps/web is served.');
     only = false;
+  }
+  let byDefault = switchedOn(env.KA_NEXT_DEFAULT);
+  if (byDefault && !enabled) {
+    console.warn('KA_NEXT_DEFAULT is on, but KA_NEXT is off; ignored, so apps/web is served.');
+    byDefault = false;
   }
   if (only && !(webRoot && existsSync(join(webRoot, 'index.html')))) {
     console.error(
@@ -160,6 +171,8 @@ export function nextConfig(env: NodeJS.ProcessEnv = process.env) {
     layout: nextLayout(env.KA_NEXT_LAYOUT, enabled),
     /** Only the next client is served (`KA_NEXT_ONLY`): there is no apps/web on this host. */
     only,
+    /** A browser that has not chosen gets the next client (`KA_NEXT_DEFAULT`). */
+    byDefault,
   };
 }
 

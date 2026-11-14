@@ -80,6 +80,16 @@ describe('with only the next client', () => {
     assert.equal((await page('/next-assets/index-next.js')).body, '/* next */');
   });
 
+  test('wins over a browser that chose apps/web: its page, its thread links and the toggle are the next client’s', async () => {
+    assert.equal((await page('/', 'ka_ui=classic')).body, NEXT);
+    assert.equal((await page('/?t=abc-123', 'ka_ui=classic')).res.status, 200);
+    const link = await page('/threads/abc-123', 'ka_ui=classic');
+    assert.equal(link.res.status, 302);
+    assert.equal(link.res.headers.get('Location'), '/?t=abc-123');
+    const ui = await app.request('/api/next/ui', { headers: { Cookie: 'ka_ui=classic' } });
+    assert.deepEqual(await ui.json(), { ui: 'next', available: true });
+  });
+
   test('«Endringslogg» and «Om prosjektet» are the next client’s addresses, as apps/web is not there', async () => {
     for (const path of ['/endringslogg', '/om-prosjektet'])
       assert.equal((await page(path, 'ka_ui=next')).body, NEXT, path);

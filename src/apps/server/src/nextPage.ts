@@ -1,8 +1,9 @@
 /**
- * Which client's page a browser gets, while the next client is on (decisions/0013): apps/web by
- * default, apps/web-next when the person chose it (`POST /api/next/ui`). The two builds keep their
- * files apart, `/assets/*` and `/next-assets/*`, so only the page depends on the choice. With
- * `KA_NEXT_ONLY` (decisions/0017) every page address is apps/web-next's, and nothing is apps/web's.
+ * Which client's page a browser gets, while the next client is on (decisions/0013): the one the
+ * person chose (`POST /api/next/ui`), else the default, apps/web, or apps/web-next with
+ * `KA_NEXT_DEFAULT` (decisions/0018). The two builds keep their files apart, `/assets/*` and
+ * `/next-assets/*`, so only the page depends on the choice. With `KA_NEXT_ONLY` (decisions/0017)
+ * every page address is apps/web-next's, and nothing is apps/web's.
  */
 import { serveStatic } from '@hono/node-server/serve-static';
 import type { MiddlewareHandler } from 'hono';
@@ -44,7 +45,8 @@ export function nextPage(classicRoot: string) {
   const classicIndex = serveStatic({ root: classicRoot, path: 'index.html' });
   const only = config.next.only;
 
-  // `uiOf` is `next` for everyone with only the next client, so apps/web's links open there.
+  // `uiOf` is `next` for everyone with only the next client, so apps/web's links open there, and
+  // for a browser that has not chosen where the next client is the default.
   const threadLinks: MiddlewareHandler = async (c, next) => {
     const to = threadLinkFor(uiOf(c), c.req.path, new URL(c.req.url).searchParams);
     return to ? c.redirect(to, 302) : next();
