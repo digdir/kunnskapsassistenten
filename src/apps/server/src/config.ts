@@ -1,5 +1,6 @@
 import { parseDataset, parseFilterFields } from './datasetConfig.ts';
 import { localOrigin } from './localOrigin.ts';
+import { nextLayout } from './nextLayout.ts';
 
 function required(name: string): string {
   const v = process.env[name];
@@ -111,6 +112,10 @@ const NEXT_MODEL = 'kunnskapsassistenten__default';
  *
  * A malformed `KA_NEXT_MODEL` stops the server only when `KA_NEXT` is on. While it is off the
  * model is not used, so a mistake in it is warned about and must not take apps/web down.
+ *
+ * `layout` is the layout from genki's builder in `KA_NEXT_LAYOUT`, checked with genki's own rules
+ * (decisions/0017, `nextLayout.ts`), the same way: a bad one stops the server only when `KA_NEXT`
+ * is on. Unset, the next client draws KA's own.
  */
 export function nextConfig(env: NodeJS.ProcessEnv = process.env) {
   const enabled = switchedOn(env.KA_NEXT);
@@ -132,6 +137,7 @@ export function nextConfig(env: NodeJS.ProcessEnv = process.env) {
     tenant: (env.KA_NEXT_TENANT ?? '').trim() || 'digdir',
     /** The build of apps/web-next. */
     webRoot: env.WEB_NEXT_ROOT ?? '',
+    layout: nextLayout(env.KA_NEXT_LAYOUT, enabled),
   };
 }
 

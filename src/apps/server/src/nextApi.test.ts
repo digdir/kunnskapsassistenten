@@ -164,6 +164,8 @@ before(async () => {
     KA_NEXT_MODEL: 'kunnskapsassistenten__default',
     KA_NEXT_TENANT: 'digdir',
   });
+  // No layout from genki's builder: the next client draws KA's own (nextLayout.test.ts has one).
+  delete process.env.KA_NEXT_LAYOUT;
   ({ app } = await import('./app.ts'));
   nextApi = await import('./nextApi.ts');
   nextApiPage = await import('./nextPage.ts');
@@ -339,6 +341,19 @@ describe('/api/next/me', () => {
       tenant: 'digdir',
       writes: false,
     });
+  });
+
+  test('is unchanged while KA_NEXT_LAYOUT is unset: no layout, so the page draws KA’s own', async () => {
+    const body = (await (await app.request('/api/next/me')).json()) as Record<string, unknown>;
+    assert.equal('layout' in body, false);
+    assert.deepEqual(Object.keys(body).sort(), [
+      'model',
+      'name',
+      'service',
+      'signOut',
+      'tenant',
+      'writes',
+    ]);
   });
 });
 
