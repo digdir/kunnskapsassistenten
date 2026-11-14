@@ -162,6 +162,7 @@ describe('KA_NEXT_LAYOUT', () => {
         /the file is larger than 65536 bytes\.$/,
       ],
       [inFile('broken.json', `{"version":1,"zones":${secret}`), /it is not valid JSON\.$/],
+      [files, /nor the path of a file that can be read\.$/],
     ];
     for (const [raw, reason] of cases) {
       const { stopped, said } = run(raw, true);

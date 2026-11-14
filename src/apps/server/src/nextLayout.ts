@@ -11,7 +11,7 @@
  * A message names each problem by genki's rule and where it is, never the value of the variable
  * or the file's text: an error from `JSON.parse` would quote it.
  */
-import { readFileSync, statSync } from 'node:fs';
+import { closeSync, fstatSync, openSync, readFileSync } from 'node:fs';
 import { createRequire, registerHooks } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
@@ -70,14 +70,20 @@ function textOf(raw: string): string | ReadLayout {
       return { refused: `it is larger than ${LAYOUT_MAX_BYTES} bytes.` };
     return raw;
   }
+  // One open file, measured and read through the same descriptor, so what is read is what was
+  // measured.
+  let fd: number | undefined;
   try {
-    if (statSync(raw).size > LAYOUT_MAX_BYTES)
+    fd = openSync(raw, 'r');
+    if (fstatSync(fd).size > LAYOUT_MAX_BYTES)
       return { refused: `the file is larger than ${LAYOUT_MAX_BYTES} bytes.` };
-    return readFileSync(raw, 'utf8');
+    return readFileSync(fd, 'utf8');
   } catch {
     return {
       refused: 'it is neither JSON that starts with { nor the path of a file that can be read.',
     };
+  } finally {
+    if (fd !== undefined) closeSync(fd);
   }
 }
 
