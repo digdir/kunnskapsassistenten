@@ -194,6 +194,7 @@ One deployment draws one service, so another assistant is a second container app
    | `digdirTool`                                       | `<service>__<variant>`        |
    | `digdirAgentId`                                    | `<service>`                   |
    | `kaNext`                                           | `1`                           |
+   | `kaNextOnly`                                       | `1`                           |
    | `kaNextModel`                                      | `<service>__<variant>`        |
    | `kaFilterFields`, `kaDataset`, `kaCapabilities`    | the service's, or empty       |
 
@@ -209,16 +210,31 @@ One deployment draws one service, so another assistant is a second container app
    If the new revision does not become healthy, its log says which of genki's rules the layout
    breaks. The old revision keeps serving meanwhile.
 
-7. **Open it.** The host serves `apps/web` first, as `ka-app` does. «Prøv ny versjon» at the
-   foot of its navigation panel gives the other assistant, and the browser keeps that choice.
+7. **Open it.** `https://<host>/` is the other assistant, for everyone. `kaNextOnly`
+   (`KA_NEXT_ONLY=1`) makes the next client the only one: every page address serves it, KA's
+   links to a thread (`/threads/<id>`) open the thread in it, and `apps/web`'s page, files,
+   pages and API (`/api/v2/*`) are not served. `/api/health` stays for the probe.
 
 A changed layout is step 6 again. `KA_NEXT_LAYOUT` with a path instead of JSON reads the file
 at that path in the container, such as a Container Apps secret mounted as a volume. The template
 takes it as `kaNextLayout`, empty by default; step 6 sets it on the app instead.
 
-The other assistant keeps what only KA's host gives: the sign-in, the profile menu with KA's
-«Endringslogg», «Om prosjektet» and «Tilbake til gammel versjon», only this service's threads,
-and KA's two trials in «Innstillinger». Every other word is the layout's.
+`KA_NEXT_ONLY` needs `KA_NEXT`: without it, it is warned about and ignored, and the host serves
+`apps/web`. Without the next client's build the server does not start. On an app deployed without
+it, this sets it, about 30 seconds and no rebuild:
+
+```sh
+az containerapp update --subscription Altinn-AI-Assistant -n ka-rapport -g rg-ka-test-weu \
+  --set-env-vars KA_NEXT_ONLY=1 --revision-suffix nextonly$(date +%H%M%S)
+```
+
+Without `KA_NEXT_ONLY`, as on `ka-app`, the host serves `apps/web` first, and «Prøv ny versjon»
+at the foot of its navigation panel gives the next client.
+
+The other assistant keeps what only KA's host gives: the sign-in, only this service's threads,
+and KA's two trials in «Innstillinger». Its profile menu has genki's «Innstillinger» and «Logg
+ut», but none of `apps/web`'s pages: no «Endringslogg», «Om prosjektet» or «Tilbake til gammel
+versjon». Every other word is the layout's.
 
 ## Testers and genki's test environment
 

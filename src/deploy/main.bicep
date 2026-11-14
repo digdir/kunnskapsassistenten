@@ -75,6 +75,9 @@ param kaNextTenant string = ''
 @description('The layout the next client draws, the JSON from genki\'s builder («Kopier oppsettet») or the path of a file holding it (decisions/0017). Empty draws KA\'s own.')
 param kaNextLayout string = ''
 
+@description('Only the next client, for a deployment of another service: `1` serves apps/web-next at `/` and leaves apps/web out, with no way back to it; needs `kaNext` (decisions/0017). Empty keeps apps/web the default.')
+param kaNextOnly string = ''
+
 @description('Testers by session user id (`userId` in `/api/v2/me`), separated by commas or spaces: their calls to genki carry `GenAI-Environment` (decisions/0015). Empty: nobody is a tester.')
 param kaTesters string = ''
 
@@ -206,6 +209,9 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             ],
             empty(kaNextLayout) ? [] : [
               { name: 'KA_NEXT_LAYOUT', value: kaNextLayout }
+            ],
+            empty(kaNextOnly) ? [] : [
+              { name: 'KA_NEXT_ONLY', value: kaNextOnly }
             ],
             empty(kaTesters) ? [] : [
               { name: 'KA_TESTERS', value: kaTesters }

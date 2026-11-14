@@ -74,7 +74,8 @@ app.use('/api/*', async (c, next) => {
  * the readiness probe and the image's health check (decisions/0012).
  */
 app.get('/api/health', (c) => c.json({ ok: true }));
-app.route('/api/v2', v2);
+// apps/web's API, left out where only the next client is served (`KA_NEXT_ONLY`, decisions/0017).
+if (!config.next.only) app.route('/api/v2', v2);
 // The next client's API, only while it is switched on (decisions/0013).
 if (config.next.enabled) app.route('/api/next', nextRoutes());
 
@@ -89,16 +90,19 @@ const cacheFor =
     if (c.res.ok) c.res.headers.set('Cache-Control', value);
   };
 
-/** The build of apps/web. Left out, the BFF serves only the API. */
+/** The build of apps/web. Left out, the BFF serves only the API, or only the next client. */
 const root = config.webRoot;
 
-if (root) {
-  // Vite puts a content hash in every name under /assets/.
-  app.use('/assets/*', cacheFor('public, max-age=31536000, immutable'));
-  app.use('/assets/*', serveStatic({ root }));
+if (root || config.next.only) {
+  // apps/web's files, none of them where only the next client is served (`KA_NEXT_ONLY`).
+  if (!config.next.only) {
+    // Vite puts a content hash in every name under /assets/.
+    app.use('/assets/*', cacheFor('public, max-age=31536000, immutable'));
+    app.use('/assets/*', serveStatic({ root }));
+    app.get('/favicon.ico', serveStatic({ root, path: 'favicon.ico' }));
+  }
   // A name from an older build is gone, and must not become index.html cached for a year.
   app.all('/assets/*', (c) => c.text('Fant ikke fila.', 404));
-  app.get('/favicon.ico', serveStatic({ root, path: 'favicon.ico' }));
   // The next client's page and files, when it is on and built (decisions/0013).
   const nextClient = nextPage(root);
   if (nextClient) {

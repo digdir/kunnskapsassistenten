@@ -15,6 +15,7 @@ test('the template passes KA_NEXT and its settings only when given, so it is off
     ['kaNextModel', 'KA_NEXT_MODEL'],
     ['kaNextTenant', 'KA_NEXT_TENANT'],
     ['kaNextLayout', 'KA_NEXT_LAYOUT'],
+    ['kaNextOnly', 'KA_NEXT_ONLY'],
   ]) {
     assert.match(template, new RegExp(`^param ${param} string = ''$`, 'm'));
     assert.match(

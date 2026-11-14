@@ -46,6 +46,14 @@ describe('the session', () => {
     ).rejects.toThrow(/shape/);
   });
 
+  it('takes whether the server serves only this client, and refuses it when it is not true or false', async () => {
+    await expect(loadMe(answering(200, { ...ME, nextOnly: true }))).resolves.toEqual({
+      ...ME,
+      nextOnly: true,
+    });
+    await expect(loadMe(answering(200, { ...ME, nextOnly: 'yes' }))).rejects.toThrow(/shape/);
+  });
+
   it('signs in with the way back to this address, its thread included', () => {
     expect(signInHref({ pathname: '/', search: '?t=abc' } as Location)).toBe(
       '/auth/login?next=%2F%3Ft%3Dabc',

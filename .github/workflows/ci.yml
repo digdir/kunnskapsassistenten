@@ -120,6 +120,18 @@ jobs:
           curl -fsS localhost:8787/ | grep -q '/assets/'
           curl -fsS -H 'Cookie: ka_ui=next' localhost:8787/ | grep -q '/next-assets/'
           docker stop ka
+      # A deployment of another service (decisions/0017): the next client for everyone, no apps/web.
+      - name: With only the next client, it is the page for everyone, and apps/web is gone
+        run: |
+          docker run --detach --rm --name ka --publish 8787:8787 \
+            -e AUTH_MODE=off -e LISTEN_HOST=0.0.0.0 -e APP_ORIGIN=http://localhost:8787 \
+            -e DIGDIR_API_KEY=unused \
+            -e KA_NEXT=1 -e KA_NEXT_ONLY=1 ka:ci
+          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
+          curl -fsS localhost:8787/ | grep -q '/next-assets/'
+          curl -fsS localhost:8787/api/next/me | grep -q '"nextOnly":true'
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8787/api/v2/health)" = 404
+          docker stop ka
       # genki's layout checks run in the image (decisions/0017): a layout passes to the page,
       # and one that breaks a rule stops the server.
       - name: With a layout from genki's builder, the page gets it, and a bad one stops the server

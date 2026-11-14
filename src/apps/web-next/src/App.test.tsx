@@ -96,6 +96,16 @@ describe('the next client', () => {
     expect(about.getAttribute('href')).toBe('/om-prosjektet');
   });
 
+  it('offers neither apps/web’s pages nor «Tilbake til gammel versjon» where the server serves only this client', async () => {
+    render(<App me={{ ...me, nextOnly: true }} api={fakeApi()} />);
+    const menu = await openMenu();
+    // genki's own entries stay.
+    expect(await within(menu).findByText('Innstillinger')).toBeTruthy();
+    expect(within(menu).getByRole('link', { name: /Logg ut/, hidden: true })).toBeTruthy();
+    for (const name of [BACK_LABEL, ABOUT_LABEL, 'Endringslogg'])
+      expect(within(menu).queryByText(name)).toBeNull();
+  });
+
   it('keeps its choices under ka-next. in this browser', async () => {
     render(<App me={me} api={fakeApi()} />);
     await screen.findByText('En tråd');

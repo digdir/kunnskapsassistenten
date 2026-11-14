@@ -142,6 +142,7 @@ const nextBuild = join(builds, 'web-next');
 mkdirSync(join(classic, 'assets'), { recursive: true });
 mkdirSync(join(nextBuild, 'next-assets'), { recursive: true });
 writeFileSync(join(classic, 'index.html'), '<html lang="nb">classic</html>');
+writeFileSync(join(classic, 'assets', 'index-classic.js'), '/* classic */');
 writeFileSync(join(nextBuild, 'index.html'), '<html lang="nb">next</html>');
 writeFileSync(join(nextBuild, 'next-assets', 'index-next.js'), '/* next */');
 
@@ -166,6 +167,8 @@ before(async () => {
   });
   // No layout from genki's builder: the next client draws KA's own (nextLayout.test.ts has one).
   delete process.env.KA_NEXT_LAYOUT;
+  // apps/web beside the next client, as KA's own site has it (nextOnly.test.ts has only next).
+  delete process.env.KA_NEXT_ONLY;
   ({ app } = await import('./app.ts'));
   nextApi = await import('./nextApi.ts');
   nextApiPage = await import('./nextPage.ts');
@@ -267,6 +270,15 @@ describe('the page', () => {
       (await page('/endringslogg/x', 'ka_ui=next')).body,
       '<html lang="nb">next</html>',
     );
+  });
+
+  test('keeps apps/web while KA_NEXT_ONLY is unset: its page at `/`, its files, its API and the way back', async () => {
+    assert.equal((await page('/')).body, '<html lang="nb">classic</html>');
+    assert.equal((await page('/assets/index-classic.js', 'ka_ui=next')).body, '/* classic */');
+    assert.equal((await app.request('/api/v2/health')).status, 200);
+    assert.equal((await switchTo('classic')).status, 200);
+    const me = (await (await app.request('/api/next/me')).json()) as Record<string, unknown>;
+    assert.equal('nextOnly' in me, false);
   });
 
   test("each client's files are served whatever the cookie, and an unknown name is a 404", async () => {
