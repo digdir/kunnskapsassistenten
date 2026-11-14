@@ -46,6 +46,7 @@ import {
   answerCopy,
   experimentsOn,
   fieldValueLabels,
+  generalRowsOf,
   isEmptySelection,
   isSettingsPageId,
   narrowing,
@@ -433,6 +434,7 @@ export const AssistantView = ({
         <Conversation
           turns={a.conversation}
           loading={a.view === 'loading'}
+          onFetchAgain={a.fetchAgain}
           assistantName={name}
           answerColor="neutral"
           // The next look's answer has no card and no name over it (dev-kilder-hoyre).
@@ -853,6 +855,10 @@ export const AssistantView = ({
     ...experiment,
     on: a.flags.has(experiment.id),
   }));
+  // «Generelt» offers the colour scheme the host keeps, and its menu line says no more.
+  const general = a.onColorSchemeChange
+    ? { colorScheme: { value: a.colorScheme, onChange: a.onColorSchemeChange } }
+    : {};
   if (nextSettings)
     primary = {
       label: t('builder.settings'),
@@ -861,6 +867,7 @@ export const AssistantView = ({
         <SettingsMenu
           pages={settingsPageIds.map((id) => ({
             id,
+            ...(id === 'general' ? { rows: generalRowsOf(general) } : {}),
             ...(id === 'beta' ? { badge: experimentsOn(experimentRows) } : {}),
           }))}
           value={settingsView}
@@ -1122,12 +1129,7 @@ export const AssistantView = ({
       ) : settingsView === 'privacy' ? (
         <SettingsPrivacy settingsNote={settingsNote} />
       ) : (
-        <SettingsGeneral
-          {...(a.onColorSchemeChange
-            ? { colorScheme: { value: a.colorScheme, onChange: a.onColorSchemeChange } }
-            : {})}
-          settingsNote={settingsNote}
-        />
+        <SettingsGeneral {...general} settingsNote={settingsNote} />
       );
   } else if (a.page === 'settings' && settingsOn) {
     main = (

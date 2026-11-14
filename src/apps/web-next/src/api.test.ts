@@ -2,6 +2,8 @@ import type { StreamEvent } from '@genai/client';
 import { HttpError, type AssistantApi } from '@genai/ui-assembly';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { genkiApi, withSignIn } from './api';
+import { drawingFor } from './App';
+import type { Me } from './session';
 
 const failing = (status: number): AssistantApi => {
   const fail = async () => {
@@ -127,5 +129,67 @@ describe('an answer from a service that cites documents', () => {
     expect(turns[0]?.answer?.markers).toBeUndefined();
     expect(turns[0]?.answer?.sources?.map((s) => s.title)).toEqual(['Årsrapport 2023']);
     expect(turns[0]?.answer?.runId).toBe('task-1');
+  });
+});
+
+// A thread asked in apps/web names no collection: KA's profile describes only Kudos, so its
+// documents link there.
+describe('a stored thread that names no collection', () => {
+  const me: Me = {
+    name: 'Testperson',
+    signOut: '/auth/logout',
+    model: 'kunnskapsassistenten__default',
+    service: 'kunnskapsassistenten',
+    tenant: 'digdir',
+    writes: false,
+  };
+  const thread = (tags: string[]) =>
+    Response.json({
+      conversation: { id: 't1', topic: 'Ventetid', tags, created: 1 },
+      messages: [
+        { id: 'q', role: 'user', text: 'Ventetid?', created: 1, chunks: [] },
+        {
+          id: 'a',
+          role: 'assistant',
+          text: 'Ventetiden gikk ned [1].',
+          created: 2,
+          chunks: [],
+          sources: [
+            { index: 1, title: 'Årsrapport 2023', document_id: '42' },
+            {
+              index: 2,
+              title: 'Tildelingsbrev 2024',
+              document_id: '0f8fad5b-d9cb-469f-a165-70867728950e',
+            },
+          ],
+          task: 'task-1',
+        },
+      ],
+    });
+  const linksOf = async (tags: string[]) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => thread(tags)),
+    );
+    // The profile the page gives genki's calls.
+    const { turns } = await genkiApi(me.tenant, drawingFor(me, undefined).profile).loadThread(
+      't1',
+    );
+    return turns[0]?.answer?.sources?.map((source) => source.url);
+  };
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('links its documents to Kudos, as a thread that names Kudos does', async () => {
+    const kudos = [
+      'https://kudos.dfo.no/documents/42',
+      'https://kudos.dfo.no/dokument/0f8fad5b-d9cb-469f-a165-70867728950e',
+    ];
+    expect(await linksOf([])).toEqual(kudos);
+    expect(await linksOf(['corpus:kudos'])).toEqual(kudos);
+  });
+
+  it('links nothing in a collection KA does not describe', async () => {
+    expect(await linksOf(['corpus:annen'])).toEqual([undefined, undefined]);
   });
 });

@@ -3,6 +3,7 @@ export {
   failureOf,
   filterSet,
   HttpError,
+  NotAsked,
   sourceFromWire,
   type AnswerData,
   type AskParams,
