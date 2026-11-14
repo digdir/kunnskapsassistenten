@@ -9,6 +9,7 @@ import {
   lookOf,
   normalised,
   withLook,
+  withProfile,
   type AssistantLayout,
   type BlockSettings,
   type BuilderState,
@@ -131,15 +132,16 @@ export const fromTemplate = (
 };
 
 /**
- * Another template chosen in the builder: its blocks and options replace the layout's, and the
- * look stays the one the layout had, unless the template sets its own.
+ * Another template chosen in the builder: its blocks and options replace the layout's, the look
+ * stays the one the layout had, unless the template sets its own, and the profile stays: it is the
+ * service's words, not the template's.
  */
 export const changeTemplate = (
   state: BuilderState,
   id: TemplateId,
   offered?: (block: BlockId) => boolean,
 ): BuilderState => {
-  const chosen = fromTemplate(id, offered);
+  const chosen = withProfile(fromTemplate(id, offered), state.layout.profile);
   const look = templateSetups[id]?.look ?? lookOf(state.layout);
   return look === lookOf(chosen.layout) ? chosen : withLook(chosen, look);
 };

@@ -359,6 +359,10 @@ export interface GenkiApiOptions {
   /** genki's API, with `headers`, or a proxy that adds the key, such as a dev server's `/genki`. */
   baseUrl: string;
   tenant: string;
+  /**
+   * The profile the assistant is drawn with, `profileOf(layout, own)` when the layout carries one,
+   * so the fields, the collections' names and a stored answer's links are in its words too.
+   */
   profile?: AssistantProfile | undefined;
   /** genki names variants in the language asked for. */
   language?: string | undefined;
@@ -487,14 +491,22 @@ export const createGenkiApi = ({
       });
     },
 
-    // The collection's multiselect fields; the profile's choice and words where it has them.
+    // The collection's multiselect fields; the profile's choice and words where it has them. A
+    // field the profile does not mark integer or not is as the dataset declares it.
     loadFields: async (dataset) => {
       const body = await getJson<{
         dataset?: { filters?: { field: string; kinds?: string[]; 'value-type'?: string }[] };
       }>(`/api/datasets/${encodeURIComponent(dataset)}`);
       const offered = (body.dataset?.filters ?? []).filter((f) => f.kinds?.includes('multiselect'));
       const chosen = corpusProfile(dataset)?.fields;
-      if (chosen) return chosen.filter((f) => offered.some((o) => o.field === f.id));
+      if (chosen)
+        return chosen.flatMap((f) => {
+          const declared = offered.find((o) => o.field === f.id);
+          if (!declared) return [];
+          return f.integer === undefined && declared['value-type'] === 'integer'
+            ? [{ ...f, integer: true }]
+            : [f];
+        });
       return offered.map((f) => ({
         id: f.field,
         label: f.field,

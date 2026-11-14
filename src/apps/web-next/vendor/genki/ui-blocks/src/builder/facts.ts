@@ -1,6 +1,6 @@
-// What a service can back, read from its published row in `/v1/models`, so the builder offers
-// only the blocks whose needs are met (kits D10). A block whose needs are not met is shown off and
-// disabled, with the reason.
+// What a service can back, read from its published row in `/v1/models` or from a draft's
+// definition, so the builder offers only the blocks whose needs are met (kits D10). A block whose
+// needs are not met is shown off and disabled, with the reason.
 import { blockSpec, type BlockId, type Need } from './catalogue.js';
 
 /** The fields of a `/v1/models` row the facts are read from. */
@@ -118,6 +118,90 @@ export const factsFromModels = (
     ...(given.steps === undefined ? {} : { steps: given.steps }),
     channels: given.channels,
   };
+};
+
+const record = (value: unknown): Record<string, unknown> =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+
+const text = (value: unknown) => (typeof value === 'string' && value ? value : undefined);
+
+/** A filter field as a dataset declares it, in `/api/datasets/{id}`'s shape. */
+export interface DatasetFilter {
+  field: string;
+  kinds?: readonly string[] | undefined;
+  'value-type'?: string | undefined;
+}
+
+/** The datasets a draft searches, as `tenant/key` or a key of its own tenant, in its order. */
+export const datasetsOfDefinition = (definition: unknown): string[] => {
+  const knowledge = record(record(record(definition).spec).knowledge);
+  return (Array.isArray(knowledge.datasets) ? knowledge.datasets : []).flatMap((entry) => {
+    const id = text(record(entry).dataset);
+    return id ? [id] : [];
+  });
+};
+
+/** A draft's `/v1/models` rows as genki would list them; the datasets' fields from `filtersOf`. */
+export const modelRowsFromDefinition = (
+  definition: unknown,
+  filtersOf: (dataset: string) => readonly DatasetFilter[] | undefined = () => undefined,
+): ModelRow[] => {
+  const metadata = record(record(definition).metadata);
+  const spec = record(record(definition).spec);
+  const service = text(metadata.id) ?? text(metadata.name);
+  if (!service) return [];
+  const tenant = text(metadata.tenant) ?? '';
+  // genki answers in a chat only for a service exposed to one.
+  const chat = record(spec.exposure).chat === true;
+  const knowledge = record(spec.knowledge);
+  const datasets = datasetsOfDefinition(definition).map((id) => {
+    const slash = id.lastIndexOf('/');
+    const key = id.slice(slash + 1);
+    return {
+      id: key,
+      tenant: slash > 0 ? id.slice(0, slash) : tenant,
+      'dataset-config-key': key,
+      filters: (filtersOf(id) ?? []).map((f) => ({
+        field: f.field,
+        ...(f.kinds ? { kinds: [...f.kinds] } : {}),
+        ...(f['value-type'] ? { 'value-type': f['value-type'] } : {}),
+      })),
+    };
+  });
+  const variants =
+    Array.isArray(spec.variants) && spec.variants.length > 0 ? spec.variants : ['default'];
+  return variants.flatMap((variant, at) => {
+    const id = typeof variant === 'string' ? variant : text(record(variant).id);
+    if (!id) return [];
+    return [
+      {
+        id: `${service}__${id}`,
+        title: text(metadata.name) ?? service,
+        _service: service,
+        _service_title: text(metadata.name) ?? service,
+        _pickable: chat && record(variant).chat !== false,
+        ...(at === 0 && chat ? { _chat: true } : {}),
+        ...(knowledge.runtimeDocuments === true ? { _documents: {} } : {}),
+        ...(datasets.length > 0 ? { _datasets: datasets } : {}),
+      },
+    ];
+  });
+};
+
+/** What a draft can back, read as `factsFromModels` reads a published row. */
+export const factsFromDefinition = (
+  definition: unknown,
+  given: {
+    channels: readonly Channel[];
+    steps?: boolean | undefined;
+    filtersOf?: ((dataset: string) => readonly DatasetFilter[] | undefined) | undefined;
+  },
+): ServiceFacts | undefined => {
+  const rows = modelRowsFromDefinition(definition, given.filtersOf);
+  const first = rows[0];
+  return first ? factsFromModels(rows, serviceOf(first), given) : undefined;
 };
 
 /** Whether the facts meet one need. `component:*` is about the layout, not the service: met here. */

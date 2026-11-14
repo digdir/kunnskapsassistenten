@@ -16,6 +16,12 @@ import {
   type Place,
   type Zone,
 } from './catalogue.js';
+import {
+  isProfileData,
+  profileProblems,
+  type ProfileData,
+  type ProfileProblem,
+} from './profile.js';
 
 export type BlockSettings = Readonly<Record<string, boolean | string>>;
 
@@ -36,6 +42,12 @@ export interface AssistantLayout {
    */
   look?: Look | undefined;
   zones: Readonly<Record<Zone, readonly PlacedBlock[]>>;
+  /**
+   * The words it is drawn with: the assistant's name, its suggestions, each collection's fields
+   * and links, the settings note. A host's own profile wins where it says something; this fills
+   * the rest, so a service made in the builder needs no host code to look like itself.
+   */
+  profile?: ProfileData | undefined;
 }
 
 /**
@@ -79,6 +91,17 @@ export const withLook = (state: BuilderState, look: Look): BuilderState => ({
   ...state,
   layout: { ...state.layout, look },
 });
+
+/** The layout with another profile, or none, its blocks and look as they are. */
+export const withProfile = (
+  state: BuilderState,
+  profile: ProfileData | undefined,
+): BuilderState => {
+  const layout = { ...state.layout };
+  if (profile) layout.profile = profile;
+  else delete layout.profile;
+  return { ...state, layout };
+};
 
 const orderIn = (zone: Zone, id: BlockId) => blockSpec(id).order[zone] ?? 0;
 
@@ -257,7 +280,8 @@ export type LayoutProblem =
       partner: BlockId;
       need: Need;
     }
-  | { rule: 'needs-unmet'; block: BlockId; option?: string; need: Need };
+  | { rule: 'needs-unmet'; block: BlockId; option?: string; need: Need }
+  | ProfileProblem;
 
 /** The blocks a `component:*` need asks for, any one of which will do; none for other needs. */
 export const partnersOf = (need: Need): BlockId[] =>
@@ -279,7 +303,8 @@ const storedOn = (layout: AssistantLayout, id: BlockId): BlockOption[] => {
  * - a block that is not built is not placed;
  * - a block, and each option the layout turns on, comes with the blocks it depends on
  *   (`component:*`);
- * - their other needs are met, when `met` says which are.
+ * - their other needs are met, when `met` says which are;
+ * - the profile, when there is one, keeps to its limits (`profileProblems`).
  */
 export const layoutProblems = (
   layout: AssistantLayout,
@@ -325,6 +350,7 @@ export const layoutProblems = (
     check(blockSpec(id).needs);
     for (const option of storedOn(layout, id)) check(option.needs ?? [], option.id);
   }
+  if (layout.profile) problems.push(...profileProblems(layout.profile));
   return problems;
 };
 
@@ -380,13 +406,22 @@ export const defaultLayout: AssistantLayout = normalised({
   ) as Record<Zone, PlacedBlock[]>,
 });
 
-/** A layout read from JSON, when it is one: the shape only, not the rules. A look must be known. */
+/**
+ * A layout read from JSON, when it is one: the shape only, not the rules. A look must be known,
+ * and a profile must be data of the right shape (`isProfileData`).
+ */
 export const isAssistantLayout = (value: unknown): value is AssistantLayout => {
   if (typeof value !== 'object' || value === null) return false;
-  const candidate = value as { version?: unknown; look?: unknown; zones?: unknown };
+  const candidate = value as {
+    version?: unknown;
+    look?: unknown;
+    zones?: unknown;
+    profile?: unknown;
+  };
   if (candidate.version !== 1 || typeof candidate.zones !== 'object' || candidate.zones === null)
     return false;
   if (candidate.look !== undefined && !isLook(candidate.look)) return false;
+  if (candidate.profile !== undefined && !isProfileData(candidate.profile)) return false;
   const zoneMap = candidate.zones as Record<string, unknown>;
   return zones.every(
     (zone) =>

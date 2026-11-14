@@ -66,7 +66,7 @@ import {
 } from './api.js';
 import { useT } from './i18n.js';
 import type { StepFrame } from './procedure.js';
-import type { AssistantProfile, FieldSpec } from './profile.js';
+import { profileOf, type AssistantProfile, type FieldSpec } from './profile.js';
 import { useStoredValue, type AssistantStorage } from './storage.js';
 import { currentYear, withinYears } from './years.js';
 
@@ -87,6 +87,7 @@ export interface AssistantOptions {
   tenant: string;
   /** The variant to start from, a model id; the service's default without it. */
   model?: string | undefined;
+  /** What the host knows of its service; it wins over the layout's own `profile` where it says something. */
   profile?: AssistantProfile | undefined;
   /** The channels the client is given; all three by default. */
   channels?: readonly Channel[] | undefined;
@@ -224,7 +225,7 @@ export const useAssistant = ({
   service,
   tenant,
   model: givenModel,
-  profile,
+  profile: hostProfile,
   channels = ['conversations', 'facets', 'feedback'],
   threadInUrl = false,
   paths,
@@ -242,6 +243,9 @@ export const useAssistant = ({
 }: AssistantOptions) => {
   // ── What the service can back, and what the layout holds ──
   const t = useT();
+  // The host's profile, the layout's filling the rest; the host's own object when the layout has
+  // none, so a host that passes one keeps its identity.
+  const profile = useMemo(() => profileOf(layout, hostProfile), [layout.profile, hostProfile]);
   const [models, setModels] = useState<ModelRow[]>();
   // Why genki could not say: the status it answered with, or none when it was not reached. The
   // error's own message is the browser's or genki's, in their language, so it goes to the console.

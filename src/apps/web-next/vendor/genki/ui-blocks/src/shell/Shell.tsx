@@ -151,6 +151,8 @@ export interface ShellProps {
   compactBar?: boolean | undefined;
   /** More skip links, after «Hopp til hovedinnhold». */
   skipLinks?: ReactNode;
+  /** Drawn in a host's preview this wide: laid out for it, with no `<main>` and no skip links. */
+  frameWidth?: number | undefined;
   /** The gap beside an open panel in CSS pixels, 32, or 12 for cards. Must match `--genai-shell-gap`. */
   gap?: number | undefined;
   /** A folded panel's width in CSS pixels, 67, or 76 for cards. Must match its button and padding. */
@@ -182,6 +184,7 @@ export const Shell = ({
   request,
   compactBar = true,
   skipLinks,
+  frameWidth,
   frame = 'flush',
   inset: givenInset,
   gap: givenGap,
@@ -224,10 +227,17 @@ export const Shell = ({
   );
   const points = breakpoints(geometry);
 
-  const viewport = useViewportWidth();
-  const narrow = useMedia(narrowerThan(points.both));
-  const drawer = useMedia(narrowerThan(points.drawer));
-  const compact = useMedia(narrowerThan(points.compact)) && compactBar;
+  const windowWidth = useViewportWidth();
+  const inWindow = {
+    narrow: useMedia(narrowerThan(points.both)),
+    drawer: useMedia(narrowerThan(points.drawer)),
+    compact: useMedia(narrowerThan(points.compact)),
+  };
+  const viewport = frameWidth ?? windowWidth;
+  const below = (point: number) => (frameWidth === undefined ? undefined : frameWidth < point);
+  const narrow = below(points.both) ?? inWindow.narrow;
+  const drawer = below(points.drawer) ?? inWindow.drawer;
+  const compact = (below(points.compact) ?? inWindow.compact) && compactBar;
   // In the top row the cards frame has no margins: the row and the main column take the window.
   const sums = useMemo(() => (compact ? { ...geometry, inset: 0 } : geometry), [compact, geometry]);
 
@@ -363,7 +373,11 @@ export const Shell = ({
   const mainHeadRegion = (
     <div className="uib-shell-pinned" ref={setMainHead}>
       {mainTitle ? (
-        <Heading className="uib-shell-title" data-size="xs" level={1}>
+        <Heading
+          className="uib-shell-title"
+          data-size="xs"
+          level={frameWidth === undefined ? 1 : 2}
+        >
           {mainTitle}
         </Heading>
       ) : null}
@@ -371,10 +385,16 @@ export const Shell = ({
     </div>
   );
 
+  // In a host's preview the page, its `<main>` and its skip links are the host's.
+  const Main = frameWidth === undefined ? 'main' : 'div';
   return (
     <>
-      <SkipLink href={`#${mainId}`}>{t('shell.skipToMain')}</SkipLink>
-      {skipLinks}
+      {frameWidth === undefined ? (
+        <>
+          <SkipLink href={`#${mainId}`}>{t('shell.skipToMain')}</SkipLink>
+          {skipLinks}
+        </>
+      ) : null}
       <div
         className={classes('uib-shell', className)}
         data-compact={compact || undefined}
@@ -385,7 +405,7 @@ export const Shell = ({
       >
         {primary ? <Side side="primary" panel={primary} {...sideProps} /> : null}
 
-        <main
+        <Main
           className={classes('uib-shell-main', mainFocusable && 'ds-focus--inset')}
           id={mainId}
           // Observes only whether the focus is on the region itself.
@@ -403,7 +423,7 @@ export const Shell = ({
             {cards ? null : mainHeadRegion}
             {children}
           </div>
-        </main>
+        </Main>
 
         {secondary ? <Side side="secondary" panel={secondary} {...sideProps} /> : null}
       </div>
