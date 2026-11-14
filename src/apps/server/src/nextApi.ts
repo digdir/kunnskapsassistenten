@@ -44,9 +44,12 @@ export const nextOffered = () =>
   Boolean(config.next.webRoot) &&
   existsSync(join(config.next.webRoot, 'index.html'));
 
-/** The client this browser chose: `next` only when the cookie says so. */
+/**
+ * The client this browser gets: `next` when the cookie says so, and always where it is the only
+ * one (`KA_NEXT_ONLY`), whatever the cookie says.
+ */
 export const uiOf = (c: Context): Ui =>
-  getCookie(c, uiCookie()) === 'next' ? 'next' : 'classic';
+  config.next.only || getCookie(c, uiCookie()) === 'next' ? 'next' : 'classic';
 
 // ── Writes from this origin only ──
 
@@ -325,6 +328,8 @@ export interface NextSettings {
   maxQueryLength: number;
   /** The layout from genki's builder (`KA_NEXT_LAYOUT`, decisions/0017); without it, KA's own. */
   layout?: NextLayout | undefined;
+  /** Only the next client is served (`KA_NEXT_ONLY`): there is no apps/web to go back to. */
+  only?: boolean | undefined;
 }
 
 const settingsFromConfig = (): NextSettings => ({
@@ -335,6 +340,7 @@ const settingsFromConfig = (): NextSettings => ({
   origin: config.auth.origin,
   maxQueryLength: config.maxQueryLength,
   layout: config.next.layout,
+  only: config.next.only,
 });
 
 /** The person's organisation: the one they act for, or their only one. */
@@ -371,6 +377,9 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
     const ui = body?.ui;
     if (ui !== 'next' && ui !== 'classic')
       return c.json({ error: 'ui is next or classic.' }, 400);
+    // With only the next client there is no apps/web to choose, and the cookie stays as it is.
+    if (settings.only && ui === 'classic')
+      return c.json({ error: 'Only the next client is served here.' }, 409);
     if (ui === 'next')
       setCookie(c, uiCookie(), 'next', {
         path: '/',
@@ -396,6 +405,8 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
       writes: Boolean(c.get('caller').token),
       // Only when one is set: without it the page draws KA's own, and the answer is as before.
       ...(settings.layout ? { layout: settings.layout } : {}),
+      // Only when on: the page then offers no apps/web, its pages nor the way back to it.
+      ...(settings.only ? { nextOnly: true } : {}),
     });
   });
 

@@ -21,6 +21,9 @@ serve({ fetch: app.fetch, port: config.port, hostname }, (info) => {
   if (config.next.enabled && config.next.layout) {
     console.log(`next client: ${config.next.model}, drawn from the layout in KA_NEXT_LAYOUT`);
   }
+  if (config.next.only) {
+    console.log('next client only (KA_NEXT_ONLY): apps/web is not served');
+  }
   if (!typesenseConfigured) {
     console.log('Typesense is not set up: no filters and no excerpts in the sources panel.');
   }

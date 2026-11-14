@@ -20,6 +20,8 @@ export interface Me {
    * checked there with genki's rules. Without it, the page draws KA's own.
    */
   layout?: AssistantLayout | undefined;
+  /** This site serves only this client (`KA_NEXT_ONLY`): no apps/web, its pages nor a way back. */
+  nextOnly?: boolean | undefined;
 }
 
 export class SignedOut extends Error {}
@@ -37,7 +39,8 @@ const isMe = (value: unknown): value is Me => {
     typeof me.service === 'string' &&
     typeof me.tenant === 'string' &&
     typeof me.writes === 'boolean' &&
-    (me.layout === undefined || isAssistantLayout(me.layout))
+    (me.layout === undefined || isAssistantLayout(me.layout)) &&
+    (me.nextOnly === undefined || typeof me.nextOnly === 'boolean')
   );
 };
 

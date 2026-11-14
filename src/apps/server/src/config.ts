@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { parseDataset, parseFilterFields } from './datasetConfig.ts';
 import { localOrigin } from './localOrigin.ts';
 import { nextLayout } from './nextLayout.ts';
@@ -116,9 +118,27 @@ const NEXT_MODEL = 'kunnskapsassistenten__default';
  * `layout` is the layout from genki's builder in `KA_NEXT_LAYOUT`, checked with genki's own rules
  * (decisions/0017, `nextLayout.ts`), the same way: a bad one stops the server only when `KA_NEXT`
  * is on. Unset, the next client draws KA's own.
+ *
+ * `only` (`KA_NEXT_ONLY`) makes the next client the deployment's only one, for a deployment of
+ * another service (decisions/0017): every page address serves it, and apps/web's page, files,
+ * pages and API are not served. It needs `KA_NEXT` and the next client's build: without `KA_NEXT`
+ * it is warned about and ignored, as `KA_NEXT_MODEL` is; without the build the server stops,
+ * since there would be no client to serve. Unset, apps/web stays the default, as before.
  */
 export function nextConfig(env: NodeJS.ProcessEnv = process.env) {
   const enabled = switchedOn(env.KA_NEXT);
+  const webRoot = env.WEB_NEXT_ROOT ?? '';
+  let only = switchedOn(env.KA_NEXT_ONLY);
+  if (only && !enabled) {
+    console.warn('KA_NEXT_ONLY is on, but KA_NEXT is off; ignored, so apps/web is served.');
+    only = false;
+  }
+  if (only && !(webRoot && existsSync(join(webRoot, 'index.html')))) {
+    console.error(
+      'KA_NEXT_ONLY is on, but WEB_NEXT_ROOT has no index.html: there is no client to serve.',
+    );
+    process.exit(1);
+  }
   let model = (env.KA_NEXT_MODEL ?? '').trim() || NEXT_MODEL;
   if (!/^[a-z0-9][a-z0-9-]*(__[a-z0-9][a-z0-9-]*)?$/i.test(model)) {
     if (enabled) {
@@ -136,8 +156,10 @@ export function nextConfig(env: NodeJS.ProcessEnv = process.env) {
     service: model.split('__')[0] ?? '',
     tenant: (env.KA_NEXT_TENANT ?? '').trim() || 'digdir',
     /** The build of apps/web-next. */
-    webRoot: env.WEB_NEXT_ROOT ?? '',
+    webRoot,
     layout: nextLayout(env.KA_NEXT_LAYOUT, enabled),
+    /** Only the next client is served (`KA_NEXT_ONLY`): there is no apps/web on this host. */
+    only,
   };
 }
 

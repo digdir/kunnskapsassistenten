@@ -43,6 +43,15 @@ the page draws genki's template `knowledge-assistant-next` with KA's whole profi
   out. KA's name, suggestions, Kudos's words and links and the settings note are left out, so
   the layout's words are drawn. `<Assistant>` gets the host's part, and genki's calls
   (`createGenkiApi`) get the merged `profileOf(layout, host)`, as genki ADR 0054 asks.
+- **`KA_NEXT_ONLY` makes the next client the deployment's only one.** A deployment of another
+  service has no `apps/web`: it would draw KA. With `KA_NEXT_ONLY=1` every page address serves
+  the next client whatever the cookie says, `apps/web`'s thread links redirect into it, and
+  `apps/web`'s page, files, pages («Endringslogg», «Om prosjektet») and API (`/api/v2/*`) are
+  not served; `/api/health` stays. `POST /api/next/ui` refuses `classic`, and `/api/next/me`
+  carries `nextOnly: true`, so the page's profile menu has none of `apps/web`'s pages and no
+  «Tilbake til gammel versjon». It needs `KA_NEXT`, and is warned about and ignored without it,
+  as `KA_NEXT_MODEL` is; without the next client's build the server does not start. Unset, as
+  on KA's own site, nothing changes.
 
 ## Consequences
 
@@ -51,8 +60,9 @@ the page draws genki's template `knowledge-assistant-next` with KA's whole profi
   (`deploy/README.md`, «Another assistant from the builder»).
 - A changed layout is a new revision, and so a new sign-in for everyone on that host, as every
   rollout is. Test and prod of the service share the layout.
-- The host's choices stay KA's: the menu links to `apps/web`'s «Endringslogg» and «Om
-  prosjektet», `apps/web` is what a browser gets first, and KA's trials win over a layout's own
+- Without `KA_NEXT_ONLY` the host's choices stay KA's: the menu links to `apps/web`'s
+  «Endringslogg» and «Om prosjektet», and `apps/web` is what a browser gets first. With it, as
+  on another service's deployment, neither. Either way KA's trials win over a layout's own
   `experiments`.
 - When genki stores layouts, the server reads the service's layout from genki instead, and
   `KA_NEXT_LAYOUT` goes.

@@ -100,6 +100,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build --tag ka:ci .
+      # Each step ends with `docker rm --force ka`, not `docker stop ka`: with --rm, stop returns
+      # before the container is removed, and the next step's `--name ka` can find the name taken.
       - name: Start it and ask
         run: |
           docker run --detach --rm --name ka --publish 8787:8787 \
@@ -108,7 +110,7 @@ jobs:
             ka:ci
           curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
           curl -fsS localhost:8787/ | grep -q '<html lang="nb"'
-          docker stop ka
+          docker rm --force ka
       - name: With the next client switched on, the cookie chooses it
         run: |
           docker run --detach --rm --name ka --publish 8787:8787 \
@@ -119,7 +121,19 @@ jobs:
           curl -fsS localhost:8787/api/next/ui | grep -q '"available":true'
           curl -fsS localhost:8787/ | grep -q '/assets/'
           curl -fsS -H 'Cookie: ka_ui=next' localhost:8787/ | grep -q '/next-assets/'
-          docker stop ka
+          docker rm --force ka
+      # A deployment of another service (decisions/0017): the next client for everyone, no apps/web.
+      - name: With only the next client, it is the page for everyone, and apps/web is gone
+        run: |
+          docker run --detach --rm --name ka --publish 8787:8787 \
+            -e AUTH_MODE=off -e LISTEN_HOST=0.0.0.0 -e APP_ORIGIN=http://localhost:8787 \
+            -e DIGDIR_API_KEY=unused \
+            -e KA_NEXT=1 -e KA_NEXT_ONLY=1 ka:ci
+          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
+          curl -fsS localhost:8787/ | grep -q '/next-assets/'
+          curl -fsS localhost:8787/api/next/me | grep -q '"nextOnly":true'
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8787/api/v2/health)" = 404
+          docker rm --force ka
       # genki's layout checks run in the image (decisions/0017): a layout passes to the page,
       # and one that breaks a rule stops the server.
       - name: With a layout from genki's builder, the page gets it, and a bad one stops the server
@@ -130,7 +144,7 @@ jobs:
             -e DIGDIR_API_KEY=unused -e KA_NEXT=1 -e KA_NEXT_LAYOUT="$layout" ka:ci
           curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
           curl -fsS localhost:8787/api/next/me | grep -q '"assistantName":"Proveassistenten"'
-          docker stop ka
+          docker rm --force ka
           code=0
           timeout 60 docker run --rm \
             -e AUTH_MODE=off -e APP_ORIGIN=http://localhost:8787 -e DIGDIR_API_KEY=unused \

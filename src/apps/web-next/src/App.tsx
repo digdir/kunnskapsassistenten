@@ -3,7 +3,8 @@
 // host's own stays here: who is signed in (`/api/next/me`), the profile, the paths, the
 // `ka-next.` keys in this browser, the colour scheme, and the way back to the old client. When
 // the server was given a layout from genki's builder (`KA_NEXT_LAYOUT`, decisions/0017), the page
-// draws that, in its own words.
+// draws that, in its own words. Where the server serves only this client (`KA_NEXT_ONLY`), the
+// menu has none of the old client's pages and no way back.
 import {
   Assistant,
   browserStorage,
@@ -68,11 +69,14 @@ export const App = ({ me, api, onSwitchBack = () => switchClient('classic') }: A
     () =>
       drawingFor(
         me,
-        menuFor(() => {
-          void Promise.resolve(switchBack.current()).catch(() =>
-            say('Fikk ikke byttet til gammel versjon. Prøv igjen.'),
-          );
-        }),
+        // Only this client on the site (`KA_NEXT_ONLY`): no apps/web pages, and no way back.
+        me.nextOnly
+          ? undefined
+          : menuFor(() => {
+              void Promise.resolve(switchBack.current()).catch(() =>
+                say('Fikk ikke byttet til gammel versjon. Prøv igjen.'),
+              );
+            }),
       ),
     [me, say],
   );

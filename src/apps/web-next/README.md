@@ -18,7 +18,8 @@ this client's profile menu. Nothing here imports `apps/web`.
 - `src/menu.tsx`: KA's entries in genki's profile menu: «Endringslogg» and «Om prosjektet», which
   are apps/web's pages (the server serves them from apps/web whichever client was chosen), opened
   with this client's address in `?fra=` for apps/web's «Tilbake til ny versjon», and
-  «Tilbake til gammel versjon».
+  «Tilbake til gammel versjon». None of them where the server serves only this client
+  (`KA_NEXT_ONLY`, `nextOnly` in `/api/next/me`), as there is no apps/web there.
 - `src/feedback.ts`: feedback on an answer, to the server's `POST /api/next/feedback`, which
   checks that the run is in the person's own thread and takes it only with a person's token.
 - `src/theme.css`: a copy of `apps/web/design-tokens-build/digdir.css`.
@@ -48,7 +49,8 @@ The server serves it: build it, and start the server with `KA_NEXT=1` and
 serves it with Vite and sends `/api` and `/auth` to the server in `KA_SERVER_URL`
 (`http://localhost:8788` by default), which needs `KA_NEXT=1` too. With `KA_NEXT_LAYOUT` on the
 server, the JSON of a layout from genki's builder or a file's path, the page draws that layout in
-its own words instead of KA's (`src/decisions/0017`).
+its own words instead of KA's (`src/decisions/0017`). With `KA_NEXT_ONLY=1` as well, the server
+serves this client at `/` for everyone, and apps/web not at all.
 
 ```sh
 npm run build --workspace apps/web-next
