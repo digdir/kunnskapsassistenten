@@ -158,6 +158,115 @@ describe('«Innstillinger»', () => {
     expect(screen.getByText('Ingen valg her ennå.')).toBeTruthy();
     expect(screen.queryByText(note!)).toBeNull();
   });
+
+  it('words «Generelt» from the one row KA offers there, the colour scheme', async () => {
+    render(<App me={me} api={fakeApi()} />);
+    await screen.findByRole('heading', { level: 1, name: 'Generelt' });
+    const menu = screen.getByRole('navigation', { name: 'Innstillinger' });
+    expect(
+      within(menu).getByRole('button', { name: 'Generelt', description: 'Utseende' }),
+    ).toBeTruthy();
+    expect(screen.getByText('Hvordan tjenesten ser ut.')).toBeTruthy();
+  });
+});
+
+describe('a page opened on a new thread', () => {
+  const withFilter = (): AssistantApi => ({
+    ...fakeApi(),
+    loadModels: vi.fn(async () => [
+      {
+        id: 'kunnskapsassistenten__default',
+        _service: 'kunnskapsassistenten',
+        _service_title: 'Kunnskapsassistenten',
+        _pickable: true,
+        _chat: true,
+        // A field to filter by, so the layout's filter is drawn.
+        _datasets: [
+          {
+            tenant: 'digdir',
+            'dataset-config-key': 'kudos',
+            filters: [{ field: 'type', kinds: ['multiselect'] }],
+          },
+        ],
+      },
+    ]),
+    loadFields: vi.fn(async () => [
+      { id: 'type', label: 'Dokumenttyper', heading: 'Dokumenttype' },
+    ]),
+    loadFacets: vi.fn(async () => [
+      {
+        id: 'type',
+        label: 'Dokumenttyper',
+        heading: 'Dokumenttype',
+        options: [
+          { value: 'Årsrapport', count: 3 },
+          { value: 'Tildelingsbrev', count: 2 },
+        ],
+      },
+    ]),
+  });
+
+  it('starts with no filter, as «Ny tråd» does, and leaves the one this browser kept', async () => {
+    localStorage.setItem('ka-next.filter', JSON.stringify({ type: ['Årsrapport'] }));
+    const api = withFilter();
+    render(<App me={me} api={api} />);
+    const panel = await screen.findByRole('region', { name: 'Filter for tråden' });
+    expect(
+      await within(panel).findByRole('button', { name: 'Dokumenttype Alle' }),
+    ).toBeTruthy();
+    expect(api.loadFacets).not.toHaveBeenCalledWith(
+      { type: ['Årsrapport'] },
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(JSON.parse(localStorage.getItem('ka-next.filter')!)).toEqual({
+      type: ['Årsrapport'],
+    });
+  });
+});
+
+describe('a thread reloaded while its answer is coming', () => {
+  beforeEach(() => history.replaceState(null, '', '/?t=t1'));
+  afterEach(() => history.replaceState(null, '', '/'));
+
+  it('says the answer may still come, and «Hent på nytt» reads the thread again, asking nothing', async () => {
+    let stored = false;
+    let asked = false;
+    const question = { id: 'q1', question: 'Hva er nytt?', askedAt: Date.now() - 60_000 };
+    const api: AssistantApi = {
+      ...fakeApi(),
+      // genki stores the answer once it is done.
+      loadThread: vi.fn(async () => ({
+        title: 'Hva er nytt?',
+        turns: [
+          stored
+            ? {
+                ...question,
+                answer: { text: 'Det nye svaret.', status: 'complete' as const, created: 2 },
+              }
+            : question,
+        ],
+      })),
+      ask: async function* () {
+        asked = true;
+      },
+    };
+    render(<App me={me} api={api} />);
+    expect(
+      await screen.findByText('Svaret kan fortsatt være på vei. Hent det på nytt om litt.'),
+    ).toBeTruthy();
+    stored = true;
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Hent på nytt' }));
+    });
+    await waitFor(() =>
+      expect(document.querySelector('.uib-answer-text')?.textContent).toBe('Det nye svaret.'),
+    );
+    expect(screen.queryByText(/Svaret kan fortsatt være på vei/)).toBeNull();
+    expect(api.loadThread).toHaveBeenCalledTimes(2);
+    expect(asked).toBe(false);
+  });
 });
 
 describe('an answer while the reader is in another thread', () => {

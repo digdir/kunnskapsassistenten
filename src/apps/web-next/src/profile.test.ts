@@ -5,7 +5,7 @@ import {
   type AssistantStorage,
   type FieldSpec,
 } from '@genai/ui-assembly';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { layout } from './App';
 import { profileFor } from './profile';
@@ -87,7 +87,7 @@ describe('the year list', () => {
       loadAbout: vi.fn(async () => undefined),
       ask: async function* () {},
     };
-    const kept = new Map<string, unknown>(chosen ? [['filter', chosen]] : []);
+    const kept = new Map<string, unknown>();
     const storage: AssistantStorage = {
       read: (key) => kept.get(key),
       write: (key, value) => void kept.set(key, value),
@@ -109,6 +109,13 @@ describe('the year list', () => {
         ?.find((field) => field.id === 'concerned_years')
         ?.options.map((option) => option.value);
     await waitFor(() => expect(years()).toBeDefined());
+    // Chosen on the page: a new thread starts with no filter, whatever the browser kept.
+    if (chosen) {
+      act(() => result.current.setSelection(chosen));
+      await waitFor(() =>
+        expect(years()).toEqual(expect.arrayContaining(Object.values(chosen).flat())),
+      );
+    }
     const shown = years();
     unmount();
     return shown;

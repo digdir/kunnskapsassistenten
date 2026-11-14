@@ -100,6 +100,9 @@ export class HttpError extends Error {
   }
 }
 
+/** Thrown by `ask`, before it yields anything, for a question the service would not take. */
+export class NotAsked extends Error {}
+
 /** What a failed question's status establishes, in the answer block's words. */
 export const failureOf = (error: unknown): AnswerFailure => {
   const status = error instanceof ApiError || error instanceof HttpError ? error.status : undefined;
@@ -398,6 +401,12 @@ export const createGenkiApi = ({
   };
   const client = createClient({ baseUrl, fetch: send });
   const corpusProfile = (key: string | undefined) => (key ? profile?.corpora?.[key] : undefined);
+  // A thread that names no collection is read in the profile's, when it describes only one.
+  const threadProfile = (key: string | undefined) => {
+    if (key) return corpusProfile(key);
+    const described = Object.values(profile?.corpora ?? {});
+    return described.length === 1 ? described[0] : undefined;
+  };
 
   const getJson = async <T>(path: string): Promise<T> => {
     const response = await send(`${baseUrl}${path}`, {
@@ -459,7 +468,7 @@ export const createGenkiApi = ({
         `/api/conversations/${encodeURIComponent(id)}`,
       );
       const corpus = corpusOf(body.conversation.tags);
-      const own = corpusProfile(corpus);
+      const own = threadProfile(corpus);
       const turns: Turn[] = [];
       for (const message of withoutRetriedAttempts(body.messages)) {
         if (message.role === 'user') {

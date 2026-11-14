@@ -49,5 +49,6 @@ export {
   type SettingsSharedThread,
   type TextSize,
 } from './SettingsPages.js';
+export { generalRowsOf, settingsGeneralRows, type SettingsGeneralRow } from './general.js';
 export { colorSchemes, isColorScheme, type ColorScheme } from './colorScheme.js';
 export { displayLevels, isDisplayLevel, type DisplayLevel } from './displayLevel.js';

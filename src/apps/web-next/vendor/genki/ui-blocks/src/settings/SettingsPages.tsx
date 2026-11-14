@@ -11,11 +11,13 @@ import {
   Tag,
   Textfield,
 } from '@digdir/designsystemet-react';
+import { useFormat } from '@genai/i18n/react';
 import { DownloadIcon, ExternalLinkIcon, PlusIcon, TrashIcon } from '@navikt/aksel-icons';
 import { useId, type ReactNode } from 'react';
 import { classes, plainClick } from '../dom.js';
 import type { SettingsExperiment } from './Choices.js';
 import type { ColorScheme } from './colorScheme.js';
+import { generalLead, generalRowsOf } from './general.js';
 import { useT } from './i18n.js';
 import { ColorSchemeToggle } from './Settings.js';
 import {
@@ -102,13 +104,14 @@ export const SettingsGeneral = ({
   className,
 }: SettingsGeneralProps) => {
   const t = useT();
-  const drawn = !!(colorScheme || answerLanguage || answerLength || openWith || textSize);
+  const f = useFormat();
+  const rows = generalRowsOf({ answerLanguage, answerLength, openWith, colorScheme, textSize });
   return (
     <SettingsPage
       className={classes('uib-settings-general', className)}
-      empty={!drawn && !children}
+      empty={rows.length === 0 && !children}
       headingLevel={headingLevel}
-      lead={t('settings.generalLead')}
+      lead={generalLead(t, f, rows)}
       note={settingsNote}
       // It speaks of the answers' instructions, so it comes with a choice the service honours.
       notice={
