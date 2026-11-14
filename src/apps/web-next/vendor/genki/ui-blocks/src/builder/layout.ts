@@ -6,10 +6,12 @@ import {
   blockSpec,
   defaultZone,
   isBlockId,
+  isLook,
   placesOf,
   zones,
   type BlockId,
   type BlockOption,
+  type Look,
   type Need,
   type Place,
   type Zone,
@@ -28,6 +30,11 @@ export interface AssistantLayout {
   version: 1;
   /** The template it started from. */
   template?: string | undefined;
+  /**
+   * The look it is drawn in. Without it, the template's (`templateLook`), as every layout was
+   * drawn before the look was its own setting.
+   */
+  look?: Look | undefined;
   zones: Readonly<Record<Zone, readonly PlacedBlock[]>>;
 }
 
@@ -55,6 +62,23 @@ export const emptyLayout: AssistantLayout = {
   version: 1,
   zones: { primary: [], main: [], secondary: [] },
 };
+
+/**
+ * The look a template draws when the layout names none: `next` for `knowledge-assistant-next`,
+ * whose layouts were drawn in it before the look was their own setting, and `current` for the rest.
+ */
+export const templateLook = (template: string | undefined): Look =>
+  template === 'knowledge-assistant-next' ? 'next' : 'current';
+
+/** The look the layout is drawn in: its own, else its template's. */
+export const lookOf = (layout: AssistantLayout): Look =>
+  isLook(layout.look) ? layout.look : templateLook(layout.template);
+
+/** The layout in another look, with its blocks and their options as they are. */
+export const withLook = (state: BuilderState, look: Look): BuilderState => ({
+  ...state,
+  layout: { ...state.layout, look },
+});
 
 const orderIn = (zone: Zone, id: BlockId) => blockSpec(id).order[zone] ?? 0;
 
@@ -305,9 +329,10 @@ export const layoutProblems = (
 };
 
 /**
- * Whether an option is in force: on, with a block it depends on placed for each such need, and its
- * other needs met when `met` says which are. Fotnoter on Chat is off while both Kilder and
- * Dokumentvisning are, whatever the switch says, so a footnote never points nowhere.
+ * Whether an option is in force: on, drawn in the layout's look, with a block it depends on placed
+ * for each such need, and its other needs met when `met` says which are. Fotnoter on Chat is off
+ * while both Kilder and Dokumentvisning are, whatever the switch says, so a footnote never points
+ * nowhere; follow-ups are off in the next look, which draws none.
  */
 export const optionInForce = (
   layout: AssistantLayout,
@@ -317,6 +342,7 @@ export const optionInForce = (
 ) => {
   const spec = blockSpec(id).options.find((o) => o.id === option);
   if (!spec || spec.status === 'planned' || !isOn(layout, id)) return false;
+  if (spec.looks && !spec.looks.includes(lookOf(layout))) return false;
   const value = settingsOf(layout, id)[option];
   if (value !== true) return false;
   return (spec.needs ?? []).every((need) => {
@@ -354,12 +380,13 @@ export const defaultLayout: AssistantLayout = normalised({
   ) as Record<Zone, PlacedBlock[]>,
 });
 
-/** A layout read from JSON, when it is one: the shape only, not the rules. */
+/** A layout read from JSON, when it is one: the shape only, not the rules. A look must be known. */
 export const isAssistantLayout = (value: unknown): value is AssistantLayout => {
   if (typeof value !== 'object' || value === null) return false;
-  const candidate = value as { version?: unknown; zones?: unknown };
+  const candidate = value as { version?: unknown; look?: unknown; zones?: unknown };
   if (candidate.version !== 1 || typeof candidate.zones !== 'object' || candidate.zones === null)
     return false;
+  if (candidate.look !== undefined && !isLook(candidate.look)) return false;
   const zoneMap = candidate.zones as Record<string, unknown>;
   return zones.every(
     (zone) =>

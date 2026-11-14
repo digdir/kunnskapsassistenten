@@ -1,7 +1,8 @@
 import type { AnswerData, AssistantApi } from '@genai/ui-assembly';
+import { lookOf, optionInForce } from '@genai/ui-blocks';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { App } from './App';
+import { App, layout } from './App';
 import { ABOUT_LABEL, BACK_LABEL } from './menu';
 import type { Me } from './session';
 
@@ -49,6 +50,13 @@ const openMenu = async () => {
 };
 
 describe('the next client', () => {
+  it('is genki’s template knowledge-assistant-next as it is: the next look, feedback on, no follow-ups', () => {
+    expect(layout.template).toBe('knowledge-assistant-next');
+    expect(lookOf(layout)).toBe('next');
+    expect(optionInForce(layout, 'chat', 'feedback')).toBe(true);
+    expect(optionInForce(layout, 'chat', 'followUps')).toBe(false);
+  });
+
   it("lists only this service's threads, and the person at the panel's foot", async () => {
     render(<App me={me} api={fakeApi()} />);
     expect(await screen.findByText('En tråd')).toBeTruthy();

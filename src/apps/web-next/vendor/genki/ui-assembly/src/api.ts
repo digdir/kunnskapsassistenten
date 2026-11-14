@@ -1,6 +1,6 @@
 // What the assembly asks genki for, lifted from the UI blocks preview's api.ts. One interface, so
-// the wiring can be tested with a fake and run against genki through a host's proxy: the key is
-// never in the page.
+// the wiring can be tested with a fake and run against genki through a host's proxy, or with the
+// person's own token from the host: a service key is never in the page.
 import { ApiError, createClient, type FilterSet, type StreamEvent } from '@genai/client';
 import type {
   AnswerFailure,
@@ -13,6 +13,7 @@ import type {
   SourceDocument,
   ThreadItem,
 } from '@genai/ui-blocks';
+import { documentLink } from './links.js';
 import type { AssistantProfile, CorpusProfile, FieldSpec } from './profile.js';
 import type { StepFrame } from './procedure.js';
 
@@ -230,7 +231,7 @@ const corpusOf = (tags: readonly string[]) =>
  */
 export const sourceFromWire = (raw: WireSource, corpus?: CorpusProfile, at = 0): SourceDocument => {
   const documentId = raw.documentId ?? raw.document_id;
-  const url = raw.url ?? (documentId ? corpus?.documentUrl?.(documentId) : undefined);
+  const url = raw.url ?? (documentId ? documentLink(corpus, documentId) : undefined);
   const minted = (excerpt: number) => `minted:${documentId ?? `source-${at}`}:${excerpt}`;
   return {
     ...(raw.index !== undefined ? { index: raw.index } : {}),
@@ -263,7 +264,7 @@ const fromChunks = (chunks: readonly ApiChunk[], corpus?: CorpusProfile): Source
     const documentId = chunk.docNum ?? chunk.chunkId;
     let document = documents.get(documentId);
     if (!document) {
-      const url = chunk.docNum ? corpus?.documentUrl?.(chunk.docNum) : undefined;
+      const url = chunk.docNum ? documentLink(corpus, chunk.docNum) : undefined;
       document = {
         index: documents.size + 1,
         title: chunk.docTitle?.trim() ?? '',
@@ -355,13 +356,26 @@ const withoutRetriedAttempts = (messages: readonly ApiMessage[]): ApiMessage[] =
 };
 
 export interface GenkiApiOptions {
-  /** Where genki is reached, such as a dev server's proxy that adds the key: `/genki`. */
+  /** genki's API, with `headers`, or a proxy that adds the key, such as a dev server's `/genki`. */
   baseUrl: string;
   tenant: string;
   profile?: AssistantProfile | undefined;
   /** genki names variants in the language asked for. */
   language?: string | undefined;
+  /** The host's credentials, such as the person's Bearer token, asked for before every request. */
+  headers?: (() => Record<string, string> | Promise<Record<string, string>>) | undefined;
 }
+
+const httpError = async (response: Response) => {
+  let detail = response.statusText;
+  try {
+    const body = (await response.json()) as { title?: string; error?: string; detail?: string };
+    detail = body.detail ?? body.title ?? body.error ?? detail;
+  } catch {
+    // Not JSON; the status says enough.
+  }
+  return new HttpError(response.status, `${response.status} ${detail}`);
+};
 
 /** The assembly's calls against genki's API. Reads, a new thread and a question only. */
 export const createGenkiApi = ({
@@ -369,24 +383,23 @@ export const createGenkiApi = ({
   tenant,
   profile,
   language = 'nb',
+  headers,
 }: GenkiApiOptions): AssistantApi => {
-  const client = createClient({ baseUrl });
+  // Every request, the stream's too: the host's headers, with the request's own over them.
+  const send: typeof fetch = async (input, init) => {
+    if (!headers) return fetch(input, init);
+    const merged = new Headers(await headers());
+    new Headers(init?.headers).forEach((value, name) => merged.set(name, value));
+    return fetch(input, { ...init, headers: merged });
+  };
+  const client = createClient({ baseUrl, fetch: send });
   const corpusProfile = (key: string | undefined) => (key ? profile?.corpora?.[key] : undefined);
 
   const getJson = async <T>(path: string): Promise<T> => {
-    const response = await fetch(`${baseUrl}${path}`, {
+    const response = await send(`${baseUrl}${path}`, {
       headers: { Accept: 'application/json', 'Accept-Language': language },
     });
-    if (!response.ok) {
-      let detail = response.statusText;
-      try {
-        const body = (await response.json()) as { title?: string; error?: string; detail?: string };
-        detail = body.detail ?? body.title ?? body.error ?? detail;
-      } catch {
-        // Not JSON; the status says enough.
-      }
-      throw new HttpError(response.status, `${response.status} ${detail}`);
-    }
+    if (!response.ok) throw await httpError(response);
     return (await response.json()) as T;
   };
 
@@ -553,7 +566,7 @@ export const createGenkiApi = ({
     ask: async function* (params) {
       let conversationId = params.conversationId;
       if (!conversationId) {
-        const response = await fetch(`${baseUrl}/api/conversations`, {
+        const response = await send(`${baseUrl}/api/conversations`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
           body: JSON.stringify({
@@ -563,6 +576,8 @@ export const createGenkiApi = ({
           }),
           signal: params.signal,
         });
+        // Not signed in stops here; any other failure asks without a thread.
+        if (response.status === 401) throw await httpError(response);
         if (response.ok) {
           const body = (await response.json()) as { conversation?: { id?: string } };
           conversationId = body.conversation?.id;

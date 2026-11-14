@@ -1,7 +1,8 @@
-// What KA knows about its service that genki does not say: the assistant's name, its suggestions
-// and follow-ups, Kudos's fields in KA's words, the document links and KA's experiments. Copied
-// from apps/web's choices (views/chat/text.ts, flags/flags.ts, .env.example), not imported: this
-// client imports nothing from apps/web. UI text is Norwegian bokmål.
+// What KA knows about its service that genki does not say: the assistant's name, its suggestions,
+// Kudos's fields in KA's words, the document links and KA's experiments. Copied from apps/web's
+// choices (views/chat/text.ts, flags/flags.ts, .env.example), not imported: this client imports
+// nothing from apps/web. UI text is Norwegian bokmål. No follow-ups: the template's next look
+// draws none.
 import type { AssistantProfile, FieldSpec } from '@genai/ui-assembly';
 import type { Me } from './session';
 
@@ -14,11 +15,23 @@ const TYPE_PLURALS: Record<string, string> = {
   Årsrapport: 'årsrapporter',
 };
 
+// The year list starts here, as the classic client's server shapes it (apps/server/src/facets.ts
+// `shapeFacet`): Kudos's `concerned_years` holds about a thousand values, and earlier ones are
+// page numbers and parse noise. genki's assembly ends the list at the year it is in Norway.
+const FIRST_YEAR = 1990;
+
 // Kudos's fields as KA chose and named them.
 const KUDOS_FIELDS: readonly FieldSpec[] = [
   { id: 'type', label: 'Dokumenttyper', heading: 'Dokumenttype' },
   { id: 'orgs_long', label: 'Virksomheter', heading: 'Virksomhet' },
-  { id: 'concerned_years', label: 'År', heading: 'År', kind: 'year', integer: true },
+  {
+    id: 'concerned_years',
+    label: 'År',
+    heading: 'År',
+    kind: 'year',
+    integer: true,
+    years: { first: FIRST_YEAR },
+  },
 ];
 
 const KUDOS = 'Kudos';
@@ -29,15 +42,11 @@ const SUGGESTIONS = [
   `Gi meg en oversikt over de viktigste temaene i ${KUDOS}.`,
   `Oppsummer det viktigste i ${KUDOS} i noen få punkter.`,
 ];
-const FOLLOW_UPS = ['Kan du utdype?', 'Identifiser utfordringer', 'Lag relaterte spørsmål'];
-
-// KA's link templates for Kudos.
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export const kudosUrl = (docNum: string) => {
-  if (/^\d+$/.test(docNum)) return `https://kudos.dfo.no/documents/${docNum}`;
-  if (UUID.test(docNum)) return `https://kudos.dfo.no/dokument/${docNum}`;
-  return undefined;
-};
+// KA's link templates for Kudos, by the kind of document number. Any other number has no link.
+const KUDOS_LINKS = {
+  digits: 'https://kudos.dfo.no/documents/{id}',
+  uuid: 'https://kudos.dfo.no/dokument/{id}',
+} as const;
 
 const issue = (n: number) => ({
   href: `https://github.com/digdir/kunnskapsassistenten/issues/${n}`,
@@ -65,7 +74,6 @@ const EXPERIMENTS = [
 export const profileFor = (me: Me): AssistantProfile => ({
   assistantName: 'Kunnskapsassistenten',
   suggestions: SUGGESTIONS,
-  followUps: FOLLOW_UPS,
   corpora: {
     kudos: {
       label: KUDOS,
@@ -73,7 +81,7 @@ export const profileFor = (me: Me): AssistantProfile => ({
       fields: KUDOS_FIELDS,
       typeField: 'type',
       typePlurals: TYPE_PLURALS,
-      documentUrl: kudosUrl,
+      documentLinks: KUDOS_LINKS,
       about: { idField: 'doc_num', fields: ['type', 'orgs_long', 'concerned_years'] },
     },
   },

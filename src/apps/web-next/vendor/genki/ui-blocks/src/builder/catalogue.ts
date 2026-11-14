@@ -48,6 +48,17 @@ export const blockIds = [
 ] as const;
 export type BlockId = (typeof blockIds)[number];
 
+/**
+ * How a layout's blocks are drawn. `next` is the «_Ready for dev» boards' look (the cards frame,
+ * the panels' titles, the profile menu), and every new look sits behind it until it is the only
+ * one; `current` is what layouts drew before it.
+ */
+export const looks = ['current', 'next'] as const;
+export type Look = (typeof looks)[number];
+
+export const isLook = (value: unknown): value is Look =>
+  typeof value === 'string' && (looks as readonly string[]).includes(value);
+
 /** A switch or a choice on a block, drawn in the builder and kept in the layout's settings. */
 export type BlockOption =
   | {
@@ -57,6 +68,8 @@ export type BlockOption =
       needs?: readonly Need[];
       /** Shown off and disabled until it is built. */
       status?: 'planned';
+      /** The looks that draw it; without, every look. In another look it is not in force. */
+      looks?: readonly Look[];
     }
   | {
       id: string;
@@ -65,6 +78,7 @@ export type BlockOption =
       default: string;
       needs?: readonly Need[];
       status?: 'planned';
+      looks?: readonly Look[];
     };
 
 export interface BlockSpec {
@@ -145,7 +159,8 @@ export const blockCatalogue: readonly BlockSpec[] = [
         needs: ['component:sources|document-view'],
       },
       { id: 'suggestions', kind: 'switch', default: true },
-      { id: 'followUps', kind: 'switch', default: true },
+      // The next look draws no follow-ups: no board has them.
+      { id: 'followUps', kind: 'switch', default: true, looks: ['current'] },
       { id: 'disclaimer', kind: 'switch', default: true },
       { id: 'copy', kind: 'switch', default: true },
       // Off by default, as in kunnskapsassistenten since 6 October (AnswerActions' `feedback`).
