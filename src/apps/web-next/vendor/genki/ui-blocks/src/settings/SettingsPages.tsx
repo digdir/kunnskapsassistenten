@@ -38,6 +38,12 @@ export interface SettingsAction {
 const given = (action: SettingsAction | undefined): action is SettingsAction =>
   !!action && (action.href !== undefined || !!action.onSelect);
 
+/** What every page takes from the host besides its rows. */
+export interface SettingsPageNote {
+  /** `SettingsPage`'s `note`, named apart from «Om deg»'s own `note`. */
+  settingsNote?: ReactNode;
+}
+
 /** A button that is a link where the host gives one, as «Gi tilbakemelding» and «Last ned». */
 const ActionButton = ({ action, children }: { action: SettingsAction; children: ReactNode }) =>
   action.href !== undefined ? (
@@ -66,7 +72,7 @@ export type AnswerLength = 'short' | 'normal' | 'long';
 export type OpenWith = 'new' | 'last';
 export type TextSize = 'standard' | 'large' | 'larger';
 
-export interface SettingsGeneralProps {
+export interface SettingsGeneralProps extends SettingsPageNote {
   /** «Utseende»: light, dark or the system's, as `ColorSchemeToggle` draws it. */
   colorScheme?: SettingsChoice<ColorScheme> | undefined;
   /** «Språk i svarene». The service must answer in the language chosen. */
@@ -92,6 +98,7 @@ export const SettingsGeneral = ({
   textSize,
   headingLevel,
   children,
+  settingsNote,
   className,
 }: SettingsGeneralProps) => {
   const t = useT();
@@ -102,6 +109,7 @@ export const SettingsGeneral = ({
       empty={!drawn && !children}
       headingLevel={headingLevel}
       lead={t('settings.generalLead')}
+      note={settingsNote}
       // It speaks of the answers' instructions, so it comes with a choice the service honours.
       notice={
         answerLanguage || answerLength
@@ -187,7 +195,7 @@ export interface SettingsMemory {
   effect?: string | undefined;
 }
 
-export interface SettingsAboutYouProps {
+export interface SettingsAboutYouProps extends SettingsPageNote {
   /** The reader's name from the sign-in, shown locked. */
   name?: string | undefined;
   /** Their organisation from the sign-in, shown locked. */
@@ -227,6 +235,7 @@ export const SettingsAboutYou = ({
   memories,
   headingLevel,
   children,
+  settingsNote,
   className,
 }: SettingsAboutYouProps) => {
   const t = useT();
@@ -240,6 +249,7 @@ export const SettingsAboutYou = ({
       empty={!drawn && !children}
       headingLevel={headingLevel}
       lead={tailors ? t('settings.aboutYouLead') : undefined}
+      note={settingsNote}
       notice={
         tailors
           ? { title: t('settings.aboutYouNoticeTitle'), text: t('settings.aboutYouNotice') }
@@ -384,7 +394,7 @@ export const SettingsAboutYou = ({
 
 // ── Beta-funksjoner ──
 
-export interface SettingsBetaProps {
+export interface SettingsBetaProps extends SettingsPageNote {
   /** The trials the reader may turn on, each with whether it is on. */
   experiments?: readonly SettingsExperiment[] | undefined;
   /** The reader turned a trial on or off. Without it, or without trials, there is no list. */
@@ -410,6 +420,7 @@ export const SettingsBeta = ({
   feedback,
   headingLevel,
   children,
+  settingsNote,
   className,
 }: SettingsBetaProps) => {
   const t = useT();
@@ -423,6 +434,7 @@ export const SettingsBeta = ({
       empty={!listed && !asking && !children}
       headingLevel={headingLevel}
       lead={t('settings.betaLead')}
+      note={settingsNote}
       notice={
         listed
           ? { title: t('settings.betaNoticeTitle'), text: t('settings.betaNotice') }
@@ -504,7 +516,7 @@ export interface SettingsSharedThread {
   detail?: string | undefined;
 }
 
-export interface SettingsPrivacyProps {
+export interface SettingsPrivacyProps extends SettingsPageNote {
   /** The collection's name, for the box: «Dokumentene i Kudos er offentlige». */
   corpus?: string | undefined;
   /** «Lagre tråder», in days: 30, 60 or 90 unless the host offers others. */
@@ -533,6 +545,7 @@ export const SettingsPrivacy = ({
   clearHistory,
   headingLevel,
   children,
+  settingsNote,
   className,
 }: SettingsPrivacyProps) => {
   const t = useT();
@@ -544,6 +557,7 @@ export const SettingsPrivacy = ({
       empty={!drawn && !children}
       headingLevel={headingLevel}
       lead={t('settings.privacyLead')}
+      note={settingsNote}
       notice={
         drawn
           ? {
