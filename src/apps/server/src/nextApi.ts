@@ -2,7 +2,8 @@
  * `/api/next`: what the next client, apps/web-next, needs from this server (decisions/0013).
  *
  * - `GET /ui` and `POST /ui`: which client this browser gets, kept in a cookie.
- * - `GET /me`: who is signed in, and which genki service and variant the page asks.
+ * - `GET /me`: who is signed in, which genki service and variant the page asks, and the layout
+ *   from genki's builder when `KA_NEXT_LAYOUT` gives one (decisions/0017).
  * - `/genki/*`: a narrow proxy to the genki calls `createGenkiApi` makes, with the signed-in
  *   person's credential, as every call of apps/web is made (`backendHeaders`).
  * - `POST /feedback`: a rating of an answer, as apps/web's, and only with a person's token.
@@ -22,6 +23,7 @@ import { backendHeaders, knownProblem, type Caller } from './backend.ts';
 import { config } from './config.ts';
 import * as convos from './conversations.ts';
 import { cleanFeedback, ownsTask, sendFeedback } from './feedback.ts';
+import type { NextLayout } from './nextLayout.ts';
 import * as sourceStore from './sourceStore.ts';
 import { getTokens } from './tokenStore.ts';
 
@@ -321,6 +323,8 @@ export interface NextSettings {
   tenant: string;
   origin: string;
   maxQueryLength: number;
+  /** The layout from genki's builder (`KA_NEXT_LAYOUT`, decisions/0017); without it, KA's own. */
+  layout?: NextLayout | undefined;
 }
 
 const settingsFromConfig = (): NextSettings => ({
@@ -330,6 +334,7 @@ const settingsFromConfig = (): NextSettings => ({
   tenant: config.next.tenant,
   origin: config.auth.origin,
   maxQueryLength: config.maxQueryLength,
+  layout: config.next.layout,
 });
 
 /** The person's organisation: the one they act for, or their only one. */
@@ -389,6 +394,8 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
       service: settings.service,
       tenant: settings.tenant,
       writes: Boolean(c.get('caller').token),
+      // Only when one is set: without it the page draws KA's own, and the answer is as before.
+      ...(settings.layout ? { layout: settings.layout } : {}),
     });
   });
 

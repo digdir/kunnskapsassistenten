@@ -120,6 +120,25 @@ jobs:
           curl -fsS localhost:8787/ | grep -q '/assets/'
           curl -fsS -H 'Cookie: ka_ui=next' localhost:8787/ | grep -q '/next-assets/'
           docker stop ka
+      # genki's layout checks run in the image (decisions/0017): a layout passes to the page,
+      # and one that breaks a rule stops the server.
+      - name: With a layout from genki's builder, the page gets it, and a bad one stops the server
+        run: |
+          layout='{"version":1,"look":"next","zones":{"primary":[{"block":"threads"}],"main":[{"block":"chat"}],"secondary":[]},"profile":{"assistantName":"Proveassistenten"}}'
+          docker run --detach --rm --name ka --publish 8787:8787 \
+            -e AUTH_MODE=off -e LISTEN_HOST=0.0.0.0 -e APP_ORIGIN=http://localhost:8787 \
+            -e DIGDIR_API_KEY=unused -e KA_NEXT=1 -e KA_NEXT_LAYOUT="$layout" ka:ci
+          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
+          curl -fsS localhost:8787/api/next/me | grep -q '"assistantName":"Proveassistenten"'
+          docker stop ka
+          code=0
+          timeout 60 docker run --rm \
+            -e AUTH_MODE=off -e APP_ORIGIN=http://localhost:8787 -e DIGDIR_API_KEY=unused \
+            -e KA_NEXT=1 -e KA_NEXT_LAYOUT='{"version":1,"zones":{"primary":[],"main":[{"block":"nope"}],"secondary":[]}}' \
+            ka:ci > refused.log 2>&1 || code=$?
+          cat refused.log
+          test "$code" = 1
+          grep -q 'unknown-block' refused.log
 
   # The client's own image for the test environment, built from src/ as
   # apps/web/docs/deploy.md builds it. In mock the server forwards nothing, so

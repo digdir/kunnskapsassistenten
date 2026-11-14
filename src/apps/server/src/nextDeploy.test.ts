@@ -14,6 +14,7 @@ test('the template passes KA_NEXT and its settings only when given, so it is off
     ['kaNext', 'KA_NEXT'],
     ['kaNextModel', 'KA_NEXT_MODEL'],
     ['kaNextTenant', 'KA_NEXT_TENANT'],
+    ['kaNextLayout', 'KA_NEXT_LAYOUT'],
   ]) {
     assert.match(template, new RegExp(`^param ${param} string = ''$`, 'm'));
     assert.match(
@@ -34,4 +35,15 @@ test('the image holds both builds, and names where the next one is, but does not
   assert.match(dockerfile, /^ENV WEB_ROOT=\.\/apps\/web\/dist$/m);
   assert.match(dockerfile, /^ENV WEB_NEXT_ROOT=\.\/apps\/web-next\/dist$/m);
   assert.doesNotMatch(dockerfile, /^ENV KA_NEXT/m);
+});
+
+test("the image holds genki's layout checks the server runs on KA_NEXT_LAYOUT, with genki's licence", () => {
+  assert.match(
+    dockerfile,
+    /^COPY apps\/web-next\/vendor\/genki\/ui-blocks apps\/web-next\/vendor\/genki\/ui-blocks$/m,
+  );
+  assert.match(
+    dockerfile,
+    /^COPY apps\/web-next\/vendor\/genki\/LICENSE apps\/web-next\/vendor\/genki\/LICENSE$/m,
+  );
 });

@@ -2,7 +2,7 @@
 // Kudos's fields in KA's words, the document links and KA's experiments. Copied from apps/web's
 // choices (views/chat/text.ts, flags/flags.ts, .env.example), not imported: this client imports
 // nothing from apps/web. UI text is Norwegian bokmål. No follow-ups: the template's next look
-// draws none.
+// draws none. With a layout from genki's builder only the host's part is used (`hostProfileFor`).
 import type { AssistantProfile, FieldSpec } from '@genai/ui-assembly';
 import type { Me } from './session';
 
@@ -70,7 +70,21 @@ const EXPERIMENTS = [
   },
 ];
 
-/** The profile for the person `me` names. */
+/**
+ * What only this host can give, whatever layout it draws: who is signed in, the sign-out, the
+ * services whose threads are listed, and KA's trials, which the assembly carries out. A layout
+ * from genki's builder (decisions/0017) is drawn with this and its own words.
+ */
+export const hostProfileFor = (me: Me): AssistantProfile => ({
+  ...(me.name ? { signedInAs: me.name } : {}),
+  ...(me.organisation ? { organisation: me.organisation } : {}),
+  ...(me.signOut ? { signOut: { href: me.signOut } } : {}),
+  // Only this service's threads: the person's token reaches no other.
+  family: (service) => service === me.service,
+  experiments: EXPERIMENTS,
+});
+
+/** The profile for the person `me` names: KA's words for its service, and the host's part. */
 export const profileFor = (me: Me): AssistantProfile => ({
   assistantName: 'Kunnskapsassistenten',
   suggestions: SUGGESTIONS,
@@ -85,11 +99,6 @@ export const profileFor = (me: Me): AssistantProfile => ({
       about: { idField: 'doc_num', fields: ['type', 'orgs_long', 'concerned_years'] },
     },
   },
-  ...(me.name ? { signedInAs: me.name } : {}),
-  ...(me.organisation ? { organisation: me.organisation } : {}),
-  ...(me.signOut ? { signOut: { href: me.signOut } } : {}),
-  // Only this service's threads: the person's token reaches no other.
-  family: (service) => service === me.service,
-  experiments: EXPERIMENTS,
+  ...hostProfileFor(me),
   settingsNote: 'Valgene huskes i denne nettleseren. Eksperimentene slås av når du logger ut.',
 });

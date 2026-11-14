@@ -180,6 +180,8 @@ export const Composer = ({
     if (trimmed) onSubmit(trimmed);
   };
 
+  const sendBlocked = value.trim().length === 0 || working;
+
   const shownRefusal =
     refusal === 'unavailable'
       ? text.error('unavailable')
@@ -350,9 +352,12 @@ export const Composer = ({
               aria-label={t('composer.send')}
               className="uib-composer-send"
               data-color={actionColor}
-              disabled={value.trim().length === 0 || working}
+              // Blocked, not disabled: it stays in the tab order, as genki's screens keep it.
+              aria-disabled={sendBlocked || undefined}
               icon
-              onClick={() => trySubmit(value)}
+              onClick={() => {
+                if (!sendBlocked) trySubmit(value);
+              }}
               ref={sendRef}
             >
               <PaperplaneIcon aria-hidden />

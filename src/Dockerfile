@@ -25,6 +25,10 @@ RUN npm ci --omit=dev --workspace apps/server --include-workspace-root \
  && npm cache clean --force
 COPY packages/contract/src packages/contract/src
 COPY apps/server/src apps/server/src
+# genki's layout checks, which the server runs on KA_NEXT_LAYOUT (decisions/0017): the next
+# client's vendored ui-blocks as source, with genki's licence.
+COPY apps/web-next/vendor/genki/LICENSE apps/web-next/vendor/genki/LICENSE
+COPY apps/web-next/vendor/genki/ui-blocks apps/web-next/vendor/genki/ui-blocks
 COPY --from=build /app/apps/web/dist apps/web/dist
 COPY --from=build /app/apps/web-next/dist apps/web-next/dist
 

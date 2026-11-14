@@ -12,12 +12,13 @@ export {
   type Turn,
 } from './api.js';
 export { Assistant, AssistantView, type AssistantProps } from './Assistant.js';
-export type {
-  AssistantExperiment,
-  AssistantProfile,
-  CorpusProfile,
-  FieldSpec,
-  YearBounds,
+export {
+  profileOf,
+  type AssistantExperiment,
+  type AssistantProfile,
+  type CorpusProfile,
+  type FieldSpec,
+  type YearBounds,
 } from './profile.js';
 export { noticeTime, useLogOnly, useNotice, useStoredColorScheme, type LogOnly } from './host.js';
 export type { DocumentIdPattern } from './profile.js';

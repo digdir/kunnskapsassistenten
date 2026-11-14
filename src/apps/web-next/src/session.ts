@@ -1,5 +1,6 @@
 // Who is signed in, from the server (`GET /api/next/me`), before the first render. Without a
 // session the page goes to the sign-in, and comes back to the same address afterwards.
+import { isAssistantLayout, type AssistantLayout } from '@genai/ui-blocks';
 
 export interface Me {
   /** The person's name, as the profile button shows it. */
@@ -14,6 +15,11 @@ export interface Me {
   tenant: string;
   /** Rename and delete reach genki only with a person's token. */
   writes: boolean;
+  /**
+   * The layout from genki's builder the server was given (`KA_NEXT_LAYOUT`, decisions/0017),
+   * checked there with genki's rules. Without it, the page draws KA's own.
+   */
+  layout?: AssistantLayout | undefined;
 }
 
 export class SignedOut extends Error {}
@@ -30,7 +36,8 @@ const isMe = (value: unknown): value is Me => {
     typeof me.model === 'string' &&
     typeof me.service === 'string' &&
     typeof me.tenant === 'string' &&
-    typeof me.writes === 'boolean'
+    typeof me.writes === 'boolean' &&
+    (me.layout === undefined || isAssistantLayout(me.layout))
   );
 };
 

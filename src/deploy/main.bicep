@@ -72,6 +72,9 @@ param kaNextModel string = ''
 @description('The genki tenant the next client reads collections and facets from. Empty is `digdir`.')
 param kaNextTenant string = ''
 
+@description('The layout the next client draws, the JSON from genki\'s builder («Kopier oppsettet») or the path of a file holding it (decisions/0017). Empty draws KA\'s own.')
+param kaNextLayout string = ''
+
 @description('Testers by session user id (`userId` in `/api/v2/me`), separated by commas or spaces: their calls to genki carry `GenAI-Environment` (decisions/0015). Empty: nobody is a tester.')
 param kaTesters string = ''
 
@@ -200,6 +203,9 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             ],
             empty(kaNextTenant) ? [] : [
               { name: 'KA_NEXT_TENANT', value: kaNextTenant }
+            ],
+            empty(kaNextLayout) ? [] : [
+              { name: 'KA_NEXT_LAYOUT', value: kaNextLayout }
             ],
             empty(kaTesters) ? [] : [
               { name: 'KA_TESTERS', value: kaTesters }

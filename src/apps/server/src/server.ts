@@ -18,6 +18,9 @@ serve({ fetch: app.fetch, port: config.port, hostname }, (info) => {
         ? `sign-in: Ansattporten, ${config.auth.ansattporten.issuer}, the person's token to the backend`
         : 'sign-in: OFF. Unsigned development id, do not use this outside your own machine.',
   );
+  if (config.next.enabled && config.next.layout) {
+    console.log(`next client: ${config.next.model}, drawn from the layout in KA_NEXT_LAYOUT`);
+  }
   if (!typesenseConfigured) {
     console.log('Typesense is not set up: no filters and no excerpts in the sources panel.');
   }

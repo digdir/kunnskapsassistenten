@@ -12,6 +12,9 @@ this client's profile menu. Nothing here imports `apps/web`.
   kept in the browser use keys that start with `ka-next.`.
 - `src/profile.ts`: what KA knows that genki does not say: Kudos's fields and words, the
   suggestions, the document links and the experiments. UI text is Norwegian bokmål.
+  `hostProfileFor` is the part only the host can give, which is all the page uses of it when
+  the server hands it a layout from genki's builder (`KA_NEXT_LAYOUT`, `src/decisions/0017`).
+  `drawingFor` in `src/App.tsx` chooses.
 - `src/menu.tsx`: KA's entries in genki's profile menu: «Endringslogg» and «Om prosjektet», which
   are apps/web's pages (the server serves them from apps/web whichever client was chosen), opened
   with this client's address in `?fra=` for apps/web's «Tilbake til ny versjon», and
@@ -43,7 +46,9 @@ The server serves it: build it, and start the server with `KA_NEXT=1` and
 `WEB_NEXT_ROOT=apps/web-next/dist`, beside `WEB_ROOT=apps/web/dist`. Then «Prøv ny versjon» in
 `apps/web` switches. For work on this client alone, `npm run dev --workspace apps/web-next`
 serves it with Vite and sends `/api` and `/auth` to the server in `KA_SERVER_URL`
-(`http://localhost:8788` by default), which needs `KA_NEXT=1` too.
+(`http://localhost:8788` by default), which needs `KA_NEXT=1` too. With `KA_NEXT_LAYOUT` on the
+server, the JSON of a layout from genki's builder or a file's path, the page draws that layout in
+its own words instead of KA's (`src/decisions/0017`).
 
 ```sh
 npm run build --workspace apps/web-next

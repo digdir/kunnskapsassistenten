@@ -124,11 +124,13 @@ const modifier = () =>
 export interface AssistantProps extends AssistantOptions {
   /** The `id` of `<main>`, the target of «Hopp til hovedinnhold». */
   mainId?: string | undefined;
+  /** Drawn in a host's preview this wide, on the host's page: no `h1` of its own (`Shell`). */
+  frameWidth?: number | undefined;
 }
 
 /** The assistant a layout describes, live against the service through `api`. */
-export const Assistant = ({ mainId, ...options }: AssistantProps) => (
-  <AssistantView assistant={useAssistant(options)} mainId={mainId} />
+export const Assistant = ({ mainId, frameWidth, ...options }: AssistantProps) => (
+  <AssistantView assistant={useAssistant(options)} mainId={mainId} frameWidth={frameWidth} />
 );
 
 const AnswerRow = ({
@@ -288,9 +290,11 @@ const approachOf = (
 export const AssistantView = ({
   assistant: a,
   mainId = 'main-content',
+  frameWidth,
 }: {
   assistant: AssistantState;
   mainId?: string | undefined;
+  frameWidth?: number | undefined;
 }) => {
   const t = useT();
   const approachHeadingId = useId();
@@ -384,7 +388,9 @@ export const AssistantView = ({
   // The page's one `h1`, the assistant's name, before everything else on it (WCAG 1.3.1, 2.4.6).
   // Chat alone in the main column draws it, as kunnskapsassistenten does; otherwise the column.
   // In the next look the `h1` is the thread's title, at the top of the main card (`mainTitle`).
-  const pageHeading = next ? null : <h1 className="ds-sr-only">{name}</h1>;
+  // In a host's preview the page and its `h1` are the host's.
+  const framed = frameWidth !== undefined;
+  const pageHeading = next || framed ? null : <h1 className="ds-sr-only">{name}</h1>;
 
   // ── Chat ──
   const chat = (inPanel: boolean, titled: boolean) => {
@@ -1118,7 +1124,7 @@ export const AssistantView = ({
   } else if (a.page === 'settings' && settingsOn) {
     main = (
       <Settings
-        headingLevel={1}
+        headingLevel={framed ? 2 : 1}
         colorScheme={a.colorScheme}
         onColorSchemeChange={(scheme) => a.onColorSchemeChange?.(scheme)}
         displayLevel={a.level}
@@ -1218,6 +1224,7 @@ export const AssistantView = ({
       // panels stay open there.
       {...(filterPanel ? { mainSize: { minWidth: 600 } } : {})}
       mainId={mainId}
+      frameWidth={frameWidth}
       initialLayout={a.shellLayout}
       onLayoutChange={a.onShellLayout}
       skipLinks={

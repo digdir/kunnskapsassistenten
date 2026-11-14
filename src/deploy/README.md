@@ -157,6 +157,69 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
 
 The template takes the same as `kaNext`, `kaNextModel` and `kaNextTenant`, empty by default.
 
+## Another assistant from the builder
+
+The next client can draw another genki service in KA's way: its own name, suggestions and
+collection words, with KA's blocks or others, as genki's builder lays them out
+(`decisions/0017`). `KA_NEXT_LAYOUT` holds the layout, the JSON the builder's «Kopier oppsettet»
+gives, or the path of a file with it. The server checks it with genki's own rules when it
+starts, and does not start with a layout genki would refuse; the log names each problem by
+rule and path. Without `KA_NEXT_LAYOUT`, the next client is KA's own, as above.
+
+One deployment draws one service, so another assistant is a second container app beside
+`ka-app`, with its own host, sign-in and genki client. These steps are for a person, in order:
+
+1. **The service in genki.** Make it in the genki portal, and publish it. Its id and variant
+   make the model, `<service>__<variant>`, such as `rapportassistenten__default`.
+2. **The layout.** On the service's page, «Byggeklosser»: choose a template, such as
+   «Kunnskapsassistenten», and write its words in «Tekster». «Kopier oppsettet» copies the
+   layout. Keep it as `layout.json`. Nothing in genki stores it yet.
+3. **An Ansattporten client of its own.** In Samarbeidsportalen, as for `ka-app` (Ansattporten
+   instead of Entra ID, above), with `https://<host>/auth/callback` as redirect URI and
+   `https://<host>/` as post-logout redirect URI. An Ansattporten client id can be registered
+   with one genki service only, so `ka-app`'s cannot be reused.
+4. **Its client in genki.** On the service's page, «Kanaler og frontend», «Registrer
+   brukerflate»: a browser frontend with the new client id and the host. genki confines a
+   person's token to the service its client is registered for.
+5. **The container app.** Deploy the template as in Deploying from scratch, with these
+   parameters changed or added. `name` keeps it apart from `ka-app`: the template names the
+   app, its environment, its identity and its log workspace after it, and the new identity
+   needs `AcrPull` on the registry too.
+
+   | Parameter                                          | Value                         |
+   | -------------------------------------------------- | ----------------------------- |
+   | `name`                                             | such as `ka-rapport`          |
+   | `publicHost`                                       | the new host                  |
+   | `ansattportenClientId`, `ansattportenClientSecret` | the new client's, from step 3 |
+   | `digdirTool`                                       | `<service>__<variant>`        |
+   | `digdirAgentId`                                    | `<service>`                   |
+   | `kaNext`                                           | `1`                           |
+   | `kaNextModel`                                      | `<service>__<variant>`        |
+   | `kaFilterFields`, `kaDataset`, `kaCapabilities`    | the service's, or empty       |
+
+6. **The layout on the app.** About 30 seconds and no rebuild. `jq -c` puts the JSON on one
+   line, and checks that it is JSON:
+
+   ```sh
+   LAYOUT=$(jq -c . layout.json)
+   az containerapp update --subscription Altinn-AI-Assistant -n ka-rapport -g rg-ka-test-weu \
+     --set-env-vars "KA_NEXT_LAYOUT=$LAYOUT" --revision-suffix layout$(date +%H%M%S)
+   ```
+
+   If the new revision does not become healthy, its log says which of genki's rules the layout
+   breaks. The old revision keeps serving meanwhile.
+
+7. **Open it.** The host serves `apps/web` first, as `ka-app` does. «Prøv ny versjon» at the
+   foot of its navigation panel gives the other assistant, and the browser keeps that choice.
+
+A changed layout is step 6 again. `KA_NEXT_LAYOUT` with a path instead of JSON reads the file
+at that path in the container, such as a Container Apps secret mounted as a volume. The template
+takes it as `kaNextLayout`, empty by default; step 6 sets it on the app instead.
+
+The other assistant keeps what only KA's host gives: the sign-in, the profile menu with KA's
+«Endringslogg», «Om prosjektet» and «Tilbake til gammel versjon», only this service's threads,
+and KA's two trials in «Innstillinger». Every other word is the layout's.
+
 ## Testers and genki's test environment
 
 `KA_TESTERS` names the testers by user id, separated by commas or spaces (`decisions/0015`).
