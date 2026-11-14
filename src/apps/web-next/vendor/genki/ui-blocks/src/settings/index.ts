@@ -44,6 +44,7 @@ export {
   type SettingsBetaProps,
   type SettingsGeneralProps,
   type SettingsMemory,
+  type SettingsPageNote,
   type SettingsPrivacyProps,
   type SettingsSharedThread,
   type TextSize,

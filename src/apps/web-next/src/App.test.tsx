@@ -1,9 +1,19 @@
+import type { StreamEvent } from '@genai/client';
 import type { AnswerData, AssistantApi } from '@genai/ui-assembly';
 import { lookOf, optionInForce } from '@genai/ui-blocks';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App, layout } from './App';
 import { ABOUT_LABEL, BACK_LABEL } from './menu';
+import { profileFor } from './profile';
 import type { Me } from './session';
 
 const me: Me = {
@@ -113,6 +123,183 @@ describe('the next client', () => {
       expect(Object.keys(localStorage).every((key) => key.startsWith('ka-next.'))).toBe(true),
     );
     expect(Object.keys(localStorage).length).toBeGreaterThan(0);
+  });
+});
+
+describe('«Innstillinger»', () => {
+  beforeEach(() => history.replaceState(null, '', '/innstillinger'));
+  afterEach(() => history.replaceState(null, '', '/'));
+
+  const go = (name: RegExp) =>
+    fireEvent.click(
+      within(screen.getByRole('navigation', { name: 'Innstillinger' })).getByRole('button', {
+        name,
+      }),
+    );
+  const pageEnd = () =>
+    document.querySelector('.uib-settings-page')?.lastElementChild?.textContent;
+
+  it("ends each page with something to choose with KA's settings note", async () => {
+    const note = profileFor(me).settingsNote;
+    expect(note).toMatch(/^Valgene huskes i denne nettleseren\./);
+    render(<App me={me} api={fakeApi()} />);
+    await screen.findByRole('heading', { level: 1, name: 'Generelt' });
+    expect(pageEnd()).toBe(note);
+    // The name and organisation from the sign-in.
+    go(/^Om deg/);
+    expect(screen.getByRole('heading', { level: 1, name: 'Om deg' })).toBeTruthy();
+    expect(pageEnd()).toBe(note);
+    // KA's two trials.
+    go(/^Beta-funksjoner/);
+    expect(screen.getByRole('heading', { level: 1, name: 'Beta-funksjoner' })).toBeTruthy();
+    expect(pageEnd()).toBe(note);
+    // genki keeps no privacy choice yet, so the page has nothing for the note to speak of.
+    go(/^Personvern og data/);
+    expect(screen.getByText('Ingen valg her ennå.')).toBeTruthy();
+    expect(screen.queryByText(note!)).toBeNull();
+  });
+});
+
+describe('an answer while the reader is in another thread', () => {
+  afterEach(() => {
+    history.replaceState(null, '', '/');
+    vi.unstubAllGlobals();
+  });
+
+  /** genki, with an answer the test sends a piece at a time; an abort rejects it, as fetch does. */
+  const streaming = () => {
+    let asked = false;
+    let signal: AbortSignal | undefined;
+    const queue: StreamEvent[] = [];
+    let wake = () => {};
+    const api: AssistantApi = {
+      ...fakeApi(),
+      loadThreads: vi.fn(async () => [
+        ...(asked
+          ? [
+              {
+                id: 't-new',
+                title: 'Hva er nytt?',
+                updatedAt: 2,
+                service: 'kunnskapsassistenten',
+              },
+            ]
+          : []),
+        { id: 't1', title: 'En tråd', updatedAt: 1, service: 'kunnskapsassistenten' },
+      ]),
+      // genki stores an answer once it is done, so the new thread holds the question alone.
+      loadThread: vi.fn(async (id: string) =>
+        id === 't-new'
+          ? {
+              title: 'Hva er nytt?',
+              turns: [{ id: 'n1', question: 'Hva er nytt?', askedAt: 1 }],
+            }
+          : {
+              title: 'En tråd',
+              turns: [
+                {
+                  id: 'q1',
+                  question: 'Hva var gammelt?',
+                  askedAt: 1,
+                  answer: {
+                    text: 'Det gamle svaret.',
+                    status: 'complete' as const,
+                    created: 2,
+                  },
+                },
+              ],
+            },
+      ),
+      ask: async function* (params) {
+        asked = true;
+        signal = params.signal;
+        for (;;) {
+          const next = queue.shift();
+          if (next) {
+            yield next;
+            if (next.type === 'done') return;
+            continue;
+          }
+          await new Promise<void>((resolve, reject) => {
+            const stop = () => reject(new DOMException('aborted', 'AbortError'));
+            if (params.signal.aborted) stop();
+            params.signal.addEventListener('abort', stop);
+            wake = resolve;
+          });
+        }
+      },
+    };
+    // Every event is read, and what it changes drawn, before the test goes on.
+    const send = (...events: StreamEvent[]) =>
+      act(async () => {
+        queue.push(...events);
+        wake();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+    return { api, send, aborted: () => signal?.aborted };
+  };
+  const open = async (name: RegExp) => {
+    const link = await screen.findByRole('link', { name });
+    await act(async () => {
+      fireEvent.click(link);
+    });
+  };
+  const answerText = () =>
+    [...document.querySelectorAll('.uib-answer-text')]
+      .map((text) => text.textContent)
+      .join(' ');
+
+  it('keeps coming, is there on return, and its feedback names the thread it was asked in', async () => {
+    const fetcher = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) =>
+      Response.json({ ok: true }),
+    );
+    vi.stubGlobal('fetch', fetcher);
+    const { api, send, aborted } = streaming();
+    render(<App me={{ ...me, writes: true }} api={api} />);
+    const field = await screen.findByRole('textbox', { name: /Spørsmål til/ });
+    fireEvent.change(field, { target: { value: 'Hva er nytt?' } });
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Send spørsmålet' }).hasAttribute('aria-disabled'),
+      ).toBe(false),
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send spørsmålet' }));
+    });
+    const named = { type: 'conversation', conversationId: 't-new' } as const;
+    await send(named, named, { type: 'text', text: 'Det nye ' });
+    await waitFor(() => expect(answerText()).toContain('Det nye'));
+    await open(/En tråd/);
+    expect(await screen.findByText('Det gamle svaret.')).toBeTruthy();
+    // The rest arrives out of sight.
+    await send(
+      { type: 'text', text: 'svaret.' },
+      {
+        type: 'done',
+        answer: {
+          id: 'a1',
+          text: 'Det nye svaret.',
+          taskId: 'task-9',
+          sources: [],
+          citations: [],
+          noAnswer: false,
+        },
+      },
+    );
+    expect(aborted()).toBe(false);
+    expect(screen.getByText('Det gamle svaret.')).toBeTruthy();
+    await open(/Hva er nytt\?/);
+    await waitFor(() => expect(answerText()).toBe('Det nye svaret.'));
+    const group = await screen.findByRole('group', { name: 'Tilbakemelding på svaret' });
+    fireEvent.click(within(group).getByRole('button', { name: 'Ja' }));
+    fireEvent.click(within(group).getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+    expect(JSON.parse(String(fetcher.mock.calls[0]![1]?.body))).toEqual({
+      conversationId: 't-new',
+      taskId: 'task-9',
+      rating: 'up',
+      reasons: [],
+    });
   });
 });
 

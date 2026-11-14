@@ -286,13 +286,19 @@ export const Conversation = ({
     const turn = turns.at(-1);
     const before = lastSeen.current;
     lastSeen.current = turn?.id;
+    const followed = before !== undefined && live.current.has(before);
+    // An answer that leaves unended, as when another thread opens, is no longer coming here.
+    for (const [id, known] of live.current)
+      if (known.status === 'streaming' && !turns.some((other) => other.id === id)) {
+        live.current.delete(id);
+        setAnnouncement('');
+      }
+    if (!turn) setAnnouncement('');
     if (!turn || loading) return;
     if (turn.kind === 'clarification') {
       // New after the question it follows, or in place of the answer that was coming.
       const arrived =
-        turn.id !== before &&
-        before !== undefined &&
-        (turns.at(-2)?.id === before || live.current.has(before));
+        turn.id !== before && before !== undefined && (turns.at(-2)?.id === before || followed);
       if (arrived)
         setAnnouncement(
           assistantName
@@ -320,6 +326,8 @@ export const Conversation = ({
     if (known.status !== 'streaming') return;
     known.status = turn.status;
     if (turn.status === 'aborted') setAnnouncement(t('conversation.answerStopped'));
+    // Its alert says the failure; said here too, it would be heard twice.
+    if (turn.status === 'failed') setAnnouncement('');
     if (turn.status !== 'complete') return;
     // One with no sources carries a warning in its card; «ferdig» alone would hide it.
     setAnnouncement(

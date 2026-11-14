@@ -1102,23 +1102,31 @@ export const AssistantView = ({
     // Each page draws only what works here: the colour scheme the host keeps, the reader from the
     // sign-in, and the profile's trials. What genki cannot honour yet is not given, so not drawn.
     const feedback = a.profile?.menu?.feedback;
+    // Under each page's rows, as the current look ends its one page.
+    const settingsNote = a.profile?.settingsNote;
     main =
       settingsView === 'about-you' ? (
-        <SettingsAboutYou name={a.profile?.signedInAs} organisation={a.profile?.organisation} />
+        <SettingsAboutYou
+          name={a.profile?.signedInAs}
+          organisation={a.profile?.organisation}
+          settingsNote={settingsNote}
+        />
       ) : settingsView === 'beta' ? (
         <SettingsBeta
           experiments={experimentRows}
           onExperimentChange={a.setFlag}
           onAllOff={a.flagsOff}
           feedback={feedback}
+          settingsNote={settingsNote}
         />
       ) : settingsView === 'privacy' ? (
-        <SettingsPrivacy />
+        <SettingsPrivacy settingsNote={settingsNote} />
       ) : (
         <SettingsGeneral
           {...(a.onColorSchemeChange
             ? { colorScheme: { value: a.colorScheme, onChange: a.onColorSchemeChange } }
             : {})}
+          settingsNote={settingsNote}
         />
       );
   } else if (a.page === 'settings' && settingsOn) {
