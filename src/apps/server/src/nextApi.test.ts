@@ -169,6 +169,8 @@ before(async () => {
   delete process.env.KA_NEXT_LAYOUT;
   // apps/web beside the next client, as KA's own site has it (nextOnly.test.ts has only next).
   delete process.env.KA_NEXT_ONLY;
+  // apps/web for a browser that has not chosen (nextDefault.test.ts has the next client).
+  delete process.env.KA_NEXT_DEFAULT;
   ({ app } = await import('./app.ts'));
   nextApi = await import('./nextApi.ts');
   nextApiPage = await import('./nextPage.ts');
@@ -208,23 +210,19 @@ describe('the toggle', () => {
     assert.deepEqual(await chosen.json(), { ui: 'next', available: true });
   });
 
-  test('POST next sets a long-lived, HttpOnly, SameSite=Lax cookie; POST classic clears it', async () => {
-    const on = await switchTo('next');
-    assert.equal(on.status, 200);
-    assert.deepEqual(await on.json(), { ui: 'next' });
-    const set = on.headers.getSetCookie().find((line) => line.startsWith('ka_ui='));
-    assert.ok(set, 'a ka_ui cookie');
-    assert.match(set, /^ka_ui=next;/);
-    assert.match(set, /Max-Age=31536000/);
-    assert.match(set, /Path=\//);
-    assert.match(set, /HttpOnly/);
-    assert.match(set, /SameSite=Lax/);
-
-    const off = await switchTo('classic');
-    assert.equal(off.status, 200);
-    const cleared = off.headers.getSetCookie().find((line) => line.startsWith('ka_ui='));
-    assert.ok(cleared);
-    assert.match(cleared, /Max-Age=0/);
+  test('POST next and POST classic each keep the choice in a long-lived, HttpOnly, SameSite=Lax cookie', async () => {
+    for (const ui of ['next', 'classic']) {
+      const res = await switchTo(ui);
+      assert.equal(res.status, 200, ui);
+      assert.deepEqual(await res.json(), { ui });
+      const set = res.headers.getSetCookie().find((line) => line.startsWith('ka_ui='));
+      assert.ok(set, `a ka_ui cookie for ${ui}`);
+      assert.match(set, new RegExp(`^ka_ui=${ui};`));
+      assert.match(set, /Max-Age=31536000/);
+      assert.match(set, /Path=\//);
+      assert.match(set, /HttpOnly/);
+      assert.match(set, /SameSite=Lax/);
+    }
   });
 
   test('refuses another value, a cross-site call, a foreign Origin, and a body that is not JSON', async () => {
@@ -244,7 +242,7 @@ describe('the toggle', () => {
 });
 
 describe('the page', () => {
-  test('is apps/web by default, and apps/web-next only with the cookie', async () => {
+  test('is apps/web for a browser that has not chosen while KA_NEXT_DEFAULT is unset, and apps/web-next only with the cookie', async () => {
     assert.equal((await page('/')).body, '<html lang="nb">classic</html>');
     assert.equal((await page('/', 'ka_ui=classic')).body, '<html lang="nb">classic</html>');
     assert.equal((await page('/', 'ka_ui=yes')).body, '<html lang="nb">classic</html>');

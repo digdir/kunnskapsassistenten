@@ -78,6 +78,9 @@ param kaNextLayout string = ''
 @description('Only the next client, for a deployment of another service: `1` serves apps/web-next at `/` and leaves apps/web out, with no way back to it; needs `kaNext` (decisions/0017). Empty keeps apps/web the default.')
 param kaNextOnly string = ''
 
+@description('The next client as the default: `1` gives apps/web-next to a browser that has not chosen, and apps/web stays for one that chose it with «Tilbake til gammel versjon»; needs `kaNext` (decisions/0018). Empty keeps apps/web the default.')
+param kaNextDefault string = ''
+
 @description('Testers by session user id (`userId` in `/api/v2/me`), separated by commas or spaces: their calls to genki carry `GenAI-Environment` (decisions/0015). Empty: nobody is a tester.')
 param kaTesters string = ''
 
@@ -212,6 +215,9 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             ],
             empty(kaNextOnly) ? [] : [
               { name: 'KA_NEXT_ONLY', value: kaNextOnly }
+            ],
+            empty(kaNextDefault) ? [] : [
+              { name: 'KA_NEXT_DEFAULT', value: kaNextDefault }
             ],
             empty(kaTesters) ? [] : [
               { name: 'KA_TESTERS', value: kaTesters }

@@ -1,7 +1,8 @@
 /**
  * `/api/next`: what the next client, apps/web-next, needs from this server (decisions/0013).
  *
- * - `GET /ui` and `POST /ui`: which client this browser gets, kept in a cookie.
+ * - `GET /ui` and `POST /ui`: which client this browser gets, its choice kept in a cookie, and
+ *   the default without one (decisions/0018).
  * - `GET /me`: who is signed in, which genki service and variant the page asks, and the layout
  *   from genki's builder when `KA_NEXT_LAYOUT` gives one (decisions/0017).
  * - `/genki/*`: a narrow proxy to the genki calls `createGenkiApi` makes, with the signed-in
@@ -15,7 +16,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Context, MiddlewareHandler } from 'hono';
 import { Hono } from 'hono';
-import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
+import { getCookie, setCookie } from 'hono/cookie';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { Env } from './apiShared.ts';
 import { readSessionId } from './auth.ts';
@@ -44,12 +45,19 @@ export const nextOffered = () =>
   Boolean(config.next.webRoot) &&
   existsSync(join(config.next.webRoot, 'index.html'));
 
+/** The client this browser chose, kept in the cookie; none when it has not chosen. */
+const chosenUi = (c: Context): Ui | undefined => {
+  const chosen = getCookie(c, uiCookie());
+  return chosen === 'next' || chosen === 'classic' ? chosen : undefined;
+};
+
 /**
- * The client this browser gets: `next` when the cookie says so, and always where it is the only
- * one (`KA_NEXT_ONLY`), whatever the cookie says.
+ * The client this browser gets: always `next` where it is the only one (`KA_NEXT_ONLY`), whatever
+ * the cookie says; else the one the cookie names; else the default, `next` with `KA_NEXT_DEFAULT`
+ * and `classic` without (decisions/0018).
  */
 export const uiOf = (c: Context): Ui =>
-  config.next.only || getCookie(c, uiCookie()) === 'next' ? 'next' : 'classic';
+  config.next.only ? 'next' : (chosenUi(c) ?? (config.next.byDefault ? 'next' : 'classic'));
 
 // ── Writes from this origin only ──
 
@@ -369,7 +377,11 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
   });
   next.use('*', sameOriginWrites(settings.origin));
 
-  /** For apps/web's «Prøv ny versjon», drawn only when this says the next client is offered. */
+  /**
+   * For apps/web's «Prøv ny versjon», drawn only when this says the next client is offered. `ui`
+   * is the client this browser gets, the default included, so apps/web's info pages offer the way
+   * back to the next client to a browser that has it by default too.
+   */
   next.get('/ui', (c) => c.json({ ui: uiOf(c), available: nextOffered() }));
 
   next.post('/ui', async (c) => {
@@ -380,15 +392,14 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
     // With only the next client there is no apps/web to choose, and the cookie stays as it is.
     if (settings.only && ui === 'classic')
       return c.json({ error: 'Only the next client is served here.' }, 409);
-    if (ui === 'next')
-      setCookie(c, uiCookie(), 'next', {
-        path: '/',
-        maxAge: ONE_YEAR,
-        httpOnly: true,
-        sameSite: 'Lax',
-        secure: secureCookies(),
-      });
-    else deleteCookie(c, uiCookie(), { path: '/', secure: secureCookies() });
+    // Either choice is kept, so apps/web stays chosen where the next client is the default.
+    setCookie(c, uiCookie(), ui, {
+      path: '/',
+      maxAge: ONE_YEAR,
+      httpOnly: true,
+      sameSite: 'Lax',
+      secure: secureCookies(),
+    });
     return c.json({ ui });
   });
 

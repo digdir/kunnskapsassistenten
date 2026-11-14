@@ -122,6 +122,17 @@ jobs:
           curl -fsS localhost:8787/ | grep -q '/assets/'
           curl -fsS -H 'Cookie: ka_ui=next' localhost:8787/ | grep -q '/next-assets/'
           docker rm --force ka
+      # The next client by default (decisions/0018): apps/web only for a browser that chose it.
+      - name: With the next client as the default, a browser without a choice gets it
+        run: |
+          docker run --detach --rm --name ka --publish 8787:8787 \
+            -e AUTH_MODE=off -e LISTEN_HOST=0.0.0.0 -e APP_ORIGIN=http://localhost:8787 \
+            -e DIGDIR_API_KEY=unused \
+            -e KA_NEXT=1 -e KA_NEXT_DEFAULT=1 ka:ci
+          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
+          curl -fsS localhost:8787/ | grep -q '/next-assets/'
+          curl -fsS -H 'Cookie: ka_ui=classic' localhost:8787/ | grep -q '/assets/'
+          docker rm --force ka
       # A deployment of another service (decisions/0017): the next client for everyone, no apps/web.
       - name: With only the next client, it is the page for everyone, and apps/web is gone
         run: |

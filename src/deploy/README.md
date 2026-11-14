@@ -130,11 +130,12 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
 
 ## The next client, behind a toggle
 
-The image holds two clients: `apps/web`, which everyone gets, and `apps/web-next`, built from
-genki's UI blocks (`decisions/0013`). `KA_NEXT=1` offers the next one: `apps/web` then shows
-«Prøv ny versjon» at the foot of the navigation panel, and a person who chooses it gets it on
-every load until they choose «Tilbake til gammel versjon» in its profile menu. The choice is a
-cookie per browser. Without `KA_NEXT` nothing of it shows, and the cookie is ignored.
+The image holds two clients: `apps/web`, which everyone gets by default, and `apps/web-next`,
+built from genki's UI blocks (`decisions/0013`). `KA_NEXT=1` offers the next one: `apps/web` then
+shows «Prøv ny versjon» at the foot of the navigation panel, and a person who chooses it gets it
+on every load until they choose «Tilbake til gammel versjon» in its profile menu. The choice is a
+cookie per browser, kept either way. Without `KA_NEXT` nothing of it shows, and the cookie is
+ignored.
 
 It uses the same sign-in and the same genki service as `apps/web`. `KA_NEXT_MODEL` names the
 variant it asks (default `kunnskapsassistenten__default`) and `KA_NEXT_TENANT` the tenant whose
@@ -155,7 +156,35 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
   --remove-env-vars KA_NEXT --revision-suffix classic$(date +%H%M%S)
 ```
 
-The template takes the same as `kaNext`, `kaNextModel` and `kaNextTenant`, empty by default.
+### The next client by default
+
+`apps/web` is phased out in two steps (`decisions/0018`). The first is `KA_NEXT_DEFAULT=1`: a
+browser that has not chosen gets the next client, and one that chose «Tilbake til gammel
+versjon» keeps `apps/web` until it chooses «Prøv ny versjon» again. A «Tilbake til gammel
+versjon» from before the setting cleared the cookie instead of keeping the choice, so that
+browser gets the next client too. `KA_NEXT_DEFAULT` needs `KA_NEXT`: without it, it is warned
+about and ignored.
+
+On a running deployment, about 30 seconds and no rebuild, this switches it on:
+
+```sh
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --set-env-vars KA_NEXT_DEFAULT=1 --revision-suffix nextdefault$(date +%H%M%S)
+```
+
+And this switches it off, so a browser that has not chosen gets `apps/web` again. A choice made
+either way is kept:
+
+```sh
+az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
+  --remove-env-vars KA_NEXT_DEFAULT --revision-suffix nodefault$(date +%H%M%S)
+```
+
+The end of the phase-out is `KA_NEXT_ONLY=1` (below): the next client for everyone, and
+`apps/web` no longer served, with no way back to it.
+
+The template takes the same as `kaNext`, `kaNextModel`, `kaNextTenant` and `kaNextDefault`, empty
+by default.
 
 ## Another assistant from the builder
 
@@ -228,8 +257,9 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-rapport -g rg-ka
   --set-env-vars KA_NEXT_ONLY=1 --revision-suffix nextonly$(date +%H%M%S)
 ```
 
-Without `KA_NEXT_ONLY`, as on `ka-app`, the host serves `apps/web` first, and «Prøv ny versjon»
-at the foot of its navigation panel gives the next client.
+Without `KA_NEXT_ONLY`, as on `ka-app`, the host serves `apps/web` too: first, or with
+`KA_NEXT_DEFAULT` only to a browser that chose it, and «Prøv ny versjon» at the foot of its
+navigation panel gives the next client.
 
 The other assistant keeps what only KA's host gives: the sign-in, only this service's threads,
 and KA's two trials in «Innstillinger». Its profile menu has genki's «Innstillinger» and «Logg

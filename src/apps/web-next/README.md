@@ -45,7 +45,8 @@ on a local marker or a test file in `vendor/`.
 
 The server serves it: build it, and start the server with `KA_NEXT=1` and
 `WEB_NEXT_ROOT=apps/web-next/dist`, beside `WEB_ROOT=apps/web/dist`. Then «Prøv ny versjon» in
-`apps/web` switches. For work on this client alone, `npm run dev --workspace apps/web-next`
+`apps/web` switches. With `KA_NEXT_DEFAULT=1` as well, this client is what a browser gets until
+it chooses «Tilbake til gammel versjon» (`src/decisions/0018`). For work on this client alone, `npm run dev --workspace apps/web-next`
 serves it with Vite and sends `/api` and `/auth` to the server in `KA_SERVER_URL`
 (`http://localhost:8788` by default), which needs `KA_NEXT=1` too. With `KA_NEXT_LAYOUT` on the
 server, the JSON of a layout from genki's builder or a file's path, the page draws that layout in

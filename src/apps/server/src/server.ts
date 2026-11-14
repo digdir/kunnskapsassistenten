@@ -23,6 +23,10 @@ serve({ fetch: app.fetch, port: config.port, hostname }, (info) => {
   }
   if (config.next.only) {
     console.log('next client only (KA_NEXT_ONLY): apps/web is not served');
+  } else if (config.next.byDefault) {
+    console.log(
+      'next client by default (KA_NEXT_DEFAULT): apps/web for a browser that chose it',
+    );
   }
   if (!typesenseConfigured) {
     console.log('Typesense is not set up: no filters and no excerpts in the sources panel.');

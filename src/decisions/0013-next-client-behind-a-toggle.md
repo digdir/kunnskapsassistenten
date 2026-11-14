@@ -1,7 +1,8 @@
 # 0013 — The next client beside the current one, behind a toggle
 
 **Status:** accepted · **Date:** 2026-11-12 · **Amended:** 2026-11-12 (feedback, profile menu,
-apps/web's pages), 2026-11-13 (the way back from apps/web's pages)
+apps/web's pages), 2026-11-13 (the way back from apps/web's pages), 2026-11-14 (the choice of
+apps/web kept, and a default, `decisions/0018`)
 
 ## Context
 
@@ -22,9 +23,10 @@ next client can live in the same app.
 session, sign-in and genki service serve both. A cookie chooses the page:
 
 - `POST /api/next/ui` with `{ "ui": "next" }` sets `ka_ui=next` (`__Host-ka_ui` on https),
-  `HttpOnly`, `SameSite=Lax`, for a year; `{ "ui": "classic" }` clears it. The page then
-  reloads, and the server sends the chosen client's `index.html`. Without the cookie a browser
-  gets `apps/web`.
+  `HttpOnly`, `SameSite=Lax`, for a year; `{ "ui": "classic" }` sets `ka_ui=classic` the same
+  way (it cleared the cookie until `decisions/0018`). The page then reloads, and the server sends
+  the chosen client's `index.html`. Without the cookie a browser gets `apps/web`, or the next
+  client with `KA_NEXT_DEFAULT` (`decisions/0018`).
 - `apps/web` shows «Prøv ny versjon» at the foot of the navigation panel when
   `GET /api/next/ui` says the next client is offered. The next client has
   «Tilbake til gammel versjon» in its profile menu, as a host entry in genki's menu
