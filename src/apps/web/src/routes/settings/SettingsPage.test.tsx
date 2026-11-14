@@ -76,12 +76,12 @@ describe('SettingsPage', () => {
     open();
 
     const toggle = screen.getByRole('switch', {
-      name: /Årsfilter med perioder/u,
+      name: /Filtreringen i høyre panel/u,
     }) as HTMLInputElement;
     expect(toggle.checked).toBe(false);
     fireEvent.click(toggle);
 
-    expect(isFlagOn('year-ranges')).toBe(true);
+    expect(isFlagOn('filters-right-panel')).toBe(true);
     // The switch shows what it did, not only the flag.
     expect(toggle.checked).toBe(true);
   });
@@ -95,7 +95,7 @@ describe('SettingsPage', () => {
 
     open();
     await waitFor(() => expect(me).toHaveBeenCalledWith('/api/v2/me', expect.anything()));
-    expect(screen.getByRole('switch', { name: /Årsfilter med perioder/u })).toBeTruthy();
+    expect(screen.getByRole('switch', { name: /Filtreringen i høyre panel/u })).toBeTruthy();
     expect(excerptSwitch()).toBeNull();
 
     cleanup();
@@ -110,10 +110,10 @@ describe('SettingsPage', () => {
   it('links to the issue for the experiment, in a new tab and said in words', () => {
     open();
 
-    const link = screen.getByRole('link', { name: /^Sak 115 ?\(åpnes i ny fane\)$/u });
+    const link = screen.getByRole('link', { name: /^Sak 84 ?\(åpnes i ny fane\)$/u });
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('href')).toBe(
-      'https://github.com/digdir/kunnskapsassistenten/issues/115',
+      'https://github.com/digdir/kunnskapsassistenten/issues/84',
     );
   });
 });
@@ -132,17 +132,28 @@ describe('old links', () => {
   });
 
   it('turns on the flag in ?flagg= and takes the parameter out, but keeps the rest', () => {
-    open('/?flagg=year-ranges&annet=1');
+    open('/?flagg=filters-right-panel&annet=1');
 
-    expect(isFlagOn('year-ranges')).toBe(true);
+    expect(isFlagOn('filters-right-panel')).toBe(true);
     expect(screen.getByTestId('address').textContent).toBe('/innstillinger?annet=1');
     expect(
-      (screen.getByRole('switch', { name: /Årsfilter med perioder/u }) as HTMLInputElement).checked,
+      (screen.getByRole('switch', { name: /Filtreringen i høyre panel/u }) as HTMLInputElement)
+        .checked,
     ).toBe(true);
   });
 
   it('lands a link to the retired flag mobile-top-row on the page, with every switch off', () => {
     open('/?flagg=mobile-top-row');
+
+    expect(screen.getByTestId('address').textContent).toBe('/innstillinger');
+    const switches = screen.getAllByRole('switch') as HTMLInputElement[];
+    expect(switches.length).toBeGreaterThan(0);
+    expect(switches.filter((toggle) => toggle.checked)).toEqual([]);
+    expect(localStorage.getItem(FLAGS_STORAGE_KEY)).toBeNull();
+  });
+
+  it('lands a link to the retired flags year-ranges and compact-filter-chips on the page, with every switch off', () => {
+    open('/?flagg=year-ranges,compact-filter-chips');
 
     expect(screen.getByTestId('address').textContent).toBe('/innstillinger');
     const switches = screen.getAllByRole('switch') as HTMLInputElement[];

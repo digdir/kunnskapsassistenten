@@ -44,7 +44,6 @@ import { CorpusLine } from './CorpusLine';
 import { FacetField, type FacetFieldHandle } from './FacetField';
 import { FieldPlaceholder } from './FieldPlaceholder';
 import { YearRangeField } from './YearRangeField';
-import { useFlag } from '../../flags';
 import { LockedFilter } from './LockedFilter';
 import './filters.css';
 
@@ -170,7 +169,6 @@ export function FiltersView({
   const unavailableRef = useRef<HTMLDivElement>(null);
   const retryRef = useRef<HTMLButtonElement>(null);
   const firstFieldRef = useRef<FacetFieldHandle>(null);
-  const yearRanges = useFlag('year-ranges');
   /** Set by ActiveFilter when it went away holding focus; read below. */
   const activeFilterLostFocus = useRef(false);
   const onActiveFilterLostFocus = useCallback(() => {
@@ -357,8 +355,8 @@ export function FiltersView({
 
       {!locked &&
         facets?.map((facet, index) => {
-          /* Behind `year-ranges`: the year field takes periods. */
-          const Field = facet.dimension === 'year' && yearRanges ? YearRangeField : FacetField;
+          /* The year field takes periods (digdir/kunnskapsassistenten#115). */
+          const Field = facet.dimension === 'year' ? YearRangeField : FacetField;
           return (
             <Field
               key={facet.dimension}

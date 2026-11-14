@@ -20,19 +20,6 @@ export type Flag = {
 /** A flag removed from here is ignored in storage and dropped on the next write. */
 export const FLAGS = [
   {
-    id: 'year-ranges',
-    title: 'Årsfilter med perioder',
-    description:
-      'Skriv et år eller en periode, som 2021 eller 2023–2028. År på rad står som én merkelapp.',
-    issue: 'https://github.com/digdir/kunnskapsassistenten/issues/115',
-  },
-  {
-    id: 'compact-filter-chips',
-    title: 'Samlede merkelapper i filteret',
-    description: 'Når mange verdier er valgt, står én merkelapp, som «12 virksomheter».',
-    issue: 'https://github.com/digdir/kunnskapsassistenten/issues/116',
-  },
-  {
     id: 'filters-right-panel',
     title: 'Filtreringen i høyre panel',
     description:

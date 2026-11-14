@@ -21,9 +21,6 @@ function organisations(page: Page) {
 
 /** Six of them, the first that are not ticked, so the chips become one. */
 async function chooseSix(page: Page) {
-  await page.addInitScript(() => {
-    localStorage.setItem('ka.flags.v1', JSON.stringify(['compact-filter-chips']));
-  });
   await page.goto('/');
   const { input, list, chips } = organisations(page);
   await input.click();
@@ -34,19 +31,23 @@ async function chooseSix(page: Page) {
   await expect(chips).toHaveText(['6 virksomheter']);
 }
 
-test('lista krysser av de valgte bak samlemerkelappen', MOCK, async ({ page }, testInfo) => {
-  covers(testInfo, 'filtre kan velges og gir chips');
-  await chooseSix(page);
-  const { input, list } = organisations(page);
+test(
+  'many chosen values show as one chip without any flag, and the list ticks them',
+  MOCK,
+  async ({ page }, testInfo) => {
+    covers(testInfo, 'filtre kan velges og gir chips');
+    await chooseSix(page);
+    const { input, list } = organisations(page);
 
-  await page.keyboard.press('Escape');
-  await input.click();
+    await page.keyboard.press('Escape');
+    await input.click();
 
-  await expect(list.getByRole('option', { selected: true })).toHaveCount(6);
-});
+    await expect(list.getByRole('option', { selected: true })).toHaveCount(6);
+  },
+);
 
 test(
-  'pil venstre fra tomt felt når samlemerkelappen, og ikke de skjulte',
+  'ArrowLeft from the empty field reaches the one chip, not the hidden ones',
   MOCK,
   async ({ page }, testInfo) => {
     covers(testInfo, 'filtre kan velges og gir chips');
@@ -74,7 +75,7 @@ test(
 );
 
 test(
-  '«Velg alle» leaves one «Alle virksomheter» chip without the flag, which the keyboard reaches and removes',
+  '«Velg alle» leaves one «Alle virksomheter» chip, which the keyboard reaches and removes',
   MOCK,
   async ({ page }, testInfo) => {
     covers(testInfo, 'filtre kan velges og gir chips');
@@ -101,16 +102,20 @@ test(
   },
 );
 
-test('«Velg alle» og «Tøm» leses opp i panelets statusregion', MOCK, async ({ page }, testInfo) => {
-  covers(testInfo, 'filtre kan velges og gir chips');
-  await page.goto('/');
-  const { field } = organisations(page);
-  // The view's own region, not the one «Dine dokumenter» has.
-  const region = page.locator('.filters-view > output');
+test(
+  '«Velg alle» and «Tøm» are read out in the status region of the panel',
+  MOCK,
+  async ({ page }, testInfo) => {
+    covers(testInfo, 'filtre kan velges og gir chips');
+    await page.goto('/');
+    const { field } = organisations(page);
+    // The view's own region, not the one «Dine dokumenter» has.
+    const region = page.locator('.filters-view > output');
 
-  await field.getByRole('button', { name: 'Velg alle virksomheter' }).click();
-  await expect(region).toHaveText(/^Alle \d+ virksomheter er valgt\.$/u);
+    await field.getByRole('button', { name: 'Velg alle virksomheter' }).click();
+    await expect(region).toHaveText(/^Alle \d+ virksomheter er valgt\.$/u);
 
-  await field.getByRole('button', { name: 'Tøm virksomheter' }).click();
-  await expect(region).toHaveText('Ingen virksomheter er valgt.');
-});
+    await field.getByRole('button', { name: 'Tøm virksomheter' }).click();
+    await expect(region).toHaveText('Ingen virksomheter er valgt.');
+  },
+);

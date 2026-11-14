@@ -27,12 +27,12 @@ import {
 import {
   documentsIn,
   formatRange,
+  listedYearsIn,
   parseYearInput,
   rangeFromKey,
   rangeKey,
   suggestPeriods,
   toRanges,
-  yearsIn,
   type YearRange,
 } from './yearRanges';
 
@@ -59,10 +59,11 @@ function rangeOf(value: string): YearRange | undefined {
   return /^\d+$/u.test(value) ? { from: Number(value), to: Number(value) } : rangeFromKey(value);
 }
 
-/** FacetField for years, behind `year-ranges` (digdir/kunnskapsassistenten#115). Before anything
+/** FacetField for years, which takes periods (digdir/kunnskapsassistenten#115). Before anything
  * is typed, the list is the years with documents; then what the text can become
- * (`suggestPeriods`), hence `filter={false}`, and a period with 0 documents can still be chosen.
- * Suggestion holds the chosen years, and the chips are drawn as periods, removed whole. */
+ * (`suggestPeriods`), hence `filter={false}`, and a year with 0 documents can still be chosen.
+ * A period stands for the years in it with documents (`listedYearsIn`), so one with none is not
+ * offered. Suggestion holds the chosen years, and the chips are drawn as periods, removed whole. */
 export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDataListElement>(null);
@@ -84,6 +85,9 @@ export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldPro
   );
 
   const typed = parseYearInput(query);
+  // A period is the years in it the field lists, so one with none of them adds nothing.
+  const isEmptyPeriod = (range: YearRange) =>
+    range.from !== range.to && listedYearsIn(range, facet.values).length === 0;
   // Nothing typed: every year with documents, as listed. No count counts as some (yearRanges.ts).
   const offered =
     query.trim() === ''
@@ -91,8 +95,19 @@ export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldPro
           .filter((value) => value.count === undefined || value.count > 0)
           .map((value) => rangeOf(value.value))
           .filter((range) => range !== undefined)
-      : suggestPeriods(query, facet.values);
+      : suggestPeriods(query, facet.values).filter((range) => !isEmptyPeriod(range));
   const options = chosenFirst(offered, (range) => first.has(optionValue(range)));
+
+  // A year with its documents; a period with its years, as a document with several years would
+  // count once in each and the sum could pass the documents there are.
+  function optionText(range: YearRange): string {
+    if (range.from !== range.to) {
+      const years = listedYearsIn(range, facet.values).length;
+      return `${formatRange(range)} (${years} år med dokumenter)`;
+    }
+    const count = documentsIn(range, facet.values);
+    return count === undefined ? formatRange(range) : `${formatRange(range)} (${count})`;
+  }
 
   // u-combobox counts its chips, here a year's each and a period's; the count is the years.
   const screenReaderTexts = {
@@ -126,12 +141,16 @@ export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldPro
 
   // Years and periods back into years; an overlapping or adjacent one joins its chip.
   // '' is the hint, chosen by Enter when nothing fits: not a choice, as in FacetField.
+  // A year stays as chosen, listed or not; a period brings only the years in it the field lists,
+  // so it never sends more values than the collection has years.
   function change(items: { value: string; label: string }[]) {
     if (items.some((item) => item.value === '')) return;
     const years = new Set<number>();
     for (const value of valuesAfter(items, drawn)) {
       const range = rangeOf(value);
-      if (range) for (const year of yearsIn(range)) years.add(year);
+      if (!range) continue;
+      if (range.from === range.to) years.add(range.from);
+      else for (const year of listedYearsIn(range, facet.values)) years.add(year);
     }
     const next = [...years].sort((a, b) => a - b).map(String);
     keepFocusFromDrawnChip(items, drawn, inputRef.current);
@@ -237,7 +256,6 @@ export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldPro
               Enter chooses it («23-28» is 2023–2028). */}
           {options.length > 0 || query.trim() === '' ? (
             options.map((range) => {
-              const count = documentsIn(range, facet.values);
               const asTyped = typed !== undefined && rangeKey(typed) === rangeKey(range);
               return (
                 <Suggestion.Option
@@ -245,12 +263,16 @@ export function YearRangeField({ ref, facet, selected, onChange }: FacetFieldPro
                   value={optionValue(range)}
                   label={asTyped ? query.trim() : formatRange(range)}
                 >
-                  {count === undefined ? formatRange(range) : `${formatRange(range)} (${count})`}
+                  {optionText(range)}
                 </Suggestion.Option>
               );
             })
           ) : (
-            <Suggestion.Empty>{`Ikke et år eller en periode. ${HINT}.`}</Suggestion.Empty>
+            <Suggestion.Empty>
+              {typed
+                ? `Ingen dokumenter i ${formatRange(typed)}.`
+                : `Ikke et år eller en periode. ${HINT}.`}
+            </Suggestion.Empty>
           )}
         </Suggestion.List>
       </Suggestion>
