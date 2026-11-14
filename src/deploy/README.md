@@ -163,7 +163,7 @@ browser that has not chosen gets the next client, and one that chose «Tilbake t
 versjon» keeps `apps/web` until it chooses «Prøv ny versjon» again. A «Tilbake til gammel
 versjon» from before the setting cleared the cookie instead of keeping the choice, so that
 browser gets the next client too. `KA_NEXT_DEFAULT` needs `KA_NEXT`: without it, it is warned
-about and ignored.
+about and ignored. The test site has it on.
 
 On a running deployment, about 30 seconds and no rebuild, this switches it on:
 
