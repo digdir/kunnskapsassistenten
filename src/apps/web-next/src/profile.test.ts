@@ -6,9 +6,9 @@ import {
   type FieldSpec,
 } from '@genai/ui-assembly';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { layout } from './App';
-import { profileFor } from './profile';
+import { hostProfileFor, kudosDocumentFile, profileFor } from './profile';
 
 const ME = {
   name: 'Testperson',
@@ -198,5 +198,69 @@ describe('the document links', () => {
     expect(source.url).toBe(
       'https://kudos.dfo.no/dokument/a33bf297-afd2-4b38-992e-b23c8fec3d80/filer/x.pdf',
     );
+  });
+});
+
+describe('the whole file of a Kudos document', () => {
+  const UUID = 'a33bf297-afd2-4b38-992e-b23c8fec3d80';
+  const answering = (status: number) => {
+    const calls: { url: string; init: RequestInit | undefined }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        calls.push({ url, init });
+        return new Response(null, { status });
+      }),
+    );
+    return calls;
+  };
+  afterEach(() => vi.unstubAllGlobals());
+  const signal = () => new AbortController().signal;
+
+  it('is the PDF through this site’s server, once a HEAD there says it has one', async () => {
+    const calls = answering(200);
+    expect(await kudosDocumentFile(`kudos:${UUID.toUpperCase()}`, signal())).toEqual({
+      url: `/api/next/kudos/files/${UUID}`,
+      mediaType: 'application/pdf',
+    });
+    expect(calls.map(({ url, init }) => [init?.method, url])).toEqual([
+      ['HEAD', `/api/next/kudos/files/${UUID}`],
+    ]);
+    expect(calls[0]?.init?.credentials).toBe('same-origin');
+  });
+
+  it('is none when the server has no PDF for the document', async () => {
+    answering(404);
+    expect(await kudosDocumentFile(`kudos:${UUID}`, signal())).toBeUndefined();
+  });
+
+  it('fails when the server cannot say, so the view says it could not show the document', async () => {
+    for (const status of [401, 502, 504]) {
+      answering(status);
+      await expect(kudosDocumentFile(`kudos:${UUID}`, signal())).rejects.toThrow(
+        String(status),
+      );
+    }
+  });
+
+  it('is none, asking nothing, for any number but `kudos:<uuid>`', async () => {
+    const calls = answering(200);
+    for (const documentId of ['42', UUID, `kudos:${UUID}/x`, `other:${UUID}`, 'kudos:../api'])
+      expect(await kudosDocumentFile(documentId, signal())).toBeUndefined();
+    expect(calls).toEqual([]);
+  });
+
+  it('stops asking when the assembly aborts, as when another document opens', async () => {
+    const calls = answering(200);
+    const controller = new AbortController();
+    const asked = kudosDocumentFile(`kudos:${UUID}`, controller.signal);
+    controller.abort();
+    await asked;
+    expect(calls[0]?.init?.signal?.aborted).toBe(true);
+  });
+
+  it('is given by the host’s part of the profile, so a layout from genki’s builder has it too', () => {
+    expect(hostProfileFor(ME).documentFile).toBe(kudosDocumentFile);
+    expect(profileFor(ME).documentFile).toBe(kudosDocumentFile);
   });
 });

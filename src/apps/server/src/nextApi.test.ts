@@ -1004,3 +1004,31 @@ describe('feedback on an answer', () => {
     assert.equal(seen.length, 0);
   });
 });
+
+describe('a Kudos PDF in Dokumentvisning', () => {
+  const policy = (res: Response) => res.headers.get('content-security-policy') ?? '';
+
+  test('may be framed by this site’s own page alone, and no other response may be framed', async () => {
+    // Not a uuid: refused before Kudos is asked, with the headers the route's answers carry.
+    const file = await app.request('/api/next/kudos/files/not-a-uuid');
+    assert.equal(file.status, 400);
+    assert.equal(file.headers.get('x-frame-options'), 'SAMEORIGIN');
+    assert.match(policy(file), /frame-ancestors 'self'/);
+    for (const path of [
+      '/api/next/me',
+      '/',
+      '/api/next/kudos/files/x/y',
+      '/api/next/kudos/files',
+    ]) {
+      const res = await app.request(path);
+      assert.equal(res.headers.get('x-frame-options'), 'DENY', path);
+      assert.match(policy(res), /frame-ancestors 'none'/, path);
+    }
+  });
+
+  test('lets the page frame its own origin, and nothing wider', async () => {
+    const page = await app.request('/');
+    assert.match(policy(page), /frame-src 'self'(;|$)/);
+    assert.equal(seen.length, 0);
+  });
+});

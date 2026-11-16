@@ -117,13 +117,16 @@ describe('a layout from genki’s builder (KA_NEXT_LAYOUT)', () => {
     expect(profile.menu?.extra?.map((entry) => entry.id)).toEqual(['about', 'back-to-classic']);
   });
 
-  it('keeps what only the host gives: the person, the sign-out, this service’s threads, KA’s trials', async () => {
+  it('keeps what only the host gives: the person, the sign-out, this service’s threads, KA’s trials, a Kudos document’s PDF', async () => {
     const host = hostProfileFor(me);
     expect(host.signedInAs).toBe(me.name);
     expect(host.organisation).toBe(me.organisation);
     expect(host.signOut).toEqual({ href: me.signOut });
     expect(host.family?.('kunnskapsassistenten')).toBe(true);
     expect(host.family?.('annen')).toBe(false);
+    expect(drawingFor({ ...me, layout: another }, undefined).profile.documentFile).toBe(
+      host.documentFile,
+    );
     expect(host.experiments?.map((experiment) => experiment.id)).toEqual(
       profileFor(me).experiments?.map((experiment) => experiment.id),
     );

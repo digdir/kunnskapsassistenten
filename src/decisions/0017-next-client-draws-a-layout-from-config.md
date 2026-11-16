@@ -39,9 +39,10 @@ the page draws genki's template `knowledge-assistant-next` with KA's whole profi
   `isAssistantLayout` again.
 - **With a layout, the page uses only the host's part of KA's profile** (`hostProfileFor` in
   `profile.ts`): who is signed in and their organisation, the sign-out, the profile menu, the
-  family limited to the configured service, and KA's two trials, which the assembly carries
-  out. KA's name, suggestions, Kudos's words and links and the settings note are left out, so
-  the layout's words are drawn. `<Assistant>` gets the host's part, and genki's calls
+  family limited to the configured service, KA's two trials, which the assembly carries out,
+  and `documentFile`, a Kudos document's PDF from this server's `/api/next/kudos/files`, which
+  the layout's Dokumentvisning option `file` turns on or off. KA's name, suggestions, Kudos's
+  words and links and the settings note are left out, so the layout's words are drawn. `<Assistant>` gets the host's part, and genki's calls
   (`createGenkiApi`) get the merged `profileOf(layout, host)`, as genki ADR 0054 asks.
 - **`KA_NEXT_ONLY` makes the next client the deployment's only one.** A deployment of another
   service has no `apps/web`: it would draw KA. With `KA_NEXT_ONLY=1` every page address serves
