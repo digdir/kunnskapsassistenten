@@ -53,7 +53,6 @@ process.env.DIGDIR_API_KEY ??= 'test-key';
 Object.assign(process.env, {
   AUTH_MODE: 'off',
   APP_ORIGIN: 'http://localhost:8787',
-  KA_NEXT: '1',
   KA_NEXT_LAYOUT: JSON.stringify(ANOTHER),
 });
 
@@ -66,7 +65,7 @@ before(async () => {
 after(() => rmSync(files, { recursive: true, force: true }));
 
 /** What `nextLayout` says on the console, and whether it stopped the server. */
-const run = (raw: string, enabled: boolean) => {
+const run = (raw: string) => {
   const said: string[] = [];
   const exit = mock.method(process, 'exit', (code?: number) => {
     throw new Error(`exit ${code}`);
@@ -77,7 +76,7 @@ const run = (raw: string, enabled: boolean) => {
   let layout: unknown;
   let stopped = false;
   try {
-    layout = layouts.nextLayout(raw, enabled);
+    layout = layouts.nextLayout(raw);
   } catch (error) {
     stopped = /exit 1/.test(String(error));
     if (!stopped) throw error;
@@ -89,12 +88,9 @@ const run = (raw: string, enabled: boolean) => {
 
 describe('KA_NEXT_LAYOUT', () => {
   test('takes the layout as the JSON itself or from a file', () => {
-    assert.deepEqual(run(JSON.stringify(ANOTHER), true).layout, ANOTHER);
-    assert.deepEqual(run(`  ${JSON.stringify(TEMPLATE)}\n`, true).layout, TEMPLATE);
-    assert.deepEqual(
-      run(inFile('another.json', JSON.stringify(ANOTHER)), true).layout,
-      ANOTHER,
-    );
+    assert.deepEqual(run(JSON.stringify(ANOTHER)).layout, ANOTHER);
+    assert.deepEqual(run(`  ${JSON.stringify(TEMPLATE)}\n`).layout, TEMPLATE);
+    assert.deepEqual(run(inFile('another.json', JSON.stringify(ANOTHER))).layout, ANOTHER);
   });
 
   test('unset or empty, there is no layout and nothing is said', () => {
@@ -103,7 +99,7 @@ describe('KA_NEXT_LAYOUT', () => {
       mock.method(console, 'warn', (...args: unknown[]) => said.push(args.join(' ')));
       mock.method(console, 'error', (...args: unknown[]) => said.push(args.join(' ')));
       try {
-        assert.equal(layouts.nextLayout(raw, true), undefined);
+        assert.equal(layouts.nextLayout(raw), undefined);
       } finally {
         mock.restoreAll();
       }
@@ -120,7 +116,7 @@ describe('KA_NEXT_LAYOUT', () => {
         corpora: { kudos: { documentLinks: { digits: 'http://kudos.dfo.no/documents/{id}' } } },
       },
     };
-    const { layout, stopped, exits, said } = run(JSON.stringify(bad), true);
+    const { layout, stopped, exits, said } = run(JSON.stringify(bad));
     assert.equal(layout, undefined);
     assert.ok(stopped);
     assert.equal(exits, 1);
@@ -141,7 +137,7 @@ describe('KA_NEXT_LAYOUT', () => {
       { ...TEMPLATE, profile: { suggestions: 'one' } },
       [TEMPLATE],
     ]) {
-      const { stopped, said } = run(JSON.stringify(shape), true);
+      const { stopped, said } = run(JSON.stringify(shape));
       assert.ok(stopped, JSON.stringify(shape));
       assert.match(said, /KA_NEXT_LAYOUT is refused: it is not an AssistantLayout v1/);
     }
@@ -165,20 +161,11 @@ describe('KA_NEXT_LAYOUT', () => {
       [files, /nor the path of a file that can be read\.$/],
     ];
     for (const [raw, reason] of cases) {
-      const { stopped, said } = run(raw, true);
+      const { stopped, said } = run(raw);
       assert.ok(stopped, said);
       assert.match(said, reason);
       assert.doesNotMatch(said, /sk-live/);
     }
-  });
-
-  test('a bad layout is warned about and ignored while KA_NEXT is off, so apps/web starts', () => {
-    const { layout, stopped, exits, said } = run('{"version":1}', false);
-    assert.equal(layout, undefined);
-    assert.equal(stopped, false);
-    assert.equal(exits, 0);
-    assert.match(said, /KA_NEXT_LAYOUT is refused: it is not an AssistantLayout v1/);
-    assert.match(said, /Ignored while KA_NEXT is off\./);
   });
 
   test("refuses to start when genki's checks cannot be loaded", () => {
@@ -190,7 +177,7 @@ describe('KA_NEXT_LAYOUT', () => {
     try {
       assert.throws(
         () =>
-          layouts.nextLayout(JSON.stringify(TEMPLATE), true, () => {
+          layouts.nextLayout(JSON.stringify(TEMPLATE), () => {
             throw new Error('missing');
           }),
         /exit 1/,

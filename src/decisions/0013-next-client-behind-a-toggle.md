@@ -2,7 +2,9 @@
 
 **Status:** accepted · **Date:** 2026-11-12 · **Amended:** 2026-11-12 (feedback, profile menu,
 apps/web's pages), 2026-11-13 (the way back from apps/web's pages), 2026-11-14 (the choice of
-apps/web kept, and a default, `decisions/0018`)
+apps/web kept, and a default, `decisions/0018`) · **Superseded in part:** 2026-11-16 by
+[0019](0019-remove-the-previous-client.md): `apps/web`, the toggle and `KA_NEXT` are gone; the
+next client, its API and its proxy stay
 
 ## Context
 

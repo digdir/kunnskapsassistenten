@@ -1,10 +1,9 @@
-// Kunnskapsassistenten's next client: `<Assistant>` from genki's @genai/ui-assembly with the
-// template `knowledge-assistant-next`, against genki through this site's server. What is this
-// host's own stays here: who is signed in (`/api/next/me`), the profile, the paths, the
-// `ka-next.` keys in this browser, the colour scheme, and the way back to the old client. When
-// the server was given a layout from genki's builder (`KA_NEXT_LAYOUT`, decisions/0017), the page
-// draws that, in its own words. Where the server serves only this client (`KA_NEXT_ONLY`), the
-// menu has none of the old client's pages and no way back.
+// Kunnskapsassistenten: `<Assistant>` from genki's @genai/ui-assembly with the template
+// `knowledge-assistant-next`, against genki through this site's server. What is this host's own
+// stays here: who is signed in (`/api/next/me`), the profile, the paths, the `ka-next.` keys in
+// this browser, the colour scheme, and KA's pages in the profile menu. When the server was given
+// a layout from genki's builder (`KA_NEXT_LAYOUT`, decisions/0017), the page draws that, in its
+// own words, and the menu has KA's pages only when the service is KA's.
 import {
   Assistant,
   browserStorage,
@@ -20,9 +19,9 @@ import { useMemo, useRef } from 'react';
 import { genkiApi } from './api';
 import { sendFeedback } from './feedback';
 import { menuFor } from './menu';
+import { hasKaPages } from './pages/paths';
 import { hostProfileFor, profileFor } from './profile';
 import type { Me } from './session';
-import { switchClient } from './switchClient';
 import { threadWrites } from './threadWrites';
 
 // The template as it is: the next look, feedback under each answer and no follow-ups.
@@ -55,31 +54,13 @@ export interface AppProps {
   me: Me;
   /** genki through the server's proxy, unless a test gives another. */
   api?: AssistantApi | undefined;
-  /** «Tilbake til gammel versjon»; the server's toggle unless a test gives another. */
-  onSwitchBack?: (() => Promise<void> | void) | undefined;
 }
 
-export const App = ({ me, api, onSwitchBack = () => switchClient('classic') }: AppProps) => {
+export const App = ({ me, api }: AppProps) => {
   const [scheme, setScheme] = useStoredColorScheme(COLOR_SCHEME_KEY);
   const [say, notice] = useNotice();
-  // Kept in a ref, so a new function from the host does not draw the assistant again.
-  const switchBack = useRef(onSwitchBack);
-  switchBack.current = onSwitchBack;
-  const drawing = useMemo(
-    () =>
-      drawingFor(
-        me,
-        // Only this client on the site (`KA_NEXT_ONLY`): no apps/web pages, and no way back.
-        me.nextOnly
-          ? undefined
-          : menuFor(() => {
-              void Promise.resolve(switchBack.current()).catch(() =>
-                say('Fikk ikke byttet til gammel versjon. Prøv igjen.'),
-              );
-            }),
-      ),
-    [me, say],
-  );
+  // KA's pages are about KA: another service, drawn from a layout, gets genki's entries only.
+  const drawing = useMemo(() => drawingFor(me, hasKaPages(me) ? menuFor() : undefined), [me]);
   // The profile drawn, so the fields, the collections' names and a stored answer's links are in
   // the same words as the page (genki ADR 0054).
   const genki = useMemo(

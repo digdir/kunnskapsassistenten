@@ -10,10 +10,9 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 
 /*
- * The next client switched on (decisions/0013), with sign-in off and a fake genki on localhost
- * that records what the server sends it: the toggle and its cookie, the page by cookie, thread
- * links in either client's form, `/api/next/me`, and the proxy's allow-list, credential, checks
- * and streaming.
+ * The client's API (decisions/0013), with sign-in off and a fake genki on localhost that records
+ * what the server sends it: `/api/next/me`, and the proxy's allow-list, credential, checks and
+ * streaming. The page and its addresses are in clientPage.test.ts.
  */
 
 interface Seen {
@@ -137,20 +136,14 @@ async function startGenki() {
 }
 
 const builds = mkdtempSync(join(tmpdir(), 'ka-next-'));
-const classic = join(builds, 'web');
 const nextBuild = join(builds, 'web-next');
-mkdirSync(join(classic, 'assets'), { recursive: true });
 mkdirSync(join(nextBuild, 'next-assets'), { recursive: true });
-writeFileSync(join(classic, 'index.html'), '<html lang="nb">classic</html>');
-writeFileSync(join(classic, 'assets', 'index-classic.js'), '/* classic */');
 writeFileSync(join(nextBuild, 'index.html'), '<html lang="nb">next</html>');
-writeFileSync(join(nextBuild, 'next-assets', 'index-next.js'), '/* next */');
 
 const ORIGIN = 'http://localhost:8787';
 
 let app: typeof import('./app.ts').app;
 let nextApi: typeof import('./nextApi.ts');
-let nextApiPage: typeof import('./nextPage.ts');
 
 before(async () => {
   await startGenki();
@@ -159,21 +152,14 @@ before(async () => {
     APP_ORIGIN: ORIGIN,
     DIGDIR_API_KEY: 'service-key',
     DIGDIR_API_BASE: genkiBase,
-    WEB_ROOT: classic,
     WEB_NEXT_ROOT: nextBuild,
-    KA_NEXT: '1',
     KA_NEXT_MODEL: 'kunnskapsassistenten__default',
     KA_NEXT_TENANT: 'digdir',
   });
-  // No layout from genki's builder: the next client draws KA's own (nextLayout.test.ts has one).
+  // No layout from genki's builder: the client draws KA's own (nextLayout.test.ts has one).
   delete process.env.KA_NEXT_LAYOUT;
-  // apps/web beside the next client, as KA's own site has it (nextOnly.test.ts has only next).
-  delete process.env.KA_NEXT_ONLY;
-  // apps/web for a browser that has not chosen (nextDefault.test.ts has the next client).
-  delete process.env.KA_NEXT_DEFAULT;
   ({ app } = await import('./app.ts'));
   nextApi = await import('./nextApi.ts');
-  nextApiPage = await import('./nextPage.ts');
 });
 
 after(async () => {
@@ -188,156 +174,6 @@ beforeEach(() => {
 });
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
-
-const switchTo = (ui: unknown, headers: Record<string, string> = {}) =>
-  app.request('/api/next/ui', {
-    method: 'POST',
-    headers: { ...JSON_HEADERS, Origin: ORIGIN, 'Sec-Fetch-Site': 'same-origin', ...headers },
-    body: JSON.stringify({ ui }),
-  });
-
-const page = async (path: string, cookie?: string) => {
-  const res = await app.request(path, cookie ? { headers: { Cookie: cookie } } : {});
-  return { res, body: await res.text() };
-};
-
-describe('the toggle', () => {
-  test('is offered: GET /api/next/ui says so, and which client this browser has', async () => {
-    const res = await app.request('/api/next/ui');
-    assert.equal(res.status, 200);
-    assert.deepEqual(await res.json(), { ui: 'classic', available: true });
-    const chosen = await app.request('/api/next/ui', { headers: { Cookie: 'ka_ui=next' } });
-    assert.deepEqual(await chosen.json(), { ui: 'next', available: true });
-  });
-
-  test('POST next and POST classic each keep the choice in a long-lived, HttpOnly, SameSite=Lax cookie', async () => {
-    for (const ui of ['next', 'classic']) {
-      const res = await switchTo(ui);
-      assert.equal(res.status, 200, ui);
-      assert.deepEqual(await res.json(), { ui });
-      const set = res.headers.getSetCookie().find((line) => line.startsWith('ka_ui='));
-      assert.ok(set, `a ka_ui cookie for ${ui}`);
-      assert.match(set, new RegExp(`^ka_ui=${ui};`));
-      assert.match(set, /Max-Age=31536000/);
-      assert.match(set, /Path=\//);
-      assert.match(set, /HttpOnly/);
-      assert.match(set, /SameSite=Lax/);
-    }
-  });
-
-  test('refuses another value, a cross-site call, a foreign Origin, and a body that is not JSON', async () => {
-    assert.equal((await switchTo('beta')).status, 400);
-    assert.equal((await switchTo('next', { 'Sec-Fetch-Site': 'cross-site' })).status, 403);
-    assert.equal((await switchTo('next', { 'Sec-Fetch-Site': 'same-site' })).status, 403);
-    assert.equal((await switchTo('next', { Origin: 'https://evil.example' })).status, 403);
-    const form = await app.request('/api/next/ui', {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ ui: 'next' }),
-    });
-    assert.equal(form.status, 403);
-    for (const res of [form, await switchTo('next', { Origin: 'https://evil.example' })])
-      assert.equal(res.headers.getSetCookie().filter((l) => l.startsWith('ka_ui=')).length, 0);
-  });
-});
-
-describe('the page', () => {
-  test('is apps/web for a browser that has not chosen while KA_NEXT_DEFAULT is unset, and apps/web-next only with the cookie', async () => {
-    assert.equal((await page('/')).body, '<html lang="nb">classic</html>');
-    assert.equal((await page('/', 'ka_ui=classic')).body, '<html lang="nb">classic</html>');
-    assert.equal((await page('/', 'ka_ui=yes')).body, '<html lang="nb">classic</html>');
-    const next = await page('/', 'ka_ui=next');
-    assert.equal(next.body, '<html lang="nb">next</html>');
-    assert.equal(next.res.headers.get('Cache-Control'), 'no-cache');
-    assert.match(next.res.headers.get('Vary') ?? '', /Cookie/);
-    assert.equal(
-      (await page('/innstillinger', 'ka_ui=next')).body,
-      '<html lang="nb">next</html>',
-    );
-  });
-
-  test("«Endringslogg» and «Om prosjektet» are apps/web's pages, whichever client was chosen", async () => {
-    for (const path of ['/endringslogg', '/om-prosjektet']) {
-      const chosen = await page(path, 'ka_ui=next');
-      assert.equal(chosen.body, '<html lang="nb">classic</html>', path);
-      assert.match(chosen.res.headers.get('Vary') ?? '', /Cookie/);
-      assert.equal((await page(path)).body, '<html lang="nb">classic</html>', path);
-    }
-    // Only those: the rest of the next client's addresses stay its own.
-    assert.equal(
-      (await page('/endringslogg/x', 'ka_ui=next')).body,
-      '<html lang="nb">next</html>',
-    );
-  });
-
-  test('keeps apps/web while KA_NEXT_ONLY is unset: its page at `/`, its files, its API and the way back', async () => {
-    assert.equal((await page('/')).body, '<html lang="nb">classic</html>');
-    assert.equal((await page('/assets/index-classic.js', 'ka_ui=next')).body, '/* classic */');
-    assert.equal((await app.request('/api/v2/health')).status, 200);
-    assert.equal((await switchTo('classic')).status, 200);
-    const me = (await (await app.request('/api/next/me')).json()) as Record<string, unknown>;
-    assert.equal('nextOnly' in me, false);
-  });
-
-  test("each client's files are served whatever the cookie, and an unknown name is a 404", async () => {
-    const file = await page('/next-assets/index-next.js');
-    assert.equal(file.res.status, 200);
-    assert.match(file.res.headers.get('Cache-Control') ?? '', /immutable/);
-    assert.equal((await page('/next-assets/gone.js', 'ka_ui=next')).res.status, 404);
-  });
-
-  test('a thread link opens in the chosen client', async () => {
-    const toNext = await page('/threads/abc-123', 'ka_ui=next');
-    assert.equal(toNext.res.status, 302);
-    assert.equal(toNext.res.headers.get('Location'), '/?t=abc-123');
-    assert.equal(
-      (await page('/chat/abc-123', 'ka_ui=next')).res.headers.get('Location'),
-      '/?t=abc-123',
-    );
-
-    const toClassic = await page('/?t=abc-123');
-    assert.equal(toClassic.res.status, 302);
-    assert.equal(toClassic.res.headers.get('Location'), '/threads/abc-123');
-
-    // Each client's own form stays where it is.
-    assert.equal((await page('/?t=abc-123', 'ka_ui=next')).res.status, 200);
-    assert.equal((await page('/threads/abc-123')).res.status, 200);
-  });
-
-  test('a thread link with an id that is not one is not followed anywhere', async () => {
-    for (const [path, cookie] of [
-      ['/?t=..%2F..%2Fauth', undefined],
-      ['/?t=%2F%2Fevil.example', undefined],
-      ['/threads/..', 'ka_ui=next'],
-    ] as const) {
-      const { res } = await page(path, cookie);
-      assert.equal(res.status, 200, path);
-    }
-  });
-
-  test('a thread link opens a genki id that starts with `_` or `-`, but never one that starts with `.` or `:`', async () => {
-    for (const id of ['_V1StGXR8Z5jdHi6BmyT', '-V1StGXR8Z5jdHi6BmyT']) {
-      const toNext = await page(`/threads/${id}`, 'ka_ui=next');
-      assert.equal(toNext.res.headers.get('Location'), `/?t=${id}`, id);
-      assert.equal((await page(`/?t=${id}`)).res.headers.get('Location'), `/threads/${id}`, id);
-    }
-    for (const id of ['.hidden', '..x', ':x']) {
-      assert.equal((await page(`/threads/${id}`, 'ka_ui=next')).res.status, 200, id);
-      assert.equal((await page(`/?t=${encodeURIComponent(id)}`)).res.status, 200, id);
-    }
-  });
-
-  test('threadLinkFor maps the two forms', () => {
-    const { threadLinkFor } = nextApiPage;
-    assert.equal(threadLinkFor('next', '/threads/x1', new URLSearchParams()), '/?t=x1');
-    assert.equal(threadLinkFor('classic', '/', new URLSearchParams('t=x1')), '/threads/x1');
-    assert.equal(
-      threadLinkFor('classic', '/innstillinger', new URLSearchParams('t=x1')),
-      undefined,
-    );
-    assert.equal(threadLinkFor('next', '/innstillinger', new URLSearchParams()), undefined);
-  });
-});
 
 describe('/api/next/me', () => {
   test('names the person, the service and variant, and that a service key may not write', async () => {
@@ -614,29 +450,6 @@ describe('the proxy', () => {
     const first = arrivals.find((a) => a.text.includes('"n":1'))!.at;
     const last = arrivals.find((a) => a.text.includes('[DONE]'))!.at;
     assert.ok(last - first >= 120, `the first chunk came ${last - first} ms before the end`);
-  });
-
-  test("an answer in a thread makes apps/web forget the sources it kept for the thread's last answer", async () => {
-    const sourceStore = await import('./sourceStore.ts');
-    const kept = [{ docNum: '7', title: 'Årsrapport 2020', url: '', chunkId: 'k1' }];
-    for (const id of ['c-1', 'c-2', 'not-yours']) sourceStore.remember(id, kept);
-
-    const answered = await post('/v1/chat/completions', QUESTION);
-    assert.equal(answered.status, 200);
-    await answered.text();
-    assert.deepEqual(sourceStore.recall('c-1'), [], 'the next answer is the last, not this');
-    assert.deepEqual(sourceStore.recall('c-2'), kept, 'another thread keeps its own');
-
-    const refused = await post('/v1/chat/completions', {
-      ...QUESTION,
-      conversation_id: 'not-yours',
-    });
-    assert.equal(refused.status, 404);
-    assert.deepEqual(
-      sourceStore.recall('not-yours'),
-      kept,
-      'a refused question changes nothing',
-    );
   });
 
   test('stopping the answer ends the call to genki', async () => {

@@ -114,7 +114,8 @@ describe('a layout from genki’s builder (KA_NEXT_LAYOUT)', () => {
     expect(profile.assistantName).toBe('Rapportassistenten');
     expect(profile.corpora).toEqual(another.profile?.corpora);
     expect(profile.signedInAs).toBe(me.name);
-    expect(profile.menu?.extra?.map((entry) => entry.id)).toEqual(['about', 'back-to-classic']);
+    // KA's pages are KA's service's: this layout still draws it, so they stay.
+    expect(profile.menu?.extra?.map((entry) => entry.id)).toEqual(['about']);
   });
 
   it('keeps what only the host gives: the person, the sign-out, this service’s threads, KA’s trials, a Kudos document’s PDF', async () => {

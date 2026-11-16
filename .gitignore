@@ -8,3 +8,4 @@ dist/
 *.log
 mise.local.toml
 .vite/
+.tokens/

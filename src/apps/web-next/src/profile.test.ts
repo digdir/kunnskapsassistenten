@@ -50,7 +50,7 @@ describe('the experiments', () => {
 });
 
 // genki's assembly keeps a year field to the bounds the profile gives it, and the year it is in
-// Norway; KA gives 1990, as the classic client's server does.
+// Norway; KA gives 1990, as the previous client's server did.
 describe('the year list', () => {
   const noisy = ['12', '1985', '1990', '2019', '2026', '2027', '2252'];
   const profile = profileFor(ME);

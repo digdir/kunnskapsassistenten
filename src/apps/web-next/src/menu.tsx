@@ -1,37 +1,28 @@
-// KA's entries in genki's profile menu: apps/web's info pages and the way back to apps/web.
+// KA's entries in genki's profile menu: «Endringslogg» and «Om prosjektet», this client's own pages.
 import type { AssistantProfile } from '@genai/ui-assembly';
-import { ArrowUndoIcon, BookIcon } from '@navikt/aksel-icons';
+import { BookIcon } from '@navikt/aksel-icons';
+import { ABOUT_PATH, CHANGELOG_PATH, pageFrom } from './pages/paths';
 
-export const CHANGELOG_PATH = '/endringslogg';
-export const ABOUT_PATH = '/om-prosjektet';
+export { ABOUT_PATH, CHANGELOG_PATH };
 export const ABOUT_LABEL = 'Om prosjektet';
-export const BACK_LABEL = 'Tilbake til gammel versjon';
 
-/** apps/web's page, with this client's address in `fra` for its «Tilbake til ny versjon». */
-export const pageFrom = (path: string, here = `${location.pathname}${location.search}`) =>
-  `${path}?${new URLSearchParams({ fra: here })}`;
-
-/** The menu, with `onSwitchBack` for «Tilbake til gammel versjon». */
+/**
+ * The menu. Each page is a page load of its own, opened with the assistant's address in `fra`,
+ * so its way back returns to the thread the person was in.
+ */
 export const menuFor = (
-  onSwitchBack: () => void,
   go: (href: string) => void = (href) => location.assign(href),
 ): NonNullable<AssistantProfile['menu']> => ({
   // genki's own entry, in its words: «Endringslogg».
   changelog: { href: CHANGELOG_PATH, onSelect: () => go(pageFrom(CHANGELOG_PATH)) },
   extra: [
-    // KA's page is «Om prosjektet», not genki's «Om tjenesten», with apps/web's icon for it.
+    // KA's page is «Om prosjektet», not genki's «Om tjenesten», with the previous client's icon.
     {
       id: 'about',
       label: ABOUT_LABEL,
       href: ABOUT_PATH,
       onSelect: () => go(pageFrom(ABOUT_PATH)),
       icon: <BookIcon />,
-    },
-    {
-      id: 'back-to-classic',
-      label: BACK_LABEL,
-      onSelect: onSwitchBack,
-      icon: <ArrowUndoIcon />,
     },
   ],
 });

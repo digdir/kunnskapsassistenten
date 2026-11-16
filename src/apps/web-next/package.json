@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Kunnskapsassistenten's next client, drawn from genki's UI blocks, behind a toggle on the same server.",
+  "description": "Kunnskapsassistenten's client, drawn from genki's UI blocks, served by apps/server.",
   "engines": {
     "node": ">=24"
   },
@@ -12,7 +12,9 @@
     "build": "tsc -p tsconfig.json && vite build",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "sync-genki": "sh scripts/sync-genki.sh"
+    "sync-genki": "sh scripts/sync-genki.sh",
+    "tokens:build": "designsystemet tokens create --config designsystemet.config.json && designsystemet tokens build -t ./.tokens/design-tokens -o ./.tokens/build && cp ./.tokens/build/digdir.css src/theme.css && rm -rf ./.tokens",
+    "tokens:verify": "designsystemet tokens create --config designsystemet.config.json && designsystemet tokens build -t ./.tokens/design-tokens -o ./.tokens/build && diff -q ./.tokens/build/digdir.css src/theme.css && rm -rf ./.tokens && echo 'tokens:verify OK'"
   },
   "dependencies": {
     "@digdir/designsystemet-css": "1.23.0",
@@ -22,6 +24,7 @@
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@digdir/designsystemet": "1.23.0",
     "@testing-library/react": "16.3.3",
     "@types/node": "^24.13.3",
     "@types/react": "^19.3.0",

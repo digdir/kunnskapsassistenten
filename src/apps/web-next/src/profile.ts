@@ -1,13 +1,13 @@
 // What KA knows about its service that genki does not say: the assistant's name, its suggestions,
-// Kudos's fields in KA's words, the document links and KA's experiments. Copied from apps/web's
-// choices (views/chat/text.ts, flags/flags.ts, .env.example), not imported: this client imports
-// nothing from apps/web. UI text is Norwegian bokmål. No follow-ups: the template's next look
-// draws none. With a layout from genki's builder only the host's part is used (`hostProfileFor`).
+// Kudos's fields in KA's words, the document links and KA's experiments, as the previous client
+// had them (its views/chat/text.ts, flags/flags.ts and .env.example). UI text is Norwegian
+// bokmål. No follow-ups: the template's next look draws none. With a layout from genki's builder
+// only the host's part is used (`hostProfileFor`).
 import type { AssistantProfile, FieldSpec } from '@genai/ui-assembly';
 import type { DocumentFile } from '@genai/ui-blocks';
 import type { Me } from './session';
 
-// apps/web's own plurals (views/filters/corpusText.ts).
+// The previous client's own plurals (its views/filters/corpusText.ts).
 const TYPE_PLURALS: Record<string, string> = {
   Evaluering: 'evalueringer',
   'Proposisjon til Stortinget': 'proposisjoner til Stortinget',
@@ -16,9 +16,9 @@ const TYPE_PLURALS: Record<string, string> = {
   Årsrapport: 'årsrapporter',
 };
 
-// The year list starts here, as the classic client's server shapes it (apps/server/src/facets.ts
-// `shapeFacet`): Kudos's `concerned_years` holds about a thousand values, and earlier ones are
-// page numbers and parse noise. genki's assembly ends the list at the year it is in Norway.
+// The year list starts here, as the previous client's server shaped it (`shapeFacet` in its
+// apps/server/src/facets.ts): Kudos's `concerned_years` holds about a thousand values, and earlier
+// ones are page numbers and parse noise. genki's assembly ends the list at the year it is in Norway.
 const FIRST_YEAR = 1990;
 
 // Kudos's fields as KA chose and named them.

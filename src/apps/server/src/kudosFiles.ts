@@ -19,7 +19,7 @@
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import type { Env } from './apiShared.ts';
+import type { Env } from './session.ts';
 
 const KUDOS = 'https://kudos.dfo.no';
 const UUID_PATTERN = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';

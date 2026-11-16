@@ -12,7 +12,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App, layout } from './App';
-import { ABOUT_LABEL, BACK_LABEL } from './menu';
+import { ABOUT_LABEL } from './menu';
 import { profileFor } from './profile';
 import type { Me } from './session';
 
@@ -59,7 +59,7 @@ const openMenu = async () => {
   return document.querySelector('.uib-shell-profile-menu') as HTMLElement;
 };
 
-describe('the next client', () => {
+describe('the client', () => {
   it('is genki’s template knowledge-assistant-next as it is: the next look, feedback on, no follow-ups', () => {
     expect(layout.template).toBe('knowledge-assistant-next');
     expect(lookOf(layout)).toBe('next');
@@ -80,29 +80,10 @@ describe('the next client', () => {
     expect(screen.getAllByRole('button', { name: me.name }).length).toBeGreaterThan(0);
   });
 
-  it("has «Tilbake til gammel versjon» as genki's own menu entry, after the pages, before «Logg ut»", async () => {
-    const onSwitch = vi.fn();
-    render(<App me={me} api={fakeApi()} onSwitchBack={onSwitch} />);
-    const menu = await openMenu();
-    // jsdom does not open a popover, so the menu counts as hidden.
-    const back = await within(menu).findByRole('button', { name: BACK_LABEL, hidden: true });
-    const settings = within(menu).getByText('Innstillinger');
-    expect(
-      settings.compareDocumentPosition(back) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    const signOut = within(menu).getByRole('link', { name: /Logg ut/, hidden: true });
-    expect(
-      back.compareDocumentPosition(signOut) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    // In the menu's own list, not put there from outside.
-    expect(document.querySelector('.ka-next-menu-extra')).toBeNull();
-    fireEvent.click(back);
-    await waitFor(() => expect(onSwitch).toHaveBeenCalledOnce());
-  });
-
-  it("has «Endringslogg» and «Om prosjektet» in the profile menu, as links to apps/web's pages", async () => {
+  it("has «Endringslogg» and «Om prosjektet» in the profile menu, after «Innstillinger» and before «Logg ut», as links to this client's pages", async () => {
     render(<App me={me} api={fakeApi()} />);
     const menu = await openMenu();
+    // jsdom does not open a popover, so the menu counts as hidden.
     const changelog = await within(menu).findByRole('link', {
       name: 'Endringslogg',
       hidden: true,
@@ -110,15 +91,40 @@ describe('the next client', () => {
     expect(changelog.getAttribute('href')).toBe('/endringslogg');
     const about = within(menu).getByRole('link', { name: ABOUT_LABEL, hidden: true });
     expect(about.getAttribute('href')).toBe('/om-prosjektet');
+    const settings = within(menu).getByText('Innstillinger');
+    const signOut = within(menu).getByRole('link', { name: /Logg ut/, hidden: true });
+    for (const page of [changelog, about]) {
+      expect(
+        settings.compareDocumentPosition(page) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(
+        page.compareDocumentPosition(signOut) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
+    // In the menu's own list, not put there from outside.
+    expect(document.querySelector('.ka-next-menu-extra')).toBeNull();
   });
 
-  it('offers neither apps/web’s pages nor «Tilbake til gammel versjon» where the server serves only this client', async () => {
-    render(<App me={{ ...me, nextOnly: true }} api={fakeApi()} />);
+  it('offers no way to another version of the client', async () => {
+    render(<App me={me} api={fakeApi()} />);
+    const menu = await openMenu();
+    await within(menu).findByText('Innstillinger');
+    for (const name of [/gammel versjon/i, /ny versjon/i])
+      expect(within(document.body).queryByText(name)).toBeNull();
+  });
+
+  it('offers none of KA’s pages to another service, drawn from a layout', async () => {
+    render(
+      <App
+        me={{ ...me, service: 'rapportassistenten', model: 'rapportassistenten__default' }}
+        api={fakeApi()}
+      />,
+    );
     const menu = await openMenu();
     // genki's own entries stay.
     expect(await within(menu).findByText('Innstillinger')).toBeTruthy();
     expect(within(menu).getByRole('link', { name: /Logg ut/, hidden: true })).toBeTruthy();
-    for (const name of [BACK_LABEL, ABOUT_LABEL, 'Endringslogg'])
+    for (const name of [ABOUT_LABEL, 'Endringslogg'])
       expect(within(menu).queryByText(name)).toBeNull();
   });
 
