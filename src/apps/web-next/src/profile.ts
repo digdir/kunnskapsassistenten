@@ -4,6 +4,7 @@
 // bokmål. No follow-ups: the template's next look draws none. With a layout from genki's builder
 // only the host's part is used (`hostProfileFor`).
 import type { AssistantProfile, FieldSpec } from '@genai/ui-assembly';
+import type { DocumentFile } from '@genai/ui-blocks';
 import type { Me } from './session';
 
 // The previous client's own plurals (its views/filters/corpusText.ts).
@@ -62,6 +63,32 @@ export const kudosDocumentUrl = (documentId: string): string | undefined => {
   return uuid ? `https://kudos.dfo.no/dokument/${uuid}` : undefined;
 };
 
+/** How long the page waits to hear whether a Kudos document has a PDF. */
+const FILE_LOOKUP_MS = 15_000;
+
+/**
+ * The whole file of a Kudos document genki names `kudos:<uuid>`: its PDF through this site's
+ * server, once a HEAD there says it has one, so a document without a PDF shows its excerpts and
+ * no framed error. Any other number has none. Provisional until genki offers a route for a
+ * document's file: then this function changes, and nothing else on the page.
+ */
+export const kudosDocumentFile = async (
+  documentId: string,
+  signal: AbortSignal,
+): Promise<DocumentFile | undefined> => {
+  const uuid = PREFIXED_UUID.exec(documentId)?.[1]?.toLowerCase();
+  if (!uuid) return undefined;
+  const url = `/api/next/kudos/files/${uuid}`;
+  const res = await fetch(url, {
+    method: 'HEAD',
+    credentials: 'same-origin',
+    signal: AbortSignal.any([signal, AbortSignal.timeout(FILE_LOOKUP_MS)]),
+  });
+  if (res.status === 404) return undefined;
+  if (!res.ok) throw new Error(`The Kudos file answered ${res.status}.`);
+  return { url, mediaType: 'application/pdf' };
+};
+
 const issue = (n: number) => ({
   href: `https://github.com/digdir/kunnskapsassistenten/issues/${n}`,
   hrefLabel: `Sak ${n}`,
@@ -86,8 +113,9 @@ const EXPERIMENTS = [
 
 /**
  * What only this host can give, whatever layout it draws: who is signed in, the sign-out, the
- * services whose threads are listed, and KA's trials, which the assembly carries out. A layout
- * from genki's builder (decisions/0017) is drawn with this and its own words.
+ * services whose threads are listed, KA's trials, which the assembly carries out, and a Kudos
+ * document's PDF from this site's server. A layout from genki's builder (decisions/0017) is drawn
+ * with this and its own words, and its Dokumentvisning option `file` says whether the PDF is asked.
  */
 export const hostProfileFor = (me: Me): AssistantProfile => ({
   ...(me.name ? { signedInAs: me.name } : {}),
@@ -96,6 +124,7 @@ export const hostProfileFor = (me: Me): AssistantProfile => ({
   // Only this service's threads: the person's token reaches no other.
   family: (service) => service === me.service,
   experiments: EXPERIMENTS,
+  documentFile: kudosDocumentFile,
 });
 
 /** The profile for the person `me` names: KA's words for its service, and the host's part. */

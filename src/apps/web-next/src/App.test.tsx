@@ -1,6 +1,6 @@
 import type { StreamEvent } from '@genai/client';
 import type { AnswerData, AssistantApi } from '@genai/ui-assembly';
-import { lookOf, optionInForce } from '@genai/ui-blocks';
+import { blocksIn, lookOf, optionInForce } from '@genai/ui-blocks';
 import {
   act,
   cleanup,
@@ -65,6 +65,12 @@ describe('the client', () => {
     expect(lookOf(layout)).toBe('next');
     expect(optionInForce(layout, 'chat', 'feedback')).toBe(true);
     expect(optionInForce(layout, 'chat', 'followUps')).toBe(false);
+  });
+
+  it('has Dokumentvisning after Kilder, with the whole document at the template’s default, on', () => {
+    expect(blocksIn(layout, 'secondary')).toEqual(['approach', 'sources', 'document-view']);
+    expect(optionInForce(layout, 'document-view', 'file')).toBe(true);
+    expect(JSON.stringify(layout)).not.toMatch(/"file"/);
   });
 
   it("lists only this service's threads, and the person at the panel's foot", async () => {

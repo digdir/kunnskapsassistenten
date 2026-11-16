@@ -38,13 +38,13 @@ export const templates: Readonly<Record<TemplateId, Readonly<Record<Zone, readon
     main: ['approach', 'chat'],
     secondary: ['sources', 'notes'],
   },
-  // The same blocks in the dev boards' look (`templateSetups`), built here step by step, so
-  // «Kunnskapsassistenten» keeps drawing what it draws today.
+  // The same blocks in the dev boards' look (`templateSetups`), built here step by step, and
+  // Dokumentvisning as kunnskapsassistenten's next client draws it.
   'knowledge-assistant-next': {
     primary: ['threads', 'filter', 'settings'],
     main: ['approach', 'chat'],
     // Fremgangsmåte also as the tool (dev-verktoy-1), beside its bar over each answer.
-    secondary: ['approach', 'sources', 'notes'],
+    secondary: ['approach', 'sources', 'document-view', 'notes'],
   },
   'sources-only': { primary: ['threads', 'filter'], main: ['chat'], secondary: ['sources'] },
   'approach-only': { primary: ['threads'], main: ['chat'], secondary: ['approach'] },

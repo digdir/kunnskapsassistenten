@@ -16,8 +16,7 @@ app.use('*', sessionMiddleware);
 
 const CDN = 'https://altinncdn.no';
 
-app.use(
-  '*',
+const headersFor = (framedBy: 'none' | 'self') =>
   secureHeaders({
     contentSecurityPolicy: {
       defaultSrc: ["'self'"],
@@ -29,13 +28,22 @@ app.use(
       imgSrc: ["'self'", 'data:'],
       connectSrc: ["'self'"],
       formAction: ["'self'"],
-      frameAncestors: ["'none'"],
+      // Dokumentvisning frames a Kudos PDF from this site's own route (kudosFiles.ts).
+      frameSrc: ["'self'"],
+      frameAncestors: [framedBy === 'self' ? "'self'" : "'none'"],
     },
     strictTransportSecurity: config.auth.origin.startsWith('https://')
       ? 'max-age=31536000; includeSubDomains'
       : false,
-    xFrameOptions: 'DENY',
-  }),
+    xFrameOptions: framedBy === 'self' ? 'SAMEORIGIN' : 'DENY',
+  });
+
+/** Only a Kudos PDF may be framed, and only by this site's own page. */
+export const FRAMED_BY_SELF = /^\/api\/next\/kudos\/files\/[^/]+$/;
+const framedBySelf = headersFor('self');
+const framedByNone = headersFor('none');
+app.use('*', (c, next) =>
+  FRAMED_BY_SELF.test(c.req.path) ? framedBySelf(c, next) : framedByNone(c, next),
 );
 
 // Only form-encoded posts are checked, so the JSON API keeps working.

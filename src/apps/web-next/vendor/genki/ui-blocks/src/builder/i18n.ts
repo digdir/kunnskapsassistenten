@@ -56,6 +56,9 @@ export const nbBuilder = defineNamespace({
   sourcesDisclaimerHelp: 'All tekst er sitater fra dokumentene',
   sourcesSearch: 'Søk i kildene',
   sourcesSearchHelp: 'Søk i utdragene til svaret',
+  documentViewFile: 'Vis hele dokumentet (beta)',
+  documentViewFileHelp:
+    'Hele dokumentet som PDF der appen kan hente det. Av: dokumentvisningen viser bare utdragene',
   approachLevel: 'Detaljnivå',
   approachLevelHelp: 'Hvor mye Fremgangsmåte viser når leseren ikke har valgt',
   approachLevelStandard: 'Standard',
@@ -144,6 +147,9 @@ export const enBuilder = {
   sourcesDisclaimerHelp: 'All text is quoted from the documents',
   sourcesSearch: 'Search the sources',
   sourcesSearchHelp: 'Search the answer’s excerpts',
+  documentViewFile: 'Show the whole document (beta)',
+  documentViewFileHelp:
+    'The whole document as a PDF where the app can fetch it. Off: the document view shows only the excerpts',
   approachLevel: 'Level of detail',
   approachLevelHelp: 'How much Approach shows when the reader has not chosen',
   approachLevelStandard: 'Standard',

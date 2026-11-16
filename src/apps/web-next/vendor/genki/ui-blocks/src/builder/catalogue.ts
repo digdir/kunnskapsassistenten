@@ -214,15 +214,16 @@ export const blockCatalogue: readonly BlockSpec[] = [
     status: 'built',
   },
   // The answer's sources, as Kilder reads them, and not Kilder itself: without Kilder a footnote
-  // opens the document here. The whole text needs a genki route that does not exist yet; until
-  // then the view shows the excerpts the answer retrieved, in the document's own order.
+  // opens the document here. genki has no route for a document's whole text yet: the view shows
+  // the excerpts the answer retrieved, in the document's own order, or with `file` the whole
+  // document as a PDF where the host can fetch it (beta).
   {
     id: 'document-view',
     zones: ['secondary', 'main'],
     order: { main: 4, secondary: 3 },
     members: ['DocumentView'],
     needs: ['service:datasets|documents'],
-    options: [],
+    options: [{ id: 'file', kind: 'switch', default: true }],
     status: 'built',
   },
   {

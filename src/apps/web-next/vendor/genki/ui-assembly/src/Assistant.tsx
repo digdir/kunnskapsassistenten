@@ -970,6 +970,7 @@ export const AssistantView = ({
       {...(titled ? {} : { title: false })}
       sources={a.documentAnswer?.sources}
       target={a.openDoc?.target}
+      file={a.documentFile}
       citations={a.documentCitations}
       answerIndex={a.documentIndex}
       answerCount={a.answered.length}

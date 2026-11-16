@@ -6,6 +6,7 @@
  * - `/genki/*`: a narrow proxy to the genki calls `createGenkiApi` makes, with the signed-in
  *   person's credential (`backendHeaders`).
  * - `POST /feedback`: a rating of an answer, only with a person's token.
+ * - `GET /kudos/files/:uuid`: a Kudos document's PDF for Dokumentvisning (kudosFiles.ts).
  *
  * Mounted under `/api/*`, so the session, the sign-in check and the body limit in app.ts come
  * first.
@@ -18,6 +19,7 @@ import { backendHeaders, knownProblem, type Caller } from './backend.ts';
 import { config } from './config.ts';
 import * as convos from './conversations.ts';
 import { cleanFeedback, ownsTask, sendFeedback } from './feedback.ts';
+import { kudosFiles, type KudosFileOptions } from './kudosFiles.ts';
 import type { NextLayout } from './nextLayout.ts';
 import type { Env } from './session.ts';
 import { getTokens } from './tokenStore.ts';
@@ -328,7 +330,10 @@ async function organisationOf(c: Context<Env>): Promise<string | undefined> {
 const LOCAL_NAME = 'Lokal testbruker';
 
 /** The routes, against `settings`; app.ts mounts them with the server's own. */
-export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
+export function nextRoutes(
+  settings: NextSettings = settingsFromConfig(),
+  kudos: KudosFileOptions = {},
+) {
   const next = new Hono<Env>();
   // First, so a refusal from the checks below is not stored either.
   next.use('/genki/*', async (c, run) => {
@@ -355,6 +360,8 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
       ...(settings.layout ? { layout: settings.layout } : {}),
     });
   });
+
+  next.route('/kudos/files', kudosFiles(kudos));
 
   // Checked in feedback.ts, and never with the service key (decisions/0013).
   next.post('/feedback', async (c) => {

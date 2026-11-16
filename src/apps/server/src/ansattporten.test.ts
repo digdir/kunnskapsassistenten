@@ -183,6 +183,18 @@ describe('sign-in', () => {
     }
     assert.equal(genki.requests.length, 0);
   });
+
+  test('without a session a Kudos PDF asks for a sign-in too, as every /api route does', async () => {
+    for (const method of ['GET', 'HEAD']) {
+      const res = await app.request(
+        '/api/next/kudos/files/a33bf297-afd2-4b38-992e-b23c8fec3d80',
+        {
+          method,
+        },
+      );
+      assert.equal(res.status, 401, method);
+    }
+  });
 });
 
 describe('ID token checks', () => {
