@@ -77,7 +77,7 @@ export const ShellTools = ({
   const chosen = value ?? own;
   const current = tools.find((tool) => tool.id === chosen) ?? tools[0];
   const tabs = useRef(new Map<string, HTMLButtonElement | null>());
-  // Read once the page has changed: a region taken away, as a panel becomes a drawer, gets no menu.
+  // Read once the page has changed: a region taken away, as a panel fills the shell, gets no menu.
   const [region, setRegion] = useState<Element | null>(null);
   useLayoutEffect(() => setRegion(pinIn?.isConnected ? pinIn : null), [pinIn]);
   const mode = toolMode(tools.length);

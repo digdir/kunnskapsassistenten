@@ -874,7 +874,7 @@ export const AssistantView = ({
           onChange={(id) => {
             if (!isSettingsPageId(id)) return;
             setSettingsView(id);
-            // On a phone the menu is a drawer over the page: it closes on the reader's choice.
+            // On a phone the menu fills the shell: it closes on the reader's choice.
             a.showSettings();
           }}
           backHref={a.hrefOf(a.urlThreads ? a.currentId : undefined)}
@@ -956,9 +956,7 @@ export const AssistantView = ({
     ) : (
       sourcesBlock(titled)
     );
-  // Escape in the document is its way back. In a drawer, a modal dialog, the browser would also
-  // close the drawer and put the focus on the drawer's button, wherever the way back sends it.
-  // Not from the question field, where Escape is the field's.
+  // Escape in the document is its way back, not also the close of a panel that fills the shell.
   const escapeStaysInDrawer = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Escape' || !a.openDoc) return;
     if (event.target instanceof Element && event.target.closest('form')) return;

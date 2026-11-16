@@ -1,4 +1,4 @@
-// The shell's model, pure: two panels that fold, resize and become drawers beside a main column.
+// The shell's model, pure: beside a main column, two panels that fold, resize and fill the shell.
 
 /** A side panel. `primary` stands before the main column, `secondary` after it. */
 export type ShellSide = 'primary' | 'secondary';
@@ -200,7 +200,7 @@ export const withCollapsed = (state: ShellState, side: ShellSide, collapsed: boo
 export const withOneOpen = (state: ShellState, keep: ShellSide) =>
   state.collapsed[keep] ? state : withCollapsed(state, otherSide(keep), true);
 
-/** Fold both, on entering drawer mode: an open drawer is modal and would cover the main column. */
+/** Fold both, on entering drawer mode: an open panel there fills the shell, over the main column. */
 export const withAllCollapsed = (state: ShellState) =>
   shellSides.reduce((next, side) => withCollapsed(next, side, true), state);
 
@@ -326,14 +326,6 @@ export const growthDirection = (side: ShellSide): 1 | -1 => (side === 'primary' 
 export const widthStep = 16;
 export const widthStride = 64;
 
-/** Designsystemet's `Dialog` placement for a drawer: in from the edge the panel stands at. */
-export const drawerPlacement = (side: ShellSide): 'left' | 'right' =>
-  side === 'primary' ? 'left' : 'right';
-
-/** A drawer is drawn at the design's width, never a dragged one, and never wider than the window. */
-export const drawerWidth = (geometry: ShellGeometry, side: ShellSide, viewport: number) =>
-  Math.min(geometry.panels[side]?.width ?? 0, viewport);
-
 /** The widths as custom properties on the shell, so the stylesheet never needs the state. */
 export const layoutStyle = (
   geometry: ShellGeometry,
@@ -357,8 +349,6 @@ export const layoutStyle = (
     // A rail does not squeeze: its floor is its own width.
     style[`--uib-shell-${side}-min-width`] =
       `${railed ? geometry.rail : (geometry.panels[side]?.minWidth ?? 0)}px`;
-    if (drawer)
-      style[`--uib-shell-${side}-drawer-width`] = `${drawerWidth(geometry, side, viewport)}px`;
   }
   return style;
 };
