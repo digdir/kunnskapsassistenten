@@ -74,6 +74,22 @@ export const sourceFor = (sources: Source[], index: number) =>
 const citedBy = (raw: unknown): { markers?: string[] } =>
   Array.isArray(raw) ? { markers: raw.filter((m): m is string => typeof m === 'string') } : {};
 
+const wholePage = (value: unknown) =>
+  typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
+
+/** An excerpt's page, the page it ends on when later, and its PDF at that page (http or https). */
+const pageOf = (e: Record<string, unknown>) => {
+  const page = wholePage(e.page);
+  if (page === undefined) return {};
+  const end = wholePage(e.page_end);
+  const url = str(e.url);
+  return {
+    page,
+    ...(end !== undefined && end > page ? { pageEnd: end } : {}),
+    ...(url !== undefined && /^https?:\/\//i.test(url) ? { url } : {}),
+  };
+};
+
 const sourceOf = (raw: unknown): Source[] => {
   if (!isRecord(raw)) return [];
   const excerpts = Array.isArray(raw.excerpts)
@@ -84,6 +100,7 @@ const sourceOf = (raw: unknown): Source[] => {
           text: str(e.text) ?? '',
           ...(typeof e.position === 'number' ? { position: e.position } : {}),
           ...(heading === undefined ? {} : { heading }),
+          ...pageOf(e),
           ...citedBy(e.markers),
         };
       })

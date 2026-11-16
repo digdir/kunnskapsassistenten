@@ -39,6 +39,10 @@ export interface Excerpt {
   position?: number;
   /** Its own section path, levels joined by ` › `, when the index gives one. */
   heading?: string;
+  /** The page of its file it starts on, the page it ends on when later, and its PDF at `page`. */
+  page?: number;
+  pageEnd?: number;
+  url?: string;
   markers?: string[];
 }
 
