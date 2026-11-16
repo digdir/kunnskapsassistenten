@@ -35,6 +35,24 @@ export const needWords = [
 ] as const;
 export type Need = (typeof needWords)[number];
 
+/** The reader's needs a block covers, which the builder assistant matches a described need to. */
+export const userNeeds = [
+  'organise-work',
+  'return-to-conversations',
+  'adjust-display',
+  'ask-questions',
+  'start-from-suggestions',
+  'narrow-documents',
+  'choose-collection',
+  'see-how-answered',
+  'check-excerpts',
+  'see-source-documents',
+  'open-original-document',
+  'read-in-context',
+  'collect-excerpts',
+] as const;
+export type UserNeed = (typeof userNeeds)[number];
+
 export const blockIds = [
   'projects',
   'threads',
@@ -48,6 +66,17 @@ export const blockIds = [
 ] as const;
 export type BlockId = (typeof blockIds)[number];
 
+/**
+ * How a layout's blocks are drawn. `next` is the «_Ready for dev» boards' look (the cards frame,
+ * the panels' titles, the profile menu), and every new look sits behind it until it is the only
+ * one; `current` is what layouts drew before it.
+ */
+export const looks = ['current', 'next'] as const;
+export type Look = (typeof looks)[number];
+
+export const isLook = (value: unknown): value is Look =>
+  typeof value === 'string' && (looks as readonly string[]).includes(value);
+
 /** A switch or a choice on a block, drawn in the builder and kept in the layout's settings. */
 export type BlockOption =
   | {
@@ -57,6 +86,8 @@ export type BlockOption =
       needs?: readonly Need[];
       /** Shown off and disabled until it is built. */
       status?: 'planned';
+      /** The looks that draw it; without, every look. In another look it is not in force. */
+      looks?: readonly Look[];
     }
   | {
       id: string;
@@ -65,6 +96,7 @@ export type BlockOption =
       default: string;
       needs?: readonly Need[];
       status?: 'planned';
+      looks?: readonly Look[];
     };
 
 export interface BlockSpec {
@@ -72,6 +104,8 @@ export interface BlockSpec {
   id: BlockId;
   /** The zones it may stand in, the default first. */
   zones: readonly Zone[];
+  /** It may also stand in both its zones at once, drawn in each its own way. */
+  both?: true;
   /** Its place among the blocks in each zone, from the top: lower comes first. */
   order: Partial<Record<Zone, number>>;
   /** Drawn in the panel's foot, not among its content: Innstillinger «nederst». */
@@ -79,6 +113,7 @@ export interface BlockSpec {
   /** The package's components it renders, by their export names. */
   members: readonly string[];
   needs: readonly Need[];
+  covers: readonly UserNeed[];
   options: readonly BlockOption[];
   /** `planned` is shown off and disabled, marked «kommer». */
   status: 'built' | 'planned';
@@ -95,6 +130,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     order: { primary: 0 },
     members: [],
     needs: ['genki:projects'],
+    covers: ['organise-work'],
     options: [],
     status: 'planned',
   },
@@ -104,6 +140,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     order: { primary: 1 },
     members: ['Threads', 'SignedIn'],
     needs: ['channel:conversations'],
+    covers: ['return-to-conversations'],
     options: [],
     status: 'built',
   },
@@ -114,6 +151,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     slot: 'foot',
     members: ['SettingsLinks', 'Settings'],
     needs: [],
+    covers: ['adjust-display'],
     options: [],
     status: 'built',
   },
@@ -135,6 +173,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
       'NotFoundState',
     ],
     needs: ['service:chat'],
+    covers: ['ask-questions', 'start-from-suggestions'],
     options: [
       {
         id: 'footnotes',
@@ -143,7 +182,8 @@ export const blockCatalogue: readonly BlockSpec[] = [
         needs: ['component:sources|document-view'],
       },
       { id: 'suggestions', kind: 'switch', default: true },
-      { id: 'followUps', kind: 'switch', default: true },
+      // The next look draws no follow-ups: no board has them.
+      { id: 'followUps', kind: 'switch', default: true, looks: ['current'] },
       { id: 'disclaimer', kind: 'switch', default: true },
       { id: 'copy', kind: 'switch', default: true },
       // Off by default, as in kunnskapsassistenten since 6 October (AnswerActions' `feedback`).
@@ -165,6 +205,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     order: { primary: 2, main: 1 },
     members: ['Filter', 'CorpusChoice', 'CorpusLine', 'Documents'],
     needs: ['service:filter-fields', 'channel:facets'],
+    covers: ['narrow-documents', 'choose-collection'],
     options: [
       { id: 'corpus', kind: 'switch', default: true },
       { id: 'documents', kind: 'switch', default: true },
@@ -176,7 +217,10 @@ export const blockCatalogue: readonly BlockSpec[] = [
     zones: ['main', 'secondary'],
     order: { main: 0, secondary: 0 },
     members: ['Approach'],
+    // The card over each answer in the main column, the tool in the secondary panel, or both.
+    both: true,
     needs: ['service:steps'],
+    covers: ['see-how-answered'],
     options: [
       { id: 'level', kind: 'choice', choices: ['standard', 'detailed'], default: 'standard' },
     ],
@@ -188,6 +232,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     order: { secondary: 2 },
     members: ['Sources'],
     needs: ['service:datasets|documents'],
+    covers: ['check-excerpts', 'see-source-documents'],
     options: [
       { id: 'disclaimer', kind: 'switch', default: true },
       { id: 'search', kind: 'switch', default: true },
@@ -195,15 +240,17 @@ export const blockCatalogue: readonly BlockSpec[] = [
     status: 'built',
   },
   // The answer's sources, as Kilder reads them, and not Kilder itself: without Kilder a footnote
-  // opens the document here. The whole text needs a genki route that does not exist yet; until
-  // then the view shows the excerpts the answer retrieved, in the document's own order.
+  // opens the document here. genki has no route for a document's whole text yet: the view shows
+  // the excerpts the answer retrieved, in the document's own order, or with `file` the whole
+  // document as a PDF where the host can fetch it (beta).
   {
     id: 'document-view',
     zones: ['secondary', 'main'],
     order: { main: 4, secondary: 3 },
     members: ['DocumentView'],
     needs: ['service:datasets|documents'],
-    options: [],
+    options: [{ id: 'file', kind: 'switch', default: true }],
+    covers: ['open-original-document', 'read-in-context'],
     status: 'built',
   },
   {
@@ -212,6 +259,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     order: { secondary: 4 },
     members: [],
     needs: [],
+    covers: ['collect-excerpts'],
     options: [],
     status: 'planned',
   },
@@ -227,6 +275,15 @@ export const blockSpec = (id: BlockId): BlockSpec => byId.get(id) as BlockSpec;
 
 /** Where the block stands when it is turned on and nobody chose: its first zone. */
 export const defaultZone = (id: BlockId): Zone => blockSpec(id).zones[0] as Zone;
+
+/** Where the builder may put a block: one zone, or `both` of its zones where it allows. */
+export type Place = Zone | 'both';
+
+/** The places the builder offers a block: each of its zones, then both where it allows. */
+export const placesOf = (id: BlockId): Place[] => {
+  const spec = blockSpec(id);
+  return spec.both ? [...spec.zones, 'both'] : [...spec.zones];
+};
 
 /** The blocks that can stand in more than one zone, which the builder asks where to put. */
 export const movableBlocks = blockCatalogue.filter((spec) => spec.zones.length > 1);
@@ -279,6 +336,16 @@ export const settingsSchema = (id: BlockId) => {
 };
 
 const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** The catalogue key of a place's name: a zone's, or «Begge steder». */
+export const placeKey = (place: Place) => `builder.zone${capital(place)}` as BuilderKey;
+
+/** The catalogue key of what each place draws, for a block that may stand in both. */
+export const placesHelpKey = (id: BlockId) => `${nameKey(id)}PlacesHelp` as BuilderKey;
+
+/** The catalogue key of a reader's need, as the builder assistant reads it. */
+export const coverKey = (need: UserNeed) =>
+  `builder.cover${capital(need.replace(/-(\w)/g, (_, c: string) => c.toUpperCase()))}` as BuilderKey;
 
 /** The catalogue key of an option's label. */
 export const optionKey = (id: BlockId, option: string) =>

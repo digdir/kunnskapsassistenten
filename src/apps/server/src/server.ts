@@ -1,16 +1,15 @@
 import { serve } from '@hono/node-server';
-import { app, startUp } from './app.ts';
-import { config, typesenseConfigured } from './config.ts';
+import { app } from './app.ts';
+import { config, retiredSettingsIn } from './config.ts';
 import { listenHost } from './listen.ts';
 
 const hostname = listenHost(config.auth.enabled);
 
 serve({ fetch: app.fetch, port: config.port, hostname }, (info) => {
   console.log(
-    `BFF on http://localhost:${info.port}, listening on ${hostname ?? 'every interface'}  →  ${config.apiBase}`,
+    `KA on http://localhost:${info.port}, listening on ${hostname ?? 'every interface'}  →  ${config.apiBase}`,
   );
-  console.log(`tool: ${config.tool}`);
-  console.log(`dataset: ${config.tenant}/${config.datasetConfigKey}`);
+  console.log(`model: ${config.next.model}, tenant ${config.next.tenant}`);
   console.log(
     config.auth.mode === 'entra'
       ? `sign-in: Entra ID, tenant ${config.auth.tenantId}`
@@ -18,8 +17,13 @@ serve({ fetch: app.fetch, port: config.port, hostname }, (info) => {
         ? `sign-in: Ansattporten, ${config.auth.ansattporten.issuer}, the person's token to the backend`
         : 'sign-in: OFF. Unsigned development id, do not use this outside your own machine.',
   );
-  if (!typesenseConfigured) {
-    console.log('Typesense is not set up: no filters and no excerpts in the sources panel.');
+  console.log(
+    config.next.webRoot
+      ? `client: ${config.next.webRoot}${config.next.layout ? ', drawn from the layout in KA_NEXT_LAYOUT' : ''}`
+      : 'client: none (WEB_NEXT_ROOT is unset), so only the API is served',
+  );
+  const retired = retiredSettingsIn();
+  if (retired.length > 0) {
+    console.log(`no longer read, and safe to remove: ${retired.join(', ')}`);
   }
-  startUp();
 });

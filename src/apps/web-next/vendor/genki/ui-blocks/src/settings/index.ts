@@ -44,9 +44,11 @@ export {
   type SettingsBetaProps,
   type SettingsGeneralProps,
   type SettingsMemory,
+  type SettingsPageNote,
   type SettingsPrivacyProps,
   type SettingsSharedThread,
   type TextSize,
 } from './SettingsPages.js';
+export { generalRowsOf, settingsGeneralRows, type SettingsGeneralRow } from './general.js';
 export { colorSchemes, isColorScheme, type ColorScheme } from './colorScheme.js';
 export { displayLevels, isDisplayLevel, type DisplayLevel } from './displayLevel.js';

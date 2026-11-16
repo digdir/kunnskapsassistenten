@@ -1,4 +1,12 @@
-import { Button, Card, Heading, Link, Paragraph, Skeleton } from '@digdir/designsystemet-react';
+import {
+  Button,
+  Card,
+  Details,
+  Heading,
+  Link,
+  Paragraph,
+  Skeleton,
+} from '@digdir/designsystemet-react';
 import { useFormat } from '@genai/i18n/react';
 import {
   ArrowLeftIcon,
@@ -81,6 +89,8 @@ export interface SourcesProps {
   hasOwnDocuments?: boolean | undefined;
   search?: boolean | undefined;
   documentsClosed?: boolean | undefined;
+  /** The documents the answer cites nowhere, last and folded: «Andre kilder som ble lest (N)». */
+  foldUncited?: boolean | undefined;
   headingLevel?: 2 | 3 | 4 | 5 | undefined;
   /** Back to the footnote the reader followed. */
   onReturn?: (() => void) | undefined;
@@ -952,6 +962,7 @@ export const Sources = ({
   onTargetMissing,
   search,
   documentsClosed = false,
+  foldUncited = false,
   headingLevel = 3,
   itemId,
   children,
@@ -987,15 +998,33 @@ export const Sources = ({
       ),
     [sources, order, t, itemId],
   );
+  // With `foldUncited`, the documents nothing in the finished answer cites.
+  const uncited = useMemo(() => {
+    if (!foldUncited || !pairing || answerStatus === 'streaming') return new Set<number>();
+    const cited = (i: number) =>
+      pairing.mode === 'excerpt'
+        ? (sources?.[i]?.excerpts ?? []).some((e) => pairing.numbers.has(e.chunkId))
+        : pairing.uses.has(prepared[i]?.key ?? '');
+    return new Set(order.documents.filter((i) => !cited(i)));
+  }, [foldUncited, pairing, answerStatus, sources, prepared, order]);
+  // The documents as drawn: the cited ones, then the folded ones, which the search follows.
+  const shown = useMemo(
+    () => [
+      ...order.documents.filter((i) => !uncited.has(i)),
+      ...order.documents.filter((i) => uncited.has(i)),
+    ],
+    [order, uncited],
+  );
+  const othersRef = useRef<HTMLDetailsElement>(null);
   const index = useMemo<SearchableItem[]>(
     () =>
-      order.documents.flatMap(
+      shown.flatMap(
         (i) =>
           prepared[i]?.rows
             .filter((row) => row.flat)
             .map((row) => ({ id: row.key, text: row.flat })) ?? [],
       ),
-    [prepared, order],
+    [prepared, shown],
   );
   const cardOfRow = useMemo(
     () =>
@@ -1021,9 +1050,22 @@ export const Sources = ({
     if (missing && item.target) onTargetMissing?.(item.target);
   }, [item.target, missing]);
 
+  const openOthers = (cards: readonly string[]) => {
+    const folded = new Set([...uncited].map((i) => prepared[i]?.key));
+    if (othersRef.current && cards.some((card) => folded.has(card))) othersRef.current.open = true;
+  };
+  // A target in the folded documents, such as the way back from Dokumentvisning, unfolds them.
+  useEffect(() => {
+    if (uncited.has(targetPosition(sources ?? [], item.target)) && othersRef.current)
+      othersRef.current.open = true;
+  }, [item.target, uncited]);
+  // So do search hits already found when the fold appears, as the answer ends.
+  useEffect(() => openOthers(hits.flatMap((hit) => cardOfRow.get(hit.itemId) ?? [])), [uncited]);
+
   const reveal = (keys: readonly string[]) => {
     if (keys.length === 0) return;
     const cards = keys.flatMap((key) => cardOfRow.get(key) ?? []);
+    openOthers(cards);
     setOpenRows((was) => new Set([...was, ...keys]));
     setOpenCards((was) => {
       const next = new Map(was);
@@ -1110,7 +1152,7 @@ export const Sources = ({
     );
   // The tool's caption names the list it stands over, «Utdrag svaret bygger på».
   const tool = variant === 'tool';
-  const captioned = tool && !waiting && !empty && Boolean(sources?.length);
+  const captioned = tool && !waiting && !empty && (sources?.length ?? 0) > uncited.size;
   const named = captioned
     ? { 'aria-labelledby': captionId }
     : heading
@@ -1119,6 +1161,45 @@ export const Sources = ({
   const own = hasOwnDocuments ?? sources?.some(isOwn) ?? false;
   const searching = (search ?? variant !== 'compact') && !empty && Boolean(sources?.length);
   const describedBy = disclaimer && sources?.length ? (disclaimerId ?? madeId) : undefined;
+  const items = (indexes: readonly number[]) =>
+    indexes.flatMap((i) => {
+      const document = prepared[i];
+      if (!document) return [];
+      return [
+        <li key={document.key}>
+          <SourceItem
+            document={document}
+            level={headingLevel}
+            pairing={pairing}
+            openRows={openRows}
+            onRowOpenChange={setRowOpen}
+            open={cardOpen(document.key)}
+            onOpenChange={(now) => setCardOpen(document.key, now)}
+            passagesOpen={openPassages.has(document.key)}
+            onPassagesOpenChange={(now) =>
+              setOpenPassages((was) => {
+                const next = new Set(was);
+                if (now) next.add(document.key);
+                else next.delete(document.key);
+                return next;
+              })
+            }
+            rowRefs={rowRefs.current}
+            applied={applied.current}
+            hits={hits}
+            currentHit={currentHit}
+            sectionFirst={variant === 'tool'}
+            corpus={corpus}
+            headerColor={headerColor}
+            back={back}
+            {...item}
+            target={i === hit ? item.target : undefined}
+          />
+        </li>,
+      ];
+    });
+  const others = shown.filter((i) => uncited.has(i));
+  const cited = shown.filter((i) => !uncited.has(i));
   return (
     <div className={classes('uib-sources', className)} data-variant={variant} data-color={color}>
       {/* In the page from the first render: a live region announces only a change to it. */}
@@ -1181,44 +1262,25 @@ export const Sources = ({
           assistantName={assistantName}
         />
       ) : sources?.length ? (
-        <ol key={listKey} className="uib-sources-documents" {...named}>
-          {order.documents.flatMap((i) => {
-            const document = prepared[i];
-            if (!document) return [];
-            return [
-              <li key={document.key}>
-                <SourceItem
-                  document={document}
-                  level={headingLevel}
-                  pairing={pairing}
-                  openRows={openRows}
-                  onRowOpenChange={setRowOpen}
-                  open={cardOpen(document.key)}
-                  onOpenChange={(now) => setCardOpen(document.key, now)}
-                  passagesOpen={openPassages.has(document.key)}
-                  onPassagesOpenChange={(now) =>
-                    setOpenPassages((was) => {
-                      const next = new Set(was);
-                      if (now) next.add(document.key);
-                      else next.delete(document.key);
-                      return next;
-                    })
-                  }
-                  rowRefs={rowRefs.current}
-                  applied={applied.current}
-                  hits={hits}
-                  currentHit={currentHit}
-                  sectionFirst={variant === 'tool'}
-                  corpus={corpus}
-                  headerColor={headerColor}
-                  back={back}
-                  {...item}
-                  target={i === hit ? item.target : undefined}
-                />
-              </li>,
-            ];
-          })}
-        </ol>
+        <>
+          {cited.length > 0 ? (
+            <ol key={listKey} className="uib-sources-documents" {...named}>
+              {items(cited)}
+            </ol>
+          ) : null}
+          {others.length > 0 ? (
+            <Details key={`others:${listKey}`} ref={othersRef} className="uib-sources-others">
+              <Details.Summary>
+                {t('sources.otherSources', { count: others.length })}
+              </Details.Summary>
+              <Details.Content>
+                <ol className="uib-sources-documents" aria-label={t('sources.otherSourcesList')}>
+                  {items(others)}
+                </ol>
+              </Details.Content>
+            </Details>
+          ) : null}
+        </>
       ) : null}
       {children}
     </div>

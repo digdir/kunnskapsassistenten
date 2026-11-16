@@ -14,6 +14,9 @@ const nbApproach = defineNamespace({
   usedOnly: { one: 'Brukte {count} kilde', other: 'Brukte {count} kilder' },
   took: { one: 'tok {count} sekund', other: 'tok {count} sekunder' },
   tookOnly: { one: 'Tok {count} sekund', other: 'Tok {count} sekunder' },
+  // How long one step took, beside it.
+  stepTime: '{seconds} s',
+  stepTimeUnder: 'under {seconds} s',
   usedInAnswer: 'Brukt i svaret: kilde {sources}.',
   showRead: { one: 'Vis det som ble lest', other: 'Vis de {count} som ble lest' },
   showReadSoFar: { one: 'Vis det som er lest', other: 'Vis de {count} som er lest' },
@@ -41,6 +44,8 @@ const enApproach = {
   usedOnly: { one: 'Used {count} source', other: 'Used {count} sources' },
   took: { one: 'took {count} second', other: 'took {count} seconds' },
   tookOnly: { one: 'Took {count} second', other: 'Took {count} seconds' },
+  stepTime: '{seconds} s',
+  stepTimeUnder: 'under {seconds} s',
   usedInAnswer: 'Used in the answer: source {sources}.',
   showRead: { one: 'Show what was read', other: 'Show the {count} that were read' },
   showReadSoFar: { one: 'Show what has been read', other: 'Show the {count} read so far' },

@@ -13,6 +13,7 @@ import { useEffect, useId, useLayoutEffect, useRef, type MouseEvent } from 'reac
 import { plainClick } from '../dom.js';
 import { useT } from './i18n.js';
 import type { FilterSelection } from './types.js';
+import { formatRange, rangeKey, toRanges, yearsIn } from './yearRanges.js';
 
 /** One chosen value, and the field it narrows. */
 export interface ChosenValue {
@@ -27,10 +28,44 @@ type Level = 3 | 4 | 5 | 6;
 /** One key per chip. The same value could sit in two fields. */
 const keyOf = ({ field, value }: ChosenValue) => `${field}\u0000${value}`;
 
+/** A chip: one value, or a field of years' period, which stands for every year in it. */
+interface Chosen extends ChosenValue {
+  values?: readonly string[] | undefined;
+}
+
+/** Each year field's years as periods, «2020–2022» one chip; the other values as they are. */
+const asChips = (chosen: readonly ChosenValue[], yearFields: ReadonlySet<string>): Chosen[] => {
+  const chips: Chosen[] = [];
+  const grouped = new Set<string>();
+  for (const item of chosen) {
+    if (!yearFields.has(item.field) || !/^\d{4}$/u.test(item.value)) {
+      chips.push(item);
+      continue;
+    }
+    if (grouped.has(item.field)) continue;
+    grouped.add(item.field);
+    const years = chosen
+      .filter((one) => one.field === item.field && /^\d{4}$/u.test(one.value))
+      .map((one) => one.value);
+    for (const range of toRanges(years))
+      chips.push({
+        field: item.field,
+        value: rangeKey(range),
+        label: formatRange(range),
+        values: yearsIn(range)
+          .map(String)
+          .filter((year) => years.includes(year)),
+      });
+  }
+  return chips;
+};
+
 export interface ActiveFilterProps {
   selection: FilterSelection;
   /** The values to show: those no field can. Never empty. */
   chosen: readonly ChosenValue[];
+  /** Fields whose values are years: their years show as periods, one chip each. */
+  yearFields?: readonly string[] | undefined;
   /** Whether fields are drawn below, so waiting will not bring a field for these values. */
   hasFields: boolean;
   level: Level;
@@ -44,7 +79,8 @@ export interface ActiveFilterProps {
 /** The filter in force where no field shows it, which must show and be removable. */
 export const ActiveFilter = ({
   selection,
-  chosen,
+  chosen: values,
+  yearFields = [],
   hasFields,
   level,
   onChange,
@@ -54,6 +90,7 @@ export const ActiveFilter = ({
   const t = useT();
   const headingId = useId();
   const sectionRef = useRef<HTMLElement>(null);
+  const chosen = asChips(values, new Set(yearFields));
   const chipRefs = useRef(new Map<string, HTMLButtonElement | null>());
   // The chip to focus after a removal, read in an effect once React has drawn the rest.
   const focusAfterRemove = useRef<string | undefined>(undefined);
@@ -74,7 +111,7 @@ export const ActiveFilter = ({
     };
   }, [onFocusLost]);
 
-  const remove = (removed: ChosenValue) => {
+  const remove = (removed: Chosen) => {
     const index = chosen.findIndex((candidate) => keyOf(candidate) === keyOf(removed));
     const next = chosen[index + 1] ?? chosen[index - 1];
     focusAfterRemove.current = next ? keyOf(next) : undefined;
@@ -83,7 +120,9 @@ export const ActiveFilter = ({
     onAnnounce(t('filter.removedValue', { value: removed.label ?? removed.value }));
     onChange({
       ...selection,
-      [removed.field]: (selection[removed.field] ?? []).filter((value) => value !== removed.value),
+      [removed.field]: (selection[removed.field] ?? []).filter((value) =>
+        removed.values ? !removed.values.includes(value) : value !== removed.value,
+      ),
     });
   };
 

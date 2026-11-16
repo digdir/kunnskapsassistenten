@@ -1,5 +1,7 @@
-import { parseDataset, parseFilterFields } from './datasetConfig.ts';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { localOrigin } from './localOrigin.ts';
+import { nextLayout } from './nextLayout.ts';
 
 function required(name: string): string {
   const v = process.env[name];
@@ -97,41 +99,65 @@ function authConfig() {
   };
 }
 
-const datasetConfigKey = process.env.DIGDIR_DATASET_CONFIG_KEY ?? 'default';
-
-/** `1`, `true`, `on` or `yes`, in any case. Anything else, or nothing, is off. */
-const switchedOn = (raw: string | undefined) => /^(1|true|on|yes)$/i.test((raw ?? '').trim());
-
 const NEXT_MODEL = 'kunnskapsassistenten__default';
 
 /**
- * The next client, apps/web-next, beside apps/web on the same host (decisions/0013). Off unless
- * `KA_NEXT` turns it on: then `/api/next/*` is mounted, and a person who chose it gets its page.
- * `model` is the genki service and variant it asks, `<service>__<variant>`.
+ * The settings of the previous client and of the switch between the two clients, no longer read
+ * (decisions/0019). A deployment that still sets them starts as before, and is told so.
+ */
+export const RETIRED_SETTINGS = [
+  'KA_NEXT',
+  'KA_NEXT_DEFAULT',
+  'KA_NEXT_ONLY',
+  'WEB_ROOT',
+  'KA_EXCERPT_ENVIRONMENT',
+  'KA_CAPABILITIES',
+  'KA_FILTER_FIELDS',
+  'KA_DATASETS',
+  'KUDOS_BASE',
+  'TYPESENSE_API_HOST',
+  'TYPESENSE_API_KEY_ADMIN',
+  'KUDOS_DOCS_COLLECTION',
+  'DIGDIR_TOOL',
+  'DIGDIR_AGENT_ID',
+  'DIGDIR_TENANT',
+  'DIGDIR_DATASET_CONFIG_KEY',
+] as const;
+
+/** The retired settings this environment still sets, by name only: a value can be a secret. */
+export const retiredSettingsIn = (env: NodeJS.ProcessEnv = process.env) =>
+  RETIRED_SETTINGS.filter((name) => env[name] !== undefined);
+
+/**
+ * The client, apps/web-next (decisions/0013, 0019), and what it asks genki. `model` is the genki
+ * service and variant, `<service>__<variant>` (`KA_NEXT_MODEL`), and `tenant` the tenant whose
+ * collections it reads (`KA_NEXT_TENANT`). A malformed model stops the server.
  *
- * A malformed `KA_NEXT_MODEL` stops the server only when `KA_NEXT` is on. While it is off the
- * model is not used, so a mistake in it is warned about and must not take apps/web down.
+ * `webRoot` is the client's build (`WEB_NEXT_ROOT`). Unset, the server serves only the API, as
+ * for work on the client with Vite. Set without an `index.html` in it, the server stops: there
+ * would be no page to serve, while the readiness probe still answered.
+ *
+ * `layout` is the layout from genki's builder in `KA_NEXT_LAYOUT`, checked with genki's own rules
+ * (decisions/0017, `nextLayout.ts`): a bad one stops the server. Unset, the client draws KA's own.
  */
 export function nextConfig(env: NodeJS.ProcessEnv = process.env) {
-  const enabled = switchedOn(env.KA_NEXT);
-  let model = (env.KA_NEXT_MODEL ?? '').trim() || NEXT_MODEL;
+  const webRoot = env.WEB_NEXT_ROOT ?? '';
+  if (webRoot && !existsSync(join(webRoot, 'index.html'))) {
+    console.error(`WEB_NEXT_ROOT has no index.html: there is no client to serve.`);
+    process.exit(1);
+  }
+  const model = (env.KA_NEXT_MODEL ?? '').trim() || NEXT_MODEL;
   if (!/^[a-z0-9][a-z0-9-]*(__[a-z0-9][a-z0-9-]*)?$/i.test(model)) {
-    if (enabled) {
-      console.error(`KA_NEXT_MODEL must be <service>__<variant>. Got "${model}".`);
-      process.exit(1);
-    }
-    console.warn(
-      `KA_NEXT_MODEL must be <service>__<variant>. Got "${model}"; ignored while KA_NEXT is off.`,
-    );
-    model = NEXT_MODEL;
+    console.error(`KA_NEXT_MODEL must be <service>__<variant>. Got "${model}".`);
+    process.exit(1);
   }
   return {
-    enabled,
     model,
     service: model.split('__')[0] ?? '',
     tenant: (env.KA_NEXT_TENANT ?? '').trim() || 'digdir',
     /** The build of apps/web-next. */
-    webRoot: env.WEB_NEXT_ROOT ?? '',
+    webRoot,
+    layout: nextLayout(env.KA_NEXT_LAYOUT),
   };
 }
 
@@ -157,59 +183,22 @@ export function testersConfig(env: NodeJS.ProcessEnv = process.env) {
   return { ids: ids as ReadonlySet<string>, environment };
 }
 
-/** The genki environment the excerpt trial asks for (`KA_EXCERPT_ENVIRONMENT`); unset, no trial. */
-export function excerptEnvironmentConfig(env: NodeJS.ProcessEnv = process.env) {
-  const environment = (env.KA_EXCERPT_ENVIRONMENT ?? '').trim();
-  if (!environment) return undefined;
-  if (!ENVIRONMENT_NAME.test(environment)) {
-    console.error(
-      `KA_EXCERPT_ENVIRONMENT must be a genki environment name. Got "${environment}".`,
-    );
-    process.exit(1);
-  }
-  return environment;
-}
-
 const auth = authConfig();
 
 export const config = {
   port: Number(process.env.PORT ?? 8787),
-  apiBase: (process.env.DIGDIR_API_BASE ?? 'http://localhost:8099').replace(/\/$/, ''),
-  /** With Ansattporten the person's token is sent instead, and the key only probes. */
+  apiBase: (process.env.DIGDIR_API_BASE ?? 'http://localhost:8080').replace(/\/$/, ''),
+  /** With Ansattporten the person's token is sent instead, and the key is not used. */
   apiKey:
     auth.mode === 'ansattporten'
       ? (process.env.DIGDIR_API_KEY ?? '')
       : required('DIGDIR_API_KEY'),
 
-  /** Default only: the browser may name another that the key already grants. */
-  tool: process.env.DIGDIR_TOOL ?? 'builtin.agent-rag-agent__agent-rag-graph-bundled',
-  tenant: process.env.DIGDIR_TENANT ?? 'public-sector-knowledge',
-  agentId: process.env.DIGDIR_AGENT_ID ?? 'builtin/agent-rag-agent',
-  datasetConfigKey,
-  /** No fields configured means no filter panel, not a guessed field name. */
-  filterFields: parseFilterFields(process.env.KA_FILTER_FIELDS, datasetConfigKey),
-  dataset: parseDataset(process.env.KA_DATASETS, datasetConfigKey),
-
-  kudosBase: (process.env.KUDOS_BASE ?? 'https://kudos.dfo.no').replace(/\/$/, ''),
-
-  typesenseHost: process.env.TYPESENSE_API_HOST ?? '',
-  typesenseKey: process.env.TYPESENSE_API_KEY_ADMIN ?? '',
-  docsCollection: process.env.KUDOS_DOCS_COLLECTION ?? '',
-
   maxQueryLength: 4000,
-
-  /** The build of apps/web. */
-  webRoot: process.env.WEB_ROOT ?? '',
 
   next: nextConfig(),
 
   testers: testersConfig(),
 
-  excerptEnvironment: excerptEnvironmentConfig(),
-
   auth,
 } as const;
-
-export const typesenseConfigured = Boolean(
-  config.typesenseHost && config.typesenseKey && config.docsCollection,
-);

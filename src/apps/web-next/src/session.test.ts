@@ -31,6 +31,21 @@ describe('the session', () => {
     await expect(loadMe(answering(502))).rejects.toThrow(/502/);
   });
 
+  it('takes the layout from genki’s builder the server gives, and refuses one that is not a layout', async () => {
+    const layout = {
+      version: 1,
+      zones: { primary: [], main: [{ block: 'chat' }], secondary: [] },
+      profile: { assistantName: 'Rapportassistenten' },
+    };
+    await expect(loadMe(answering(200, { ...ME, layout }))).resolves.toEqual({ ...ME, layout });
+    await expect(
+      loadMe(answering(200, { ...ME, layout: { ...layout, version: 2 } })),
+    ).rejects.toThrow(/shape/);
+    await expect(
+      loadMe(answering(200, { ...ME, layout: { ...layout, profile: { suggestions: 'one' } } })),
+    ).rejects.toThrow(/shape/);
+  });
+
   it('signs in with the way back to this address, its thread included', () => {
     expect(signInHref({ pathname: '/', search: '?t=abc' } as Location)).toBe(
       '/auth/login?next=%2F%3Ft%3Dabc',

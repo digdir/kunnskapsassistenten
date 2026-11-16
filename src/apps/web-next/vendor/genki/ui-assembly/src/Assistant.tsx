@@ -25,7 +25,6 @@ import {
   EmptyState,
   ErrorState,
   Filter,
-  FilterNext,
   FilterRead,
   NotFoundState,
   Settings,
@@ -46,8 +45,11 @@ import {
   Welcome,
   answerCopy,
   experimentsOn,
+  fieldValueLabels,
+  generalRowsOf,
   isEmptySelection,
   isSettingsPageId,
+  narrowing,
   sameSelection,
   settingsPageIds,
   type AnswerCopied,
@@ -60,7 +62,14 @@ import {
   type SourceDocument,
   type SourceTarget,
 } from '@genai/ui-blocks';
-import { ArrowLeftIcon, ChatIcon, FileIcon, FileTextIcon, RobotIcon } from '@navikt/aksel-icons';
+import {
+  ArrowLeftIcon,
+  ChatIcon,
+  FileSearchIcon,
+  FileTextIcon,
+  PlusIcon,
+  RobotIcon,
+} from '@navikt/aksel-icons';
 import {
   useEffect,
   useId,
@@ -68,6 +77,7 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent,
+  type MouseEvent,
   type ReactNode,
 } from 'react';
 import { phrase, useT, type AssemblyTranslator } from './i18n.js';
@@ -92,14 +102,21 @@ const sourcesTool = {
 // `compact-filter`: a field's ticks in one column, so the filter fits its narrow panel.
 const oneColumnTicks = { '--genai-filter-checkboxes-columns': '1' } as CSSProperties;
 
+// The next look's footnote marks, 16 px as dev-kilder-hoyre draws them.
+const nextFootnotes = { '--genai-answer-footnote-size': 'var(--ds-size-4)' } as CSSProperties;
+
 // The tools' icons in the next look, as the dev-verktoy boards draw them: Fremgangsmåte's robot,
-// Kilder's page. Notater's pencil waits for the block.
+// Kilder's page with a magnifier. Notater's pencil waits for the block.
 const toolIcons: Record<string, ReactNode> = {
   approach: <RobotIcon aria-hidden />,
   chat: <ChatIcon aria-hidden />,
-  sources: <FileIcon aria-hidden />,
+  sources: <FileSearchIcon aria-hidden />,
   'document-view': <FileTextIcon aria-hidden />,
 };
+
+// A plain main-button click is the host's; any other, for a new tab, is the browser's.
+const plainClick = (event: MouseEvent<HTMLAnchorElement>) =>
+  event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
 // The modifier to name; the shortcut takes both (kunnskapsassistenten's shortcutModifier.ts).
 const modifier = () =>
@@ -108,11 +125,13 @@ const modifier = () =>
 export interface AssistantProps extends AssistantOptions {
   /** The `id` of `<main>`, the target of «Hopp til hovedinnhold». */
   mainId?: string | undefined;
+  /** Drawn in a host's preview this wide, on the host's page: no `h1` of its own (`Shell`). */
+  frameWidth?: number | undefined;
 }
 
 /** The assistant a layout describes, live against the service through `api`. */
-export const Assistant = ({ mainId, ...options }: AssistantProps) => (
-  <AssistantView assistant={useAssistant(options)} mainId={mainId} />
+export const Assistant = ({ mainId, frameWidth, ...options }: AssistantProps) => (
+  <AssistantView assistant={useAssistant(options)} mainId={mainId} frameWidth={frameWidth} />
 );
 
 const AnswerRow = ({
@@ -149,6 +168,7 @@ const AnswerRow = ({
                 sources: turn.sources,
                 markers: turn.markers,
                 locale: t.locale,
+                documentFootnotes: a.look === 'next',
               });
               void copy(text, { kind: 'answer', sources });
             },
@@ -159,7 +179,8 @@ const AnswerRow = ({
                     void copy(new URL(a.hrefOf(a.currentId), location.href).href, {
                       kind: 'link',
                     }),
-                  linkOnlyHere: true,
+                  // The next look keeps the answer's time but no note that the link works only here.
+                  linkOnlyHere: a.look !== 'next',
                 }
               : {}),
           }
@@ -191,41 +212,40 @@ const AnswerRow = ({
 
 /**
  * «Fremgangsmåte» for one turn asked here, at the reader's level. Stored turns carry no steps.
- * `list` is the next look's tool in the secondary panel (dev-verktoy-1 to -3): the steps alone.
+ * `card` stands over the answer, `compact` beside the tool, and `tool` has every detail.
  */
 const approachOf = (
   a: AssistantState,
   turnId: string | undefined,
   t: AssemblyTranslator,
-  variant: 'card' | 'list' = 'card',
+  place: 'card' | 'compact' | 'tool' = 'card',
 ) => {
   const turn = a.turns.find((one) => one.id === turnId);
   const approach = turn?.approach;
   if (!turn || !approach) return null;
   const busy = turn.answer?.status === 'streaming';
-  const steps = stepsOf(approach, busy, t.locale);
+  const tool = place === 'tool';
+  const steps = stepsOf(approach, busy, t.locale, tool);
   if (steps.length === 0) return null;
-  if (variant === 'list')
-    return (
-      <Approach
-        variant="list"
-        steps={steps}
-        working={busy}
-        startedAt={approach.startedAt}
-        {...(approach.finishedAt ? { finishedAt: approach.finishedAt } : {})}
-      />
-    );
-  // The next look says the filter inside «Fremgangsmåte» (dev-filter-panel; «9 · Filtrering» B):
+  // The next look's card and every tool say the filter (dev-filter-panel; «9 · Filtrering» B):
   // the totals and «filteret er endret» when folded, what the answer read from when open. Only for
   // a question asked here, since genki keeps no filter with a turn.
   const next = a.look === 'next';
-  const asked = next ? turn.scope?.selection : undefined;
+  const asked = next || tool ? turn.scope?.selection : undefined;
   const before = a.turns
     .slice(0, a.turns.indexOf(turn))
     .reverse()
     .find((one) => one.answer && one.scope?.selection);
   const changed =
     asked && before?.scope?.selection ? !sameSelection(before.scope.selection, asked) : false;
+  const count = turn.scope?.documents;
+  // Beside the tool, the card says only how many documents the answer read from.
+  const scope =
+    asked && place !== 'compact' ? (
+      <FilterRead selection={asked} fields={a.facets} count={count} />
+    ) : asked && count !== undefined ? (
+      <FilterRead selection={{}} count={count} />
+    ) : undefined;
   return (
     <>
       <Approach
@@ -234,17 +254,12 @@ const approachOf = (
         startedAt={approach.startedAt}
         {...(approach.finishedAt ? { finishedAt: approach.finishedAt } : {})}
         {...(turn.answer?.sources ? { used: turn.answer.sources.length } : {})}
-        {...(next ? { summary: 'totals' as const } : {})}
+        // The next look's tool is the dev-verktoy boards' list; its card is their bar.
+        {...(next ? (tool ? { variant: 'list' as const } : { summary: 'totals' as const }) : {})}
         {...(changed ? { note: t('filter.changed') } : {})}
-        {...(asked
-          ? {
-              scope: (
-                <FilterRead selection={asked} fields={a.facets} count={turn.scope?.documents} />
-              ),
-            }
-          : {})}
+        {...(scope ? { scope } : {})}
       />
-      {a.level === 'detailed' ? (
+      {a.level === 'detailed' && place !== 'compact' ? (
         // No block draws the detailed level yet: the step frames as genki sent them, for now.
         <Details data-size="sm">
           <Details.Summary>{t('assembly.technicalDetails')}</Details.Summary>
@@ -276,22 +291,27 @@ const approachOf = (
 export const AssistantView = ({
   assistant: a,
   mainId = 'main-content',
+  frameWidth,
 }: {
   assistant: AssistantState;
   mainId?: string | undefined;
+  frameWidth?: number | undefined;
 }) => {
   const t = useT();
   const approachHeadingId = useId();
   const chatZone = a.where('chat');
-  const approachZone = a.where('approach');
+  // Fremgangsmåte as the card in the main column, the tool in the secondary panel, or both.
+  const approachCard = a.standsIn('approach', 'main');
+  const approachTool = a.standsIn('approach', 'secondary');
+  const cardPlace = approachTool ? 'compact' : 'card';
   const filterZone = a.where('filter');
   const threadsOn = a.has('threads');
   const sourcesOn = a.has('sources');
   const documentOn = a.has('document-view');
   const settingsOn = a.has('settings');
   const name = a.assistantName;
-  // The dev boards' look (`knowledge-assistant-next`): cards, every panel titled, the thread's
-  // title as the `h1`, and the reader at the primary panel's foot with the profile menu.
+  // The dev boards' look, the layout's `next`: cards, every panel titled, the thread's title as
+  // the `h1`, and the reader at the primary panel's foot with the profile menu.
   const next = a.look === 'next';
   // The document stands where the conversation was, with Dokumentvisning beside Chat in «Innhold».
   const chatHidden = a.documentOverChat && !!a.openDoc;
@@ -369,7 +389,9 @@ export const AssistantView = ({
   // The page's one `h1`, the assistant's name, before everything else on it (WCAG 1.3.1, 2.4.6).
   // Chat alone in the main column draws it, as kunnskapsassistenten does; otherwise the column.
   // In the next look the `h1` is the thread's title, at the top of the main card (`mainTitle`).
-  const pageHeading = next ? null : <h1 className="ds-sr-only">{name}</h1>;
+  // In a host's preview the page and its `h1` are the host's.
+  const framed = frameWidth !== undefined;
+  const pageHeading = next || framed ? null : <h1 className="ds-sr-only">{name}</h1>;
 
   // ── Chat ──
   const chat = (inPanel: boolean, titled: boolean) => {
@@ -398,7 +420,7 @@ export const AssistantView = ({
     } else if (start) {
       middle = (
         <div className="uia-greeting">
-          <Welcome />
+          <Welcome className="uia-welcome" />
           {a.view === 'ready' ? (
             <EmptyState
               title={t('assembly.emptyThreadTitle')}
@@ -412,16 +434,17 @@ export const AssistantView = ({
         <Conversation
           turns={a.conversation}
           loading={a.view === 'loading'}
+          onFetchAgain={a.fetchAgain}
           assistantName={name}
           answerColor="neutral"
-          // The next look's answer has no card, under the assistant's name (dev-kilder-hoyre).
-          {...(next ? { answerVariant: 'plain' as const } : {})}
+          // The next look's answer has no card and no name over it (dev-kilder-hoyre).
+          {...(next ? { answerVariant: 'plain' as const, answerLabel: false } : {})}
           // The next look names the thread once, in the main card's `h1`.
           {...(a.named && !next ? { title: a.named, titleRepeatsQuestion: a.repeatsQuestion } : {})}
           target={a.answerTarget}
           header={(turn) =>
-            turn.kind === 'answer' && approachZone === 'main' && chatZone === 'main'
-              ? approachOf(a, turn.id, t)
+            turn.kind === 'answer' && approachCard && chatZone === 'main'
+              ? approachOf(a, turn.id, t, cardPlace)
               : null
           }
           {...(a.footnotes
@@ -436,6 +459,8 @@ export const AssistantView = ({
                   follow(turn, target, { turnId: turn.id, document: target });
                 },
                 sourcesUsed: true,
+                // Until genki cites excerpts, the next look marks each cited document.
+                ...(next ? { documentFootnotes: true } : {}),
               }
             : {})}
           onRegenerate={(turn, question) => {
@@ -452,15 +477,19 @@ export const AssistantView = ({
       );
     }
     const suggestions = a.option('chat', 'suggestions') ? (a.profile?.suggestions ?? []) : [];
+    // The catalogue keeps follow-ups to the current look.
     const followUps = a.option('chat', 'followUps') ? a.profile?.followUps : undefined;
     const disclaimer = a.option('chat', 'disclaimer');
+    // While a question is written, the next look hides the greeting and suggestions in place.
+    const typing = next && start && a.draft !== '';
     return (
       <div
         className="uia-chat"
         data-start={start || undefined}
+        data-typing={typing || undefined}
         data-in-panel={inPanel || undefined}
         // In the next look the docked field stands on the main card's ground, not the page's.
-        style={next && !inPanel ? cardGround : undefined}
+        style={next ? { ...nextFootnotes, ...(inPanel ? {} : cardGround) } : undefined}
       >
         {titled ? pageHeading : null}
         {middle}
@@ -509,12 +538,6 @@ export const AssistantView = ({
                 <VariantPicker variants={a.variants} value={a.model} onChange={a.setModel} />
               ) : undefined
             }
-            // What the next question reads from, under the field, beside the filter's panel.
-            {...(filterPanel
-              ? {
-                  note: <FilterNext selection={a.selection} fields={a.facets} count={a.readFrom} />,
-                }
-              : {})}
             // Docked, the field keeps the rest of the column clear of itself (WCAG 2.4.11) with a
             // scroll margin as tall as it, as kunnskapsassistenten does.
             sticky={!start && !inPanel}
@@ -552,8 +575,12 @@ export const AssistantView = ({
   ) => (
     <Filter
       {...(pinIn !== undefined ? { pinIn } : {})}
-      yearPeriods={a.flags.has('year-ranges')}
-      compactChips={a.flags.has('compact-filter-chips')}
+      // Years as periods and many chosen values as one chip: standard since 13.11, no longer trials.
+      yearPeriods
+      compactChips
+      yearFields={(a.fields ?? [])
+        .filter((field) => field.kind === 'year')
+        .map((field) => field.id)}
       fields={a.facets}
       selection={a.selection}
       onChange={a.setSelection}
@@ -611,7 +638,11 @@ export const AssistantView = ({
       typePlurals={corpusProfile?.typePlurals}
     />
   );
-  const narrowedTo = (a.facets ?? []).flatMap((field) => [...(a.selection[field.id] ?? [])]);
+  // A field with every value it lists chosen narrows nothing, so the strip does not name it.
+  const narrowed = narrowing(a.selection, a.facets);
+  const narrowedTo = (a.facets ?? []).flatMap((field) =>
+    fieldValueLabels(field, narrowed[field.id] ?? []),
+  );
   // The design's strip over the conversation: what the thread reads from, and «Endre».
   const filterStrip = (
     <section className="uia-filter-strip" aria-label={t('builder.filter')}>
@@ -707,15 +738,29 @@ export const AssistantView = ({
             : {}),
         }
       : undefined;
-  // Pinned, so the list scrolls above it and never runs under it (WCAG 2.4.11); on the rail, the
-  // avatar alone.
+  // Pinned, so the list scrolls above it and never runs under it (WCAG 2.4.11). Not on the rail.
   const profileFoot: Partial<ShellPanel> = profile
-    ? {
-        foot: <ShellProfile {...profile} />,
-        footPinned: true,
-        railFoot: <ShellProfile {...profile} compact />,
-      }
+    ? { foot: <ShellProfile {...profile} />, footPinned: true }
     : {};
+
+  // The folded threads panel in the next look: its button, then «Ny tråd» as a plus (dev-navbar).
+  const newThreadRail = (
+    <Tooltip content={t('threads.newThread')} placement="right">
+      <Button asChild data-size="md" icon>
+        <a
+          aria-label={t('threads.newThread')}
+          href={a.hrefOf()}
+          onClick={(event) => {
+            if (!plainClick(event)) return;
+            event.preventDefault();
+            a.newThread();
+          }}
+        >
+          <PlusIcon aria-hidden />
+        </a>
+      </Button>
+    </Tooltip>
+  );
 
   // ── Settings, from the primary panel's foot ──
   const foot =
@@ -768,6 +813,7 @@ export const AssistantView = ({
       children: threadList,
       foot,
       ...nextPrimary,
+      ...(next ? { rail: newThreadRail } : {}),
       // The filter's own panel in the threads' card, 220 + 440 at 1720 as dev-filter-panel draws
       // it: «Filter», «Gjelder neste spørsmål», and the card's button on its row.
       ...(filterPanel
@@ -810,6 +856,10 @@ export const AssistantView = ({
     ...experiment,
     on: a.flags.has(experiment.id),
   }));
+  // «Generelt» offers the colour scheme the host keeps, and its menu line says no more.
+  const general = a.onColorSchemeChange
+    ? { colorScheme: { value: a.colorScheme, onChange: a.onColorSchemeChange } }
+    : {};
   if (nextSettings)
     primary = {
       label: t('builder.settings'),
@@ -818,13 +868,14 @@ export const AssistantView = ({
         <SettingsMenu
           pages={settingsPageIds.map((id) => ({
             id,
+            ...(id === 'general' ? { rows: generalRowsOf(general) } : {}),
             ...(id === 'beta' ? { badge: experimentsOn(experimentRows) } : {}),
           }))}
           value={settingsView}
           onChange={(id) => {
             if (!isSettingsPageId(id)) return;
             setSettingsView(id);
-            // On a phone the menu is a drawer over the page: it closes on the reader's choice.
+            // On a phone the menu fills the shell: it closes on the reader's choice.
             a.showSettings();
           }}
           backHref={a.hrefOf(a.urlThreads ? a.currentId : undefined)}
@@ -863,6 +914,7 @@ export const AssistantView = ({
             variant: 'tool' as const,
             headerColor: 'brand3',
             disclaimer: false,
+            foldUncited: true,
           }
         : {
             onAnswerChange: a.showAnswer,
@@ -905,9 +957,7 @@ export const AssistantView = ({
     ) : (
       sourcesBlock(titled)
     );
-  // Escape in the document is its way back. In a drawer, a modal dialog, the browser would also
-  // close the drawer and put the focus on the drawer's button, wherever the way back sends it.
-  // Not from the question field, where Escape is the field's.
+  // Escape in the document is its way back, not also the close of a panel that fills the shell.
   const escapeStaysInDrawer = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Escape' || !a.openDoc) return;
     if (event.target instanceof Element && event.target.closest('form')) return;
@@ -919,6 +969,7 @@ export const AssistantView = ({
       {...(titled ? {} : { title: false })}
       sources={a.documentAnswer?.sources}
       target={a.openDoc?.target}
+      file={a.documentFile}
       citations={a.documentCitations}
       answerIndex={a.documentIndex}
       answerCount={a.answered.length}
@@ -935,7 +986,7 @@ export const AssistantView = ({
     />
   );
   // Stored answers carry no steps, so a thread that has some says why none are shown.
-  const approachSteps = approachOf(a, a.active?.id, t);
+  const approachSteps = approachOf(a, a.active?.id, t, cardPlace);
   const approachNote = (
     <Paragraph data-size="sm" className="uia-quiet">
       {a.working
@@ -945,13 +996,9 @@ export const AssistantView = ({
           : t('assembly.approachEmpty')}
     </Paragraph>
   );
-  // The next look draws the steps as the tool's list (dev-verktoy-1 to -3), not as the card.
-  const approachPanel =
-    (next ? approachOf(a, a.active?.id, t, 'list') : approachSteps) ?? approachNote;
-  // The next look offers «Fremgangsmåte» as a tool too, beside its bar over each answer: the bar
-  // is dev-filter-panel's, the tool the dev-verktoy boards' (gaps.md row 25).
-  const approachTool = approachZone === 'secondary' || (next && approachZone === 'main');
-  // Each tool's icon, as the dev-verktoy boards draw it, in the switcher and on the folded panel.
+  // The tool is the detailed one, the next look's as the list of the dev-verktoy boards.
+  const approachPanel = approachOf(a, a.active?.id, t, 'tool') ?? approachNote;
+  // Each tool's icon, as the dev-verktoy boards draw it, in the switcher.
   const icon = (id: string) =>
     next ? { icon: toolIcons[id] ?? <FileTextIcon aria-hidden /> } : {};
   const tools: ShellTool[] = [
@@ -1020,25 +1067,6 @@ export const AssistantView = ({
       {...(next ? { headingLevel: 3 as const, variant: 'tinted' as const } : {})}
     />
   ) : null;
-  // The folded panel in the next look: a button per tool under the panel's own (dev-verktoy-4).
-  const toolsRail = next ? (
-    <>
-      {tools.map((tool) => (
-        <Tooltip key={tool.id} content={tool.label} placement="left">
-          <Button
-            aria-label={tool.label}
-            data-color="neutral"
-            data-size="md"
-            icon
-            onClick={() => a.showTool(tool.id)}
-            variant="tertiary"
-          >
-            {tool.icon}
-          </Button>
-        </Tooltip>
-      ))}
-    </>
-  ) : undefined;
   // `filters-right-panel`: the filter over the tools, drawn first and named first, as
   // kunnskapsassistenten's withFiltersBesideSources.
   const secondary: ShellPanel | undefined =
@@ -1069,11 +1097,7 @@ export const AssistantView = ({
           // The next look titles the panel by how many tools it has: the tool's name for one
           // (dev-verktoy-1), else «Verktøy» with the switcher under it; 380 wide.
           ...(next
-            ? {
-                title: singleTool ? singleTool.label : t('shell.tools'),
-                size: { width: 380 },
-                rail: toolsRail,
-              }
+            ? { title: singleTool ? singleTool.label : t('shell.tools'), size: { width: 380 } }
             : {}),
         }
       : undefined;
@@ -1085,29 +1109,32 @@ export const AssistantView = ({
     // Each page draws only what works here: the colour scheme the host keeps, the reader from the
     // sign-in, and the profile's trials. What genki cannot honour yet is not given, so not drawn.
     const feedback = a.profile?.menu?.feedback;
+    // Under each page's rows, as the current look ends its one page.
+    const settingsNote = a.profile?.settingsNote;
     main =
       settingsView === 'about-you' ? (
-        <SettingsAboutYou name={a.profile?.signedInAs} organisation={a.profile?.organisation} />
+        <SettingsAboutYou
+          name={a.profile?.signedInAs}
+          organisation={a.profile?.organisation}
+          settingsNote={settingsNote}
+        />
       ) : settingsView === 'beta' ? (
         <SettingsBeta
           experiments={experimentRows}
           onExperimentChange={a.setFlag}
           onAllOff={a.flagsOff}
           feedback={feedback}
+          settingsNote={settingsNote}
         />
       ) : settingsView === 'privacy' ? (
-        <SettingsPrivacy />
+        <SettingsPrivacy settingsNote={settingsNote} />
       ) : (
-        <SettingsGeneral
-          {...(a.onColorSchemeChange
-            ? { colorScheme: { value: a.colorScheme, onChange: a.onColorSchemeChange } }
-            : {})}
-        />
+        <SettingsGeneral {...general} settingsNote={settingsNote} />
       );
   } else if (a.page === 'settings' && settingsOn) {
     main = (
       <Settings
-        headingLevel={1}
+        headingLevel={framed ? 2 : 1}
         colorScheme={a.colorScheme}
         onColorSchemeChange={(scheme) => a.onColorSchemeChange?.(scheme)}
         displayLevel={a.level}
@@ -1132,7 +1159,7 @@ export const AssistantView = ({
     // Without Chat beside it, Fremgangsmåte has the column's head, as wide as the strip under it.
     // Its note is named by a heading, as the secondary panel's switcher names it there; the steps
     // name themselves on their own summary.
-    if (approachZone === 'main' && chatZone !== 'main')
+    if (approachCard && chatZone !== 'main')
       parts.push(
         approachSteps ? (
           <div key="approach" className="uia-main-approach">
@@ -1207,6 +1234,7 @@ export const AssistantView = ({
       // panels stay open there.
       {...(filterPanel ? { mainSize: { minWidth: 600 } } : {})}
       mainId={mainId}
+      frameWidth={frameWidth}
       initialLayout={a.shellLayout}
       onLayoutChange={a.onShellLayout}
       skipLinks={

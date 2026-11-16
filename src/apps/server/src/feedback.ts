@@ -1,7 +1,7 @@
-import type { FeedbackRequest, FeedbackResponse } from '@ka/contract';
 import { backendHeaders, type Caller } from './backend.ts';
 import { config } from './config.ts';
 import * as convos from './conversations.ts';
+import type { FeedbackRequest, FeedbackResponse } from './types.ts';
 
 export const MAX_FEEDBACK_COMMENT = 2000;
 /** As many reasons as genki keeps, each a short phrase picked in the client. */
@@ -45,8 +45,7 @@ export function cleanFeedback(body: unknown): FeedbackRequest | string {
  */
 export async function ownsTask(caller: Caller, feedback: FeedbackRequest): Promise<boolean> {
   try {
-    const { messages } = await convos.detail(caller, feedback.conversationId);
-    return messages.some((m) => m.taskId === feedback.taskId);
+    return (await convos.answerRuns(caller, feedback.conversationId)).includes(feedback.taskId);
   } catch {
     return false;
   }

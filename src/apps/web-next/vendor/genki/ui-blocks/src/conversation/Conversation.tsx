@@ -1,5 +1,5 @@
 import { Button, Card, Heading, Paragraph } from '@digdir/designsystemet-react';
-import { MagnifyingGlassIcon } from '@navikt/aksel-icons';
+import { ArrowsCirclepathIcon, MagnifyingGlassIcon } from '@navikt/aksel-icons';
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Answer, type AnswerTarget } from '../answer/Answer.js';
 import { finishedText } from '../answer/copy.js';
@@ -60,6 +60,8 @@ export interface ConversationProps {
    * last question with nothing after it, outside `loading`, got no answer and says so.
    */
   pending?: boolean | undefined;
+  /** The last question's answer may still come: «Hent på nytt», in place of «no answer», calls it. */
+  onFetchAgain?: (() => void) | undefined;
   /** One of the answers a question back offers was chosen. */
   onReply?: ((turn: ConversationClarification, option: string) => void) | undefined;
   /** Where a footnote or a document leads, for a new tab and for copying. */
@@ -102,6 +104,8 @@ export interface ConversationProps {
   onStalled?: ((turn: ConversationAnswer) => void) | undefined;
   /** «Kilder brukt i svaret» under a finished answer. */
   sourcesUsed?: boolean | undefined;
+  /** `Answer`'s `documentFootnotes`: marks per cited document until a service cites excerpts. */
+  documentFootnotes?: boolean | undefined;
   /** «Er det noe mer jeg kan hjelpe deg med?» under a finished answer. */
   closingQuestion?: boolean | undefined;
   /** Who answers, for a screen reader. Without it, the AI assistant. */
@@ -117,6 +121,8 @@ export interface ConversationProps {
    * `assistantName`, over what the `header` puts there, and with no card (`Answer`'s `plain`).
    */
   answerVariant?: 'card' | 'plain' | undefined;
+  /** `false` leaves out the label over a `plain` answer, as the newer dev boards draw it. */
+  answerLabel?: boolean | undefined;
   /** Designsystemet's `data-color` for the block, set only when given. */
   color?: string | undefined;
   /** The moment an answer's «i dag» and «i går» are counted from. */
@@ -194,6 +200,7 @@ export const Conversation = ({
   titleRepeatsQuestion,
   titleLevel = 2,
   pending = false,
+  onFetchAgain,
   onReply,
   href,
   citationId,
@@ -208,12 +215,14 @@ export const Conversation = ({
   stalledAfter = STALLED_ANSWER_MS,
   onStalled,
   sourcesUsed,
+  documentFootnotes,
   closingQuestion,
   assistantName,
   headingLevel = 3,
   questionColor,
   answerColor,
   answerVariant = 'card',
+  answerLabel: labelled = true,
   color,
   now,
   className,
@@ -221,12 +230,13 @@ export const Conversation = ({
   const t = useT();
   const plain = answerVariant === 'plain';
   // For the eye: the answer's own line, «… svarte:», still tells a screen reader who answered.
-  const answerLabel = plain ? (
-    // In the answers' family, as the answer it names.
-    <p aria-hidden="true" className="uib-conversation-label" data-color={answerColor}>
-      {assistantName ?? t('answer.assistant')}
-    </p>
-  ) : null;
+  const answerLabel =
+    plain && labelled ? (
+      // In the answers' family, as the answer it names.
+      <p aria-hidden="true" className="uib-conversation-label" data-color={answerColor}>
+        {assistantName ?? t('answer.assistant')}
+      </p>
+    ) : null;
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLOListElement>(null);
   const fieldRef = useRef<HTMLInputElement>(null);
@@ -236,19 +246,24 @@ export const Conversation = ({
   // replaces the turn in place or draws a new one. When focus falls to the page with the button
   // the reader pressed, it goes to the answer that takes its place, the item at the same place.
   const regenerating = useRef<{ at: number; pressed: Element } | undefined>(undefined);
-  const regenerate = (turn: ConversationAnswer, question: ConversationQuestion | undefined) => {
+  const replacing = (then: () => void) => {
     const pressed = document.activeElement;
     const item = pressed?.closest('.uib-conversation-turn');
     const at = item && listRef.current ? [...listRef.current.children].indexOf(item) : -1;
     regenerating.current = pressed && at >= 0 ? { at, pressed } : undefined;
-    onRegenerate?.(turn, question);
+    then();
   };
+  const regenerate = (turn: ConversationAnswer, question: ConversationQuestion | undefined) =>
+    replacing(() => onRegenerate?.(turn, question));
   useEffect(() => {
     const asked = regenerating.current;
     if (!asked) return;
     const active = document.activeElement;
-    // Not yet redrawn: the button is still there, with focus.
-    if (active === asked.pressed && asked.pressed.isConnected) return;
+    // The button is still there: nothing replaced it yet, and focus the reader moved stays.
+    if (asked.pressed.isConnected) {
+      if (active !== asked.pressed) regenerating.current = undefined;
+      return;
+    }
     regenerating.current = undefined;
     // Focus the reader moved elsewhere stays.
     if (active !== null && active !== document.body) return;
@@ -279,13 +294,19 @@ export const Conversation = ({
     const turn = turns.at(-1);
     const before = lastSeen.current;
     lastSeen.current = turn?.id;
+    const followed = before !== undefined && live.current.has(before);
+    // An answer that leaves unended, as when another thread opens, is no longer coming here.
+    for (const [id, known] of live.current)
+      if (known.status === 'streaming' && !turns.some((other) => other.id === id)) {
+        live.current.delete(id);
+        setAnnouncement('');
+      }
+    if (!turn) setAnnouncement('');
     if (!turn || loading) return;
     if (turn.kind === 'clarification') {
       // New after the question it follows, or in place of the answer that was coming.
       const arrived =
-        turn.id !== before &&
-        before !== undefined &&
-        (turns.at(-2)?.id === before || live.current.has(before));
+        turn.id !== before && before !== undefined && (turns.at(-2)?.id === before || followed);
       if (arrived)
         setAnnouncement(
           assistantName
@@ -313,6 +334,8 @@ export const Conversation = ({
     if (known.status !== 'streaming') return;
     known.status = turn.status;
     if (turn.status === 'aborted') setAnnouncement(t('conversation.answerStopped'));
+    // Its alert says the failure; said here too, it would be heard twice.
+    if (turn.status === 'failed') setAnnouncement('');
     if (turn.status !== 'complete') return;
     // One with no sources carries a warning in its card; «ferdig» alone would hide it.
     setAnnouncement(
@@ -501,12 +524,41 @@ export const Conversation = ({
     );
   };
 
+  // The last question's answer may still come: «Hent på nytt» reads it again, asking nothing.
+  const drawStillComing = (question: ConversationQuestion, fetchAgain: () => void) => (
+    <li
+      key={`${question.id}:still-coming`}
+      className="uib-conversation-turn ds-focus"
+      data-kind="answer"
+      data-still-coming="true"
+      tabIndex={-1}
+    >
+      <Card className="uib-answer" data-color={answerColor} data-plain={plain || undefined}>
+        <Card.Block className="uib-answer-body">
+          <Paragraph data-size="sm" variant="long" className="uib-answer-stopped">
+            {t('conversation.stillComing')}
+          </Paragraph>
+        </Card.Block>
+        <Card.Block>
+          <div className="uib-answer-row">
+            <Button variant="tertiary" data-size="sm" onClick={() => replacing(fetchAgain)}>
+              <ArrowsCirclepathIcon aria-hidden />
+              {t('conversation.fetchAgain')}
+            </Button>
+          </div>
+        </Card.Block>
+      </Card>
+    </li>
+  );
+
   const drawTurns = () =>
-    turns.flatMap((turn, index) =>
-      turn.kind === 'question' && unanswered(turns, index, pending || loading)
-        ? [drawTurn(turn, index), drawUnanswered(turn)]
-        : [drawTurn(turn, index)],
-    );
+    turns.flatMap((turn, index) => {
+      if (turn.kind !== 'question' || !unanswered(turns, index, pending || loading))
+        return [drawTurn(turn, index)];
+      if (onFetchAgain && index === turns.length - 1)
+        return [drawTurn(turn, index), drawStillComing(turn, onFetchAgain)];
+      return [drawTurn(turn, index), drawUnanswered(turn)];
+    });
 
   const drawTurn = (turn: ConversationTurn, index: number) => {
     if (turn.kind === 'question')
@@ -571,6 +623,7 @@ export const Conversation = ({
           target={target?.turnId === turn.id ? answerTarget : undefined}
           highlight={turn.id === searchedId ? highlight : undefined}
           sourcesUsed={sourcesUsed}
+          documentFootnotes={documentFootnotes}
           closingQuestion={closingQuestion}
           onRegenerate={onRegenerate && (() => regenerate(turn, question))}
           failure={turn.failure}

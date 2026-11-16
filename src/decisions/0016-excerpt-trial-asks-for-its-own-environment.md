@@ -1,6 +1,7 @@
 # 0016: The excerpt trial asks genki for its own environment
 
-**Status:** accepted · **Date:** 2026-11-12
+**Status:** accepted · **Date:** 2026-11-12 · **Superseded:** 2026-11-16 by
+[0019](0019-remove-the-previous-client.md): the trial was `apps/web`'s, and went with it
 
 ## Context
 

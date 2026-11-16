@@ -10,6 +10,8 @@ export interface ApproachLine {
   count: number;
   /** The excerpts the run read, added up. */
   excerpts: number;
+  /** How long the run took, added up from the steps that said, in milliseconds. */
+  duration?: number;
 }
 
 /** The card's lines: steps that ran one after another with the same title make one line. */
@@ -24,9 +26,16 @@ export const linesOf = (steps: readonly ApproachStep[]): ApproachLine[] => {
       line.step = active ? { ...step, status: 'active' } : step;
       line.count += 1;
       line.excerpts += excerpts;
+      if (step.duration !== undefined) line.duration = (line.duration ?? 0) + step.duration;
       continue;
     }
-    lines.push({ key: step.id, step, count: 1, excerpts });
+    lines.push({
+      key: step.id,
+      step,
+      count: 1,
+      excerpts,
+      ...(step.duration === undefined ? {} : { duration: step.duration }),
+    });
   }
   return lines;
 };

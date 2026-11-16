@@ -21,7 +21,10 @@ export interface AnswerActionsProps {
    * adds a lot of noise under every answer, and its decision log has it to be rethought.
    */
   feedback?: boolean | undefined;
-  /** The app sends the rating, reasons and comment. Drawn only with `feedback`. */
+  /**
+   * The app sends the rating, reasons and comment. Raised on the click on a thumb, and again in
+   * full when the reasons and comment are sent or the rating changes. Drawn only with `feedback`.
+   */
   onFeedback?: ((feedback: AnswerFeedback) => void) | undefined;
   /** How the app's sending went. */
   feedbackStatus?: AnswerFeedbackStatus | undefined;

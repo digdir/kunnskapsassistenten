@@ -2,7 +2,8 @@
 
 **Status:** accepted · **Date:** 2026-10-07 · **Superseded in part:**
 2026-11-06 by [0012](0012-retire-the-previous-client.md), which retires the
-current client below and `/api/*` with it, except `/api/health`
+current client below and `/api/*` with it, except `/api/health`; and 2026-11-16 by
+[0019](0019-remove-the-previous-client.md), which removes `apps/web` and `/api/v2/*` with it
 
 ## Context
 

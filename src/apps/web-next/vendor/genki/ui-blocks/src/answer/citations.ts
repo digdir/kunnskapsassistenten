@@ -68,7 +68,7 @@ const writtenMarkers = (text: string): Written[] => {
  * - a footnote right after one that leads to the same item is one footnote, not two.
  *
  * Footnotes are numbered by excerpt, never by document: when the footnotes name only documents,
- * the pairing numbers nothing, and the answer draws no footnote marks.
+ * the pairing numbers nothing, and the answer draws marks only with `documentFootnotes`.
  *
  * Without `sources` nothing is a footnote yet: they arrive with the end of the answer.
  */
@@ -120,6 +120,15 @@ export const readFootnotes = (
     written: written.filter((w) => w.n < 1000).length,
     met: written.map((w) => ({ n: w.n, dropped: marks.get(w.key)?.kind === 'dropped' })),
   };
+};
+
+/** When the footnotes name documents: each cited document's number, 1, 2, 3 by first citation. */
+export const documentNumbers = (pairing: Pairing): ReadonlyMap<string, number> => {
+  const numbers = new Map<string, number>();
+  if (pairing.mode !== 'document') return numbers;
+  for (const target of pairing.targets)
+    if (target !== undefined && !numbers.has(target)) numbers.set(target, numbers.size + 1);
+  return numbers;
 };
 
 /**

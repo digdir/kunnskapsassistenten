@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { profileFor } from './profile';
+import {
+  sourceFromWire,
+  useAssistant,
+  type AssistantApi,
+  type AssistantStorage,
+  type FieldSpec,
+} from '@genai/ui-assembly';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { layout } from './App';
+import { hostProfileFor, kudosDocumentFile, profileFor } from './profile';
 
 const ME = {
   name: 'Testperson',
@@ -33,12 +42,225 @@ describe('the experiments', () => {
     expect(narrower?.description).toBe('Filteret tar mindre plass, og tråder får resten.');
   });
 
-  it('describe the gathered chips by the case they still try, many values, since all is one chip without them', () => {
-    const gathered = profileFor(ME).experiments?.find(
-      ({ id }) => id === 'compact-filter-chips',
+  it('no longer offer years as periods or gathered chips: they are the standard', () => {
+    const ids = (profileFor(ME).experiments ?? []).map(({ id }) => id);
+    expect(ids).not.toContain('year-ranges');
+    expect(ids).not.toContain('compact-filter-chips');
+  });
+});
+
+// genki's assembly keeps a year field to the bounds the profile gives it, and the year it is in
+// Norway; KA gives 1990, as the previous client's server did.
+describe('the year list', () => {
+  const noisy = ['12', '1985', '1990', '2019', '2026', '2027', '2252'];
+  const profile = profileFor(ME);
+
+  const yearsShown = async (now: string, chosen?: Record<string, string[]>) => {
+    const api: AssistantApi = {
+      loadModels: vi.fn(async () => [
+        {
+          id: 'kunnskapsassistenten__default',
+          _service: 'kunnskapsassistenten',
+          _pickable: true,
+          _chat: true,
+          _datasets: [
+            {
+              tenant: 'digdir',
+              'dataset-config-key': 'kudos',
+              filters: [{ field: 'concerned_years', kinds: ['multiselect'] }],
+            },
+          ],
+        },
+      ]),
+      loadThreads: vi.fn(async () => []),
+      loadThread: vi.fn(async () => ({ title: '', turns: [] })),
+      loadCorpora: vi.fn(async () => []),
+      loadFields: vi.fn(async () => profile.corpora?.kudos?.fields ?? []),
+      loadFacets: vi.fn(async (_selection, _dataset, fields: readonly FieldSpec[]) =>
+        fields.map((field) => ({
+          id: field.id,
+          label: field.label,
+          ...(field.kind ? { kind: field.kind } : {}),
+          options: noisy.map((value) => ({ value, count: 1 })),
+        })),
+      ),
+      loadAbout: vi.fn(async () => undefined),
+      ask: async function* () {},
+    };
+    const kept = new Map<string, unknown>();
+    const storage: AssistantStorage = {
+      read: (key) => kept.get(key),
+      write: (key, value) => void kept.set(key, value),
+      remove: (key) => void kept.delete(key),
+    };
+    // Made once: the hook reads a new api or layout as a new setup.
+    const options = {
+      api,
+      layout,
+      service: 'kunnskapsassistenten',
+      tenant: 'digdir',
+      profile,
+      storage,
+      now: () => new Date(now),
+    };
+    const { result, unmount } = renderHook(() => useAssistant(options));
+    const years = () =>
+      result.current.facets
+        ?.find((field) => field.id === 'concerned_years')
+        ?.options.map((option) => option.value);
+    await waitFor(() => expect(years()).toBeDefined());
+    // Chosen on the page: a new thread starts with no filter, whatever the browser kept.
+    if (chosen) {
+      act(() => result.current.setSelection(chosen));
+      await waitFor(() =>
+        expect(years()).toEqual(expect.arrayContaining(Object.values(chosen).flat())),
+      );
+    }
+    const shown = years();
+    unmount();
+    return shown;
+  };
+
+  it('offers the years from 1990 to this year, newest first, whatever else Kudos holds', async () => {
+    expect(await yearsShown('2026-11-14T12:00:00Z')).toEqual(['2026', '2019', '1990']);
+  });
+
+  it('keeps a chosen year outside the bounds, so its chip can be removed', async () => {
+    expect(await yearsShown('2026-11-14T12:00:00Z', { concerned_years: ['2252'] })).toEqual([
+      '2252',
+      '2026',
+      '2019',
+      '1990',
+    ]);
+  });
+
+  it('ends at the year it is in Oslo, not on the machine clock', async () => {
+    // 23:30 UTC on New Year's Eve is 00:30 on 1 January in Oslo.
+    expect(await yearsShown('2026-12-31T23:30:00Z')).toEqual(['2027', '2026', '2019', '1990']);
+  });
+});
+
+describe('the document links', () => {
+  const kudos = profileFor(ME).corpora?.kudos;
+  const linkOf = (documentId: string) =>
+    sourceFromWire({ title: 'Et dokument', document_id: documentId }, kudos).url;
+
+  it('go to the document in Kudos, by the kind of number', () => {
+    expect(linkOf('42')).toBe('https://kudos.dfo.no/documents/42');
+    expect(linkOf('0f8fad5b-d9cb-469f-a165-70867728950e')).toBe(
+      'https://kudos.dfo.no/dokument/0f8fad5b-d9cb-469f-a165-70867728950e',
     );
-    expect(gathered?.description).toBe(
-      'Når mange verdier er valgt, står én merkelapp, som «12 virksomheter».',
+    expect(linkOf('0F8FAD5B-D9CB-469F-A165-70867728950E')).toBe(
+      'https://kudos.dfo.no/dokument/0F8FAD5B-D9CB-469F-A165-70867728950E',
     );
+  });
+
+  it('are not made for any other number', () => {
+    expect(linkOf('A-42')).toBeUndefined();
+    expect(linkOf('42/1')).toBeUndefined();
+  });
+
+  // genki's knowledge database names a Kudos document `kudos:<uuid>`.
+  it('go to the document in Kudos for a number genki prefixes with its collection', () => {
+    expect(linkOf('kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80')).toBe(
+      'https://kudos.dfo.no/dokument/a33bf297-afd2-4b38-992e-b23c8fec3d80',
+    );
+    expect(linkOf('kudos:A33BF297-AFD2-4B38-992E-B23C8FEC3D80')).toBe(
+      'https://kudos.dfo.no/dokument/A33BF297-AFD2-4B38-992E-B23C8FEC3D80',
+    );
+  });
+
+  it('are not made for a prefixed number that is not exactly a uuid', () => {
+    for (const documentId of [
+      'kudos:',
+      'kudos:42',
+      'kudos:a33bf297-afd2-4b38-992e-b23c8fec3d8',
+      'kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80/filer',
+      'kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80 ',
+      'kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80\n',
+      'kudos:../a33bf297-afd2-4b38-992e-b23c8fec3d80',
+      'KUDOS:a33bf297-afd2-4b38-992e-b23c8fec3d80',
+      'other:a33bf297-afd2-4b38-992e-b23c8fec3d80',
+      'kudos:kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80',
+    ])
+      expect(linkOf(documentId), documentId).toBeUndefined();
+  });
+
+  it('keep the link a source carries, whatever its number', () => {
+    const source = sourceFromWire(
+      {
+        title: 'Et dokument',
+        document_id: 'kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80',
+        url: 'https://kudos.dfo.no/dokument/a33bf297-afd2-4b38-992e-b23c8fec3d80/filer/x.pdf',
+      },
+      kudos,
+    );
+    expect(source.url).toBe(
+      'https://kudos.dfo.no/dokument/a33bf297-afd2-4b38-992e-b23c8fec3d80/filer/x.pdf',
+    );
+  });
+});
+
+describe('the whole file of a Kudos document', () => {
+  const UUID = 'a33bf297-afd2-4b38-992e-b23c8fec3d80';
+  const answering = (status: number) => {
+    const calls: { url: string; init: RequestInit | undefined }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        calls.push({ url, init });
+        return new Response(null, { status });
+      }),
+    );
+    return calls;
+  };
+  afterEach(() => vi.unstubAllGlobals());
+  const signal = () => new AbortController().signal;
+
+  it('is the PDF through this site’s server, once a HEAD there says it has one', async () => {
+    const calls = answering(200);
+    expect(await kudosDocumentFile(`kudos:${UUID.toUpperCase()}`, signal())).toEqual({
+      url: `/api/next/kudos/files/${UUID}`,
+      mediaType: 'application/pdf',
+    });
+    expect(calls.map(({ url, init }) => [init?.method, url])).toEqual([
+      ['HEAD', `/api/next/kudos/files/${UUID}`],
+    ]);
+    expect(calls[0]?.init?.credentials).toBe('same-origin');
+  });
+
+  it('is none when the server has no PDF for the document', async () => {
+    answering(404);
+    expect(await kudosDocumentFile(`kudos:${UUID}`, signal())).toBeUndefined();
+  });
+
+  it('fails when the server cannot say, so the view says it could not show the document', async () => {
+    for (const status of [401, 502, 504]) {
+      answering(status);
+      await expect(kudosDocumentFile(`kudos:${UUID}`, signal())).rejects.toThrow(
+        String(status),
+      );
+    }
+  });
+
+  it('is none, asking nothing, for any number but `kudos:<uuid>`', async () => {
+    const calls = answering(200);
+    for (const documentId of ['42', UUID, `kudos:${UUID}/x`, `other:${UUID}`, 'kudos:../api'])
+      expect(await kudosDocumentFile(documentId, signal())).toBeUndefined();
+    expect(calls).toEqual([]);
+  });
+
+  it('stops asking when the assembly aborts, as when another document opens', async () => {
+    const calls = answering(200);
+    const controller = new AbortController();
+    const asked = kudosDocumentFile(`kudos:${UUID}`, controller.signal);
+    controller.abort();
+    await asked;
+    expect(calls[0]?.init?.signal?.aborted).toBe(true);
+  });
+
+  it('is given by the host’s part of the profile, so a layout from genki’s builder has it too', () => {
+    expect(hostProfileFor(ME).documentFile).toBe(kudosDocumentFile);
+    expect(profileFor(ME).documentFile).toBe(kudosDocumentFile);
   });
 });

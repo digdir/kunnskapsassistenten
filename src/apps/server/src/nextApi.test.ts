@@ -1,17 +1,18 @@
 import assert from 'node:assert/strict';
+import { once } from 'node:events';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { createServer, type IncomingMessage, type Server } from 'node:http';
+import { createServer, request, type IncomingMessage, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, beforeEach, describe, mock, test } from 'node:test';
+import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 
 /*
- * The next client switched on (decisions/0013), with sign-in off and a fake genki on localhost
- * that records what the server sends it: the toggle and its cookie, the page by cookie, thread
- * links in either client's form, `/api/next/me`, and the proxy's allow-list, credential, checks
- * and streaming.
+ * The client's API (decisions/0013), with sign-in off and a fake genki on localhost that records
+ * what the server sends it: `/api/next/me`, and the proxy's allow-list, credential, checks and
+ * streaming. The page and its addresses are in clientPage.test.ts.
  */
 
 interface Seen {
@@ -135,19 +136,14 @@ async function startGenki() {
 }
 
 const builds = mkdtempSync(join(tmpdir(), 'ka-next-'));
-const classic = join(builds, 'web');
 const nextBuild = join(builds, 'web-next');
-mkdirSync(join(classic, 'assets'), { recursive: true });
 mkdirSync(join(nextBuild, 'next-assets'), { recursive: true });
-writeFileSync(join(classic, 'index.html'), '<html lang="nb">classic</html>');
 writeFileSync(join(nextBuild, 'index.html'), '<html lang="nb">next</html>');
-writeFileSync(join(nextBuild, 'next-assets', 'index-next.js'), '/* next */');
 
 const ORIGIN = 'http://localhost:8787';
 
 let app: typeof import('./app.ts').app;
 let nextApi: typeof import('./nextApi.ts');
-let nextApiPage: typeof import('./nextPage.ts');
 
 before(async () => {
   await startGenki();
@@ -156,15 +152,14 @@ before(async () => {
     APP_ORIGIN: ORIGIN,
     DIGDIR_API_KEY: 'service-key',
     DIGDIR_API_BASE: genkiBase,
-    WEB_ROOT: classic,
     WEB_NEXT_ROOT: nextBuild,
-    KA_NEXT: '1',
     KA_NEXT_MODEL: 'kunnskapsassistenten__default',
     KA_NEXT_TENANT: 'digdir',
   });
+  // No layout from genki's builder: the client draws KA's own (nextLayout.test.ts has one).
+  delete process.env.KA_NEXT_LAYOUT;
   ({ app } = await import('./app.ts'));
   nextApi = await import('./nextApi.ts');
-  nextApiPage = await import('./nextPage.ts');
 });
 
 after(async () => {
@@ -180,139 +175,6 @@ beforeEach(() => {
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
-const switchTo = (ui: unknown, headers: Record<string, string> = {}) =>
-  app.request('/api/next/ui', {
-    method: 'POST',
-    headers: { ...JSON_HEADERS, Origin: ORIGIN, 'Sec-Fetch-Site': 'same-origin', ...headers },
-    body: JSON.stringify({ ui }),
-  });
-
-const page = async (path: string, cookie?: string) => {
-  const res = await app.request(path, cookie ? { headers: { Cookie: cookie } } : {});
-  return { res, body: await res.text() };
-};
-
-describe('the toggle', () => {
-  test('is offered: GET /api/next/ui says so, and which client this browser has', async () => {
-    const res = await app.request('/api/next/ui');
-    assert.equal(res.status, 200);
-    assert.deepEqual(await res.json(), { ui: 'classic', available: true });
-    const chosen = await app.request('/api/next/ui', { headers: { Cookie: 'ka_ui=next' } });
-    assert.deepEqual(await chosen.json(), { ui: 'next', available: true });
-  });
-
-  test('POST next sets a long-lived, HttpOnly, SameSite=Lax cookie; POST classic clears it', async () => {
-    const on = await switchTo('next');
-    assert.equal(on.status, 200);
-    assert.deepEqual(await on.json(), { ui: 'next' });
-    const set = on.headers.getSetCookie().find((line) => line.startsWith('ka_ui='));
-    assert.ok(set, 'a ka_ui cookie');
-    assert.match(set, /^ka_ui=next;/);
-    assert.match(set, /Max-Age=31536000/);
-    assert.match(set, /Path=\//);
-    assert.match(set, /HttpOnly/);
-    assert.match(set, /SameSite=Lax/);
-
-    const off = await switchTo('classic');
-    assert.equal(off.status, 200);
-    const cleared = off.headers.getSetCookie().find((line) => line.startsWith('ka_ui='));
-    assert.ok(cleared);
-    assert.match(cleared, /Max-Age=0/);
-  });
-
-  test('refuses another value, a cross-site call, a foreign Origin, and a body that is not JSON', async () => {
-    assert.equal((await switchTo('beta')).status, 400);
-    assert.equal((await switchTo('next', { 'Sec-Fetch-Site': 'cross-site' })).status, 403);
-    assert.equal((await switchTo('next', { 'Sec-Fetch-Site': 'same-site' })).status, 403);
-    assert.equal((await switchTo('next', { Origin: 'https://evil.example' })).status, 403);
-    const form = await app.request('/api/next/ui', {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ ui: 'next' }),
-    });
-    assert.equal(form.status, 403);
-    for (const res of [form, await switchTo('next', { Origin: 'https://evil.example' })])
-      assert.equal(res.headers.getSetCookie().filter((l) => l.startsWith('ka_ui=')).length, 0);
-  });
-});
-
-describe('the page', () => {
-  test('is apps/web by default, and apps/web-next only with the cookie', async () => {
-    assert.equal((await page('/')).body, '<html lang="nb">classic</html>');
-    assert.equal((await page('/', 'ka_ui=classic')).body, '<html lang="nb">classic</html>');
-    assert.equal((await page('/', 'ka_ui=yes')).body, '<html lang="nb">classic</html>');
-    const next = await page('/', 'ka_ui=next');
-    assert.equal(next.body, '<html lang="nb">next</html>');
-    assert.equal(next.res.headers.get('Cache-Control'), 'no-cache');
-    assert.match(next.res.headers.get('Vary') ?? '', /Cookie/);
-    assert.equal(
-      (await page('/innstillinger', 'ka_ui=next')).body,
-      '<html lang="nb">next</html>',
-    );
-  });
-
-  test("«Endringslogg» and «Om prosjektet» are apps/web's pages, whichever client was chosen", async () => {
-    for (const path of ['/endringslogg', '/om-prosjektet']) {
-      const chosen = await page(path, 'ka_ui=next');
-      assert.equal(chosen.body, '<html lang="nb">classic</html>', path);
-      assert.match(chosen.res.headers.get('Vary') ?? '', /Cookie/);
-      assert.equal((await page(path)).body, '<html lang="nb">classic</html>', path);
-    }
-    // Only those: the rest of the next client's addresses stay its own.
-    assert.equal(
-      (await page('/endringslogg/x', 'ka_ui=next')).body,
-      '<html lang="nb">next</html>',
-    );
-  });
-
-  test("each client's files are served whatever the cookie, and an unknown name is a 404", async () => {
-    const file = await page('/next-assets/index-next.js');
-    assert.equal(file.res.status, 200);
-    assert.match(file.res.headers.get('Cache-Control') ?? '', /immutable/);
-    assert.equal((await page('/next-assets/gone.js', 'ka_ui=next')).res.status, 404);
-  });
-
-  test('a thread link opens in the chosen client', async () => {
-    const toNext = await page('/threads/abc-123', 'ka_ui=next');
-    assert.equal(toNext.res.status, 302);
-    assert.equal(toNext.res.headers.get('Location'), '/?t=abc-123');
-    assert.equal(
-      (await page('/chat/abc-123', 'ka_ui=next')).res.headers.get('Location'),
-      '/?t=abc-123',
-    );
-
-    const toClassic = await page('/?t=abc-123');
-    assert.equal(toClassic.res.status, 302);
-    assert.equal(toClassic.res.headers.get('Location'), '/threads/abc-123');
-
-    // Each client's own form stays where it is.
-    assert.equal((await page('/?t=abc-123', 'ka_ui=next')).res.status, 200);
-    assert.equal((await page('/threads/abc-123')).res.status, 200);
-  });
-
-  test('a thread link with an id that is not one is not followed anywhere', async () => {
-    for (const [path, cookie] of [
-      ['/?t=..%2F..%2Fauth', undefined],
-      ['/?t=%2F%2Fevil.example', undefined],
-      ['/threads/..', 'ka_ui=next'],
-    ] as const) {
-      const { res } = await page(path, cookie);
-      assert.equal(res.status, 200, path);
-    }
-  });
-
-  test('threadLinkFor maps the two forms', () => {
-    const { threadLinkFor } = nextApiPage;
-    assert.equal(threadLinkFor('next', '/threads/x1', new URLSearchParams()), '/?t=x1');
-    assert.equal(threadLinkFor('classic', '/', new URLSearchParams('t=x1')), '/threads/x1');
-    assert.equal(
-      threadLinkFor('classic', '/innstillinger', new URLSearchParams('t=x1')),
-      undefined,
-    );
-    assert.equal(threadLinkFor('next', '/innstillinger', new URLSearchParams()), undefined);
-  });
-});
-
 describe('/api/next/me', () => {
   test('names the person, the service and variant, and that a service key may not write', async () => {
     const res = await app.request('/api/next/me');
@@ -325,6 +187,19 @@ describe('/api/next/me', () => {
       tenant: 'digdir',
       writes: false,
     });
+  });
+
+  test('is unchanged while KA_NEXT_LAYOUT is unset: no layout, so the page draws KA’s own', async () => {
+    const body = (await (await app.request('/api/next/me')).json()) as Record<string, unknown>;
+    assert.equal('layout' in body, false);
+    assert.deepEqual(Object.keys(body).sort(), [
+      'model',
+      'name',
+      'service',
+      'signOut',
+      'tenant',
+      'writes',
+    ]);
   });
 });
 
@@ -429,6 +304,34 @@ describe('the proxy', () => {
       assert.equal(res.status, 403, `${method} ${path}`);
     }
     assert.equal(seen.length, 0);
+  });
+
+  test('forwards a thread whose genki id starts with `_` or `-`, and refuses one that starts with `.` or `:`', async () => {
+    for (const id of ['_V1StGXR8Z5jdHi6BmyT', '-V1StGXR8Z5jdHi6BmyT'])
+      assert.equal((await proxied(`/api/conversations/${id}`)).status, 200, id);
+    const asked = await post('/v1/chat/completions', {
+      ...QUESTION,
+      conversation_id: '_V1StGXR8Z5jdHi6BmyT',
+    });
+    assert.equal(asked.status, 200);
+    await asked.body?.cancel();
+    assert.deepEqual(
+      seen.map((s) => s.url),
+      [
+        '/api/conversations/_V1StGXR8Z5jdHi6BmyT',
+        '/api/conversations/-V1StGXR8Z5jdHi6BmyT',
+        '/v1/chat/completions',
+      ],
+    );
+    assert.equal(JSON.parse(seen[2]?.body ?? '{}').conversation_id, '_V1StGXR8Z5jdHi6BmyT');
+    seen.length = 0;
+    for (const id of ['.hidden', '..x', ':x'])
+      assert.equal((await proxied(`/api/conversations/${id}`)).status, 403, id);
+    assert.equal(
+      (await post('/v1/chat/completions', { ...QUESTION, conversation_id: ':x' })).status,
+      400,
+    );
+    assert.deepEqual(seen, []);
   });
 
   test('refuses a write from another site, or without a JSON body type', async () => {
@@ -549,29 +452,6 @@ describe('the proxy', () => {
     const first = arrivals.find((a) => a.text.includes('"n":1'))!.at;
     const last = arrivals.find((a) => a.text.includes('[DONE]'))!.at;
     assert.ok(last - first >= 120, `the first chunk came ${last - first} ms before the end`);
-  });
-
-  test("an answer in a thread makes apps/web forget the sources it kept for the thread's last answer", async () => {
-    const sourceStore = await import('./sourceStore.ts');
-    const kept = [{ docNum: '7', title: 'Årsrapport 2020', url: '', chunkId: 'k1' }];
-    for (const id of ['c-1', 'c-2', 'not-yours']) sourceStore.remember(id, kept);
-
-    const answered = await post('/v1/chat/completions', QUESTION);
-    assert.equal(answered.status, 200);
-    await answered.text();
-    assert.deepEqual(sourceStore.recall('c-1'), [], 'the next answer is the last, not this');
-    assert.deepEqual(sourceStore.recall('c-2'), kept, 'another thread keeps its own');
-
-    const refused = await post('/v1/chat/completions', {
-      ...QUESTION,
-      conversation_id: 'not-yours',
-    });
-    assert.equal(refused.status, 404);
-    assert.deepEqual(
-      sourceStore.recall('not-yours'),
-      kept,
-      'a refused question changes nothing',
-    );
   });
 
   test('stopping the answer ends the call to genki', async () => {
@@ -704,6 +584,87 @@ describe('the proxy', () => {
     const res = await host.request('/api/next/genki/v1/models');
     assert.equal(res.status, 502);
     assert.equal(((await res.json()) as { code: string }).code, 'backend_unreachable');
+  });
+});
+
+describe('the proxy, with the path as the server receives it', () => {
+  let server: Server;
+  let port = 0;
+
+  before(async () => {
+    server = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' }) as Server;
+    await once(server, 'listening');
+    port = (server.address() as AddressInfo).port;
+  });
+
+  after(async () => {
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  });
+
+  /** The path exactly as written, as a client that resolves nothing in it sends it. */
+  const sent = (path: string) =>
+    new Promise<{ status: number; code?: string }>((resolve, reject) => {
+      const req = request({ host: '127.0.0.1', port, path, agent: false }, (res) => {
+        let body = '';
+        res.on('data', (chunk: Buffer) => (body += chunk.toString()));
+        res.on('end', () =>
+          resolve({
+            status: res.statusCode ?? 0,
+            code: (JSON.parse(body) as { code?: string }).code,
+          }),
+        );
+      });
+      req.on('error', reject);
+      req.end();
+    });
+
+  test('refuses with 400 a dot segment or an encoded slash or backslash, before the allow-list and genki', async () => {
+    const paths = [
+      '/api/next/genki/api/datasets/..%2Fconversations',
+      '/api/next/genki/api/datasets/..%2fconversations',
+      '/api/next/genki/api/datasets/%2E%2E%2Fconversations',
+      '/api/next/genki/api/datasets/%2E%2E/conversations',
+      '/api/next/genki/api/datasets/.%2e/conversations',
+      '/api/next/genki/api/datasets/../conversations',
+      '/api/next/genki/api/datasets/./kudos',
+      '/api/next/genki/api/datasets/%2E/kudos',
+      '/api/next/genki/api/datasets/..%5Cconversations',
+      '/api/next/genki/api/datasets/..%5cconversations',
+      '/api/next/genki/api/conversations/..%2F..%2Fapi%2Fdatasets',
+      '/api/next/genki/api/conversations/../../api/datasets',
+      '/api/next/x/../genki/api/conversations',
+    ];
+    for (const path of paths)
+      assert.deepEqual(await sent(path), { status: 400, code: 'bad_path' }, path);
+    assert.deepEqual(seen, []);
+  });
+
+  test('takes a double-encoded slash as text, which no rule allows, so genki is never asked', async () => {
+    assert.deepEqual(await sent('/api/next/genki/api/datasets/..%252Fconversations'), {
+      status: 403,
+      code: 'not_allowed',
+    });
+    assert.deepEqual(seen, []);
+  });
+
+  test('still forwards an allowed path, and an encoded slash in the query', async () => {
+    for (const path of [
+      '/api/next/genki/v1/models',
+      '/api/next/genki/api/datasets/kudos',
+      '/api/next/genki/api/conversations/c-1',
+      '/api/next/genki/api/facets?dataset-config-key=kudos&filter=%7B%22a%22%3A%22b%2Fc%22%7D',
+    ])
+      assert.equal((await sent(path)).status, 200, path);
+    assert.deepEqual(
+      seen.map((s) => s.url),
+      [
+        '/v1/models',
+        '/api/datasets/kudos',
+        '/api/conversations/c-1',
+        '/api/facets?dataset-config-key=kudos&filter=%7B%22a%22%3A%22b%2Fc%22%7D&tenant=digdir',
+      ],
+    );
   });
 });
 
@@ -855,6 +816,34 @@ describe('feedback on an answer', () => {
     assert.equal((await rate(host, { ...RATING, reasons: 'Feil' })).status, 400);
     assert.equal((await rate(host, { ...RATING, reasons: [1] })).status, 400);
     assert.equal((await rate(host, { ...RATING, conversationId: '' })).status, 400);
+    assert.equal(seen.length, 0);
+  });
+});
+
+describe('a Kudos PDF in Dokumentvisning', () => {
+  const policy = (res: Response) => res.headers.get('content-security-policy') ?? '';
+
+  test('may be framed by this site’s own page alone, and no other response may be framed', async () => {
+    // Not a uuid: refused before Kudos is asked, with the headers the route's answers carry.
+    const file = await app.request('/api/next/kudos/files/not-a-uuid');
+    assert.equal(file.status, 400);
+    assert.equal(file.headers.get('x-frame-options'), 'SAMEORIGIN');
+    assert.match(policy(file), /frame-ancestors 'self'/);
+    for (const path of [
+      '/api/next/me',
+      '/',
+      '/api/next/kudos/files/x/y',
+      '/api/next/kudos/files',
+    ]) {
+      const res = await app.request(path);
+      assert.equal(res.headers.get('x-frame-options'), 'DENY', path);
+      assert.match(policy(res), /frame-ancestors 'none'/, path);
+    }
+  });
+
+  test('lets the page frame its own origin, and nothing wider', async () => {
+    const page = await app.request('/');
+    assert.match(policy(page), /frame-src 'self'(;|$)/);
     assert.equal(seen.length, 0);
   });
 });

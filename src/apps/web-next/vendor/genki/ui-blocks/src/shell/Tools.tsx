@@ -1,6 +1,13 @@
 import { Dropdown, Field, Heading, Label, Select } from '@digdir/designsystemet-react';
 import { ChevronDownIcon } from '@navikt/aksel-icons';
-import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { classes } from '../dom.js';
 import { useT } from './i18n.js';
@@ -70,6 +77,9 @@ export const ShellTools = ({
   const chosen = value ?? own;
   const current = tools.find((tool) => tool.id === chosen) ?? tools[0];
   const tabs = useRef(new Map<string, HTMLButtonElement | null>());
+  // Read once the page has changed: a region taken away, as a panel fills the shell, gets no menu.
+  const [region, setRegion] = useState<Element | null>(null);
+  useLayoutEffect(() => setRegion(pinIn?.isConnected ? pinIn : null), [pinIn]);
   const mode = toolMode(tools.length);
   if (mode === 'none' || !current) return null;
   const tinted = variant === 'tinted';
@@ -226,7 +236,7 @@ export const ShellTools = ({
       data-mode={mode}
       data-variant={tinted ? 'tinted' : undefined}
     >
-      {pinIn === undefined ? switcher : pinIn && createPortal(switcher, pinIn)}
+      {pinIn === undefined ? switcher : region && createPortal(switcher, region)}
       {panels}
     </div>
   );

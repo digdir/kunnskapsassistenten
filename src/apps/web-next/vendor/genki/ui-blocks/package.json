@@ -13,6 +13,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./builder": {
+      "source": "./src/builder/index.ts",
+      "types": "./dist/builder/index.d.ts",
+      "default": "./dist/builder/index.js"
+    },
     "./styles.css": "./src/ui-blocks.css"
   },
   "scripts": {

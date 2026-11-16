@@ -84,6 +84,12 @@
     padding-block-end: var(--genai-assembly-room-inset, var(--ds-size-3));
   }
 
+  /* Writing hides the greeting and suggestions but keeps their room, so the field stays put. */
+  .uia-chat[data-typing] .uia-welcome,
+  .uia-chat[data-typing] .uia-suggestions {
+    visibility: hidden;
+  }
+
   .uia-disclaimer {
     color: var(--genai-assembly-disclaimer-color, var(--ds-color-neutral-text-subtle));
     text-align: center;

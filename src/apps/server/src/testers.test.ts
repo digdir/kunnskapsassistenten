@@ -1,64 +1,66 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { after, before, describe, mock, test } from 'node:test';
-import { events, fakeBackend, setEnvironment, type Backend } from '../fixtures/backend.ts';
+import { after, before, beforeEach, describe, mock, test } from 'node:test';
+import { startFakeGenki } from '../fixtures/ansattporten.ts';
 
-// Sign-in is off here, so the session's user id is the `ka_sid` cookie.
-setEnvironment();
-process.env.KA_TESTERS = 'tester-1, ansattporten:abc';
-delete process.env.KA_TEST_ENVIRONMENT;
+/*
+ * Testers (decisions/0015): every call to genki for a person in `KA_TESTERS` carries
+ * `GenAI-Environment`. Sign-in is off here, so the session's user id is the `ka_sid` cookie.
+ */
+const ORIGIN = 'http://localhost:8787';
 
+let genki: Awaited<ReturnType<typeof startFakeGenki>>;
 let app: typeof import('./app.ts').app;
 let config: typeof import('./config.ts');
 let headers: typeof import('./backend.ts');
-let backend: Backend;
-const sent: Array<{ path: string; environment: string | null }> = [];
 
 before(async () => {
+  genki = await startFakeGenki();
+  Object.assign(process.env, {
+    AUTH_MODE: 'off',
+    APP_ORIGIN: ORIGIN,
+    DIGDIR_API_KEY: 'service-key',
+    DIGDIR_API_BASE: genki.base,
+    KA_TESTERS: 'tester-1, ansattporten:abc',
+  });
+  delete process.env.KA_TEST_ENVIRONMENT;
+  delete process.env.KA_NEXT_LAYOUT;
   ({ app } = await import('./app.ts'));
   config = await import('./config.ts');
   headers = await import('./backend.ts');
-  backend = fakeBackend();
-  const fake = globalThis.fetch;
-  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
-    const url = new URL(input instanceof Request ? input.url : String(input));
-    if (url.hostname === 'backend.test')
-      sent.push({
-        path: url.pathname,
-        environment: new Headers(init?.headers).get('GenAI-Environment'),
-      });
-    return fake(input, init);
-  }) as typeof fetch;
 });
-after(() => backend.restore());
+after(() => genki.close());
+beforeEach(() => {
+  genki.requests.length = 0;
+});
 
-async function ask(sid: string, extra: Record<string, string> = {}) {
-  sent.length = 0;
-  const res = await app.request('/api/v2/ask', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Cookie: `ka_sid=${sid}`, ...extra },
-    body: JSON.stringify({ query: 'Hva sier årsrapportene?' }),
+/** A thread list and a question through the proxy, as the client makes them; what genki got. */
+async function calls(sid: string, extra: Record<string, string> = {}) {
+  const cookie = { Cookie: `ka_sid=${sid}`, ...extra };
+  const list = await app.request('/api/next/genki/api/conversations?page_size=100', {
+    headers: cookie,
   });
-  assert.equal(res.status, 200);
-  await events(res);
-  return sent.map((s) => [s.path, s.environment]);
-}
-
-async function me(sid: string) {
-  const res = await app.request('/api/v2/me', { headers: { Cookie: `ka_sid=${sid}` } });
-  return (await res.json()) as { environment?: string };
+  assert.equal(list.status, 200);
+  const asked = await app.request('/api/next/genki/v1/chat/completions', {
+    method: 'POST',
+    headers: { ...cookie, 'Content-Type': 'application/json', Origin: ORIGIN },
+    body: JSON.stringify({
+      model: 'kunnskapsassistenten__default',
+      messages: [{ role: 'user', content: 'Hva sier årsrapportene?' }],
+      stream: true,
+    }),
+  });
+  assert.equal(asked.status, 200);
+  await asked.text();
+  return genki.requests.map((r) => [r.path, r.headers['genai-environment'] ?? null]);
 }
 
 describe('a tester in KA_TESTERS', () => {
-  test("sends GenAI-Environment: test on every call to genki for the tester's question", async () => {
-    assert.deepEqual(await ask('tester-1'), [
+  test('sends GenAI-Environment: test on every call to genki for the tester', async () => {
+    assert.deepEqual(await calls('tester-1'), [
       ['/api/conversations', 'test'],
-      ['/api/mcp', 'test'],
+      ['/v1/chat/completions', 'test'],
     ]);
-  });
-
-  test('is told by /api/v2/me which environment answers', async () => {
-    assert.equal((await me('tester-1')).environment, 'test');
   });
 
   test("sends it with the person's token too", () => {
@@ -71,21 +73,17 @@ describe('a tester in KA_TESTERS', () => {
 
 describe('anyone not in KA_TESTERS', () => {
   test('sends no GenAI-Environment, so genki runs prod', async () => {
-    assert.deepEqual(await ask('someone-else'), [
+    assert.deepEqual(await calls('someone-else'), [
       ['/api/conversations', null],
-      ['/api/mcp', null],
+      ['/v1/chat/completions', null],
     ]);
   });
 
   test('cannot choose an environment by sending GenAI-Environment from the browser', async () => {
-    assert.deepEqual(await ask('someone-else', { 'GenAI-Environment': 'test' }), [
+    assert.deepEqual(await calls('someone-else', { 'GenAI-Environment': 'test' }), [
       ['/api/conversations', null],
-      ['/api/mcp', null],
+      ['/v1/chat/completions', null],
     ]);
-  });
-
-  test('gets no environment from /api/v2/me', async () => {
-    assert.equal('environment' in (await me('someone-else')), false);
   });
 });
 

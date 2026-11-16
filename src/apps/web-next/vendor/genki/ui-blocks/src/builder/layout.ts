@@ -6,12 +6,22 @@ import {
   blockSpec,
   defaultZone,
   isBlockId,
+  isLook,
+  placesOf,
   zones,
   type BlockId,
   type BlockOption,
+  type Look,
   type Need,
+  type Place,
   type Zone,
 } from './catalogue.js';
+import {
+  isProfileData,
+  profileProblems,
+  type ProfileData,
+  type ProfileProblem,
+} from './profile.js';
 
 export type BlockSettings = Readonly<Record<string, boolean | string>>;
 
@@ -26,7 +36,18 @@ export interface AssistantLayout {
   version: 1;
   /** The template it started from. */
   template?: string | undefined;
+  /**
+   * The look it is drawn in. Without it, the template's (`templateLook`), as every layout was
+   * drawn before the look was its own setting.
+   */
+  look?: Look | undefined;
   zones: Readonly<Record<Zone, readonly PlacedBlock[]>>;
+  /**
+   * The words it is drawn with: the assistant's name, its suggestions, each collection's fields
+   * and links, the settings note. A host's own profile wins where it says something; this fills
+   * the rest, so a service made in the builder needs no host code to look like itself.
+   */
+  profile?: ProfileData | undefined;
 }
 
 /**
@@ -35,7 +56,7 @@ export interface AssistantLayout {
  */
 export interface BuilderState {
   layout: AssistantLayout;
-  chosen: Partial<Record<BlockId, Zone>>;
+  chosen: Partial<Record<BlockId, Place>>;
   /**
    * The blocks a change of service turned off, each with its zone and options, so a service that
    * can back them again puts them back (`fitService`). Screen state too; a template forgets them.
@@ -54,15 +75,53 @@ export const emptyLayout: AssistantLayout = {
   zones: { primary: [], main: [], secondary: [] },
 };
 
+/**
+ * The look a template draws when the layout names none: `next` for `knowledge-assistant-next`,
+ * whose layouts were drawn in it before the look was their own setting, and `current` for the rest.
+ */
+export const templateLook = (template: string | undefined): Look =>
+  template === 'knowledge-assistant-next' ? 'next' : 'current';
+
+/** The look the layout is drawn in: its own, else its template's. */
+export const lookOf = (layout: AssistantLayout): Look =>
+  isLook(layout.look) ? layout.look : templateLook(layout.template);
+
+/** The layout in another look, with its blocks and their options as they are. */
+export const withLook = (state: BuilderState, look: Look): BuilderState => ({
+  ...state,
+  layout: { ...state.layout, look },
+});
+
+/** The layout with another profile, or none, its blocks and look as they are. */
+export const withProfile = (
+  state: BuilderState,
+  profile: ProfileData | undefined,
+): BuilderState => {
+  const layout = { ...state.layout };
+  if (profile) layout.profile = profile;
+  else delete layout.profile;
+  return { ...state, layout };
+};
+
 const orderIn = (zone: Zone, id: BlockId) => blockSpec(id).order[zone] ?? 0;
 
 /** The zone's blocks in the catalogue's order, whatever order they were turned on in. */
 const sorted = (zone: Zone, placed: readonly PlacedBlock[]) =>
   [...placed].sort((a, b) => orderIn(zone, a.block) - orderIn(zone, b.block));
 
-/** Where the block stands, or `undefined` when it is off. */
+/** Where the block stands, the first of its zones when it stands in two, or `undefined` when off. */
 export const zoneOf = (layout: AssistantLayout, id: BlockId): Zone | undefined =>
   zones.find((zone) => layout.zones[zone].some((placed) => placed.block === id));
+
+/** Every zone the block stands in, in the zones' order. */
+export const zonesOf = (layout: AssistantLayout, id: BlockId): Zone[] =>
+  zones.filter((zone) => layout.zones[zone].some((placed) => placed.block === id));
+
+/** Where the block stands as the builder offers it: its zone, `both`, or `undefined` when off. */
+export const placedAt = (layout: AssistantLayout, id: BlockId): Place | undefined => {
+  const at = zonesOf(layout, id);
+  return at.length > 1 ? 'both' : at[0];
+};
 
 export const isOn = (layout: AssistantLayout, id: BlockId) => zoneOf(layout, id) !== undefined;
 
@@ -71,8 +130,8 @@ export const blocksIn = (layout: AssistantLayout, zone: Zone): BlockId[] =>
   sorted(zone, layout.zones[zone]).map((placed) => placed.block);
 
 /** Where a block stands, else where it was chosen to go, else its default zone. */
-export const placeOf = (state: BuilderState, id: BlockId): Zone =>
-  zoneOf(state.layout, id) ?? state.chosen[id] ?? defaultZone(id);
+export const placeOf = (state: BuilderState, id: BlockId): Place =>
+  placedAt(state.layout, id) ?? state.chosen[id] ?? defaultZone(id);
 
 const without = (layout: AssistantLayout, id: BlockId) =>
   Object.fromEntries(
@@ -82,11 +141,13 @@ const without = (layout: AssistantLayout, id: BlockId) =>
 const findPlaced = (layout: AssistantLayout, id: BlockId) =>
   zones.flatMap((zone) => layout.zones[zone]).find((placed) => placed.block === id);
 
-/** Puts the block in the zone, out of any other: a block stands in one place at a time. */
-const put = (layout: AssistantLayout, id: BlockId, zone: Zone): AssistantLayout => {
+/** Puts the block in the zone, or in both its zones, and out of any other, its options kept. */
+const put = (layout: AssistantLayout, id: BlockId, place: Place): AssistantLayout => {
   const kept = findPlaced(layout, id) ?? { block: id };
   const rest = without(layout, id);
-  return { ...layout, zones: { ...rest, [zone]: sorted(zone, [...rest[zone], kept]) } };
+  const into = place === 'both' ? blockSpec(id).zones : [place];
+  for (const zone of into) rest[zone] = sorted(zone, [...rest[zone], kept]);
+  return { ...layout, zones: rest };
 };
 
 /** On, where it stood last or was chosen to go. A block that is on stays where it is. */
@@ -95,7 +156,7 @@ export const turnOn = (state: BuilderState, id: BlockId): BuilderState =>
 
 /** Off. A movable block remembers where it stood, for when it is turned on again. */
 export const turnOff = (state: BuilderState, id: BlockId): BuilderState => {
-  const at = zoneOf(state.layout, id);
+  const at = placedAt(state.layout, id);
   if (!at) return state;
   return {
     ...state,
@@ -108,12 +169,12 @@ export const turnOff = (state: BuilderState, id: BlockId): BuilderState => {
  * To another zone it may stand in; a zone it may not stand in changes nothing. A block that is
  * off is not turned on, but goes there when it is.
  */
-export const moveTo = (state: BuilderState, id: BlockId, zone: Zone): BuilderState => {
-  if (!blockSpec(id).zones.includes(zone)) return state;
+export const moveTo = (state: BuilderState, id: BlockId, place: Place): BuilderState => {
+  if (!placesOf(id).includes(place)) return state;
   return {
     ...state,
-    layout: isOn(state.layout, id) ? put(state.layout, id, zone) : state.layout,
-    chosen: { ...state.chosen, [id]: zone },
+    layout: isOn(state.layout, id) ? put(state.layout, id, place) : state.layout,
+    chosen: { ...state.chosen, [id]: place },
   };
 };
 
@@ -127,12 +188,16 @@ export const fitService = (
   offered: (id: BlockId) => boolean,
 ): { state: BuilderState; dropped: BlockId[]; restored: BlockId[] } => {
   const dropped: BlockId[] = [];
-  const held: HeldBlock[] = [...(state.held ?? [])];
+  let held: HeldBlock[] = [...(state.held ?? [])];
   let layout = state.layout;
   for (const zone of zones) {
     for (const placed of state.layout.zones[zone]) {
       if (offered(placed.block)) continue;
-      dropped.push(placed.block);
+      // Held where it stands now, in each of its zones, and no longer where it stood before.
+      if (!dropped.includes(placed.block)) {
+        dropped.push(placed.block);
+        held = held.filter((entry) => entry.placed.block !== placed.block);
+      }
       held.push({ zone, placed });
       layout = { ...layout, zones: without(layout, placed.block) };
     }
@@ -141,16 +206,18 @@ export const fitService = (
   const kept: HeldBlock[] = [];
   for (const entry of held) {
     const id = entry.placed.block;
-    if (dropped.includes(id) || !offered(id) || isOn(layout, id)) {
+    // A block held in both its zones comes back to both.
+    const back = restored.includes(id);
+    if (!back && (dropped.includes(id) || !offered(id) || isOn(layout, id))) {
       if (!isOn(layout, id)) kept.push(entry);
       continue;
     }
-    const rest = without(layout, id);
+    const rest = layout.zones[entry.zone].filter((placed) => placed.block !== id);
     layout = {
       ...layout,
-      zones: { ...rest, [entry.zone]: sorted(entry.zone, [...rest[entry.zone], entry.placed]) },
+      zones: { ...layout.zones, [entry.zone]: sorted(entry.zone, [...rest, entry.placed]) },
     };
-    restored.push(id);
+    if (!back) restored.push(id);
   }
   return {
     state: { ...state, layout, ...(kept.length > 0 ? { held: kept } : { held: undefined }) },
@@ -160,8 +227,8 @@ export const fitService = (
 };
 
 /** On, in the zone given: what a drop into a zone does. A zone it may not stand in changes nothing. */
-export const placeIn = (state: BuilderState, id: BlockId, zone: Zone): BuilderState =>
-  blockSpec(id).zones.includes(zone) ? moveTo(turnOn(state, id), id, zone) : state;
+export const placeIn = (state: BuilderState, id: BlockId, place: Place): BuilderState =>
+  placesOf(id).includes(place) ? moveTo(turnOn(state, id), id, place) : state;
 
 /** The value of each option, the defaults filled in. */
 export const settingsOf = (layout: AssistantLayout, id: BlockId): BlockSettings => {
@@ -179,20 +246,20 @@ export const withSetting = (
   value: boolean | string,
 ): BuilderState => {
   const spec = blockSpec(id).options.find((o) => o.id === option);
-  const zone = zoneOf(state.layout, id);
-  if (!spec || !zone) return state;
-  const placed = state.layout.zones[zone].map((p) => {
-    if (p.block !== id) return p;
-    const rest = Object.fromEntries(
-      Object.entries(p.settings ?? {}).filter(([key]) => key !== option),
-    );
-    const settings = value === spec.default ? rest : { ...rest, [option]: value };
-    return Object.keys(settings).length > 0 ? { block: id, settings } : { block: id };
-  });
-  return {
-    ...state,
-    layout: { ...state.layout, zones: { ...state.layout.zones, [zone]: placed } },
-  };
+  const at = zonesOf(state.layout, id);
+  if (!spec || at.length === 0) return state;
+  // A block in both its zones has one set of options, kept alike in each.
+  const zoneMap = { ...state.layout.zones };
+  for (const zone of at)
+    zoneMap[zone] = zoneMap[zone].map((p) => {
+      if (p.block !== id) return p;
+      const rest = Object.fromEntries(
+        Object.entries(p.settings ?? {}).filter(([key]) => key !== option),
+      );
+      const settings = value === spec.default ? rest : { ...rest, [option]: value };
+      return Object.keys(settings).length > 0 ? { block: id, settings } : { block: id };
+    });
+  return { ...state, layout: { ...state.layout, zones: zoneMap } };
 };
 
 // The secondary panel's rule is the shell's: the builder reads the blocks, never the other way.
@@ -213,7 +280,8 @@ export type LayoutProblem =
       partner: BlockId;
       need: Need;
     }
-  | { rule: 'needs-unmet'; block: BlockId; option?: string; need: Need };
+  | { rule: 'needs-unmet'; block: BlockId; option?: string; need: Need }
+  | ProfileProblem;
 
 /** The blocks a `component:*` need asks for, any one of which will do; none for other needs. */
 export const partnersOf = (need: Need): BlockId[] =>
@@ -231,18 +299,19 @@ const storedOn = (layout: AssistantLayout, id: BlockId): BlockOption[] => {
 /**
  * Every rule a layout breaks, each with the rule's name, as genki reports a problem elsewhere:
  * - every block is in the catalogue and stands in a zone it may;
- * - no block is placed twice;
+ * - no block is placed twice, but one that may stand in both its zones, once in each;
  * - a block that is not built is not placed;
  * - a block, and each option the layout turns on, comes with the blocks it depends on
  *   (`component:*`);
- * - their other needs are met, when `met` says which are.
+ * - their other needs are met, when `met` says which are;
+ * - the profile, when there is one, keeps to its limits (`profileProblems`).
  */
 export const layoutProblems = (
   layout: AssistantLayout,
   met?: (need: Need) => boolean,
 ): LayoutProblem[] => {
   const problems: LayoutProblem[] = [];
-  const seen = new Set<BlockId>();
+  const seen = new Map<BlockId, Zone[]>();
   for (const zone of zones) {
     for (const placed of layout.zones[zone]) {
       const id: unknown = placed.block;
@@ -250,14 +319,17 @@ export const layoutProblems = (
         problems.push({ rule: 'unknown-block', block: String(id), zone });
         continue;
       }
-      if (seen.has(id)) problems.push({ rule: 'placed-twice', block: id });
-      seen.add(id);
       const spec = blockSpec(id);
+      const at = seen.get(id) ?? [];
+      // Twice is once too many, except a block that may stand in both its zones, once in each.
+      if (at.length > 0 && (!spec.both || at.includes(zone)))
+        problems.push({ rule: 'placed-twice', block: id });
+      seen.set(id, [...at, zone]);
       if (!spec.zones.includes(zone)) problems.push({ rule: 'zone-not-allowed', block: id, zone });
       if (spec.status === 'planned') problems.push({ rule: 'not-built', block: id });
     }
   }
-  for (const id of seen) {
+  for (const id of seen.keys()) {
     const check = (needs: readonly Need[], option?: string) => {
       for (const need of needs) {
         const [partner, ...others] = partnersOf(need);
@@ -278,13 +350,15 @@ export const layoutProblems = (
     check(blockSpec(id).needs);
     for (const option of storedOn(layout, id)) check(option.needs ?? [], option.id);
   }
+  if (layout.profile) problems.push(...profileProblems(layout.profile));
   return problems;
 };
 
 /**
- * Whether an option is in force: on, with a block it depends on placed for each such need, and its
- * other needs met when `met` says which are. Fotnoter on Chat is off while both Kilder and
- * Dokumentvisning are, whatever the switch says, so a footnote never points nowhere.
+ * Whether an option is in force: on, drawn in the layout's look, with a block it depends on placed
+ * for each such need, and its other needs met when `met` says which are. Fotnoter on Chat is off
+ * while both Kilder and Dokumentvisning are, whatever the switch says, so a footnote never points
+ * nowhere; follow-ups are off in the next look, which draws none.
  */
 export const optionInForce = (
   layout: AssistantLayout,
@@ -294,6 +368,7 @@ export const optionInForce = (
 ) => {
   const spec = blockSpec(id).options.find((o) => o.id === option);
   if (!spec || spec.status === 'planned' || !isOn(layout, id)) return false;
+  if (spec.looks && !spec.looks.includes(lookOf(layout))) return false;
   const value = settingsOf(layout, id)[option];
   if (value !== true) return false;
   return (spec.needs ?? []).every((need) => {
@@ -331,12 +406,22 @@ export const defaultLayout: AssistantLayout = normalised({
   ) as Record<Zone, PlacedBlock[]>,
 });
 
-/** A layout read from JSON, when it is one: the shape only, not the rules. */
+/**
+ * A layout read from JSON, when it is one: the shape only, not the rules. A look must be known,
+ * and a profile must be data of the right shape (`isProfileData`).
+ */
 export const isAssistantLayout = (value: unknown): value is AssistantLayout => {
   if (typeof value !== 'object' || value === null) return false;
-  const candidate = value as { version?: unknown; zones?: unknown };
+  const candidate = value as {
+    version?: unknown;
+    look?: unknown;
+    zones?: unknown;
+    profile?: unknown;
+  };
   if (candidate.version !== 1 || typeof candidate.zones !== 'object' || candidate.zones === null)
     return false;
+  if (candidate.look !== undefined && !isLook(candidate.look)) return false;
+  if (candidate.profile !== undefined && !isProfileData(candidate.profile)) return false;
   const zoneMap = candidate.zones as Record<string, unknown>;
   return zones.every(
     (zone) =>

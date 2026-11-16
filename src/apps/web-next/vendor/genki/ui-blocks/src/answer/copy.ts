@@ -4,7 +4,7 @@ import { excerptMarkdown, headingText } from '../sources/excerptMarkdown.js';
 import { documentKeys } from '../sources/pairing.js';
 import { distinctNames, sectionOf } from '../sources/Sources.js';
 import type { SourceDocument } from '../sources/types.js';
-import { readFootnotes, type AnswerMarker } from './citations.js';
+import { documentNumbers, readFootnotes, type AnswerMarker } from './citations.js';
 import { translator } from './i18n.js';
 
 export interface AnswerCopyOptions {
@@ -14,6 +14,8 @@ export interface AnswerCopyOptions {
   markers?: readonly AnswerMarker[] | undefined;
   /** The language of the reference list's words, «s.» or «p.». */
   locale?: Locale | undefined;
+  /** As the answer's `documentFootnotes`: footnotes that name documents keep their numbers. */
+  documentFootnotes?: boolean | undefined;
 }
 
 export interface AnswerCopy {
@@ -98,15 +100,17 @@ export const finishedText = (markdown: string) => {
  * its footnotes, and a reference list under it, since an answer must not leave the app without
  * where it came from. One line per numbered excerpt, and two from one report told apart by their
  * page, section or first words. An answer whose footnotes name only documents is drawn without
- * footnotes, so it is copied without them, with one unnumbered line per cited document. Each part
- * is left out when the source lacks it. With no sources, the clean text alone.
+ * footnotes, so it is copied without them, with one unnumbered line per cited document; with
+ * `documentFootnotes` both keep the documents' numbers, as drawn. Each part is left out when the
+ * source lacks it. With no sources, the clean text alone.
  */
 export const answerCopy = (text: string, options: AnswerCopyOptions = {}): AnswerCopy => {
-  const { sources = [], markers, locale = 'nb' } = options;
+  const { sources = [], markers, locale = 'nb', documentFootnotes = false } = options;
   const t = translator(locale);
   const { pairing, met } = readFootnotes(text, sources, markers);
   const byExcerpt = pairing.mode === 'excerpt';
   const keys = documentKeys(sources);
+  const byDocument = documentFootnotes ? documentNumbers(pairing) : new Map<string, number>();
   const names = distinctNames(sources, (title, id) => t('sources.sameTitle', { title, id })).map(
     (name) => name || t('sources.untitled'),
   );
@@ -162,9 +166,19 @@ export const answerCopy = (text: string, options: AnswerCopyOptions = {}): Answe
 
   const references = byExcerpt
     ? cited.map((c) => line(c.n, c.title, c.excerpt.page, c.source, partOf(c)))
-    : sources.flatMap((source, i) =>
-        pairing.uses.has(keys[i] ?? '') ? [line(undefined, names[i] ?? '', undefined, source)] : [],
-      );
+    : byDocument.size
+      ? sources
+          .flatMap((source, i) => {
+            const n = byDocument.get(keys[i] ?? '');
+            return n === undefined ? [] : [{ n, text: line(n, names[i] ?? '', undefined, source) }];
+          })
+          .toSorted((a, b) => a.n - b.n)
+          .map((reference) => reference.text)
+      : sources.flatMap((source, i) =>
+          pairing.uses.has(keys[i] ?? '')
+            ? [line(undefined, names[i] ?? '', undefined, source)]
+            : [],
+        );
 
   // Where a written `[N]` leads, by the contract's rule: the marker it names, or the source with
   // `index: N`. One that names nothing is prose, such as a list number, and stays.
@@ -182,6 +196,7 @@ export const answerCopy = (text: string, options: AnswerCopyOptions = {}): Answe
         : -1
       : sources.findIndex((s) => s.index === n);
     if ((markers && !marker) || (!markers && at < 0)) return undefined;
+    if (!byExcerpt && byDocument.size) return byDocument.get(keys[at] ?? '') ?? null;
     // One that names only a document is drawn as nothing, so it is copied as nothing.
     return (byExcerpt && marker && pairing.numbers.get(marker.chunkId)) || null;
   };

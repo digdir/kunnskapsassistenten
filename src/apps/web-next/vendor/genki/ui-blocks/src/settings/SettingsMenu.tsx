@@ -2,6 +2,7 @@ import { Badge, Link } from '@digdir/designsystemet-react';
 import { ChevronLeftIcon } from '@navikt/aksel-icons';
 import { useId } from 'react';
 import { classes, plainClick } from '../dom.js';
+import { generalSummary, type SettingsGeneralRow } from './general.js';
 import { useT } from './i18n.js';
 
 /** The settings pages the block draws, in the design's order (the dev-innstillinger boards). */
@@ -18,8 +19,10 @@ export interface SettingsMenuItem {
   id: string;
   /** Its name. The block's pages have theirs without it. */
   title?: string | undefined;
-  /** One line under the name, «Språk, svarlengde, utseende». */
+  /** One line under the name, «Rolle og kontekst». */
   summary?: string | undefined;
+  /** «Generelt»'s rows, from `generalRowsOf`: its line names these, and none without them. */
+  rows?: readonly SettingsGeneralRow[] | undefined;
   /** How many are on, as Beta-funksjoner counts the trials turned on. No badge at 0. */
   badge?: number | undefined;
 }
@@ -40,10 +43,10 @@ export interface SettingsMenuProps {
 
 type Translate = ReturnType<typeof useT>;
 
-const ownWords = (t: Translate, id: string) => {
+const ownWords = (t: Translate, { id, rows = [] }: SettingsMenuItem) => {
   switch (id) {
     case 'general':
-      return { title: t('settings.general'), summary: t('settings.generalSummary') };
+      return { title: t('settings.general'), summary: generalSummary(t, rows) };
     case 'about-you':
       return { title: t('settings.aboutYou'), summary: t('settings.aboutYouSummary') };
     case 'beta':
@@ -88,7 +91,7 @@ export const SettingsMenu = ({
       ) : null}
       <ul aria-label={t('settings.pagesLabel')} className="uib-settings-menu-pages">
         {pages.map((page) => {
-          const own = ownWords(t, page.id);
+          const own = ownWords(t, page);
           const title = page.title ?? own.title;
           const summary = page.summary ?? own.summary;
           const badge = page.badge ?? 0;

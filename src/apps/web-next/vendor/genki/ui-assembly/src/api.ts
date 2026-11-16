@@ -1,6 +1,6 @@
 // What the assembly asks genki for, lifted from the UI blocks preview's api.ts. One interface, so
-// the wiring can be tested with a fake and run against genki through a host's proxy: the key is
-// never in the page.
+// the wiring can be tested with a fake and run against genki through a host's proxy, or with the
+// person's own token from the host: a service key is never in the page.
 import { ApiError, createClient, type FilterSet, type StreamEvent } from '@genai/client';
 import type {
   AnswerFailure,
@@ -14,6 +14,7 @@ import type {
   SourceDocument,
   ThreadItem,
 } from '@genai/ui-blocks';
+import { documentLink } from './links.js';
 import type { AssistantProfile, CorpusProfile, FieldSpec } from './profile.js';
 import type { StepFrame } from './procedure.js';
 
@@ -82,6 +83,8 @@ export interface AssistantApi {
     selection: FilterSelection,
     dataset: string,
     fields: readonly FieldSpec[],
+    /** The values each field has, for a field with more chosen than genki takes. */
+    lists?: readonly FilterField[],
   ): Promise<FilterField[]>;
   /** The line under a document's title in «Dokumenter», where the profile says how to find it. */
   loadAbout(dataset: string, documentId: string): Promise<readonly string[] | undefined>;
@@ -94,6 +97,8 @@ export interface AssistantApi {
     dataset: string,
     fields: readonly FieldSpec[],
     limit: number,
+    /** The values each field has, for a field with more chosen than genki takes. */
+    lists?: readonly FilterField[],
   ): Promise<{ documents: DocumentInScope[]; found?: number | undefined }>;
   /** Makes the thread first when there is none, then asks into it, as kunnskapsassistenten does. */
   ask(params: AskParams): AsyncGenerator<StreamEvent, void>;
@@ -107,6 +112,9 @@ export class HttpError extends Error {
     super(message);
   }
 }
+
+/** Thrown by `ask`, before it yields anything, for a question the service would not take. */
+export class NotAsked extends Error {}
 
 /** What a failed question's status establishes, in the answer block's words. */
 export const failureOf = (error: unknown): AnswerFailure => {
@@ -131,21 +139,48 @@ export const failureOf = (error: unknown): AnswerFailure => {
   }
 };
 
-/** The fields the question is narrowed by, in genki's filter shape. */
+/** The longest facets address sent: Node answers 431 past 16 KB of headers, token included. */
+export const FACETS_URL_LIMIT = 8_000;
+
+/** The most values genki's filter takes in a field (`maxOptions` in adapter-rest). */
+export const FILTER_VALUES_LIMIT = 100;
+
+/** A field with more values chosen, and more left out, than genki's filter takes. */
+export class FilterTooLarge extends Error {
+  constructor(readonly field: string) {
+    super(`filter field ${field} has too many values chosen and left out to send`);
+  }
+}
+
+/** The fields asked with, in genki's shape; past the limit, the values `lists` has left out. */
 export const filterSet = (
   selection: FilterSelection,
   fields: readonly FieldSpec[],
+  lists?: readonly FilterField[],
 ): FilterSet | undefined => {
-  const chosen = fields
-    .filter((f) => (selection[f.id]?.length ?? 0) > 0)
-    .map((f) => ({
-      field: f.id,
-      type: 'multiselect' as const,
-      'value-type': f.integer ? ('integer' as const) : ('string' as const),
-      'selected-options': f.integer
-        ? (selection[f.id] ?? []).map(Number)
-        : [...(selection[f.id] ?? [])],
-    }));
+  const chosen = fields.flatMap((f) => {
+    const values = selection[f.id] ?? [];
+    if (values.length === 0) return [];
+    const ticked = new Set(values);
+    const leftOut = lists
+      ?.find((list) => list.id === f.id)
+      ?.options.map((option) => option.value)
+      .filter((value) => !ticked.has(value));
+    const asLeftOut = values.length > FILTER_VALUES_LIMIT;
+    if (asLeftOut && (!leftOut || leftOut.length > FILTER_VALUES_LIMIT))
+      throw new FilterTooLarge(f.id);
+    // Every value it has is chosen: it narrows nothing.
+    if (asLeftOut && leftOut?.length === 0) return [];
+    const sent = asLeftOut && leftOut ? leftOut : values;
+    return [
+      {
+        field: f.id,
+        type: asLeftOut ? ('not-in-set' as const) : ('multiselect' as const),
+        'value-type': f.integer ? ('integer' as const) : ('string' as const),
+        'selected-options': f.integer ? sent.map(Number) : [...sent],
+      },
+    ];
+  });
   return chosen.length > 0 ? { fields: chosen } : undefined;
 };
 
@@ -212,7 +247,7 @@ const corpusOf = (tags: readonly string[]) =>
  */
 export const sourceFromWire = (raw: WireSource, corpus?: CorpusProfile, at = 0): SourceDocument => {
   const documentId = raw.documentId ?? raw.document_id;
-  const url = raw.url ?? (documentId ? corpus?.documentUrl?.(documentId) : undefined);
+  const url = raw.url ?? (documentId ? documentLink(corpus, documentId) : undefined);
   const minted = (excerpt: number) => `minted:${documentId ?? `source-${at}`}:${excerpt}`;
   return {
     ...(raw.index !== undefined ? { index: raw.index } : {}),
@@ -245,7 +280,7 @@ const fromChunks = (chunks: readonly ApiChunk[], corpus?: CorpusProfile): Source
     const documentId = chunk.docNum ?? chunk.chunkId;
     let document = documents.get(documentId);
     if (!document) {
-      const url = chunk.docNum ? corpus?.documentUrl?.(chunk.docNum) : undefined;
+      const url = chunk.docNum ? documentLink(corpus, chunk.docNum) : undefined;
       document = {
         index: documents.size + 1,
         title: chunk.docTitle?.trim() ?? '',
@@ -337,13 +372,30 @@ const withoutRetriedAttempts = (messages: readonly ApiMessage[]): ApiMessage[] =
 };
 
 export interface GenkiApiOptions {
-  /** Where genki is reached, such as a dev server's proxy that adds the key: `/genki`. */
+  /** genki's API, with `headers`, or a proxy that adds the key, such as a dev server's `/genki`. */
   baseUrl: string;
   tenant: string;
+  /**
+   * The profile the assistant is drawn with, `profileOf(layout, own)` when the layout carries one,
+   * so the fields, the collections' names and a stored answer's links are in its words too.
+   */
   profile?: AssistantProfile | undefined;
   /** genki names variants in the language asked for. */
   language?: string | undefined;
+  /** The host's credentials, such as the person's Bearer token, asked for before every request. */
+  headers?: (() => Record<string, string> | Promise<Record<string, string>>) | undefined;
 }
+
+const httpError = async (response: Response) => {
+  let detail = response.statusText;
+  try {
+    const body = (await response.json()) as { title?: string; error?: string; detail?: string };
+    detail = body.detail ?? body.title ?? body.error ?? detail;
+  } catch {
+    // Not JSON; the status says enough.
+  }
+  return new HttpError(response.status, `${response.status} ${detail}`);
+};
 
 /** The assembly's calls against genki's API. Reads, a new thread and a question only. */
 export const createGenkiApi = ({
@@ -351,34 +403,47 @@ export const createGenkiApi = ({
   tenant,
   profile,
   language = 'nb',
+  headers,
 }: GenkiApiOptions): AssistantApi => {
-  const client = createClient({ baseUrl });
+  // Every request, the stream's too: the host's headers, with the request's own over them.
+  const send: typeof fetch = async (input, init) => {
+    if (!headers) return fetch(input, init);
+    const merged = new Headers(await headers());
+    new Headers(init?.headers).forEach((value, name) => merged.set(name, value));
+    return fetch(input, { ...init, headers: merged });
+  };
+  const client = createClient({ baseUrl, fetch: send });
   const corpusProfile = (key: string | undefined) => (key ? profile?.corpora?.[key] : undefined);
+  // A thread that names no collection is read in the profile's, when it describes only one.
+  const threadProfile = (key: string | undefined) => {
+    if (key) return corpusProfile(key);
+    const described = Object.values(profile?.corpora ?? {});
+    return described.length === 1 ? described[0] : undefined;
+  };
 
   const getJson = async <T>(path: string): Promise<T> => {
-    const response = await fetch(`${baseUrl}${path}`, {
+    const response = await send(`${baseUrl}${path}`, {
       headers: { Accept: 'application/json', 'Accept-Language': language },
     });
-    if (!response.ok) {
-      let detail = response.statusText;
-      try {
-        const body = (await response.json()) as { title?: string; error?: string; detail?: string };
-        detail = body.detail ?? body.title ?? body.error ?? detail;
-      } catch {
-        // Not JSON; the status says enough.
-      }
-      throw new HttpError(response.status, `${response.status} ${detail}`);
-    }
+    if (!response.ok) throw await httpError(response);
     return (await response.json()) as T;
   };
 
-  const facetsQuery = (dataset: string, fields: string, filter?: FilterSet | object) =>
-    new URLSearchParams({
+  const getFacets = <T>(dataset: string, fields: string, filter?: FilterSet | object) => {
+    const query = new URLSearchParams({
       tenant,
       'dataset-config-key': dataset,
       fields,
       ...(filter ? { filter: JSON.stringify(filter) } : {}),
     });
+    const path = `/api/facets?${query}`;
+    const length = `${baseUrl}${path}`.length;
+    if (length > FACETS_URL_LIMIT)
+      return Promise.reject(
+        new HttpError(431, `facets address of ${length} characters, over ${FACETS_URL_LIMIT}`),
+      );
+    return getJson<T>(path);
+  };
 
   const aboutCache = new Map<string, Promise<readonly string[] | undefined>>();
 
@@ -433,7 +498,7 @@ export const createGenkiApi = ({
         `/api/conversations/${encodeURIComponent(id)}`,
       );
       const corpus = corpusOf(body.conversation.tags);
-      const own = corpusProfile(corpus);
+      const own = threadProfile(corpus);
       const turns: Turn[] = [];
       for (const message of withoutRetriedAttempts(body.messages)) {
         if (message.role === 'user') {
@@ -465,14 +530,22 @@ export const createGenkiApi = ({
       });
     },
 
-    // The collection's multiselect fields; the profile's choice and words where it has them.
+    // The collection's multiselect fields; the profile's choice and words where it has them. A
+    // field the profile does not mark integer or not is as the dataset declares it.
     loadFields: async (dataset) => {
       const body = await getJson<{
         dataset?: { filters?: { field: string; kinds?: string[]; 'value-type'?: string }[] };
       }>(`/api/datasets/${encodeURIComponent(dataset)}`);
       const offered = (body.dataset?.filters ?? []).filter((f) => f.kinds?.includes('multiselect'));
       const chosen = corpusProfile(dataset)?.fields;
-      if (chosen) return chosen.filter((f) => offered.some((o) => o.field === f.id));
+      if (chosen)
+        return chosen.flatMap((f) => {
+          const declared = offered.find((o) => o.field === f.id);
+          if (!declared) return [];
+          return f.integer === undefined && declared['value-type'] === 'integer'
+            ? [{ ...f, integer: true }]
+            : [f];
+        });
       return offered.map((f) => ({
         id: f.field,
         label: f.field,
@@ -481,15 +554,15 @@ export const createGenkiApi = ({
     },
 
     // One call per field, narrowed by the other fields only: each count is «given the others».
-    loadFacets: (selection, dataset, fields) =>
+    loadFacets: (selection, dataset, fields, lists) =>
       Promise.all(
         fields.map(async (field) => {
           const others = Object.fromEntries(
             Object.entries(selection).filter(([id]) => id !== field.id),
           );
-          const body = await getJson<{
+          const body = await getFacets<{
             fields: { field: string; options: { value: string; count: number }[] }[];
-          }>(`/api/facets?${facetsQuery(dataset, field.id, filterSet(others, fields))}`);
+          }>(dataset, field.id, filterSet(others, fields, lists));
           const options = (body.fields.find((f) => f.field === field.id)?.options ?? []).map(
             (o) => ({
               value: String(o.value),
@@ -506,9 +579,9 @@ export const createGenkiApi = ({
         }),
       ),
 
-    loadDocuments: async (selection, dataset, fields, limit) => {
+    loadDocuments: async (selection, dataset, fields, limit, lists) => {
       const own = corpusProfile(dataset);
-      const filter = filterSet(selection, fields);
+      const filter = filterSet(selection, fields, lists);
       const body = await getJson<{
         documents: { id: string; title?: string; url?: string; fields?: Record<string, unknown> }[];
         found?: number;
@@ -526,7 +599,7 @@ export const createGenkiApi = ({
       return {
         documents: body.documents.map((d) => {
           const values = d.fields ?? {};
-          const href = d.url ?? own?.documentUrl?.(d.id);
+          const href = d.url ?? documentLink(own, d.id);
           const organisation = join(own?.organisationField, values);
           const year = yearField ? yearsOf(values[yearField]) : undefined;
           return {
@@ -559,9 +632,9 @@ export const createGenkiApi = ({
           },
         ],
       };
-      const found = getJson<{
+      const found = getFacets<{
         fields: { field: string; options: { value: string | number; count: number }[] }[];
-      }>(`/api/facets?${facetsQuery(dataset, about.fields.join(','), filter)}`).then(
+      }>(dataset, about.fields.join(','), filter).then(
         (body) => {
           const values = (field: string) =>
             (body.fields.find((f) => f.field === field)?.options ?? [])
@@ -580,7 +653,7 @@ export const createGenkiApi = ({
     ask: async function* (params) {
       let conversationId = params.conversationId;
       if (!conversationId) {
-        const response = await fetch(`${baseUrl}/api/conversations`, {
+        const response = await send(`${baseUrl}/api/conversations`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
           body: JSON.stringify({
@@ -590,6 +663,8 @@ export const createGenkiApi = ({
           }),
           signal: params.signal,
         });
+        // Not signed in stops here; any other failure asks without a thread.
+        if (response.status === 401) throw await httpError(response);
         if (response.ok) {
           const body = (await response.json()) as { conversation?: { id?: string } };
           conversationId = body.conversation?.id;

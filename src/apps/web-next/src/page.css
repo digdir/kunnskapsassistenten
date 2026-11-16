@@ -27,3 +27,64 @@ body {
   flex-wrap: wrap;
   gap: var(--ds-size-3);
 }
+
+/* KA's own pages (pages/Page.tsx): a column of text on a card, on the page's background, as the
+   assistant's cards stand on it (genki's shell, `frame="cards"`): the same inset, surface, corner
+   and shadow. */
+.ka-page {
+  box-sizing: border-box;
+  min-block-size: 100%;
+  padding: var(--ds-size-4);
+}
+
+.ka-page-main {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-8);
+  max-inline-size: 48rem;
+  margin-inline: auto;
+  padding: var(--ds-size-8) var(--ds-size-10);
+  border-radius: var(--ds-border-radius-xl);
+  box-shadow: var(--ds-shadow-xs);
+  background: var(--ds-color-neutral-surface-default);
+}
+
+.ka-page-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-size-4);
+}
+
+/* Each entry of «Endringslogg» begins under its line with room to breathe. */
+.ka-page-text h2 {
+  margin-block-start: var(--ds-size-2);
+}
+
+.ka-page-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-size-2);
+}
+
+.ka-page-quote {
+  margin: 0;
+  padding-inline-start: var(--ds-size-4);
+  border-inline-start: var(--ds-size-1) solid var(--ds-color-neutral-border-subtle);
+  color: var(--ds-color-neutral-text-subtle);
+}
+
+/* On a phone the card is the page: the text gets the whole width. */
+@media (max-width: 40rem) {
+  .ka-page {
+    padding: 0;
+  }
+
+  .ka-page-main {
+    min-block-size: 100%;
+    padding: var(--ds-size-6) var(--ds-size-4);
+    border-radius: 0;
+    box-shadow: none;
+  }
+}

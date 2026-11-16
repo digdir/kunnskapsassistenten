@@ -54,8 +54,10 @@ export const useStoredValue = <T>(
   key: string,
   parse: (stored: unknown) => T,
   store?: (value: T) => unknown,
+  // Starts from the fallback, leaving what is stored as it is until the value is set.
+  fresh = false,
 ) => {
-  const [value, setValue] = useState<T>(() => parse(storage?.read(key)));
+  const [value, setValue] = useState<T>(() => parse(fresh ? undefined : storage?.read(key)));
   useEffect(
     () => storage?.subscribe?.(key, () => setValue(parse(storage.read(key)))),
     // `parse` is the caller's constant.

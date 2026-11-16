@@ -43,8 +43,8 @@ export interface FilterProps {
   selection: FilterSelection;
   /** Called only when the selection changes. Ask with `narrowing(selection, fields)`. */
   onChange: (selection: FilterSelection) => void;
-  /** The fields could not be fetched. */
-  failed?: boolean | undefined;
+  /** The fields could not be fetched; a string says why, in place of the block's words. */
+  failed?: boolean | string | undefined;
   /** «Prøv igjen» with the error. */
   onRetry?: (() => void) | undefined;
   /** The thread on screen is locked to this filter, so the fields are not drawn. */
@@ -57,6 +57,11 @@ export interface FilterProps {
   newThreadHref?: string | undefined;
   /** A field of kind `year` takes periods, and years in a row show as one chip. */
   yearPeriods?: boolean | undefined;
+  /**
+   * The ids of the fields whose values are years, for when the facets are missing: a filter in
+   * force then still shows its years as periods, «2020–2022», one chip each.
+   */
+  yearFields?: readonly string[] | undefined;
   /** One chip for six or more chosen values too; all of two or more listed always are. */
   compactChips?: boolean | undefined;
   /** The most values a field can send; more shows a warning. */
@@ -142,6 +147,7 @@ export const Filter = ({
   onNewThread,
   newThreadHref,
   yearPeriods = false,
+  yearFields,
   compactChips = false,
   maxValues = 100,
   title,
@@ -255,7 +261,13 @@ export const Filter = ({
 
         {/* While locked, the fields are not drawn, so a failure to fetch them can wait. */}
         <ErrorRegion
-          message={failed && !locked ? t('filter.failed') : undefined}
+          message={
+            failed && !locked
+              ? typeof failed === 'string'
+                ? failed
+                : t('filter.failed')
+              : undefined
+          }
           onRetry={retry}
           retryRef={retryRef}
         />
@@ -301,6 +313,10 @@ export const Filter = ({
             <ActiveFilter
               selection={selection}
               chosen={withoutField}
+              yearFields={[
+                ...(yearFields ?? []),
+                ...(fields ?? []).filter((field) => field.kind === 'year').map((field) => field.id),
+              ]}
               hasFields={(fields?.length ?? 0) > 0}
               level={sub}
               onChange={change}

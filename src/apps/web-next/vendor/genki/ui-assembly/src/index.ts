@@ -3,6 +3,7 @@ export {
   failureOf,
   filterSet,
   HttpError,
+  NotAsked,
   sourceFromWire,
   type AnswerData,
   type AskParams,
@@ -12,8 +13,16 @@ export {
   type Turn,
 } from './api.js';
 export { Assistant, AssistantView, type AssistantProps } from './Assistant.js';
-export type { AssistantExperiment, AssistantProfile, CorpusProfile, FieldSpec } from './profile.js';
+export {
+  profileOf,
+  type AssistantExperiment,
+  type AssistantProfile,
+  type CorpusProfile,
+  type FieldSpec,
+  type YearBounds,
+} from './profile.js';
 export { noticeTime, useLogOnly, useNotice, useStoredColorScheme, type LogOnly } from './host.js';
+export type { DocumentIdPattern } from './profile.js';
 export { stepsOf, type StepFrame } from './procedure.js';
 export { browserStorage, useStoredValue, type AssistantStorage } from './storage.js';
 export {

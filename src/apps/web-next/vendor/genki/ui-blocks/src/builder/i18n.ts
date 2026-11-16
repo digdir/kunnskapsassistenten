@@ -6,6 +6,7 @@ export const nbBuilder = defineNamespace({
   zonePrimary: 'Venstre panel',
   zoneMain: 'Innhold',
   zoneSecondary: 'Høyre panel',
+  zoneBoth: 'Begge steder',
   planned: 'kommer',
 
   projects: 'Prosjekter',
@@ -20,6 +21,8 @@ export const nbBuilder = defineNamespace({
   filterHelp: 'Hvilke dokumenter tråden leser fra',
   approach: 'Fremgangsmåte',
   approachHelp: 'Hvordan assistenten jobbet',
+  approachPlacesHelp:
+    'Som kort over hvert svar i innholdet, som verktøy med flere detaljer i høyre panel, eller begge steder',
   sources: 'Kilder',
   sourcesHelp: 'Utdragene svaret bygger på',
   documentView: 'Dokumentvisning',
@@ -33,7 +36,7 @@ export const nbBuilder = defineNamespace({
   chatSuggestions: 'Forslag til spørsmål',
   chatSuggestionsHelp: 'Tre spørsmål å starte med under feltet',
   chatFollowUps: 'Forslag til oppfølging',
-  chatFollowUpsHelp: 'Knapper over feltet etter et svar',
+  chatFollowUpsHelp: 'Knapper over feltet etter et svar. Ikke i utseendet «Ny utgave».',
   chatDisclaimer: 'Merknad om feil',
   chatDisclaimerHelp:
     'Under feltet: «Assistenten kan gjøre feil. Husk å sjekke viktig informasjon.», med assistentens navn',
@@ -53,10 +56,28 @@ export const nbBuilder = defineNamespace({
   sourcesDisclaimerHelp: 'All tekst er sitater fra dokumentene',
   sourcesSearch: 'Søk i kildene',
   sourcesSearchHelp: 'Søk i utdragene til svaret',
+  documentViewFile: 'Vis hele dokumentet (beta)',
+  documentViewFileHelp:
+    'Hele dokumentet som PDF der appen kan hente det. Av: dokumentvisningen viser bare utdragene',
   approachLevel: 'Detaljnivå',
   approachLevelHelp: 'Hvor mye Fremgangsmåte viser når leseren ikke har valgt',
   approachLevelStandard: 'Standard',
   approachLevelDetailed: 'Detaljert',
+
+  // The reader's needs each block covers, which the builder assistant matches a described need to.
+  coverOrganiseWork: 'Samle arbeid med felles instrukser og dokumenter',
+  coverReturnToConversations: 'Finne igjen og fortsette tidligere samtaler',
+  coverAdjustDisplay: 'Velge fargetema og hvor mye detaljer som vises',
+  coverAskQuestions: 'Stille spørsmål og få svar i en samtale',
+  coverStartFromSuggestions: 'Komme i gang med forslag til spørsmål',
+  coverNarrowDocuments: 'Avgrense hvilke dokumenter svaret bygger på',
+  coverChooseCollection: 'Velge dokumentsamling selv',
+  coverSeeHowAnswered: 'Se hvordan assistenten kom fram til svaret',
+  coverCheckExcerpts: 'Kontrollere svaret mot utdragene det bygger på',
+  coverSeeSourceDocuments: 'Se hvilke dokumenter svaret kommer fra',
+  coverOpenOriginalDocument: 'Enkel tilgang til originaldokumentet',
+  coverReadInContext: 'Lese utdraget i sammenheng med resten av dokumentet',
+  coverCollectExcerpts: 'Samle utdrag og skrive med kildene for hånden',
 
   templateKnowledgeAssistant: 'Kunnskapsassistenten',
   templateKnowledgeAssistantNext: 'Kunnskapsassistenten, ny utgave',
@@ -67,6 +88,11 @@ export const nbBuilder = defineNamespace({
   templateWithoutSecondary: 'Uten høyre sidepanel',
   templateWithoutPrimary: 'Uten venstre sidepanel',
   templateChatOnly: 'Bare chat',
+
+  look: 'Utseende',
+  lookHelp: 'Hvordan blokkene tegnes',
+  lookCurrent: 'Dagens',
+  lookNext: 'Ny utgave',
 
   // Why a block or an option is not offered, one per need the service does not meet.
   needServiceChat: 'Tjenesten svarer ikke i en chat.',
@@ -86,6 +112,7 @@ export const enBuilder = {
   zonePrimary: 'Left panel',
   zoneMain: 'Content',
   zoneSecondary: 'Right panel',
+  zoneBoth: 'Both places',
   planned: 'coming',
 
   projects: 'Projects',
@@ -100,6 +127,8 @@ export const enBuilder = {
   filterHelp: 'Which documents the thread reads from',
   approach: 'Approach',
   approachHelp: 'How the assistant worked',
+  approachPlacesHelp:
+    'As a card over each answer in the content, as a tool with more detail in the right panel, or both',
   sources: 'Sources',
   sourcesHelp: 'The excerpts the answer builds on',
   documentView: 'Document view',
@@ -113,7 +142,7 @@ export const enBuilder = {
   chatSuggestions: 'Suggested questions',
   chatSuggestionsHelp: 'Three questions to start with under the field',
   chatFollowUps: 'Suggested follow-ups',
-  chatFollowUpsHelp: 'Buttons over the field after an answer',
+  chatFollowUpsHelp: 'Buttons over the field after an answer. Not in the “Next edition” look.',
   chatDisclaimer: 'Note on mistakes',
   chatDisclaimerHelp:
     'Under the field: “The assistant can make mistakes. Remember to check important information.”, with the assistant’s name',
@@ -133,10 +162,27 @@ export const enBuilder = {
   sourcesDisclaimerHelp: 'All text is quoted from the documents',
   sourcesSearch: 'Search the sources',
   sourcesSearchHelp: 'Search the answer’s excerpts',
+  documentViewFile: 'Show the whole document (beta)',
+  documentViewFileHelp:
+    'The whole document as a PDF where the app can fetch it. Off: the document view shows only the excerpts',
   approachLevel: 'Level of detail',
   approachLevelHelp: 'How much Approach shows when the reader has not chosen',
   approachLevelStandard: 'Standard',
   approachLevelDetailed: 'Detailed',
+
+  coverOrganiseWork: 'Group work with shared instructions and documents',
+  coverReturnToConversations: 'Find and continue earlier conversations',
+  coverAdjustDisplay: 'Choose the colour scheme and how much detail is shown',
+  coverAskQuestions: 'Ask questions and get answers in a conversation',
+  coverStartFromSuggestions: 'Get started with suggested questions',
+  coverNarrowDocuments: 'Narrow down which documents the answer builds on',
+  coverChooseCollection: 'Choose the document collection yourself',
+  coverSeeHowAnswered: 'See how the assistant arrived at the answer',
+  coverCheckExcerpts: 'Check the answer against the excerpts it builds on',
+  coverSeeSourceDocuments: 'See which documents the answer comes from',
+  coverOpenOriginalDocument: 'Easy access to the original document',
+  coverReadInContext: 'Read the excerpt in the context of the rest of the document',
+  coverCollectExcerpts: 'Collect excerpts and write with the sources at hand',
 
   templateKnowledgeAssistant: 'Knowledge assistant',
   templateKnowledgeAssistantNext: 'Knowledge assistant, next edition',
@@ -147,6 +193,11 @@ export const enBuilder = {
   templateWithoutSecondary: 'Without right panel',
   templateWithoutPrimary: 'Without left panel',
   templateChatOnly: 'Chat only',
+
+  look: 'Look',
+  lookHelp: 'How the blocks are drawn',
+  lookCurrent: 'Current',
+  lookNext: 'Next edition',
 
   needServiceChat: 'The service does not answer in a chat.',
   needServiceSources: 'The service does not search documents.',

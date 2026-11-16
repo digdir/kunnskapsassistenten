@@ -17,13 +17,17 @@ export const useViewportWidth = () =>
 export const useMedia = (query: string) =>
   useSyncExternalStore(
     (change) => {
-      const list = window.matchMedia(query);
-      list.addEventListener('change', change);
-      return () => list.removeEventListener('change', change);
+      const list = mediaList(query);
+      list?.addEventListener('change', change);
+      return () => list?.removeEventListener('change', change);
     },
-    () => window.matchMedia(query).matches,
+    () => mediaList(query)?.matches ?? false,
     () => false,
   );
+
+// Where there is no `matchMedia`, as in a host's test DOM, no query matches.
+const mediaList = (query: string) =>
+  typeof window.matchMedia === 'function' ? window.matchMedia(query) : undefined;
 
 // What Tab can land on, by attribute rather than layout, so browsers and tests agree.
 const tabbable = [

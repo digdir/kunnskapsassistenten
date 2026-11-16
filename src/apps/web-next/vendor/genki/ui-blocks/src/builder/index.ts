@@ -2,11 +2,13 @@ export * from './catalogue.js';
 export * from './layout.js';
 export * from './templates.js';
 export * from './facts.js';
+export * from './profile.js';
+export * from './described.js';
 
 import type { Need } from './catalogue.js';
 import type { BuilderKey } from './i18n.js';
 
-export type { BuilderKey } from './i18n.js';
+export { enBuilder, nbBuilder, type BuilderKey } from './i18n.js';
 
 const needKeys: Record<Need, BuilderKey> = {
   'service:chat': 'builder.needServiceChat',

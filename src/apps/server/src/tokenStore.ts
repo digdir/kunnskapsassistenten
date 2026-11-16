@@ -1,6 +1,6 @@
 /** Ansattporten tokens per session, in this process only. The browser holds just the key. */
 import { randomBytes } from 'node:crypto';
-import type { Organisation } from '@ka/contract';
+import type { Organisation } from './types.ts';
 
 export interface TokenSession {
   accessToken: string;

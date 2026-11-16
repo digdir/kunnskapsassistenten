@@ -38,6 +38,12 @@ export const nbDocumentView = defineNamespace({
   askHint: 'Svaret kommer i tråden.',
   ask: 'Spør',
   askSent: 'Spørsmålet er sendt til tråden.',
+  // The whole document, as a file from the host.
+  fileLoading: 'Henter dokumentet …',
+  fileTitle: 'Dokumentet {title} som PDF',
+  openFile: 'Åpne dokumentet (PDF)',
+  fileNone: 'Hele dokumentet kan ikke vises her.',
+  fileFailed: 'Fikk ikke vist hele dokumentet.',
 });
 
 export const enDocumentView = {
@@ -74,6 +80,11 @@ export const enDocumentView = {
   askHint: 'The answer comes in the thread.',
   ask: 'Ask',
   askSent: 'The question was sent to the thread.',
+  fileLoading: 'Fetching the document …',
+  fileTitle: 'The document {title} as PDF',
+  openFile: 'Open the document (PDF)',
+  fileNone: 'The whole document cannot be shown here.',
+  fileFailed: 'The whole document could not be shown.',
 } satisfies Translation<typeof nbDocumentView>;
 
 /** The document view's own catalogue, with the Sources words it shares, out of the shared one. */

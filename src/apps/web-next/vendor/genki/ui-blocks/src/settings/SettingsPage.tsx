@@ -31,6 +31,8 @@ export interface SettingsPageProps {
   empty?: boolean | undefined;
   /** The page's rows. */
   children?: ReactNode;
+  /** The host's quiet line under the rows, as `Settings`' `note`; not on an empty page. */
+  note?: ReactNode;
   /** Designsystemet's `data-color` for the page, set only when given. */
   color?: string | undefined;
   className?: string | undefined;
@@ -49,6 +51,7 @@ export const SettingsPage = ({
   headingLevel = 1,
   empty = false,
   children,
+  note,
   color,
   className,
 }: SettingsPageProps) => {
@@ -82,7 +85,14 @@ export const SettingsPage = ({
           {t('settings.nothingYet')}
         </Paragraph>
       ) : (
-        children
+        <>
+          {children}
+          {note ? (
+            <Paragraph className="uib-settings-note" data-size="sm" variant="long">
+              {note}
+            </Paragraph>
+          ) : null}
+        </>
       )}
     </article>
   );

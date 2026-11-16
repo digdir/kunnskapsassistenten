@@ -1,50 +1,28 @@
 /**
- * `/api/next`: what the next client, apps/web-next, needs from this server (decisions/0013).
+ * `/api/next`: what the client, apps/web-next, needs from this server (decisions/0013, 0019).
  *
- * - `GET /ui` and `POST /ui`: which client this browser gets, kept in a cookie.
- * - `GET /me`: who is signed in, and which genki service and variant the page asks.
+ * - `GET /me`: who is signed in, which genki service and variant the page asks, and the layout
+ *   from genki's builder when `KA_NEXT_LAYOUT` gives one (decisions/0017).
  * - `/genki/*`: a narrow proxy to the genki calls `createGenkiApi` makes, with the signed-in
- *   person's credential, as every call of apps/web is made (`backendHeaders`).
- * - `POST /feedback`: a rating of an answer, as apps/web's, and only with a person's token.
+ *   person's credential (`backendHeaders`).
+ * - `POST /feedback`: a rating of an answer, only with a person's token.
+ * - `GET /kudos/files/:uuid`: a Kudos document's PDF for Dokumentvisning (kudosFiles.ts).
  *
  * Mounted under `/api/*`, so the session, the sign-in check and the body limit in app.ts come
- * first. Nothing here imports apps/web, and apps/web's routes are not changed.
+ * first.
  */
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import type { Context, MiddlewareHandler } from 'hono';
 import { Hono } from 'hono';
-import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import type { Env } from './apiShared.ts';
 import { readSessionId } from './auth.ts';
 import { backendHeaders, knownProblem, type Caller } from './backend.ts';
 import { config } from './config.ts';
 import * as convos from './conversations.ts';
 import { cleanFeedback, ownsTask, sendFeedback } from './feedback.ts';
-import * as sourceStore from './sourceStore.ts';
+import { kudosFiles, type KudosFileOptions } from './kudosFiles.ts';
+import type { NextLayout } from './nextLayout.ts';
+import type { Env } from './session.ts';
 import { getTokens } from './tokenStore.ts';
-
-// ── Which client ──
-
-export type Ui = 'next' | 'classic';
-
-const secureCookies = () => config.auth.origin.startsWith('https://');
-
-/** `__Host-` needs Secure, which a plain-http localhost cannot have. */
-export const uiCookie = () => (secureCookies() ? '__Host-ka_ui' : 'ka_ui');
-
-const ONE_YEAR = 60 * 60 * 24 * 365;
-
-/** Whether the next client is offered: switched on, and built. */
-export const nextOffered = () =>
-  config.next.enabled &&
-  Boolean(config.next.webRoot) &&
-  existsSync(join(config.next.webRoot, 'index.html'));
-
-/** The client this browser chose: `next` only when the cookie says so. */
-export const uiOf = (c: Context): Ui =>
-  getCookie(c, uiCookie()) === 'next' ? 'next' : 'classic';
 
 // ── Writes from this origin only ──
 
@@ -74,8 +52,8 @@ const refused = (c: Context, code: string) => c.json({ error: 'refused', code },
 
 // ── The proxy's rules ──
 
-/** An id in a path: starts with a letter or digit, so never `.` or `..`. */
-const ID = '[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}';
+/** An id in a path: starts as genki's ids may, with a letter, digit, `_` or `-`, never `.` or `:`. */
+const ID = '[A-Za-z0-9_-][A-Za-z0-9_.:-]{0,199}';
 const AN_ID = new RegExp(`^${ID}$`);
 const TITLE_MAX = 200;
 const TAGS_MAX = 5;
@@ -237,6 +215,29 @@ const RULES: readonly Rule[] = [
 export const ruleFor = (method: string, path: string) =>
   RULES.find((rule) => rule.method === method && rule.path.test(path));
 
+const DOT_SEGMENT = /^(?:\.|%2e){1,2}$/i;
+
+/** The path as the client sent it, before the URL parser resolved its `.` and `..` segments. */
+const sentPath = (c: Context): string => {
+  const sent = (c.env as { incoming?: { url?: string } } | undefined)?.incoming?.url;
+  if (!sent) return new URL(c.req.url).pathname;
+  const start = sent.startsWith('/') ? 0 : sent.indexOf('/', sent.indexOf('//') + 2);
+  const path = start === -1 ? '/' : sent.slice(start);
+  const query = path.indexOf('?');
+  return query === -1 ? path : path.slice(0, query);
+};
+
+/** A `.` or `..` segment, raw or encoded, or an encoded slash or backslash anywhere in the path. */
+const unsafePath = (path: string) => {
+  const lower = path.toLowerCase();
+  return (
+    lower.includes('%2f') ||
+    lower.includes('%5c') ||
+    lower.includes('\\') ||
+    path.split('/').some((segment) => DOT_SEGMENT.test(segment))
+  );
+};
+
 /** genki's headers the page reads, passed back as they came. */
 const PASSED_BACK = ['genai-task', 'genai-service-version', 'genai-conversation'];
 
@@ -248,7 +249,7 @@ const NOT_STORED = 'no-store, no-transform';
 
 /**
  * How much of a failed response is read, for its problem type and code only. genki's error
- * text never reaches the page or the log (decisions/0009, as in mcp.ts): it can name hosts and
+ * text never reaches the page or the log (decisions/0009): it can name hosts and
  * replies from the model.
  */
 const ERROR_BODY_MAX = 16 * 1024;
@@ -312,6 +313,8 @@ export interface NextSettings {
   tenant: string;
   origin: string;
   maxQueryLength: number;
+  /** The layout from genki's builder (`KA_NEXT_LAYOUT`, decisions/0017); without it, KA's own. */
+  layout?: NextLayout | undefined;
 }
 
 const settingsFromConfig = (): NextSettings => ({
@@ -321,6 +324,7 @@ const settingsFromConfig = (): NextSettings => ({
   tenant: config.next.tenant,
   origin: config.auth.origin,
   maxQueryLength: config.maxQueryLength,
+  layout: config.next.layout,
 });
 
 /** The person's organisation: the one they act for, or their only one. */
@@ -340,7 +344,10 @@ async function organisationOf(c: Context<Env>): Promise<string | undefined> {
 const LOCAL_NAME = 'Lokal testbruker';
 
 /** The routes, against `settings`; app.ts mounts them with the server's own. */
-export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
+export function nextRoutes(
+  settings: NextSettings = settingsFromConfig(),
+  kudos: KudosFileOptions = {},
+) {
   const next = new Hono<Env>();
   // First, so a refusal from the checks below is not stored either.
   next.use('/genki/*', async (c, run) => {
@@ -349,41 +356,28 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
   });
   next.use('*', sameOriginWrites(settings.origin));
 
-  /** For apps/web's «Prøv ny versjon», drawn only when this says the next client is offered. */
-  next.get('/ui', (c) => c.json({ ui: uiOf(c), available: nextOffered() }));
-
-  next.post('/ui', async (c) => {
-    const body = (await c.req.json().catch(() => undefined)) as { ui?: unknown } | undefined;
-    const ui = body?.ui;
-    if (ui !== 'next' && ui !== 'classic')
-      return c.json({ error: 'ui is next or classic.' }, 400);
-    if (ui === 'next')
-      setCookie(c, uiCookie(), 'next', {
-        path: '/',
-        maxAge: ONE_YEAR,
-        httpOnly: true,
-        sameSite: 'Lax',
-        secure: secureCookies(),
-      });
-    else deleteCookie(c, uiCookie(), { path: '/', secure: secureCookies() });
-    return c.json({ ui });
-  });
-
   next.get('/me', async (c) => {
     const user = c.get('user');
     const organisation = await organisationOf(c);
     return c.json({
       name: user?.name || (config.auth.enabled ? '' : LOCAL_NAME),
+      // The id `KA_TESTERS` names a tester by (decisions/0015). Only with sign-in on: off, the id
+      // is the session cookie's own, which the page is not to read.
+      ...(user ? { userId: user.id } : {}),
       ...(organisation ? { organisation } : {}),
       signOut: config.auth.enabled ? '/auth/logout' : null,
       model: settings.model,
       service: settings.service,
       tenant: settings.tenant,
       writes: Boolean(c.get('caller').token),
+      // Only when one is set: without it the page draws KA's own, and the answer is as before.
+      ...(settings.layout ? { layout: settings.layout } : {}),
     });
   });
 
-  // apps/web's feedback checks (feedback.ts), and never with the service key (decisions/0013).
+  next.route('/kudos/files', kudosFiles(kudos));
+
+  // Checked in feedback.ts, and never with the service key (decisions/0013).
   next.post('/feedback', async (c) => {
     const caller: Caller = c.get('caller');
     if (!caller.token) return refused(c, 'not_allowed');
@@ -400,9 +394,14 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
 
   next.all('/genki/*', async (c) => {
     const url = new URL(c.req.url);
+    const method = c.req.method;
+    const sent = sentPath(c);
+    if (unsafePath(sent)) {
+      console.log('next proxy refused %s %s', method, JSON.stringify(sent));
+      return c.json({ error: 'refused', code: 'bad_path' }, 400);
+    }
     const prefix = url.pathname.indexOf('/genki/');
     const path = url.pathname.slice(prefix + '/genki'.length);
-    const method = c.req.method;
     const rule = ruleFor(method, path);
     const caller: Caller = c.get('caller');
     if (!rule || (rule.personOnly && !caller.token)) {
@@ -475,10 +474,6 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
       const failure = await upstreamFailure(upstream);
       return failed(c, upstream.status, failure.message, failure.code);
     }
-    // apps/web hangs a thread's kept sources on its last answer (sourceStore.ts), now this one.
-    const thread = shaped.body?.conversation_id;
-    if (method === 'POST' && typeof thread === 'string') sourceStore.forget(thread);
-
     // The body as it comes, never read, re-chunked or compressed here: an answer streams.
     const out = new Headers({ 'X-Accel-Buffering': 'no' });
     const type = upstream.headers.get('Content-Type');

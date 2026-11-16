@@ -110,12 +110,8 @@
   /* `:empty` is exact: React renders nothing for an empty slot, not even whitespace. */
   .uib-shell-head:empty,
   .uib-shell-pinned:empty,
-  .uib-shell-content[hidden] {
-    display: none;
-  }
-
-  /* An empty head row in a drawer takes no room: a zero-height flex item still gets the gap. */
-  .uib-shell-drawer .uib-shell-header:has(> .uib-shell-head:empty):not(:has(> .uib-shell-title)) {
+  .uib-shell-content[hidden],
+  .uib-shell-fill[hidden] {
     display: none;
   }
 
@@ -324,7 +320,12 @@
   }
 
   /* The title's text on the head's top line, whatever the button beside it. */
-  .uib-shell[data-frame='cards'] > .uib-shell-side > .uib-shell-box > .uib-shell-header {
+  .uib-shell[data-frame='cards'] > .uib-shell-side > .uib-shell-box > .uib-shell-header,
+  .uib-shell[data-frame='cards']
+    > .uib-shell-side
+    > .uib-shell-fill
+    > .uib-shell-box
+    > .uib-shell-header {
     align-items: start;
   }
 
@@ -440,7 +441,7 @@
     min-inline-size: 0;
   }
 
-  /* The row holds the panels' buttons only; what a rail shows at its bottom is in the drawer. */
+  /* The row holds the panels' buttons only; what a rail shows at its bottom is in the open panel. */
   .uib-shell[data-compact] .uib-shell-rail-foot {
     display: none;
   }
@@ -461,49 +462,47 @@
     );
   }
 
-  /* ── Drawers, where an open panel does not fit beside the main column ── */
+  /* ── A panel that fills the shell, where an open panel does not fit beside the main column ── */
 
-  /* Designsystemet's `Dialog`; `[open]` is load-bearing, or the drawer never closes. */
-  .uib-shell-drawer {
-    --dsc-dialog-background: var(
-      --genai-shell-drawer-background,
-      var(--ds-color-neutral-surface-default)
-    );
-
-    padding: 0;
-    container-type: inline-size;
+  /* The shell holds the fill; the rails leave it alone, and the main column's layers stay under it. */
+  .uib-shell[data-drawer] {
+    position: relative;
   }
 
-  .uib-shell-drawer[open] {
+  .uib-shell[data-drawer] > .uib-shell-side {
+    position: static;
+    container-type: normal;
+  }
+
+  .uib-shell[data-drawer] > .uib-shell-main {
+    isolation: isolate;
+  }
+
+  /* Over the shell's whole box, on a ground of its own: no dialog, no backdrop, no top layer. */
+  .uib-shell-fill {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
     display: flex;
     flex-direction: column;
+    container-type: inline-size;
+    background: var(--genai-shell-drawer-background, var(--ds-color-neutral-surface-default));
   }
 
-  /* The design's width, not a dragged one, for a drawer. */
-  .uib-shell-drawer[data-side='primary'] {
-    --dsc-dialog-placement-inline-max-width: var(--uib-shell-primary-drawer-width);
-  }
-
-  .uib-shell-drawer[data-side='secondary'] {
-    --dsc-dialog-placement-inline-max-width: var(--uib-shell-secondary-drawer-width);
-  }
-
-  /* Designsystemet floats the close button, which does nothing in a flex column. */
-  .uib-shell-drawer > button[command='close'] {
-    flex: 0 0 auto;
-    align-self: flex-end;
-    margin-block: var(--genai-shell-drawer-close-margin, var(--ds-size-3)) 0;
-    margin-inline: 0 var(--genai-shell-drawer-close-margin, var(--ds-size-3));
-  }
-
-  /* Takes what the close button leaves; `min-block-size: 0` lets the content scroll. */
-  .uib-shell-drawer > .uib-shell-box {
+  /* `min-block-size: 0` lets the content scroll; the head row starts closer to the top. */
+  .uib-shell-fill > .uib-shell-box {
     --_shell-region: var(--genai-shell-drawer-background, var(--ds-color-neutral-surface-default));
 
     flex: 1 1 auto;
     block-size: auto;
     min-block-size: 0;
-    padding-block-start: 0;
+    padding-block-start: var(--genai-shell-drawer-close-margin, var(--ds-size-3));
+  }
+
+  /* Ends the head row even alone, where the panel has no title and no head. */
+  .uib-shell-close {
+    flex: 0 0 auto;
+    margin-inline-start: auto;
   }
 
   /* ── The secondary panel's tools (ShellTools), board 3's tool rule ── */
@@ -846,8 +845,8 @@
     padding-block-end: var(--genai-shell-card-padding-block, var(--ds-size-4));
   }
 
-  /* In a drawer, one column: the companion under the panel's own, in the flow. */
-  .uib-shell-drawer .uib-shell-companion {
+  /* Filling the shell, one column: the companion under the panel's own, in the flow. */
+  .uib-shell-fill .uib-shell-companion {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
