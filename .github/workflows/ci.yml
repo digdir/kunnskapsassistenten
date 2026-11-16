@@ -34,8 +34,10 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      # The next client's first load against apps/web's budget (300 kB gzip).
+      # The client's first load against KA's budget (300 kB gzip).
       - run: node apps/web-next/scripts/check-bundle-size.mjs apps/web-next/dist
+      # The theme in apps/web-next/src/theme.css is the one Designsystemet makes from the config.
+      - run: npm run tokens:verify --workspace apps/web-next
 
   # apps/web-next/vendor/genki is genki's source at the commit it names, and nothing else:
   # taken again from digdir/genki (public), it must be the same, byte for byte.
@@ -53,43 +55,6 @@ jobs:
           git status --short -- apps/web-next/vendor
           git diff --exit-code -- apps/web-next/vendor
           test -z "$(git status --porcelain -- apps/web-next/vendor)"
-
-  # The client's own checks, beside `check` rather than in it, so the
-  # end-to-end suite does not make the server's job slower. It runs in mock
-  # mode (playwright.config.ts sets VITE_API_MODE), so it needs no secret.
-  web:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: src/package-lock.json
-      - run: npm ci
-      - run: npm run lint --workspace apps/web
-      - run: npm run tokens:verify --workspace apps/web
-      # What a reader downloads before the page starts, against the budget in
-      # the script (300 kB gzip), for the bff build the image serves. Mock or
-      # live back in the bundle, or a sixth more without a decision, is red.
-      - run: VITE_API_MODE=bff npm run build --workspace apps/web
-      - run: node apps/web/scripts/check-bundle-size.mjs apps/web/dist
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e --workspace apps/web
-      # The suite writes its report to ~/.cache/ka-review/e2e, outside the
-      # tree, and upload-artifact does not expand `~`.
-      - if: failure()
-        run: |
-          mkdir -p ../ci-artifacts
-          cp -r "$HOME/.cache/ka-review/e2e" ../ci-artifacts/ 2>/dev/null || true
-      - if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: ci-artifacts
-          if-no-files-found: ignore
-          retention-days: 7
 
   # The image, built before the merge so a broken Dockerfile stops at the pull
   # request. Nothing is pushed.
@@ -110,40 +75,23 @@ jobs:
             ka:ci
           curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
           curl -fsS localhost:8787/ | grep -q '<html lang="nb"'
-          docker rm --force ka
-      - name: With the next client switched on, the cookie chooses it
-        run: |
-          docker run --detach --rm --name ka --publish 8787:8787 \
-            -e AUTH_MODE=off -e LISTEN_HOST=0.0.0.0 -e APP_ORIGIN=http://localhost:8787 \
-            -e DIGDIR_API_KEY=unused \
-            -e KA_NEXT=1 ka:ci
-          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
-          curl -fsS localhost:8787/api/next/ui | grep -q '"available":true'
-          curl -fsS localhost:8787/ | grep -q '/assets/'
-          curl -fsS -H 'Cookie: ka_ui=next' localhost:8787/ | grep -q '/next-assets/'
-          docker rm --force ka
-      # The next client by default (decisions/0018): apps/web only for a browser that chose it.
-      - name: With the next client as the default, a browser without a choice gets it
-        run: |
-          docker run --detach --rm --name ka --publish 8787:8787 \
-            -e AUTH_MODE=off -e LISTEN_HOST=0.0.0.0 -e APP_ORIGIN=http://localhost:8787 \
-            -e DIGDIR_API_KEY=unused \
-            -e KA_NEXT=1 -e KA_NEXT_DEFAULT=1 ka:ci
-          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
           curl -fsS localhost:8787/ | grep -q '/next-assets/'
-          curl -fsS -H 'Cookie: ka_ui=classic' localhost:8787/ | grep -q '/assets/'
+          curl -fsS localhost:8787/endringslogg | grep -q '/next-assets/'
           docker rm --force ka
-      # A deployment of another service (decisions/0017): the next client for everyone, no apps/web.
-      - name: With only the next client, it is the page for everyone, and apps/web is gone
+      # One client (decisions/0019): the settings and the cookie of the switch change nothing, the
+      # previous client's API is gone, and its thread links open the thread.
+      - name: With the switch's old settings and cookie, it is the client, and the old API is gone
         run: |
           docker run --detach --rm --name ka --publish 8787:8787 \
             -e AUTH_MODE=off -e LISTEN_HOST=0.0.0.0 -e APP_ORIGIN=http://localhost:8787 \
             -e DIGDIR_API_KEY=unused \
-            -e KA_NEXT=1 -e KA_NEXT_ONLY=1 ka:ci
+            -e KA_NEXT=1 -e KA_NEXT_DEFAULT=1 -e KA_NEXT_ONLY=1 ka:ci
           curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
-          curl -fsS localhost:8787/ | grep -q '/next-assets/'
-          curl -fsS localhost:8787/api/next/me | grep -q '"nextOnly":true'
+          curl -fsS -H 'Cookie: ka_ui=classic' localhost:8787/ | grep -q '/next-assets/'
           test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8787/api/v2/health)" = 404
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8787/api/next/ui)" = 404
+          test "$(curl -s -o /dev/null -w '%{redirect_url}' localhost:8787/threads/abc)" = http://localhost:8787/?t=abc
+          docker logs ka 2>&1 | grep -q 'no longer read, and safe to remove: KA_NEXT, KA_NEXT_DEFAULT, KA_NEXT_ONLY'
           docker rm --force ka
       # genki's layout checks run in the image (decisions/0017): a layout passes to the page,
       # and one that breaks a rule stops the server.
@@ -152,32 +100,15 @@ jobs:
           layout='{"version":1,"look":"next","zones":{"primary":[{"block":"threads"}],"main":[{"block":"chat"}],"secondary":[]},"profile":{"assistantName":"Proveassistenten"}}'
           docker run --detach --rm --name ka --publish 8787:8787 \
             -e AUTH_MODE=off -e LISTEN_HOST=0.0.0.0 -e APP_ORIGIN=http://localhost:8787 \
-            -e DIGDIR_API_KEY=unused -e KA_NEXT=1 -e KA_NEXT_LAYOUT="$layout" ka:ci
+            -e DIGDIR_API_KEY=unused -e KA_NEXT_LAYOUT="$layout" ka:ci
           curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/api/health
           curl -fsS localhost:8787/api/next/me | grep -q '"assistantName":"Proveassistenten"'
           docker rm --force ka
           code=0
           timeout 60 docker run --rm \
             -e AUTH_MODE=off -e APP_ORIGIN=http://localhost:8787 -e DIGDIR_API_KEY=unused \
-            -e KA_NEXT=1 -e KA_NEXT_LAYOUT='{"version":1,"zones":{"primary":[],"main":[{"block":"nope"}],"secondary":[]}}' \
+            -e KA_NEXT_LAYOUT='{"version":1,"zones":{"primary":[],"main":[{"block":"nope"}],"secondary":[]}}' \
             ka:ci > refused.log 2>&1 || code=$?
           cat refused.log
           test "$code" = 1
           grep -q 'unknown-block' refused.log
-
-  # The client's own image for the test environment, built from src/ as
-  # apps/web/docs/deploy.md builds it. In mock the server forwards nothing, so
-  # it needs no key. Nothing is pushed.
-  web-image:
-    if: github.event_name != 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - run: docker build --file apps/web/Dockerfile --tag ka-web:ci .
-      - name: Start it and ask
-        run: |
-          docker run --detach --rm --name ka-web --publish 8787:8787 -e KA_MODE=mock ka-web:ci
-          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 localhost:8787/healthz | grep -q '"mode":"mock"'
-          curl -fsS localhost:8787/ | grep -q '/config.js'
-          docker stop ka-web

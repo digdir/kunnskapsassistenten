@@ -1,4 +1,4 @@
-// What jsdom lacks and the blocks use. Written for this client, not imported from apps/web.
+// What jsdom lacks and the blocks use.
 
 // Designsystemet loads @oddbird/popover-polyfill, which reads CSS.escape when it is imported.
 const cssEscape = (value: string) => value.replace(/[^a-zA-Z0-9_ -￿-]/g, '\\$&');

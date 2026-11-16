@@ -1,7 +1,7 @@
 # Deploying to Azure Container Apps
 
 One container: the Hono server signs people in, keeps their tokens, talks to
-genki, and serves the built clients from the same origin. Same origin is not
+genki, and serves the built client from the same origin. Same origin is not
 cosmetic, it is what keeps the session cookie first-party.
 
 **Deployed and in use:** `https://qa.kunnskap.digdir.cloud`
@@ -38,15 +38,14 @@ section has the two URIs.
 token to genki (`decisions/0011`). It is what the test site runs. It needs,
 besides the genki values in Deploying from scratch:
 
-| Parameter                    | genki-test                                                  |
-| ---------------------------- | ----------------------------------------------------------- |
-| `authMode`                   | `ansattporten`                                              |
-| `ansattportenIssuer`         | `https://test.ansattporten.no` (the default)                |
-| `ansattportenClientId`       | the client id from Samarbeidsportalen                       |
-| `ansattportenClientSecret`   | its secret (secure parameter, a Container Apps secret)      |
-| `ansattportenAudience`       | `digdir:genai` (the default)                                |
-| `ansattportenAltinnResource` | `urn:altinn:resource:digdir-genai-platform-test`            |
-| `kaCapabilities`             | `no-filters` or `filters`, as there is no key to probe with |
+| Parameter                    | genki-test                                             |
+| ---------------------------- | ------------------------------------------------------ |
+| `authMode`                   | `ansattporten`                                         |
+| `ansattportenIssuer`         | `https://test.ansattporten.no` (the default)           |
+| `ansattportenClientId`       | the client id from Samarbeidsportalen                  |
+| `ansattportenClientSecret`   | its secret (secure parameter, a Container Apps secret) |
+| `ansattportenAudience`       | `digdir:genai` (the default)                           |
+| `ansattportenAltinnResource` | `urn:altinn:resource:digdir-genai-platform-test`       |
 
 `digdirApiKey` may then be empty, and `azureClientId` and `azureClientSecret`
 are not used. The test site has none of the three. The redirect URI is
@@ -92,18 +91,13 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
 ```
 
 That swaps the image and nothing else. The variables and secrets stay as they
-are, among them `KA_FILTER_FIELDS` and `KA_DATASETS`, which give the filter
-panel its fields and the dataset its name. To change a variable, add
-`--set-env-vars` to an `az containerapp update`: it adds or updates the
-variables it names and leaves the others as they are. Quote a value with `|`
-in it, because `|` is a pipe to the shell.
-
-The previous client is gone (`decisions/0012`): `KA_DEFAULT_CLIENT` is no
-longer set on the app, and a browser's `ka_klient` cookie no longer matters.
+are. To change a variable, add `--set-env-vars` to an `az containerapp update`:
+it adds or updates the variables it names and leaves the others as they are.
+Quote a value with `|` in it, because `|` is a pipe to the shell.
 
 Config or a secret, about 30 seconds and no rebuild. The app's secrets are
-`session-secret`, `ansattporten-client-secret` and `typesense-key`. This
-replaces the Ansattporten client secret. `read -rs` reads the value without
+`session-secret` and `ansattporten-client-secret`. This replaces the
+Ansattporten client secret. `read -rs` reads the value without
 showing it or keeping it in the shell history:
 
 ```sh
@@ -128,72 +122,48 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
   --revision-suffix rollback$(date +%H%M%S)
 ```
 
-## The next client, behind a toggle
+## Settings no longer read
 
-The image holds two clients: `apps/web`, which everyone gets by default, and `apps/web-next`,
-built from genki's UI blocks (`decisions/0013`). `KA_NEXT=1` offers the next one: `apps/web` then
-shows «Prøv ny versjon» at the foot of the navigation panel, and a person who chooses it gets it
-on every load until they choose «Tilbake til gammel versjon» in its profile menu. The choice is a
-cookie per browser, kept either way. Without `KA_NEXT` nothing of it shows, and the cookie is
-ignored.
+The previous client, `apps/web`, is gone, and the switch between it and the next client with it
+(`decisions/0019`). The server ignores the settings that only they used, and names at startup
+those still set on the app, by name only:
 
-It uses the same sign-in and the same genki service as `apps/web`. `KA_NEXT_MODEL` names the
-variant it asks (default `kunnskapsassistenten__default`) and `KA_NEXT_TENANT` the tenant whose
-collections it reads (default `digdir`). The test site has `KA_NEXT=1` and neither of the
-other two.
+`KA_NEXT`, `KA_NEXT_DEFAULT`, `KA_NEXT_ONLY`, `WEB_ROOT`, `KA_EXCERPT_ENVIRONMENT`,
+`KA_CAPABILITIES`, `KA_FILTER_FIELDS`, `KA_DATASETS`, `KUDOS_BASE`, `TYPESENSE_API_HOST`,
+`TYPESENSE_API_KEY_ADMIN`, `KUDOS_DOCS_COLLECTION`, `DIGDIR_TOOL`, `DIGDIR_AGENT_ID`,
+`DIGDIR_TENANT` and `DIGDIR_DATASET_CONFIG_KEY`.
 
-On a running deployment, about 30 seconds and no rebuild, this turns it on:
-
-```sh
-az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
-  --set-env-vars KA_NEXT=1 --revision-suffix next$(date +%H%M%S)
-```
-
-And this turns it off, so everyone gets `apps/web` again:
+They do no harm, and can be removed at any time after the new image is out. The log line
+`no longer read, and safe to remove:` names the ones the app has, and so does the first command
+below, which prints the names of the app's variables and no values. The second removes the ones
+`ka-app` had on 2026-11-16, about 30 seconds and no rebuild:
 
 ```sh
+az containerapp show --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu --query "properties.template.containers[0].env[].name" -o tsv
 az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
-  --remove-env-vars KA_NEXT --revision-suffix classic$(date +%H%M%S)
+  --remove-env-vars KA_NEXT KA_NEXT_DEFAULT KA_CAPABILITIES KA_FILTER_FIELDS KA_DATASETS TYPESENSE_API_HOST TYPESENSE_API_KEY_ADMIN KUDOS_DOCS_COLLECTION DIGDIR_TOOL DIGDIR_AGENT_ID DIGDIR_TENANT DIGDIR_DATASET_CONFIG_KEY \
+  --revision-suffix retired$(date +%H%M%S)
 ```
 
-### The next client by default
-
-`apps/web` is phased out in two steps (`decisions/0018`). The first is `KA_NEXT_DEFAULT=1`: a
-browser that has not chosen gets the next client, and one that chose «Tilbake til gammel
-versjon» keeps `apps/web` until it chooses «Prøv ny versjon» again. A «Tilbake til gammel
-versjon» from before the setting cleared the cookie instead of keeping the choice, so that
-browser gets the next client too. `KA_NEXT_DEFAULT` needs `KA_NEXT`: without it, it is warned
-about and ignored. The test site has it on.
-
-On a running deployment, about 30 seconds and no rebuild, this switches it on:
+Then the secret only `TYPESENSE_API_KEY_ADMIN` used. A secret a variable still refers to cannot
+be removed, so this comes after the variables:
 
 ```sh
-az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
-  --set-env-vars KA_NEXT_DEFAULT=1 --revision-suffix nextdefault$(date +%H%M%S)
+az containerapp secret remove --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu --secret-names typesense-key
 ```
 
-And this switches it off, so a browser that has not chosen gets `apps/web` again. A choice made
-either way is kept:
-
-```sh
-az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
-  --remove-env-vars KA_NEXT_DEFAULT --revision-suffix nodefault$(date +%H%M%S)
-```
-
-The end of the phase-out is `KA_NEXT_ONLY=1` (below): the next client for everyone, and
-`apps/web` no longer served, with no way back to it.
-
-The template takes the same as `kaNext`, `kaNextModel`, `kaNextTenant` and `kaNextDefault`, empty
-by default.
+A browser that chose the previous client keeps a `ka_ui` cookie, which nothing reads any more,
+and gets the next client like everyone else. Its links to a thread, `/threads/<id>` and
+`/chat/<id>`, open the thread.
 
 ## Another assistant from the builder
 
-The next client can draw another genki service in KA's way: its own name, suggestions and
+The client can draw another genki service in KA's way: its own name, suggestions and
 collection words, with KA's blocks or others, as genki's builder lays them out
 (`decisions/0017`). `KA_NEXT_LAYOUT` holds the layout, the JSON the builder's «Kopier oppsettet»
 gives, or the path of a file with it. The server checks it with genki's own rules when it
 starts, and does not start with a layout genki would refuse; the log names each problem by
-rule and path. Without `KA_NEXT_LAYOUT`, the next client is KA's own, as above.
+rule and path. Without `KA_NEXT_LAYOUT`, the client is KA's own.
 
 One deployment draws one service, so another assistant is a second container app beside
 `ka-app`, with its own host, sign-in and genki client. These steps are for a person, in order:
@@ -220,12 +190,7 @@ One deployment draws one service, so another assistant is a second container app
    | `name`                                             | such as `ka-rapport`          |
    | `publicHost`                                       | the new host                  |
    | `ansattportenClientId`, `ansattportenClientSecret` | the new client's, from step 3 |
-   | `digdirTool`                                       | `<service>__<variant>`        |
-   | `digdirAgentId`                                    | `<service>`                   |
-   | `kaNext`                                           | `1`                           |
-   | `kaNextOnly`                                       | `1`                           |
    | `kaNextModel`                                      | `<service>__<variant>`        |
-   | `kaFilterFields`, `kaDataset`, `kaCapabilities`    | the service's, or empty       |
 
 6. **The layout on the app.** About 30 seconds and no rebuild. `jq -c` puts the JSON on one
    line, and checks that it is JSON:
@@ -239,42 +204,27 @@ One deployment draws one service, so another assistant is a second container app
    If the new revision does not become healthy, its log says which of genki's rules the layout
    breaks. The old revision keeps serving meanwhile.
 
-7. **Open it.** `https://<host>/` is the other assistant, for everyone. `kaNextOnly`
-   (`KA_NEXT_ONLY=1`) makes the next client the only one: every page address serves it, KA's
-   links to a thread (`/threads/<id>`) open the thread in it, and `apps/web`'s page, files,
-   pages and API (`/api/v2/*`) are not served. `/api/health` stays for the probe.
+7. **Open it.** `https://<host>/` is the other assistant, for everyone.
 
 A changed layout is step 6 again. `KA_NEXT_LAYOUT` with a path instead of JSON reads the file
 at that path in the container, such as a Container Apps secret mounted as a volume. The template
 takes it as `kaNextLayout`, empty by default; step 6 sets it on the app instead.
 
-`KA_NEXT_ONLY` needs `KA_NEXT`: without it, it is warned about and ignored, and the host serves
-`apps/web`. Without the next client's build the server does not start. On an app deployed without
-it, this sets it, about 30 seconds and no rebuild:
-
-```sh
-az containerapp update --subscription Altinn-AI-Assistant -n ka-rapport -g rg-ka-test-weu \
-  --set-env-vars KA_NEXT_ONLY=1 --revision-suffix nextonly$(date +%H%M%S)
-```
-
-Without `KA_NEXT_ONLY`, as on `ka-app`, the host serves `apps/web` too: first, or with
-`KA_NEXT_DEFAULT` only to a browser that chose it, and «Prøv ny versjon» at the foot of its
-navigation panel gives the next client.
-
 The other assistant keeps what only KA's host gives: the sign-in, only this service's threads,
 and KA's two trials in «Innstillinger». Its profile menu has genki's «Innstillinger» and «Logg
-ut», but none of `apps/web`'s pages: no «Endringslogg», «Om prosjektet» or «Tilbake til gammel
-versjon». Every other word is the layout's.
+ut», but not KA's «Endringslogg» and «Om prosjektet», which are KA's service's
+(`decisions/0019`), and their addresses say «Siden finnes ikke». Every other word is the
+layout's.
 
 ## Testers and genki's test environment
 
 `KA_TESTERS` names the testers by user id, separated by commas or spaces (`decisions/0015`).
-A tester's questions, threads and feedback, in both clients, go to genki with
-`GenAI-Environment: test`, and the chat shows «Testmiljø» beside the send button. Everyone else sends no header and gets the service's
-`prod`. `KA_TEST_ENVIRONMENT` names another environment than `test`. Without `KA_TESTERS` nobody
+A tester's questions, threads and feedback go to genki with `GenAI-Environment: test`. Everyone
+else sends no header and gets the service's `prod`. The client does not show it: a tester sees
+no «Testmiljø». `KA_TEST_ENVIRONMENT` names another environment than `test`. Without `KA_TESTERS` nobody
 is a tester and nothing changes.
 
-The user id is `userId` in `/api/v2/me`, which a tester opens on the site while signed in:
+The user id is `userId` in `/api/next/me`, which a tester opens on the site while signed in:
 with Ansattporten it is `ansattporten:` followed by Ansattporten's subject for KA's client.
 
 Add the `test` environment to the genki service first: until it has one, genki refuses a
@@ -298,35 +248,6 @@ az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-tes
 A new revision signs everyone out with Ansattporten, as every rollout does. The template takes
 the same as `kaTesters` and `kaTestEnvironment`, empty by default.
 
-## The excerpt trial
-
-`KA_EXCERPT_ENVIRONMENT` names a genki environment of the service whose version cites by
-excerpt (`decisions/0016`). With it set, Innstillinger in `apps/web` offers «Fotnoter som
-viser til utdraget», and the calls of a person who turns it on go to genki with `GenAI-Environment` set to
-that environment. Testers keep their own environment. Without it there is no switch and nothing
-changes.
-
-Add the environment to the genki service first: until it has one, genki refuses those questions
-with `409 environment_not_found`. A key or client bound to environments must allow it too. Then,
-about 30 seconds and no rebuild, type the environment's
-name when the first command waits:
-
-```sh
-read -r EXCERPT_ENVIRONMENT
-az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
-  --set-env-vars "KA_EXCERPT_ENVIRONMENT=$EXCERPT_ENVIRONMENT" --revision-suffix excerpt$(date +%H%M%S)
-```
-
-The trial is gone again with:
-
-```sh
-az containerapp update --subscription Altinn-AI-Assistant -n ka-app -g rg-ka-test-weu \
-  --remove-env-vars KA_EXCERPT_ENVIRONMENT --revision-suffix excerpt$(date +%H%M%S)
-```
-
-A new revision signs everyone out with Ansattporten, as every rollout does. The template takes
-the same as `kaExcerptEnvironment`, empty by default.
-
 ## Deploying from scratch
 
 Only needed if the resource group is gone. The names are the test site's. The
@@ -335,8 +256,8 @@ default: the container app `ka-app`, the environment `ka-app-env`, the
 identity `ka-app-id` and the log workspace `ka-app-logs`. The registry is not
 created here: `sharedregistryswc` is in its own resource group.
 
-The template's defaults are hosted headless-rag and Entra ID, which is not
-what the test site runs, so the command passes genki and Ansattporten. The two
+The template's defaults are genki-test and Entra ID, which is not what the
+test site runs, so the command passes Ansattporten. The two
 `read` lines take the Ansattporten client id and then its secret, the secret
 without showing it, and the session secret is made new:
 
@@ -356,9 +277,6 @@ az deployment group create --subscription Altinn-AI-Assistant -g rg-ka-test-weu 
   publicHost=qa.kunnskap.digdir.cloud \
   sessionSecret="$SESSION_SECRET" \
   digdirApiBase=https://api.genki-test.digdir.cloud \
-  digdirTool=kunnskapsassistenten__default \
-  digdirAgentId=kunnskapsassistenten \
-  digdirDatasetConfigKey=default \
   authMode=ansattporten \
   ansattportenClientId="$CLIENT_ID" \
   ansattportenClientSecret="$CLIENT_SECRET" \
@@ -383,63 +301,17 @@ and its managed certificate are not in `main.bicep`; `publicHost` only decides
 
 Parameters the template needs are declared with `@description` in
 `main.bicep`. `image`, `acrLoginServer` and `sessionSecret` have no default.
-The ones that are not obvious: `digdirDatasetConfigKey` is `default` on genki
-and locally and `kudos` on hosted headless-rag, and `publicHost` is the custom
-domain.
-
-`digdirApiBase`, `digdirTool` and `digdirAgentId` choose the backend. They
-default to headless-rag. For genki-test, as above:
-`https://api.genki-test.digdir.cloud`, `kunnskapsassistenten__default` and
-`kunnskapsassistenten`, with `digdirDatasetConfigKey` set to `default`.
-`digdirApiKey` is for `authMode=entra`: a genki service key for
+`publicHost` is the custom domain. `digdirApiBase` is the genki API, genki-test
+by default. `digdirApiKey` is for `authMode=entra`: a genki service key for
 `kunnskapsassistenten`, made by an Entra ID login (genki-test is locked). With
-Ansattporten only the capability probe would use it.
-
-`kaFilterFields` and `kaDataset` are the dataset's filter fields and its name,
-passed as `KA_FILTER_FIELDS` and `KA_DATASETS` under `digdirDatasetConfigKey`.
-They default to Kudos: `documentType:type|organisation:orgs_long|year:concerned_years:integer`
-and `Kudos`. The year needs `integer`, or it finds nothing. Another dataset
-needs its own fields, and an empty `kaFilterFields` means no filter panel.
-
-The test site also has `kaCapabilities`, `typesenseApiKey` and `kaNext` set,
-which the command above leaves out. Without `kaCapabilities` the filters are
-off, and without `kaNext` nobody is offered the next client.
-Typesense needs `typesenseHost`, `kudosDocsCollection` and `typesenseApiKey`
-together: without them the filter panel is empty and the sources show no
-excerpt.
-
-## Known limits
-
-**Questions do not answer against hosted headless-rag,** the template's
-default backend, which the test site does not use.
-`test.rag.digdir.cloud` rejects `agent-rag-graph-bundled` and
-`agent-rag-graph-faithful` with `mode_not_allowed`, and `simple-qa` returns
-`isError` with an empty answer. Only `fact-checker` and `retrieve-only` work
-there, and neither is the product. Verified with two API keys, one granting
-all five agents explicitly, so it is the backend's configuration and not a key
-scope. A local backend exposes nine agent and mode pairs including the ones
-needed.
-
-**The filters follow `KA_CAPABILITIES` on the test site.** With Ansattporten
-and no service key there is nothing to probe with, so the variable decides:
-`filters` turns them on, and anything else leaves the panel saying
-«Filtrering er ikke tilgjengelig ennå». With a service key the capability
-probe decides. Against hosted headless-rag it finds that the backend drops
-caller-supplied filters, so they are off there too, and they come on once the
-backend takes filters, with no redeploy. `kaCapabilities=filters` forces them
-on if the probe cannot get an answer.
-Against a slow backend the probe can stay unsettled for about 9 minutes
-(three tries of 60 s, 1 and 5 minutes apart), with the filters hidden, and
-then answers no until the app restarts.
-
-**The dataset key is `default` on genki and `kudos` on hosted headless-rag.**
-Getting it wrong on headless-rag fails every call with "API key is not allowed
-to access the requested dataset", which reads like a permissions problem.
+Ansattporten it is not used. `kaNextModel`, `kaNextTenant` and `kaNextLayout`
+are the client's service and variant, its tenant and a layout from genki's
+builder, each empty for its default.
 
 ## Choices worth knowing about
 
 **`minReplicas: 1`, not scale to zero.** A cold start would make the first
-question of the day pay for boot and re-run the capability probe.
+question of the day pay for boot.
 
 **Ingress timeout is the default 240 s.** One turn streams for 30 to 90 s. If
 turns get slower this is the setting that cuts them off, and it will look like

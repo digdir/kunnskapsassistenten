@@ -6,25 +6,8 @@ param location string = resourceGroup().location
 param image string
 param acrLoginServer string
 
-@description('Backend the BFF talks to: headless-rag (`https://test.rag.digdir.cloud`) or genki (`https://api.genki-test.digdir.cloud`).')
-param digdirApiBase string = 'https://test.rag.digdir.cloud'
-
-@description('The tool the BFF asks. genki: `kunnskapsassistenten__default`.')
-param digdirTool string = 'builtin.agent-rag-agent__agent-rag-graph-bundled'
-
-@description('The agent new conversations belong to. genki: `kunnskapsassistenten`.')
-param digdirAgentId string = 'builtin/agent-rag-agent'
-
-param digdirTenant string = 'public-sector-knowledge'
-
-@description('Hosted headless-rag uses `kudos`; a local backend and genki use `default`.')
-param digdirDatasetConfigKey string = 'kudos'
-
-@description('The dataset\'s filter fields, as `id:field[:valueType[:label]]|…` with id documentType, organisation or year. The year needs `integer`, or it finds nothing. Empty: no filter panel.')
-param kaFilterFields string = 'documentType:type|organisation:orgs_long|year:concerned_years:integer'
-
-@description('The dataset\'s name in the client, as `Name` or `Name|description`.')
-param kaDataset string = 'Kudos'
+@description('The genki API the server talks to.')
+param digdirApiBase string = 'https://api.genki-test.digdir.cloud'
 
 @description('Sign-in: `entra` (Entra ID, the service key to the backend) or `ansattporten` (the person\'s token to genki). `off` is local development only.')
 @allowed(['entra', 'ansattporten'])
@@ -45,7 +28,7 @@ param ansattportenAltinnResource string = ''
 @description('Custom domain users reach the app on. Empty uses the Container Apps default domain.')
 param publicHost string = ''
 
-@description('Required with `entra`. With `ansattporten` only the capability probe uses it, and it may be empty.')
+@description('The genki service key, required with `entra`. With `ansattporten` it is not used, and may be empty.')
 @secure()
 param digdirApiKey string = ''
 @secure()
@@ -54,41 +37,21 @@ param azureClientSecret string = ''
 param ansattportenClientSecret string = ''
 @secure()
 param sessionSecret string
-@secure()
-param typesenseApiKey string = ''
 
-param typesenseHost string = ''
-param kudosDocsCollection string = ''
-
-@description('What the capability probe would find, forced: `filters` or `no-filters`. Empty lets the probe decide.')
-param kaCapabilities string = ''
-
-@description('The next client (apps/web-next) beside apps/web: `1` offers it, empty keeps it off (decisions/0013).')
-param kaNext string = ''
-
-@description('The genki service and variant the next client asks, `<service>__<variant>`. Empty is `kunnskapsassistenten__default`.')
+@description('The genki service and variant the client asks, `<service>__<variant>`. Empty is `kunnskapsassistenten__default`.')
 param kaNextModel string = ''
 
-@description('The genki tenant the next client reads collections and facets from. Empty is `digdir`.')
+@description('The genki tenant the client reads collections and facets from. Empty is `digdir`.')
 param kaNextTenant string = ''
 
-@description('The layout the next client draws, the JSON from genki\'s builder («Kopier oppsettet») or the path of a file holding it (decisions/0017). Empty draws KA\'s own.')
+@description('The layout the client draws, the JSON from genki\'s builder («Kopier oppsettet») or the path of a file holding it (decisions/0017). Empty draws KA\'s own.')
 param kaNextLayout string = ''
 
-@description('Only the next client, for a deployment of another service: `1` serves apps/web-next at `/` and leaves apps/web out, with no way back to it; needs `kaNext` (decisions/0017). Empty keeps apps/web the default.')
-param kaNextOnly string = ''
-
-@description('The next client as the default: `1` gives apps/web-next to a browser that has not chosen, and apps/web stays for one that chose it with «Tilbake til gammel versjon»; needs `kaNext` (decisions/0018). Empty keeps apps/web the default.')
-param kaNextDefault string = ''
-
-@description('Testers by session user id (`userId` in `/api/v2/me`), separated by commas or spaces: their calls to genki carry `GenAI-Environment` (decisions/0015). Empty: nobody is a tester.')
+@description('Testers by session user id (`userId` in `/api/next/me`), separated by commas or spaces: their calls to genki carry `GenAI-Environment` (decisions/0015). Empty: nobody is a tester.')
 param kaTesters string = ''
 
 @description('The genki environment testers get. Empty is `test`.')
 param kaTestEnvironment string = ''
-
-@description('The genki environment that cites by excerpt, for people who turn the trial on in the app (decisions/0016). Empty: no trial.')
-param kaExcerptEnvironment string = ''
 
 var appHost = empty(publicHost) ? '${name}.${containerEnv.properties.defaultDomain}' : publicHost
 var ansattporten = authMode == 'ansattporten'
@@ -149,8 +112,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
         empty(digdirApiKey) ? [] : [ { name: 'digdir-api-key', value: digdirApiKey } ],
         ansattporten
           ? [ { name: 'ansattporten-client-secret', value: ansattportenClientSecret } ]
-          : [ { name: 'azure-client-secret', value: azureClientSecret } ],
-        empty(typesenseApiKey) ? [] : [ { name: 'typesense-key', value: typesenseApiKey } ]
+          : [ { name: 'azure-client-secret', value: azureClientSecret } ]
       )
     }
     template: {
@@ -163,14 +125,8 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             [
               { name: 'PORT', value: '8787' }
               { name: 'DIGDIR_API_BASE', value: digdirApiBase }
-              { name: 'DIGDIR_TOOL', value: digdirTool }
-              { name: 'DIGDIR_AGENT_ID', value: digdirAgentId }
-              { name: 'DIGDIR_TENANT', value: digdirTenant }
-              { name: 'DIGDIR_DATASET_CONFIG_KEY', value: digdirDatasetConfigKey }
               { name: 'APP_ORIGIN', value: 'https://${appHost}' }
               { name: 'SESSION_SECRET', secretRef: 'session-secret' }
-              { name: 'TYPESENSE_API_HOST', value: typesenseHost }
-              { name: 'KUDOS_DOCS_COLLECTION', value: kudosDocsCollection }
               { name: 'AUTH_MODE', value: authMode }
             ],
             empty(digdirApiKey) ? [] : [
@@ -189,21 +145,6 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
               { name: 'AZURE_CLIENT_SECRET', secretRef: 'azure-client-secret' }
               { name: 'AZURE_REDIRECT_URI', value: 'https://${appHost}/auth/callback' }
             ],
-            empty(typesenseApiKey) ? [] : [
-              { name: 'TYPESENSE_API_KEY_ADMIN', secretRef: 'typesense-key' }
-            ],
-            empty(kaCapabilities) ? [] : [
-              { name: 'KA_CAPABILITIES', value: kaCapabilities }
-            ],
-            empty(kaFilterFields) ? [] : [
-              { name: 'KA_FILTER_FIELDS', value: '${digdirDatasetConfigKey}=${kaFilterFields}' }
-            ],
-            empty(kaDataset) ? [] : [
-              { name: 'KA_DATASETS', value: '${digdirDatasetConfigKey}=${kaDataset}' }
-            ],
-            empty(kaNext) ? [] : [
-              { name: 'KA_NEXT', value: kaNext }
-            ],
             empty(kaNextModel) ? [] : [
               { name: 'KA_NEXT_MODEL', value: kaNextModel }
             ],
@@ -213,20 +154,11 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             empty(kaNextLayout) ? [] : [
               { name: 'KA_NEXT_LAYOUT', value: kaNextLayout }
             ],
-            empty(kaNextOnly) ? [] : [
-              { name: 'KA_NEXT_ONLY', value: kaNextOnly }
-            ],
-            empty(kaNextDefault) ? [] : [
-              { name: 'KA_NEXT_DEFAULT', value: kaNextDefault }
-            ],
             empty(kaTesters) ? [] : [
               { name: 'KA_TESTERS', value: kaTesters }
             ],
             empty(kaTestEnvironment) ? [] : [
               { name: 'KA_TEST_ENVIRONMENT', value: kaTestEnvironment }
-            ],
-            empty(kaExcerptEnvironment) ? [] : [
-              { name: 'KA_EXCERPT_ENVIRONMENT', value: kaExcerptEnvironment }
             ]
           )
           probes: [

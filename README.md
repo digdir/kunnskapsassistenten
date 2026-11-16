@@ -2,7 +2,7 @@
 
 | Folder | Contents |
 | --- | --- |
-| [`src/`](src/) | The application: frontend, server and contract, built on `digdir-headless-rag`. See [`src/README.md`](src/README.md). |
+| [`src/`](src/) | The application: the client and the server, on genki. See [`src/README.md`](src/README.md). |
 | [`docs/`](docs/) | Documentation of the design work. |
 | [`docs/archive/evals/`](docs/archive/evals/) | The evaluation code from the headless-rag period, kept as documentation. Not run and not maintained. |
 

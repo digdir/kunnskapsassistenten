@@ -1,6 +1,6 @@
 /** Ansattporten for a confidential client: the code flow with PKCE, refresh and logout. */
 import { createHash, createPublicKey, randomBytes, verify, type JsonWebKey } from 'node:crypto';
-import type { Organisation } from '@ka/contract';
+import type { Organisation } from './types.ts';
 
 export interface Discovery {
   issuer: string;

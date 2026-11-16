@@ -124,26 +124,21 @@ export function readLayout(raw: string, checks: () => LayoutChecks = layoutCheck
 
 /**
  * The layout from `KA_NEXT_LAYOUT`, or `undefined` when it is unset or empty. A layout with a
- * problem stops the server when the next client is on (`enabled`). While it is off the layout is
- * not used, so the problem is warned about and must not take apps/web down.
+ * problem stops the server, so a rollout with one never becomes ready and the old one serves on.
  */
 export function nextLayout(
   raw: string | undefined,
-  enabled: boolean,
   checks: () => LayoutChecks = layoutChecks,
 ): NextLayout | undefined {
   const given = (raw ?? '').trim();
   if (!given) return undefined;
   const read = readLayout(given, checks);
   if ('layout' in read) return read.layout;
-  const message = [
-    `KA_NEXT_LAYOUT is refused: ${read.refused}`,
-    ...(read.problems ?? []).map((problem) => `  ${problem}`),
-  ].join('\n');
-  if (enabled) {
-    console.error(message);
-    process.exit(1);
-  }
-  console.warn(`${message}\nIgnored while KA_NEXT is off.`);
-  return undefined;
+  console.error(
+    [
+      `KA_NEXT_LAYOUT is refused: ${read.refused}`,
+      ...(read.problems ?? []).map((problem) => `  ${problem}`),
+    ].join('\n'),
+  );
+  process.exit(1);
 }
