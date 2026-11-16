@@ -137,6 +137,8 @@ export const profileFor = (me: Me): AssistantProfile => ({
       description: 'dokumenter fra kudos.dfo.no',
       fields: KUDOS_FIELDS,
       typeField: 'type',
+      // Who published each document, under its title in «Dokumentene som blir med».
+      organisationField: 'orgs_long',
       typePlurals: TYPE_PLURALS,
       documentUrl: kudosDocumentUrl,
       documentLinks: KUDOS_LINKS,

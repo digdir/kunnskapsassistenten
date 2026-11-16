@@ -35,6 +35,24 @@ export const needWords = [
 ] as const;
 export type Need = (typeof needWords)[number];
 
+/** The reader's needs a block covers, which the builder assistant matches a described need to. */
+export const userNeeds = [
+  'organise-work',
+  'return-to-conversations',
+  'adjust-display',
+  'ask-questions',
+  'start-from-suggestions',
+  'narrow-documents',
+  'choose-collection',
+  'see-how-answered',
+  'check-excerpts',
+  'see-source-documents',
+  'open-original-document',
+  'read-in-context',
+  'collect-excerpts',
+] as const;
+export type UserNeed = (typeof userNeeds)[number];
+
 export const blockIds = [
   'projects',
   'threads',
@@ -95,6 +113,7 @@ export interface BlockSpec {
   /** The package's components it renders, by their export names. */
   members: readonly string[];
   needs: readonly Need[];
+  covers: readonly UserNeed[];
   options: readonly BlockOption[];
   /** `planned` is shown off and disabled, marked «kommer». */
   status: 'built' | 'planned';
@@ -111,6 +130,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     order: { primary: 0 },
     members: [],
     needs: ['genki:projects'],
+    covers: ['organise-work'],
     options: [],
     status: 'planned',
   },
@@ -120,6 +140,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     order: { primary: 1 },
     members: ['Threads', 'SignedIn'],
     needs: ['channel:conversations'],
+    covers: ['return-to-conversations'],
     options: [],
     status: 'built',
   },
@@ -130,6 +151,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     slot: 'foot',
     members: ['SettingsLinks', 'Settings'],
     needs: [],
+    covers: ['adjust-display'],
     options: [],
     status: 'built',
   },
@@ -151,6 +173,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
       'NotFoundState',
     ],
     needs: ['service:chat'],
+    covers: ['ask-questions', 'start-from-suggestions'],
     options: [
       {
         id: 'footnotes',
@@ -182,6 +205,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     order: { primary: 2, main: 1 },
     members: ['Filter', 'CorpusChoice', 'CorpusLine', 'Documents'],
     needs: ['service:filter-fields', 'channel:facets'],
+    covers: ['narrow-documents', 'choose-collection'],
     options: [
       { id: 'corpus', kind: 'switch', default: true },
       { id: 'documents', kind: 'switch', default: true },
@@ -196,6 +220,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     // The card over each answer in the main column, the tool in the secondary panel, or both.
     both: true,
     needs: ['service:steps'],
+    covers: ['see-how-answered'],
     options: [
       { id: 'level', kind: 'choice', choices: ['standard', 'detailed'], default: 'standard' },
     ],
@@ -207,6 +232,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     order: { secondary: 2 },
     members: ['Sources'],
     needs: ['service:datasets|documents'],
+    covers: ['check-excerpts', 'see-source-documents'],
     options: [
       { id: 'disclaimer', kind: 'switch', default: true },
       { id: 'search', kind: 'switch', default: true },
@@ -224,6 +250,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     members: ['DocumentView'],
     needs: ['service:datasets|documents'],
     options: [{ id: 'file', kind: 'switch', default: true }],
+    covers: ['open-original-document', 'read-in-context'],
     status: 'built',
   },
   {
@@ -232,6 +259,7 @@ export const blockCatalogue: readonly BlockSpec[] = [
     order: { secondary: 4 },
     members: [],
     needs: [],
+    covers: ['collect-excerpts'],
     options: [],
     status: 'planned',
   },
@@ -314,6 +342,10 @@ export const placeKey = (place: Place) => `builder.zone${capital(place)}` as Bui
 
 /** The catalogue key of what each place draws, for a block that may stand in both. */
 export const placesHelpKey = (id: BlockId) => `${nameKey(id)}PlacesHelp` as BuilderKey;
+
+/** The catalogue key of a reader's need, as the builder assistant reads it. */
+export const coverKey = (need: UserNeed) =>
+  `builder.cover${capital(need.replace(/-(\w)/g, (_, c: string) => c.toUpperCase()))}` as BuilderKey;
 
 /** The catalogue key of an option's label. */
 export const optionKey = (id: BlockId, option: string) =>

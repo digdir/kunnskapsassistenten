@@ -1,9 +1,10 @@
 // «Dokumentene som blir med», the dev boards' box under the filter (dev-filter-panel; «9 ·
 // Filtrering», choice 7): how many documents the next question reads from, on a neutral ground,
-// and, where the host has them, the documents themselves, each with a tick to leave it out.
-import { Checkbox, Input } from '@digdir/designsystemet-react';
+// and, where the host has them, the documents themselves: each with a tick to leave it out when
+// the host can, or else a plain list, each title a link where the host has one.
+import { Checkbox, Input, Link } from '@digdir/designsystemet-react';
 import { ChevronDownIcon, ChevronUpIcon } from '@navikt/aksel-icons';
-import { useId, useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { corpusName, type CorpusOption } from '../corpus/Corpus.js';
 import { classes } from '../dom.js';
 import { useT } from './i18n.js';
@@ -12,12 +13,11 @@ import { useT } from './i18n.js';
 export interface DocumentInScope {
   id: string;
   title: string;
-  /** Its type, drawn as a tag: «Evaluering». */
-  type?: string | undefined;
   /** Who published it. */
   organisation?: string | undefined;
   year?: number | string | undefined;
-  pages?: number | undefined;
+  /** Where the document opens, in a new tab: the title is a link. */
+  href?: string | undefined;
   /** Ticked: it is read. Unticked: the reader left it out. */
   included: boolean;
 }
@@ -31,7 +31,10 @@ export interface DocumentsInScopeProps {
   corpus?: CorpusOption | undefined;
   /** The documents, most relevant first. The list is drawn only with them. */
   documents?: readonly DocumentInScope[] | undefined;
-  /** The reader ticked or unticked a document. Without it the ticks cannot be changed. */
+  /**
+   * The reader ticked or unticked a document. Without it there are no ticks: the documents are a
+   * plain list, since a tick that cannot be changed reads as a broken one.
+   */
   onIncludedChange?: ((id: string, included: boolean) => void) | undefined;
   /** Open when it first shows; the reader folds it with «Skjul». */
   defaultOpen?: boolean | undefined;
@@ -99,7 +102,9 @@ export const DocumentsInScope = ({
 
         {listed.length > 0 ? (
           <>
-            <p className="uib-documents-scope-hint">{t('documents.inScopeHint')}</p>
+            {onIncludedChange ? (
+              <p className="uib-documents-scope-hint">{t('documents.inScopeHint')}</p>
+            ) : null}
             <Input
               type="search"
               className="uib-documents-scope-search"
@@ -113,35 +118,43 @@ export const DocumentsInScope = ({
             ) : (
               <ul className="uib-documents-scope-list" aria-labelledby={`${id}-title`}>
                 {shown.map((document) => {
+                  // «Virksomhet, år» under the title, as the dev boards draw it (dev-filter-panel).
                   const about = [
                     document.organisation,
                     document.year === undefined ? undefined : String(document.year),
-                    document.pages === undefined
-                      ? undefined
-                      : t('documents.pages', { count: document.pages }),
                   ].filter(Boolean);
+                  const text = (name: ReactNode) => (
+                    <span className="uib-documents-scope-text">
+                      <span className="uib-documents-scope-name">{name}</span>
+                      {about.length > 0 ? (
+                        <span className="uib-documents-scope-about">{about.join(', ')}</span>
+                      ) : null}
+                    </span>
+                  );
                   return (
                     <li key={document.id}>
-                      <Checkbox
-                        className="uib-documents-scope-document"
-                        checked={document.included}
-                        readOnly={!onIncludedChange}
-                        disabled={!onIncludedChange}
-                        onChange={(event) =>
-                          onIncludedChange?.(document.id, event.currentTarget.checked)
-                        }
-                        label={
-                          <span className="uib-documents-scope-text">
-                            <span className="uib-documents-scope-name">{document.title}</span>
-                            <span className="uib-documents-scope-about">
-                              {document.type ? (
-                                <span className="uib-documents-scope-type">{document.type}</span>
-                              ) : null}
-                              {about.length > 0 ? <span>{about.join(' · ')}</span> : null}
-                            </span>
-                          </span>
-                        }
-                      />
+                      {onIncludedChange ? (
+                        <Checkbox
+                          className="uib-documents-scope-document"
+                          checked={document.included}
+                          onChange={(event) =>
+                            onIncludedChange(document.id, event.currentTarget.checked)
+                          }
+                          label={text(document.title)}
+                        />
+                      ) : (
+                        <div className="uib-documents-scope-document">
+                          {text(
+                            document.href ? (
+                              <Link href={document.href} target="_blank" rel="noreferrer">
+                                {document.title}
+                              </Link>
+                            ) : (
+                              document.title
+                            ),
+                          )}
+                        </div>
+                      )}
                     </li>
                   );
                 })}

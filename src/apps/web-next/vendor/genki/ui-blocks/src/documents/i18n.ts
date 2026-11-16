@@ -42,7 +42,6 @@ export const nbDocuments = defineNamespace({
   inScopeSearch: 'Søk i dokumentene som blir med',
   inScopeSearchHint: 'Søk i lista – tittel eller virksomhet',
   inScopeNone: 'Ingen dokumenter i lista passer med søket.',
-  pages: { one: '{count} side', other: '{count} sider' },
 });
 
 export const enDocuments = {
@@ -82,7 +81,6 @@ export const enDocuments = {
   inScopeSearch: 'Search the documents included',
   inScopeSearchHint: 'Search the list – title or organisation',
   inScopeNone: 'No document in the list matches the search.',
-  pages: { one: '{count} page', other: '{count} pages' },
 } satisfies Translation<typeof nbDocuments>;
 
 /** The documents' own catalogue, with the collection's words, apart from the shared one. */
