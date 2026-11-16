@@ -51,6 +51,11 @@ const KUDOS_LINKS = {
 
 // genki's knowledge database names a Kudos document `kudos:<uuid>`, which no template fits. Only
 // that exact shape is read: the prefix as genki writes it, then one uuid and nothing after it.
+const UUID_TEXT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}';
+/** A Kudos file's address, as genki gives an excerpt's: its document's uuid and its own. */
+const KUDOS_FILE = new RegExp(
+  `^https://kudos\\.dfo\\.no/dokument/(${UUID_TEXT})/filer/(${UUID_TEXT})\\.pdf$`,
+);
 const PREFIXED_UUID =
   /^kudos:([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
 
@@ -69,16 +74,22 @@ const FILE_LOOKUP_MS = 15_000;
 /**
  * The whole file of a Kudos document genki names `kudos:<uuid>`: its PDF through this site's
  * server, once a HEAD there says it has one, so a document without a PDF shows its excerpts and
- * no framed error. Any other number has none. Provisional until genki offers a route for a
- * document's file: then this function changes, and nothing else on the page.
+ * no framed error. Any other number has none. With the opened excerpt's file, that file, and the
+ * view opens it at the excerpt's page. Provisional until genki offers a route for a document's
+ * file: then this function changes, and nothing else on the page.
  */
 export const kudosDocumentFile = async (
   documentId: string,
   signal: AbortSignal,
+  excerpt?: { file?: string },
 ): Promise<DocumentFile | undefined> => {
   const uuid = PREFIXED_UUID.exec(documentId)?.[1]?.toLowerCase();
   if (!uuid) return undefined;
-  const url = `/api/next/kudos/files/${uuid}`;
+  // The opened excerpt's own file, when it is one of this document's on Kudos: the server checks
+  // the record lists it, and the view opens it at the excerpt's page since it is that file.
+  const file = excerpt?.file ? KUDOS_FILE.exec(excerpt.file) : null;
+  const fileUuid = file?.[1]?.toLowerCase() === uuid ? file?.[2]?.toLowerCase() : undefined;
+  const url = `/api/next/kudos/files/${uuid}${fileUuid ? `?file=${fileUuid}` : ''}`;
   const res = await fetch(url, {
     method: 'HEAD',
     credentials: 'same-origin',
@@ -86,7 +97,11 @@ export const kudosDocumentFile = async (
   });
   if (res.status === 404) return undefined;
   if (!res.ok) throw new Error(`The Kudos file answered ${res.status}.`);
-  return { url, mediaType: 'application/pdf' };
+  return {
+    url,
+    mediaType: 'application/pdf',
+    ...(fileUuid && excerpt?.file ? { source: excerpt.file } : {}),
+  };
 };
 
 const issue = (n: number) => ({
