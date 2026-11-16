@@ -131,6 +131,15 @@ const classes = (...names: (string | false | undefined)[]) => names.filter(Boole
 /** A «Les side N» link is drawn only where the address opens that page. */
 export const reachesPage = (url: string, page: number) => url.endsWith(`#page=${page}`);
 
+/** «side 12», or «side 12–13» for an excerpt that runs on to a later page. */
+export const usePageText = () => {
+  const t = useT();
+  return (page: number, pageEnd?: number) =>
+    pageEnd !== undefined && pageEnd > page
+      ? t('sources.pages', { from: page, to: pageEnd })
+      : t('sources.page', { page });
+};
+
 /** Whether the reader asks for less motion, so a scroll jumps rather than glides. */
 export const prefersStill = () =>
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
@@ -617,6 +626,7 @@ const SourceItem = ({
   back,
 }: ItemProps) => {
   const t = useT();
+  const pageText = usePageText();
   const detailsId = useId();
   const bodyId = useId();
   const rowId = useId();
@@ -875,7 +885,7 @@ const SourceItem = ({
                       {path && path !== section ? <strong>{path}</strong> : null}
                       {path && path !== section && page !== undefined ? ' · ' : null}
                       {page === undefined ? null : (
-                        <span className="uib-sources-page">{t('sources.page', { page })}</span>
+                        <span className="uib-sources-page">{pageText(page, excerpt?.pageEnd)}</span>
                       )}
                     </Paragraph>
                   ) : null}

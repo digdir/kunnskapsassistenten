@@ -37,6 +37,7 @@ import {
   sectionOf,
   targetPosition,
   useExcerptName,
+  usePageText,
   useSourceSubtitle,
   type BackTo,
 } from '../sources/Sources.js';
@@ -67,6 +68,11 @@ export interface DocumentFile {
   url: string;
   /** Its media type. Only `application/pdf` is shown in the view. */
   mediaType: string;
+  /**
+   * The address of the file it stands for, as the excerpts' `url` names it before `#page=N`. Only
+   * when it is the shown excerpt's file does the view open the PDF at that excerpt's page.
+   */
+  source?: string | undefined;
 }
 
 /** The targeted document's file, as the host finds it. */
@@ -207,6 +213,7 @@ export const DocumentView = ({
 }: DocumentViewProps) => {
   const t = useT();
   const excerptName = useExcerptName();
+  const pageText = usePageText();
   const titleId = useId();
   const documentTitleId = useId();
   const jumpsId = useId();
@@ -257,6 +264,16 @@ export const DocumentView = ({
     fileState?.status === 'ready' && isPdf(fileState.file) && isFileAddress(fileState.file.url)
       ? fileState.file
       : undefined;
+  // The PDF opens at the shown excerpt's page, only when the host says the file is that excerpt's.
+  const pageExcerpt = marked ? passages.find((p) => p.chunkId === marked) : undefined;
+  const framed =
+    pdf &&
+    pdf.source !== undefined &&
+    pageExcerpt?.page !== undefined &&
+    pageExcerpt.url !== undefined &&
+    pageExcerpt.url.split('#', 1)[0] === pdf.source.split('#', 1)[0]
+      ? `${pdf.url.split('#', 1)[0]}#page=${pageExcerpt.page}`
+      : pdf?.url;
   // A file the view cannot show is as none: the excerpts, and a line saying so.
   const fileMissed = fileState !== undefined && !fileLoading && !pdf;
   const inline =
@@ -440,14 +457,17 @@ export const DocumentView = ({
             </Paragraph>
           ) : pdf && inline ? (
             // The browser's own viewer, the whole document in place of the excerpts.
+            // Keyed by its address, so another page loads anew: a changed fragment alone does not
+            // move every browser's PDF viewer.
             <iframe
+              key={framed}
               className="uib-document-view-file"
-              src={pdf.url}
+              src={framed}
               title={t('documentView.fileTitle', { title: documentTitle })}
             />
           ) : pdf ? (
             <Link
-              href={pdf.url}
+              href={framed}
               target="_blank"
               rel="noopener noreferrer"
               data-size="sm"
@@ -503,7 +523,7 @@ export const DocumentView = ({
                       // Starts with what the chip shows, then the page and any other document.
                       const name = [
                         t('sources.excerptNumber', { n }),
-                        page === undefined ? undefined : t('sources.page', { page }),
+                        page === undefined ? undefined : pageText(page, excerpt.pageEnd),
                         elsewhere ? t('documentView.jumpIn', { title }) : undefined,
                       ]
                         .filter(Boolean)
@@ -606,7 +626,7 @@ export const DocumentView = ({
                             {path && path !== section && page !== undefined ? ' · ' : null}
                             {page === undefined ? null : (
                               <span className="uib-document-view-page">
-                                {t('sources.page', { page })}
+                                {pageText(page, excerpt.pageEnd)}
                               </span>
                             )}
                           </Paragraph>

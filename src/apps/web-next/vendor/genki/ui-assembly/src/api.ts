@@ -194,6 +194,13 @@ interface WireSource {
     position?: number;
     /** Its own section path, which the Sources block titles the excerpt by. */
     heading?: string;
+    /** The page of its file it starts on, and ends on when that is a later one. */
+    page?: number;
+    page_end?: number;
+    /** As the blocks name it, for a host that hands its own sources through. */
+    pageEnd?: number;
+    /** Its PDF opened at `page`, `…#page=N`. */
+    url?: string;
     /** The markers that cite this excerpt, from a service that cites excerpts. */
     markers?: string[];
   }[];
@@ -232,6 +239,9 @@ const corpusOf = (tags: readonly string[]) =>
  * conversation»). `at` is the source's place in the answer's list, which keeps two sources without
  * a document id apart.
  */
+const wholePage = (value: unknown) =>
+  typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
+
 export const sourceFromWire = (raw: WireSource, corpus?: CorpusProfile, at = 0): SourceDocument => {
   const documentId = raw.documentId ?? raw.document_id;
   const url = raw.url ?? (documentId ? documentLink(corpus, documentId) : undefined);
@@ -246,11 +256,19 @@ export const sourceFromWire = (raw: WireSource, corpus?: CorpusProfile, at = 0):
     excerpts: (raw.excerpts ?? []).map((e, i) => {
       const text = e.text ?? '';
       const heading: unknown = e.heading;
+      const page = wholePage(e.page);
+      const pageEnd = page === undefined ? undefined : wholePage(e.page_end ?? e.pageEnd);
+      const link: unknown = e.url;
       return {
         chunkId: e.chunkId || e.chunk_id || minted(i),
         text,
         ...(e.position !== undefined ? { position: e.position } : {}),
         ...(typeof heading === 'string' ? { heading } : {}),
+        ...(page === undefined ? {} : { page }),
+        ...(pageEnd !== undefined && page !== undefined && pageEnd > page ? { pageEnd } : {}),
+        ...(page !== undefined && typeof link === 'string' && /^https?:\/\//i.test(link)
+          ? { url: link }
+          : {}),
         ...(text ? {} : { textUnavailable: true }),
       };
     }),
