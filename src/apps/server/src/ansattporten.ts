@@ -1,7 +1,6 @@
 /** AUTH_MODE=ansattporten: the person signs in here, and genki is asked with their token (decisions/0011). */
 import type { Context, MiddlewareHandler } from 'hono';
 import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie';
-import type { Organisation } from '@ka/contract';
 import {
   clearUser,
   cookieOptions,
@@ -31,6 +30,7 @@ import {
   setTokens,
   type TokenSession,
 } from './tokenStore.ts';
+import type { Organisation } from './types.ts';
 
 const REFRESH_MARGIN_MS = 60_000;
 

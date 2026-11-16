@@ -132,7 +132,7 @@ describe('an answer from a service that cites documents', () => {
   });
 });
 
-// A thread asked in apps/web names no collection: KA's profile describes only Kudos, so its
+// A thread asked in the previous client names no collection: KA's profile describes only Kudos, so its
 // documents link there.
 describe('a stored thread that names no collection', () => {
   const me: Me = {

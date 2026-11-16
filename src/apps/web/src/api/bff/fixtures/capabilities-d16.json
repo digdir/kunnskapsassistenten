@@ -1,9 +1,0 @@
-{
-  "capabilities": { "filters": true, "othersThreads": false, "threadTitles": false },
-  "settled": true,
-  "dataset": {
-    "key": "kudos-full",
-    "label": "Kudos",
-    "description": "10 064 dokumenter fra kudos.dfo.no"
-  }
-}

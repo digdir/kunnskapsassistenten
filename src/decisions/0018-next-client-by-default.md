@@ -1,6 +1,7 @@
 # 0018: The next client by default, by a setting, on the way to the only one
 
-**Status:** accepted · **Date:** 2026-11-14
+**Status:** accepted · **Date:** 2026-11-14 · **Superseded:** 2026-11-16 by
+[0019](0019-remove-the-previous-client.md), which removes `apps/web` and the choice with it
 
 ## Context
 

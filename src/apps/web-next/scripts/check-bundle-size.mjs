@@ -1,4 +1,4 @@
-// What a reader downloads before the page starts, against apps/web's budget: 300 kB gzip for the
+// What a reader downloads before the page starts, against KA's budget: 300 kB gzip for the
 // scripts and sheets index.html names. `node scripts/check-bundle-size.mjs dist`
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

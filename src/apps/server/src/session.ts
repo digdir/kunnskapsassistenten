@@ -8,6 +8,9 @@ import { config } from './config.ts';
 
 export type SessionVars = { userId: string; user: User | null; caller: Caller };
 
+/** The app's environment, with the session's variables. */
+export type Env = { Variables: SessionVars };
+
 const COOKIE = 'ka_sid';
 const MAX_AGE = 60 * 60 * 24 * 30;
 

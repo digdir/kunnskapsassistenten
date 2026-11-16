@@ -6,12 +6,11 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 
 /*
- * The next client, built from genki's UI blocks (decisions/0013). The blocks are the source
- * snapshot in vendor/genki, reached through the aliases below, so a bare import inside them
- * resolves from this folder's node_modules.
+ * Kunnskapsassistenten's client, built from genki's UI blocks (decisions/0013, 0019). The blocks
+ * are the source snapshot in vendor/genki, reached through the aliases below, so a bare import
+ * inside them resolves from this folder's node_modules.
  *
- * Its files go to /next-assets/, not /assets/, so the server can serve both clients' files
- * whatever a browser chose, and only the page depends on the choice.
+ * Its files go to /next-assets/, a name kept from when the server served two clients.
  */
 
 const vendor = (path: string) =>
@@ -48,8 +47,8 @@ function colorSchemeScript(): Plugin {
   };
 }
 
-/** In development, the KA server that holds the session and calls genki (`npm start` in src). */
-const server = process.env.KA_SERVER_URL || 'http://localhost:8788';
+/** In development, the KA server that holds the session and calls genki, on its default port. */
+const server = process.env.KA_SERVER_URL || 'http://localhost:8787';
 
 export default defineConfig({
   plugins: [react(), colorSchemeScript()],

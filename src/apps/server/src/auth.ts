@@ -2,11 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { ConfidentialClientApplication } from '@azure/msal-node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie';
-import type { User } from '@ka/contract';
 import { config } from './config.ts';
 import { entraLoginPage } from './authPages.ts';
 import { localOrigin } from './localOrigin.ts';
 import { dropTokens, getTokens } from './tokenStore.ts';
+import type { User } from './types.ts';
 
 const MAX_AGE = 60 * 60 * 8;
 const SCOPES = ['openid', 'profile', 'email'];

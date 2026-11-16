@@ -1,63 +1,26 @@
 /**
- * `/api/next`: what the next client, apps/web-next, needs from this server (decisions/0013).
+ * `/api/next`: what the client, apps/web-next, needs from this server (decisions/0013, 0019).
  *
- * - `GET /ui` and `POST /ui`: which client this browser gets, its choice kept in a cookie, and
- *   the default without one (decisions/0018).
  * - `GET /me`: who is signed in, which genki service and variant the page asks, and the layout
  *   from genki's builder when `KA_NEXT_LAYOUT` gives one (decisions/0017).
  * - `/genki/*`: a narrow proxy to the genki calls `createGenkiApi` makes, with the signed-in
- *   person's credential, as every call of apps/web is made (`backendHeaders`).
- * - `POST /feedback`: a rating of an answer, as apps/web's, and only with a person's token.
+ *   person's credential (`backendHeaders`).
+ * - `POST /feedback`: a rating of an answer, only with a person's token.
  *
  * Mounted under `/api/*`, so the session, the sign-in check and the body limit in app.ts come
- * first. Nothing here imports apps/web, and apps/web's routes are not changed.
+ * first.
  */
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import type { Context, MiddlewareHandler } from 'hono';
 import { Hono } from 'hono';
-import { getCookie, setCookie } from 'hono/cookie';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import type { Env } from './apiShared.ts';
 import { readSessionId } from './auth.ts';
 import { backendHeaders, knownProblem, type Caller } from './backend.ts';
 import { config } from './config.ts';
 import * as convos from './conversations.ts';
 import { cleanFeedback, ownsTask, sendFeedback } from './feedback.ts';
 import type { NextLayout } from './nextLayout.ts';
-import * as sourceStore from './sourceStore.ts';
+import type { Env } from './session.ts';
 import { getTokens } from './tokenStore.ts';
-
-// ── Which client ──
-
-export type Ui = 'next' | 'classic';
-
-const secureCookies = () => config.auth.origin.startsWith('https://');
-
-/** `__Host-` needs Secure, which a plain-http localhost cannot have. */
-export const uiCookie = () => (secureCookies() ? '__Host-ka_ui' : 'ka_ui');
-
-const ONE_YEAR = 60 * 60 * 24 * 365;
-
-/** Whether the next client is offered: switched on, and built. */
-export const nextOffered = () =>
-  config.next.enabled &&
-  Boolean(config.next.webRoot) &&
-  existsSync(join(config.next.webRoot, 'index.html'));
-
-/** The client this browser chose, kept in the cookie; none when it has not chosen. */
-const chosenUi = (c: Context): Ui | undefined => {
-  const chosen = getCookie(c, uiCookie());
-  return chosen === 'next' || chosen === 'classic' ? chosen : undefined;
-};
-
-/**
- * The client this browser gets: always `next` where it is the only one (`KA_NEXT_ONLY`), whatever
- * the cookie says; else the one the cookie names; else the default, `next` with `KA_NEXT_DEFAULT`
- * and `classic` without (decisions/0018).
- */
-export const uiOf = (c: Context): Ui =>
-  config.next.only ? 'next' : (chosenUi(c) ?? (config.next.byDefault ? 'next' : 'classic'));
 
 // ── Writes from this origin only ──
 
@@ -270,7 +233,7 @@ const NOT_STORED = 'no-store, no-transform';
 
 /**
  * How much of a failed response is read, for its problem type and code only. genki's error
- * text never reaches the page or the log (decisions/0009, as in mcp.ts): it can name hosts and
+ * text never reaches the page or the log (decisions/0009): it can name hosts and
  * replies from the model.
  */
 const ERROR_BODY_MAX = 16 * 1024;
@@ -336,8 +299,6 @@ export interface NextSettings {
   maxQueryLength: number;
   /** The layout from genki's builder (`KA_NEXT_LAYOUT`, decisions/0017); without it, KA's own. */
   layout?: NextLayout | undefined;
-  /** Only the next client is served (`KA_NEXT_ONLY`): there is no apps/web to go back to. */
-  only?: boolean | undefined;
 }
 
 const settingsFromConfig = (): NextSettings => ({
@@ -348,7 +309,6 @@ const settingsFromConfig = (): NextSettings => ({
   origin: config.auth.origin,
   maxQueryLength: config.maxQueryLength,
   layout: config.next.layout,
-  only: config.next.only,
 });
 
 /** The person's organisation: the one they act for, or their only one. */
@@ -377,37 +337,14 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
   });
   next.use('*', sameOriginWrites(settings.origin));
 
-  /**
-   * For apps/web's «Prøv ny versjon», drawn only when this says the next client is offered. `ui`
-   * is the client this browser gets, the default included, so apps/web's info pages offer the way
-   * back to the next client to a browser that has it by default too.
-   */
-  next.get('/ui', (c) => c.json({ ui: uiOf(c), available: nextOffered() }));
-
-  next.post('/ui', async (c) => {
-    const body = (await c.req.json().catch(() => undefined)) as { ui?: unknown } | undefined;
-    const ui = body?.ui;
-    if (ui !== 'next' && ui !== 'classic')
-      return c.json({ error: 'ui is next or classic.' }, 400);
-    // With only the next client there is no apps/web to choose, and the cookie stays as it is.
-    if (settings.only && ui === 'classic')
-      return c.json({ error: 'Only the next client is served here.' }, 409);
-    // Either choice is kept, so apps/web stays chosen where the next client is the default.
-    setCookie(c, uiCookie(), ui, {
-      path: '/',
-      maxAge: ONE_YEAR,
-      httpOnly: true,
-      sameSite: 'Lax',
-      secure: secureCookies(),
-    });
-    return c.json({ ui });
-  });
-
   next.get('/me', async (c) => {
     const user = c.get('user');
     const organisation = await organisationOf(c);
     return c.json({
       name: user?.name || (config.auth.enabled ? '' : LOCAL_NAME),
+      // The id `KA_TESTERS` names a tester by (decisions/0015). Only with sign-in on: off, the id
+      // is the session cookie's own, which the page is not to read.
+      ...(user ? { userId: user.id } : {}),
       ...(organisation ? { organisation } : {}),
       signOut: config.auth.enabled ? '/auth/logout' : null,
       model: settings.model,
@@ -416,12 +353,10 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
       writes: Boolean(c.get('caller').token),
       // Only when one is set: without it the page draws KA's own, and the answer is as before.
       ...(settings.layout ? { layout: settings.layout } : {}),
-      // Only when on: the page then offers no apps/web, its pages nor the way back to it.
-      ...(settings.only ? { nextOnly: true } : {}),
     });
   });
 
-  // apps/web's feedback checks (feedback.ts), and never with the service key (decisions/0013).
+  // Checked in feedback.ts, and never with the service key (decisions/0013).
   next.post('/feedback', async (c) => {
     const caller: Caller = c.get('caller');
     if (!caller.token) return refused(c, 'not_allowed');
@@ -518,10 +453,6 @@ export function nextRoutes(settings: NextSettings = settingsFromConfig()) {
       const failure = await upstreamFailure(upstream);
       return failed(c, upstream.status, failure.message, failure.code);
     }
-    // apps/web hangs a thread's kept sources on its last answer (sourceStore.ts), now this one.
-    const thread = shaped.body?.conversation_id;
-    if (method === 'POST' && typeof thread === 'string') sourceStore.forget(thread);
-
     // The body as it comes, never read, re-chunked or compressed here: an answer streams.
     const out = new Headers({ 'X-Accel-Buffering': 'no' });
     const type = upstream.headers.get('Content-Type');

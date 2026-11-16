@@ -44,14 +44,14 @@ async function models(): Promise<Result> {
   const ids = (body.data ?? []).map((m) => m.id);
   if (!ids.length) return { ok: false, detail: 'authenticated, but the key grants no agents' };
 
-  if (!ids.includes(config.tool)) {
+  if (!ids.includes(config.next.model)) {
     return {
       ok: false,
-      detail: `${ids.length} agents, but not the pinned one`,
-      fix: `DIGDIR_TOOL is "${config.tool}". Available: ${ids.join(', ')}`,
+      detail: `${ids.length} agents, but not the one the client asks`,
+      fix: `KA_NEXT_MODEL is "${config.next.model}". Available: ${ids.join(', ')}`,
     };
   }
-  return { ok: true, detail: `${ids.length} agents, including the pinned one` };
+  return { ok: true, detail: `${ids.length} agents, including the one the client asks` };
 }
 
 async function conversations(): Promise<Result> {
@@ -69,54 +69,17 @@ async function conversations(): Promise<Result> {
   return { ok: true, detail: 'readable and scoped by X-User-Id' };
 }
 
-async function typesense(): Promise<Result> {
-  if (!config.typesenseHost || !config.typesenseKey || !config.docsCollection) {
-    return {
-      ok: false,
-      detail: 'not configured',
-      fix: 'Optional. Without it the filter panel is empty and sources show no excerpt. Set TYPESENSE_API_HOST, TYPESENSE_API_KEY_ADMIN, KUDOS_DOCS_COLLECTION.',
-    };
-  }
-  const res = await fetch(
-    `https://${config.typesenseHost}/collections/${config.docsCollection}`,
-    { headers: { 'X-TYPESENSE-API-KEY': config.typesenseKey }, signal: withTimeout(15_000) },
-  );
-  if (!res.ok) {
-    return {
-      ok: false,
-      detail: `HTTP ${res.status} on ${config.docsCollection}`,
-      fix: 'Check TYPESENSE_API_KEY_ADMIN and that KUDOS_DOCS_COLLECTION names an existing collection.',
-    };
-  }
-  const body = (await res.json()) as { num_documents?: number };
-  const chunks = config.docsCollection.replace('_documents_', '_chunks_');
-  const chunksRes = await fetch(`https://${config.typesenseHost}/collections/${chunks}`, {
-    headers: { 'X-TYPESENSE-API-KEY': config.typesenseKey },
-    signal: withTimeout(15_000),
-  });
-  if (!chunksRes.ok) {
-    return {
-      ok: false,
-      detail: `${body.num_documents ?? '?'} documents, but no chunks collection`,
-      fix: `Expected "${chunks}" alongside the documents collection. Source excerpts need it.`,
-    };
-  }
-  return { ok: true, detail: `${body.num_documents ?? '?'} documents, chunks present` };
-}
-
 console.log(`\nBackend  ${config.apiBase}`);
-console.log(`Agent    ${config.tool}`);
-console.log(`Dataset  ${config.tenant}/${config.datasetConfigKey}\n`);
+console.log(`Model    ${config.next.model}`);
+console.log(`Tenant   ${config.next.tenant}\n`);
 
 await check('agents (/v1/models)', models);
 await check('conversations API', conversations);
-await check('typesense (optional)', typesense);
 
-const required = results.filter((r) => r.name !== 'typesense (optional)');
-const failed = required.filter((r) => !r.result.ok);
+const failed = results.filter((r) => !r.result.ok);
 console.log(
   failed.length
-    ? `\n${failed.length} required check(s) failed. The app will not work yet.\n`
+    ? `\n${failed.length} check(s) failed. The app will not work yet.\n`
     : '\nReady. `npm run dev` and open http://localhost:5173\n',
 );
 process.exit(failed.length ? 1 : 0);

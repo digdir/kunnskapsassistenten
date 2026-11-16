@@ -1,5 +1,5 @@
 /**
- * A fake Ansattporten and a fake genki on localhost, for ansattporten.test.ts.
+ * A fake Ansattporten and a fake genki on localhost, for ansattporten.test.ts and testers.test.ts.
  * The tokens are signed with a key made here, and say nothing true.
  */
 import {
@@ -220,6 +220,7 @@ export interface GenkiRequest {
 
 const problem = (type: string, title: string) => ({ type, title, status: 403, detail: title });
 
+/** genki's calls the client makes through the server, and genki's own `/me`. */
 export async function startFakeGenki() {
   const requests: GenkiRequest[] = [];
   const state = {
@@ -227,7 +228,6 @@ export async function startFakeGenki() {
     meRefused: false,
     locked: false,
   };
-  const frame = (msg: object) => `data: ${JSON.stringify({ jsonrpc: '2.0', ...msg })}\n\n`;
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://fake');
@@ -238,6 +238,7 @@ export async function startFakeGenki() {
       headers: {
         authorization: req.headers.authorization,
         'genai-acting-for': req.headers['genai-acting-for'] as string | undefined,
+        'genai-environment': req.headers['genai-environment'] as string | undefined,
         'x-api-key': req.headers['x-api-key'] as string | undefined,
         'x-user-id': req.headers['x-user-id'] as string | undefined,
       },
@@ -267,7 +268,7 @@ export async function startFakeGenki() {
         ],
       });
     if (url.pathname === '/api/feedback') return json(res, 201, { ok: true, task: 't1' });
-    if (url.pathname === '/api/mcp') {
+    if (url.pathname === '/v1/chat/completions') {
       if (state.locked)
         return json(
           res,
@@ -275,20 +276,8 @@ export async function startFakeGenki() {
           problem('urn:genai:problem:locked-environment', 'The environment is locked'),
           problemJson,
         );
-      res.writeHead(200, { 'content-type': 'text/event-stream' });
-      res.end(
-        frame({
-          method: 'notifications/progress',
-          params: { _meta: { event: 'request/started', 'request-id': 't1' } },
-        }) +
-          frame({
-            id: 1,
-            result: {
-              content: [{ type: 'text', text: 'Svar.' }],
-              structuredContent: { conversation_id: 'c1', chunks: [] },
-            },
-          }),
-      );
+      res.writeHead(200, { 'content-type': 'text/event-stream', 'genai-task': 't1' });
+      res.end('data: {"choices":[{"delta":{"content":"Svar."}}]}\n\ndata: [DONE]\n\n');
       return;
     }
     json(res, 404, { error: 'not found' });

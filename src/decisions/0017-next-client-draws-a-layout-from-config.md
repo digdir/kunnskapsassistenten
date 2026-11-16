@@ -1,6 +1,8 @@
 # 0017: The next client draws a layout from genki's builder, given in config
 
-**Status:** accepted · **Date:** 2026-11-14
+**Status:** accepted · **Date:** 2026-11-14 · **Superseded in part:** 2026-11-16 by
+[0019](0019-remove-the-previous-client.md): `KA_NEXT_ONLY` is gone, as the next client is the only
+one, and KA's pages are in the menu for KA's service only
 
 ## Context
 
