@@ -1,7 +1,7 @@
 // The words a layout is drawn with, as data: what `@genai/ui-assembly`'s `AssistantProfile` holds
 // that JSON can hold, so the builder can edit it and a host can store it with the layout. What
 // only code can say stays the host's: the reader, the profile menu, the sign-out, the family of
-// services and a function from a document's number to its link.
+// services, a function from a document's number to its link, and one to its file.
 
 /** The kinds of field a profile may mark; a year field offers only years. */
 export const fieldKinds = ['year'] as const;

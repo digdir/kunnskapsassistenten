@@ -250,6 +250,21 @@
       0 var(--genai-document-view-passage-current-marker-color, var(--ds-color-accent-base-default));
   }
 
+  /* The whole document in the browser's own viewer, as tall as the view has room for. */
+  .uib-document-view-file {
+    display: block;
+    inline-size: 100%;
+    block-size: var(--genai-document-view-file-block-size, 75dvh);
+    min-block-size: var(--genai-document-view-file-min-block-size, 20rem);
+    border: var(--genai-document-view-file-border-width, var(--ds-border-width-default)) solid
+      var(--genai-document-view-file-border-color, var(--ds-color-border-subtle));
+    border-radius: var(--genai-document-view-file-border-radius, var(--ds-border-radius-md));
+    background: var(--genai-document-view-file-background, var(--ds-color-surface-default));
+  }
+  .uib-document-view-file-note {
+    color: var(--genai-document-view-file-note-color, var(--ds-color-text-subtle));
+  }
+
   .uib-document-view-ask {
     display: flex;
     flex-wrap: wrap;

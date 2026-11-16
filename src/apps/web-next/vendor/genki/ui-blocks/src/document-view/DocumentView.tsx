@@ -1,5 +1,13 @@
-import { Button, Card, Chip, Heading, Paragraph, Textfield } from '@digdir/designsystemet-react';
-import { ArrowLeftIcon } from '@navikt/aksel-icons';
+import {
+  Button,
+  Card,
+  Chip,
+  Heading,
+  Link,
+  Paragraph,
+  Textfield,
+} from '@digdir/designsystemet-react';
+import { ArrowLeftIcon, ExternalLinkIcon } from '@navikt/aksel-icons';
 import {
   useEffect,
   useId,
@@ -12,6 +20,7 @@ import {
 } from 'react';
 import { useT } from './i18n.js';
 import { Markdown } from '../markdown/Markdown.js';
+import { useMedia } from '../shell/hooks.js';
 import { excerptMarkdown, headingText } from '../sources/excerptMarkdown.js';
 import {
   orderedExcerpts,
@@ -52,11 +61,44 @@ export interface DocumentQuestion {
   excerpt?: SourceExcerpt | undefined;
 }
 
+/** The whole document as a file, for the browser's own viewer. */
+export interface DocumentFile {
+  /** Where the browser reads it: an http or https address, or a path on the host's own site. */
+  url: string;
+  /** Its media type. Only `application/pdf` is shown in the view. */
+  mediaType: string;
+}
+
+/** The targeted document's file, as the host finds it. */
+export type DocumentFileStatus =
+  | { status: 'loading' }
+  | { status: 'ready'; file: DocumentFile }
+  | { status: 'none' }
+  | { status: 'failed' };
+
+const isPdf = (file: DocumentFile) =>
+  (file.mediaType.split(';')[0] ?? '').trim().toLowerCase() === 'application/pdf';
+
+/** An address the browser may open in a frame: http or https, and never `javascript:` or `data:`. */
+const isFileAddress = (url: string) => {
+  try {
+    const { protocol } = new URL(url, document.baseURI);
+    return protocol === 'https:' || protocol === 'http:';
+  } catch {
+    return false;
+  }
+};
+
+// A phone, upright or sideways: a framed PDF there shows one page that cannot scroll, or nothing.
+const SMALL_SCREEN = '(width < 40rem), (height < 30rem)';
+
 export interface DocumentViewProps {
   /** The answer's sources, as Sources takes them; the view shows the targeted one's excerpts. */
   sources?: readonly SourceDocument[] | undefined;
   /** Which document and excerpt to land on; each new target, by identity, is followed once. */
   target?: SourceTarget | undefined;
+  /** The targeted document's whole file from the host; a PDF replaces the excerpts. */
+  file?: DocumentFileStatus | undefined;
   /** The answer's footnotes in order, as Sources takes them, to number and jump to excerpts. */
   citations?: readonly SourceCitation[] | undefined;
   /** A link back to the answer was followed: that footnote's index in `citations`. */
@@ -143,6 +185,7 @@ const Empty = ({ level, title, text }: { level: number; title: string; text: str
 export const DocumentView = ({
   sources,
   target,
+  file,
   citations,
   onShowUse,
   citationHref,
@@ -203,6 +246,21 @@ export const DocumentView = ({
   // Read from the target itself, so a new document never shows the last one's mark for a render.
   const marked = source && !strayChunk ? shown?.chunkId : undefined;
   const shownKey = source ? documentKey(source) : '';
+  const smallScreen = useMedia(SMALL_SCREEN);
+  // The file is the targeted document's: a jump to another document shows that one's excerpts.
+  const fileState =
+    file && sources && source && source === sources[targetPosition(sources, target)]
+      ? file
+      : undefined;
+  const fileLoading = fileState?.status === 'loading';
+  const pdf =
+    fileState?.status === 'ready' && isPdf(fileState.file) && isFileAddress(fileState.file.url)
+      ? fileState.file
+      : undefined;
+  // A file the view cannot show is as none: the excerpts, and a line saying so.
+  const fileMissed = fileState !== undefined && !fileLoading && !pdf;
+  const inline =
+    !smallScreen && !(typeof navigator !== 'undefined' && navigator.pdfViewerEnabled === false);
 
   useEffect(() => {
     if (target && !own && (missing || strayChunk)) onTargetMissing?.(target);
@@ -210,11 +268,12 @@ export const DocumentView = ({
 
   useEffect(() => {
     // Once per target, once its document is here: new sources for the same target move no focus.
-    if (!shown || !source || applied.current.has(shown)) return;
+    // While the file is being found, nothing is drawn to land on yet.
+    if (!shown || !source || fileLoading || applied.current.has(shown)) return;
     applied.current.add(shown);
     if (!own) setSaid('');
     setLanding({ chunkId: marked });
-  }, [shown, source]);
+  }, [shown, source, fileLoading]);
 
   // The room under the sticky «Utdrag i svaret» row, measured before each landing and on resize.
   const fitRoom = (row: HTMLElement | null) => {
@@ -347,6 +406,7 @@ export const DocumentView = ({
       <article
         className="ds-card uib-document-view-document"
         aria-labelledby={documentTitleId}
+        aria-busy={fileLoading || undefined}
         onKeyDown={leave}
       >
         <Card.Block className="uib-document-view-head" data-color={headerColor}>
@@ -374,178 +434,215 @@ export const DocumentView = ({
             linkClassName="uib-document-view-link"
             noLinkClassName="uib-document-view-no-link"
           />
-          <Paragraph data-size="xs" className="uib-document-view-scope">
-            {ordered
-              ? t('documentView.scope', { count: passages.length })
-              : t('documentView.scopeUnordered', { count: passages.length })}
-          </Paragraph>
-          {disclaimer ? (
-            <Paragraph data-size="xs" className="uib-document-view-disclaimer">
-              {t('documentView.disclaimer')}
+          {fileLoading ? (
+            <Paragraph data-size="sm" className="uib-document-view-file-note">
+              {t('documentView.fileLoading')}
             </Paragraph>
-          ) : null}
-          {/* One chip per cited excerpt, each a jump to it; the rest is reached by scrolling. */}
-          {jumps.length > 0 ? (
-            <div
-              ref={setJumpsRow}
-              className="uib-document-view-jumps"
-              role="group"
-              aria-labelledby={jumpsId}
+          ) : pdf && inline ? (
+            // The browser's own viewer, the whole document in place of the excerpts.
+            <iframe
+              className="uib-document-view-file"
+              src={pdf.url}
+              title={t('documentView.fileTitle', { title: documentTitle })}
+            />
+          ) : pdf ? (
+            <Link
+              href={pdf.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-size="sm"
+              className="uib-document-view-link"
+              aria-label={`${t('documentView.openFile')}, ${documentTitle} ${t('sources.opensInNewTab')}`}
             >
-              <span id={jumpsId} className="uib-document-view-jumps-label">
-                {t('documentView.jumps')}
-              </span>
-              <ul className="uib-document-view-jump-list">
-                {jumps.map((item, i) => {
-                  const { n, excerpt } = item;
-                  const elsewhere = item.source !== source;
+              <span>{t('documentView.openFile')}</span>
+              <ExternalLinkIcon aria-hidden />
+            </Link>
+          ) : (
+            <>
+              {fileMissed ? (
+                <Paragraph data-size="sm" className="uib-document-view-file-note">
+                  {fileState?.status === 'failed'
+                    ? t('documentView.fileFailed')
+                    : t('documentView.fileNone')}
+                </Paragraph>
+              ) : null}
+              <Paragraph data-size="xs" className="uib-document-view-scope">
+                {ordered
+                  ? t('documentView.scope', { count: passages.length })
+                  : t('documentView.scopeUnordered', { count: passages.length })}
+              </Paragraph>
+              {disclaimer ? (
+                <Paragraph data-size="xs" className="uib-document-view-disclaimer">
+                  {t('documentView.disclaimer')}
+                </Paragraph>
+              ) : null}
+              {/* One chip per cited excerpt, each a jump to it; the rest is reached by scrolling. */}
+              {jumps.length > 0 ? (
+                <div
+                  ref={setJumpsRow}
+                  className="uib-document-view-jumps"
+                  role="group"
+                  aria-labelledby={jumpsId}
+                >
+                  <span id={jumpsId} className="uib-document-view-jumps-label">
+                    {t('documentView.jumps')}
+                  </span>
+                  <ul className="uib-document-view-jump-list">
+                    {jumps.map((item, i) => {
+                      const { n, excerpt } = item;
+                      const elsewhere = item.source !== source;
+                      const page = excerpt.page;
+                      const title = item.source.title.trim() || t('sources.untitled');
+                      // A run of chips into another document, or back, is led by that document's name.
+                      const runStarts = i === 0 ? elsewhere : jumps[i - 1]?.source !== item.source;
+                      const lead = runStarts
+                        ? elsewhere
+                          ? t('documentView.jumpsIn', { title })
+                          : t('documentView.jumpsHere')
+                        : undefined;
+                      // Starts with what the chip shows, then the page and any other document.
+                      const name = [
+                        t('sources.excerptNumber', { n }),
+                        page === undefined ? undefined : t('sources.page', { page }),
+                        elsewhere ? t('documentView.jumpIn', { title }) : undefined,
+                      ]
+                        .filter(Boolean)
+                        .join(', ');
+                      return (
+                        <li key={excerpt.chunkId} className="uib-document-view-jump-item">
+                          {lead ? (
+                            <span className="uib-document-view-jump-doc" aria-hidden="true">
+                              {lead}
+                            </span>
+                          ) : null}
+                          <Chip.Button
+                            type="button"
+                            className="uib-document-view-jump"
+                            aria-label={name}
+                            title={elsewhere ? name : undefined}
+                            aria-current={
+                              !elsewhere && excerpt.chunkId === marked ? 'true' : undefined
+                            }
+                            onClick={() => jump(item)}
+                          >
+                            <span className="uib-document-view-jump-number" aria-hidden="true">
+                              {n}
+                            </span>
+                            {page === undefined ? null : (
+                              <span className="uib-document-view-jump-page" aria-hidden="true">
+                                {t('documentView.jumpPage', { page })}
+                              </span>
+                            )}
+                          </Chip.Button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : null}
+              <ol className="uib-document-view-passages">
+                {passages.map((excerpt, i) => {
+                  const n =
+                    pairing?.mode === 'excerpt' ? pairing.numbers.get(excerpt.chunkId) : undefined;
+                  const uses = n === undefined ? [] : (pairing?.uses.get(excerpt.chunkId) ?? []);
+                  const uncited = pairing?.mode === 'excerpt' && n === undefined;
+                  const path = headingText(excerpt.heading);
+                  const section = sectionOf(path);
                   const page = excerpt.page;
-                  const title = item.source.title.trim() || t('sources.untitled');
-                  // A run of chips into another document, or back, is led by that document's name.
-                  const runStarts = i === 0 ? elsewhere : jumps[i - 1]?.source !== item.source;
-                  const lead = runStarts
-                    ? elsewhere
-                      ? t('documentView.jumpsIn', { title })
-                      : t('documentView.jumpsHere')
-                    : undefined;
-                  // Starts with what the chip shows, then the page and any other document.
-                  const name = [
-                    t('sources.excerptNumber', { n }),
-                    page === undefined ? undefined : t('sources.page', { page }),
-                    elsewhere ? t('documentView.jumpIn', { title }) : undefined,
-                  ]
-                    .filter(Boolean)
-                    .join(', ');
+                  const text = excerpt.textUnavailable ? '' : excerptMarkdown(excerpt.text);
+                  const fetching = !excerpt.textUnavailable && excerpt.textLoading && !text;
+                  const pageLink =
+                    excerpt.url && page !== undefined && reachesPage(excerpt.url, page)
+                      ? excerpt.url
+                      : undefined;
+                  const here = excerpt.chunkId === marked;
+                  const titleOf = `${passageId}-${i}`;
                   return (
-                    <li key={excerpt.chunkId} className="uib-document-view-jump-item">
-                      {lead ? (
-                        <span className="uib-document-view-jump-doc" aria-hidden="true">
-                          {lead}
-                        </span>
+                    <li key={excerpt.chunkId}>
+                      {gapBefore(passages, i) ? (
+                        <p className="uib-document-view-gap">
+                          <span aria-hidden="true">[…]</span>
+                          <span className="ds-sr-only">{t('documentView.gap')}</span>
+                        </p>
                       ) : null}
-                      <Chip.Button
-                        type="button"
-                        className="uib-document-view-jump"
-                        aria-label={name}
-                        title={elsewhere ? name : undefined}
-                        aria-current={!elsewhere && excerpt.chunkId === marked ? 'true' : undefined}
-                        onClick={() => jump(item)}
+                      {/* A group named by its title, so focus that lands here says which excerpt. */}
+                      <div
+                        ref={(el) => {
+                          if (el) passageRefs.current.set(excerpt.chunkId, el);
+                          else passageRefs.current.delete(excerpt.chunkId);
+                        }}
+                        className="uib-document-view-passage ds-focus"
+                        role="group"
+                        aria-labelledby={titleOf}
+                        tabIndex={-1}
+                        data-current={here || undefined}
+                        data-uncited={uncited || undefined}
+                        aria-busy={fetching || undefined}
                       >
-                        <span className="uib-document-view-jump-number" aria-hidden="true">
-                          {n}
-                        </span>
-                        {page === undefined ? null : (
-                          <span className="uib-document-view-jump-page" aria-hidden="true">
-                            {t('documentView.jumpPage', { page })}
-                          </span>
+                        <ExcerptTitle
+                          id={titleOf}
+                          level={headingLevel + 1}
+                          className="uib-document-view-passage-title"
+                          n={n}
+                          section={section}
+                          uses={uses}
+                          back={
+                            backTo && {
+                              ...backTo,
+                              onShow:
+                                onShowUse &&
+                                ((citation) => onShowUse(citation, { source, excerpt })),
+                            }
+                          }
+                        />
+                        {uncited ? (
+                          <Paragraph data-size="xs" className="uib-document-view-uncited">
+                            {t('sources.uncited')}
+                          </Paragraph>
+                        ) : null}
+                        {(path && path !== section) || page !== undefined ? (
+                          <Paragraph data-size="xs" className="uib-document-view-section">
+                            {path && path !== section ? <strong>{path}</strong> : null}
+                            {path && path !== section && page !== undefined ? ' · ' : null}
+                            {page === undefined ? null : (
+                              <span className="uib-document-view-page">
+                                {t('sources.page', { page })}
+                              </span>
+                            )}
+                          </Paragraph>
+                        ) : null}
+                        {fetching ? (
+                          <Paragraph data-size="sm" className="uib-document-view-unavailable">
+                            {t('sources.excerptLoading')}
+                          </Paragraph>
+                        ) : text ? (
+                          <Markdown
+                            text={text}
+                            links={false}
+                            className="uib-markdown uib-document-view-quote"
+                          />
+                        ) : (
+                          <Paragraph data-size="sm" className="uib-document-view-unavailable">
+                            {t('sources.excerptUnavailable')}
+                          </Paragraph>
                         )}
-                      </Chip.Button>
+                        {pageLink && page !== undefined ? (
+                          <PageLink
+                            href={pageLink}
+                            page={page}
+                            name={excerptName(n, section)}
+                            title={documentTitle}
+                            corpus={corpus}
+                            className="uib-document-view-link"
+                          />
+                        ) : null}
+                      </div>
                     </li>
                   );
                 })}
-              </ul>
-            </div>
-          ) : null}
-          <ol className="uib-document-view-passages">
-            {passages.map((excerpt, i) => {
-              const n =
-                pairing?.mode === 'excerpt' ? pairing.numbers.get(excerpt.chunkId) : undefined;
-              const uses = n === undefined ? [] : (pairing?.uses.get(excerpt.chunkId) ?? []);
-              const uncited = pairing?.mode === 'excerpt' && n === undefined;
-              const path = headingText(excerpt.heading);
-              const section = sectionOf(path);
-              const page = excerpt.page;
-              const text = excerpt.textUnavailable ? '' : excerptMarkdown(excerpt.text);
-              const fetching = !excerpt.textUnavailable && excerpt.textLoading && !text;
-              const pageLink =
-                excerpt.url && page !== undefined && reachesPage(excerpt.url, page)
-                  ? excerpt.url
-                  : undefined;
-              const here = excerpt.chunkId === marked;
-              const titleOf = `${passageId}-${i}`;
-              return (
-                <li key={excerpt.chunkId}>
-                  {gapBefore(passages, i) ? (
-                    <p className="uib-document-view-gap">
-                      <span aria-hidden="true">[…]</span>
-                      <span className="ds-sr-only">{t('documentView.gap')}</span>
-                    </p>
-                  ) : null}
-                  {/* A group named by its title, so focus that lands here says which excerpt. */}
-                  <div
-                    ref={(el) => {
-                      if (el) passageRefs.current.set(excerpt.chunkId, el);
-                      else passageRefs.current.delete(excerpt.chunkId);
-                    }}
-                    className="uib-document-view-passage ds-focus"
-                    role="group"
-                    aria-labelledby={titleOf}
-                    tabIndex={-1}
-                    data-current={here || undefined}
-                    data-uncited={uncited || undefined}
-                    aria-busy={fetching || undefined}
-                  >
-                    <ExcerptTitle
-                      id={titleOf}
-                      level={headingLevel + 1}
-                      className="uib-document-view-passage-title"
-                      n={n}
-                      section={section}
-                      uses={uses}
-                      back={
-                        backTo && {
-                          ...backTo,
-                          onShow:
-                            onShowUse && ((citation) => onShowUse(citation, { source, excerpt })),
-                        }
-                      }
-                    />
-                    {uncited ? (
-                      <Paragraph data-size="xs" className="uib-document-view-uncited">
-                        {t('sources.uncited')}
-                      </Paragraph>
-                    ) : null}
-                    {(path && path !== section) || page !== undefined ? (
-                      <Paragraph data-size="xs" className="uib-document-view-section">
-                        {path && path !== section ? <strong>{path}</strong> : null}
-                        {path && path !== section && page !== undefined ? ' · ' : null}
-                        {page === undefined ? null : (
-                          <span className="uib-document-view-page">
-                            {t('sources.page', { page })}
-                          </span>
-                        )}
-                      </Paragraph>
-                    ) : null}
-                    {fetching ? (
-                      <Paragraph data-size="sm" className="uib-document-view-unavailable">
-                        {t('sources.excerptLoading')}
-                      </Paragraph>
-                    ) : text ? (
-                      <Markdown
-                        text={text}
-                        links={false}
-                        className="uib-markdown uib-document-view-quote"
-                      />
-                    ) : (
-                      <Paragraph data-size="sm" className="uib-document-view-unavailable">
-                        {t('sources.excerptUnavailable')}
-                      </Paragraph>
-                    )}
-                    {pageLink && page !== undefined ? (
-                      <PageLink
-                        href={pageLink}
-                        page={page}
-                        name={excerptName(n, section)}
-                        title={documentTitle}
-                        corpus={corpus}
-                        className="uib-document-view-link"
-                      />
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
+              </ol>
+            </>
+          )}
           {onAsk ? (
             <form className="uib-document-view-ask" onSubmit={ask}>
               <Textfield

@@ -27,6 +27,7 @@ import {
   serviceOf,
   settingsOf,
   lookOf,
+  targetPosition,
   zoneOf,
   zonesOf,
   type AssistantLayout,
@@ -38,6 +39,7 @@ import {
   type ConversationTurn,
   type CorpusOption,
   type DisplayLevel,
+  type DocumentFileStatus,
   type DocumentItem,
   type DocumentQuestion,
   type DocumentViewReturn,
@@ -1172,6 +1174,42 @@ export const useAssistant = ({
   const documentOverChat = documentZone === 'main' && where('chat') === 'main';
   const documentTurn = openDoc ? turns.find((t) => t.id === openDoc.turnId) : undefined;
   const documentAnswer = documentTurn?.answer;
+  // The opened document's file from the host, asked once per document while `file` is on.
+  const findFile = profile?.documentFile;
+  const fileOn = documentOn && option('document-view', 'file') && typeof findFile === 'function';
+  const fileSources = documentAnswer?.sources;
+  const fileSource =
+    fileOn && openDoc && fileSources
+      ? fileSources[targetPosition(fileSources, openDoc.target)]
+      : undefined;
+  const fileOf = fileSource ? (fileSource.documentId ?? '') : undefined;
+  const findFileRef = useRef(findFile);
+  findFileRef.current = findFile;
+  const [found, setFound] = useState<{ documentId: string; file: DocumentFileStatus }>();
+  useEffect(() => {
+    const find = findFileRef.current;
+    if (!fileOf || typeof find !== 'function') return;
+    const controller = new AbortController();
+    // A result for a document no longer open is dropped: the call was aborted on the way out.
+    const settle = (file: DocumentFileStatus) => {
+      if (!controller.signal.aborted) setFound({ documentId: fileOf, file });
+    };
+    Promise.resolve()
+      .then(() => find(fileOf, controller.signal))
+      .then(
+        (file) => settle(file ? { status: 'ready', file } : { status: 'none' }),
+        () => settle({ status: 'failed' }),
+      );
+    return () => controller.abort();
+  }, [fileOf]);
+  const documentFile: DocumentFileStatus | undefined =
+    fileOf === undefined
+      ? undefined
+      : fileOf === ''
+        ? { status: 'none' }
+        : found?.documentId === fileOf
+          ? found.file
+          : { status: 'loading' };
   // The document keeps to the answer it was opened from, whichever answer Kilder shows after.
   const documentCitations = useMemo(
     () =>
@@ -1411,6 +1449,7 @@ export const useAssistant = ({
     documentOverChat,
     openDoc,
     documentAnswer,
+    documentFile,
     documentCitations,
     documentIndex: Math.max(
       0,
