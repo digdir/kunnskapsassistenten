@@ -48,6 +48,20 @@ const KUDOS_LINKS = {
   uuid: 'https://kudos.dfo.no/dokument/{id}',
 } as const;
 
+// genki's knowledge database names a Kudos document `kudos:<uuid>`, which no template fits. Only
+// that exact shape is read: the prefix as genki writes it, then one uuid and nothing after it.
+const PREFIXED_UUID =
+  /^kudos:([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
+
+/**
+ * The document in Kudos for a number genki prefixed with its collection; any other number is left
+ * to the templates. The assembly asks only for a source that carries no link of its own.
+ */
+export const kudosDocumentUrl = (documentId: string): string | undefined => {
+  const uuid = PREFIXED_UUID.exec(documentId)?.[1];
+  return uuid ? `https://kudos.dfo.no/dokument/${uuid}` : undefined;
+};
+
 const issue = (n: number) => ({
   href: `https://github.com/digdir/kunnskapsassistenten/issues/${n}`,
   hrefLabel: `Sak ${n}`,
@@ -95,6 +109,7 @@ export const profileFor = (me: Me): AssistantProfile => ({
       fields: KUDOS_FIELDS,
       typeField: 'type',
       typePlurals: TYPE_PLURALS,
+      documentUrl: kudosDocumentUrl,
       documentLinks: KUDOS_LINKS,
       about: { idField: 'doc_num', fields: ['type', 'orgs_long', 'concerned_years'] },
     },

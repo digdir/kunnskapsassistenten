@@ -159,4 +159,44 @@ describe('the document links', () => {
     expect(linkOf('A-42')).toBeUndefined();
     expect(linkOf('42/1')).toBeUndefined();
   });
+
+  // genki's knowledge database names a Kudos document `kudos:<uuid>`.
+  it('go to the document in Kudos for a number genki prefixes with its collection', () => {
+    expect(linkOf('kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80')).toBe(
+      'https://kudos.dfo.no/dokument/a33bf297-afd2-4b38-992e-b23c8fec3d80',
+    );
+    expect(linkOf('kudos:A33BF297-AFD2-4B38-992E-B23C8FEC3D80')).toBe(
+      'https://kudos.dfo.no/dokument/A33BF297-AFD2-4B38-992E-B23C8FEC3D80',
+    );
+  });
+
+  it('are not made for a prefixed number that is not exactly a uuid', () => {
+    for (const documentId of [
+      'kudos:',
+      'kudos:42',
+      'kudos:a33bf297-afd2-4b38-992e-b23c8fec3d8',
+      'kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80/filer',
+      'kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80 ',
+      'kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80\n',
+      'kudos:../a33bf297-afd2-4b38-992e-b23c8fec3d80',
+      'KUDOS:a33bf297-afd2-4b38-992e-b23c8fec3d80',
+      'other:a33bf297-afd2-4b38-992e-b23c8fec3d80',
+      'kudos:kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80',
+    ])
+      expect(linkOf(documentId), documentId).toBeUndefined();
+  });
+
+  it('keep the link a source carries, whatever its number', () => {
+    const source = sourceFromWire(
+      {
+        title: 'Et dokument',
+        document_id: 'kudos:a33bf297-afd2-4b38-992e-b23c8fec3d80',
+        url: 'https://kudos.dfo.no/dokument/a33bf297-afd2-4b38-992e-b23c8fec3d80/filer/x.pdf',
+      },
+      kudos,
+    );
+    expect(source.url).toBe(
+      'https://kudos.dfo.no/dokument/a33bf297-afd2-4b38-992e-b23c8fec3d80/filer/x.pdf',
+    );
+  });
 });
