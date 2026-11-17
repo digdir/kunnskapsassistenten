@@ -78,6 +78,17 @@ export const nbFilter = defineNamespace({
   },
   readFromUncounted: 'Avgrenset til:',
   inAnswer: 'Filteret dette svaret bygger på',
+  // «Filteret svaret bygger på» at the top of Fremgangsmåte (dev-fremgangsmate-1).
+  basis: 'Filteret svaret bygger på',
+  basisReadFrom: 'Leste fra',
+  basisDocuments: { one: '{count} dokument', other: '{count} dokumenter' },
+  basisUsed: {
+    one: '{count} av dem er brukt i svaret.',
+    other: '{count} av dem er brukt i svaret.',
+  },
+  basisChanged: 'Endret siden forrige svar',
+  basisAdded: '{values} er lagt til',
+  basisRemoved: '{values} er tatt ut',
   next: {
     one: 'Neste spørsmål leser fra {count} dokument',
     other: 'Neste spørsmål leser fra {count} dokumenter',
@@ -152,6 +163,16 @@ export const enFilter = {
   readFromNarrowed: { one: 'Read from {count} document:', other: 'Read from {count} documents:' },
   readFromUncounted: 'Limited to:',
   inAnswer: 'The filter this answer builds on',
+  basis: 'The filter the answer builds on',
+  basisReadFrom: 'Read from',
+  basisDocuments: { one: '{count} document', other: '{count} documents' },
+  basisUsed: {
+    one: '{count} of them is used in the answer.',
+    other: '{count} of them are used in the answer.',
+  },
+  basisChanged: 'Changed since the previous answer',
+  basisAdded: '{values} added',
+  basisRemoved: '{values} taken out',
   next: {
     one: 'The next question reads from {count} document',
     other: 'The next question reads from {count} documents',

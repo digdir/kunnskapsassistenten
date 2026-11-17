@@ -42,9 +42,9 @@ export const templates: Readonly<Record<TemplateId, Readonly<Record<Zone, readon
   // Dokumentvisning as kunnskapsassistenten's next client draws it.
   'knowledge-assistant-next': {
     primary: ['threads', 'filter', 'settings'],
+    // Fremgangsmåte only as the bar over each answer: the panel's tools are about the sources.
     main: ['approach', 'chat'],
-    // Fremgangsmåte also as the tool (dev-verktoy-1), beside its bar over each answer.
-    secondary: ['approach', 'sources', 'document-view', 'notes'],
+    secondary: ['sources', 'document-view', 'notes'],
   },
   'sources-only': { primary: ['threads', 'filter'], main: ['chat'], secondary: ['sources'] },
   'approach-only': { primary: ['threads'], main: ['chat'], secondary: ['approach'] },
@@ -82,8 +82,7 @@ export interface TemplateSetup {
 
 /**
  * `knowledge-assistant-next` is kunnskapsassistenten's next client as it runs: the next look, with
- * feedback under each answer and no follow-ups, which that look does not draw. Fremgangsmåte in
- * the secondary panel is the detailed tool wherever it stands, so its `level` stays the default.
+ * feedback under each answer and no follow-ups, which that look does not draw.
  */
 export const templateSetups: Readonly<Partial<Record<TemplateId, TemplateSetup>>> = {
   'knowledge-assistant-next': {

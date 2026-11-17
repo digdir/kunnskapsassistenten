@@ -353,6 +353,23 @@
     --dsc-button-size: var(--genai-shell-rail-button-size, var(--ds-size-11));
   }
 
+  /* Beside a title, the button is centred on the title's line, not the title on the button: the
+     titles keep their one line across the panels, and the button stands half its extra height
+     above it. Moved, not resized, so nothing under the row moves. A rail has no title. */
+  .uib-shell[data-frame='cards']
+    > .uib-shell-side:not([data-collapsed])
+    .uib-shell-header
+    > .uib-shell-toggle {
+    translate: 0
+      calc(
+        (
+            var(--genai-shell-title-line-height, var(--ds-size-8)) -
+              var(--genai-shell-rail-button-size, var(--ds-size-11))
+          ) /
+          2
+      );
+  }
+
   /* The foot under a line inside the card's edges, as the design's profile. */
   .uib-shell[data-frame='cards'] > .uib-shell-side > .uib-shell-box > .uib-shell-foot {
     align-self: stretch;
@@ -362,7 +379,7 @@
     padding-block-start: var(--genai-shell-card-foot-padding-block-start, var(--ds-size-3));
     border-block-start-color: var(
       --genai-shell-divider-color,
-      var(--ds-color-neutral-surface-tinted)
+      var(--ds-color-neutral-border-subtle)
     );
   }
 
@@ -387,10 +404,7 @@
     box-sizing: border-box;
     padding-block-start: var(--genai-shell-card-padding-block, var(--ds-size-4));
     padding-inline: var(--genai-shell-main-title-padding-inline, var(--ds-size-6));
-    border-block-end-color: var(
-      --genai-shell-divider-color,
-      var(--ds-color-neutral-surface-tinted)
-    );
+    border-block-end-color: var(--genai-shell-divider-color, var(--ds-color-neutral-border-subtle));
   }
 
   /* What the title leaves, filled: not 100 % under it, which would always scroll. */
@@ -632,8 +646,8 @@
       var(--ds-color-surface-hover)
     );
     --dsc-button-background--active: var(
-      --genai-shell-tools-tinted-hover-background,
-      var(--ds-color-surface-hover)
+      --genai-shell-tools-tinted-active-background,
+      var(--ds-color-surface-active)
     );
     --dsc-button-color: var(--genai-shell-tools-tinted-color, var(--ds-color-text-default));
     --dsc-button-color--hover: var(--genai-shell-tools-tinted-color, var(--ds-color-text-default));
@@ -647,10 +661,15 @@
     font-weight: var(--genai-shell-tools-tinted-font-weight, var(--ds-font-weight-medium));
   }
 
+  /* Pressed or with its menu open, the active surface; hover is for the pointer only. */
   .uib-shell-tools-trigger[aria-expanded='true'] {
     --dsc-button-background: var(
-      --genai-shell-tools-tinted-hover-background,
-      var(--ds-color-surface-hover)
+      --genai-shell-tools-tinted-active-background,
+      var(--ds-color-surface-active)
+    );
+    --dsc-button-background--hover: var(
+      --genai-shell-tools-tinted-active-background,
+      var(--ds-color-surface-active)
     );
   }
 
@@ -757,7 +776,7 @@
       var(--genai-shell-profile-who-padding-block-end, var(--ds-size-2));
     padding-inline: var(--genai-shell-profile-who-padding-inline, var(--ds-size-2));
     border-block-end: var(--genai-shell-border-width, var(--ds-border-width-default)) solid
-      var(--genai-shell-divider-color, var(--ds-color-neutral-surface-tinted));
+      var(--genai-shell-divider-color, var(--ds-color-neutral-border-subtle));
   }
 
   .uib-shell-profile-who-text {
@@ -809,7 +828,7 @@
     padding: 0;
     background: var(--genai-shell-companion-background, var(--ds-color-neutral-surface-default));
     border-inline-start: var(--genai-shell-border-width, var(--ds-border-width-default)) solid
-      var(--genai-shell-divider-color, var(--ds-color-neutral-surface-tinted));
+      var(--genai-shell-divider-color, var(--ds-color-neutral-border-subtle));
   }
 
   /* Its title on the line of the panel's, the button at the card's edge. */
@@ -853,7 +872,7 @@
     min-block-size: 0;
     inline-size: 100%;
     border-block-start: var(--genai-shell-border-width, var(--ds-border-width-default)) solid
-      var(--genai-shell-divider-color, var(--ds-color-neutral-surface-tinted));
+      var(--genai-shell-divider-color, var(--ds-color-neutral-border-subtle));
   }
 
   /* Something new in «Endringslogg»: the accent's dot. */
