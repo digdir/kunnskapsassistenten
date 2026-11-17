@@ -194,6 +194,13 @@ interface WireSource {
     position?: number;
     /** Its own section path, which the Sources block titles the excerpt by. */
     heading?: string;
+    /** The page of its file it starts on, and ends on when that is a later one. */
+    page?: number;
+    page_end?: number;
+    /** As the blocks name it, for a host that hands its own sources through. */
+    pageEnd?: number;
+    /** Its PDF opened at `page`, `…#page=N`. */
+    url?: string;
     /** The markers that cite this excerpt, from a service that cites excerpts. */
     markers?: string[];
   }[];
@@ -225,6 +232,9 @@ interface ApiMessage {
 const corpusOf = (tags: readonly string[]) =>
   tags.find((tag) => tag.startsWith('corpus:'))?.slice('corpus:'.length) || undefined;
 
+const wholePage = (value: unknown) =>
+  typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
+
 /**
  * One source as the blocks take it. A title it lacks stays empty, for the blocks to name in the
  * reader's language. An excerpt without an id gets one of its own, the same on every read, since
@@ -246,11 +256,19 @@ export const sourceFromWire = (raw: WireSource, corpus?: CorpusProfile, at = 0):
     excerpts: (raw.excerpts ?? []).map((e, i) => {
       const text = e.text ?? '';
       const heading: unknown = e.heading;
+      const page = wholePage(e.page);
+      const pageEnd = page === undefined ? undefined : wholePage(e.page_end ?? e.pageEnd);
+      const link: unknown = e.url;
       return {
         chunkId: e.chunkId || e.chunk_id || minted(i),
         text,
         ...(e.position !== undefined ? { position: e.position } : {}),
         ...(typeof heading === 'string' ? { heading } : {}),
+        ...(page === undefined ? {} : { page }),
+        ...(pageEnd !== undefined && page !== undefined && pageEnd > page ? { pageEnd } : {}),
+        ...(page !== undefined && typeof link === 'string' && /^https?:\/\//i.test(link)
+          ? { url: link }
+          : {}),
         ...(text ? {} : { textUnavailable: true }),
       };
     }),

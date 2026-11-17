@@ -6,8 +6,9 @@
  * Provisional until genki offers a route for a document's file (genki ADR 0054).
  *
  * - Only `https://kudos.dfo.no`: the document's record at `/api/v0/documents/<uuid>`, then the first
- *   of its files whose address is exactly `/dokument/<that uuid>/filer/<uuid>.pdf` there. No other
- *   host or path is read, and no redirect is followed.
+ *   of its files whose address is exactly `/dokument/<that uuid>/filer/<uuid>.pdf` there, or with
+ *   `?file=<file uuid>` the file of the excerpt the reader opened, only when the record lists it at
+ *   that address. No other host or path is read, and no redirect is followed.
  * - The PDF is streamed as it comes, with `application/pdf`, `inline`, `nosniff` and private
  *   caching, up to `FILE_MAX_BYTES`, and only when it starts as a PDF does.
  * - `HEAD` reads the record alone: the page asks it first, so a document without a PDF shows its
@@ -68,6 +69,12 @@ type Failure = { status: ContentfulStatusCode; code: string; title: string };
 // 404 is «no PDF to show», which the page tells from a failure: a file too large is one.
 const failures = {
   badUuid: { status: 400, code: 'bad_uuid', title: 'Ugyldig dokumentnummer.' },
+  badFile: { status: 400, code: 'bad_file', title: 'Ugyldig filnummer.' },
+  fileNotListed: {
+    status: 404,
+    code: 'kudos_file_not_listed',
+    title: 'Dokumentet har ikke den filen i Kudos.',
+  },
   notFound: { status: 404, code: 'kudos_not_found', title: 'Fant ikke dokumentet i Kudos.' },
   noPdf: { status: 404, code: 'kudos_no_pdf', title: 'Dokumentet har ingen PDF i Kudos.' },
   tooLarge: {
@@ -206,8 +213,8 @@ export function kudosFiles(options: KudosFileOptions = {}) {
     return res;
   };
 
-  /** The document's first PDF on Kudos, from its record. */
-  const pdfOf = async (uuid: string, signal: AbortSignal) => {
+  /** The document's PDF on Kudos, from its record: the file asked for, or else its first. */
+  const pdfOf = async (uuid: string, signal: AbortSignal, fileUuid?: string) => {
     const res = await call(`${KUDOS}/api/v0/documents/${uuid}`, 'application/json', signal);
     if (res.status === 404) {
       drop(res);
@@ -226,11 +233,16 @@ export function kudosFiles(options: KudosFileOptions = {}) {
     }
     if (!isRecord(record)) throw new Refused(failures.failed);
     const listed = Array.isArray(record.files) ? record.files : [];
+    // The one address that file may have, under this document, as the record must list it.
+    const asked = fileUuid && `${KUDOS}/dokument/${uuid}/filer/${fileUuid}.pdf`;
     const file = listed.find(
       (f): f is Record<string, unknown> =>
-        isRecord(f) && typeof f.url === 'string' && isFileOf(f.url, uuid),
+        isRecord(f) &&
+        typeof f.url === 'string' &&
+        isFileOf(f.url, uuid) &&
+        (!asked || f.url.toLowerCase() === asked),
     );
-    if (!file) throw new Refused(failures.noPdf);
+    if (!file) throw new Refused(asked ? failures.fileNotListed : failures.noPdf);
     if (typeof file.size === 'number' && file.size > max) throw new Refused(failures.tooLarge);
     const url = file.url as string;
     return { url, name: nameOf(file, url) };
@@ -241,10 +253,15 @@ export function kudosFiles(options: KudosFileOptions = {}) {
     if (!UUID.test(given.toLowerCase()))
       return problem(c, 400, failures.badUuid.code, failures.badUuid.title);
     const uuid = given.toLowerCase();
+    // The opened excerpt's own file, by its number, when the page names one.
+    const named = c.req.query('file');
+    if (named !== undefined && !UUID.test(named.toLowerCase()))
+      return problem(c, 400, failures.badFile.code, failures.badFile.title);
+    const fileUuid = named?.toLowerCase();
     // A closed tab ends the calls to Kudos too.
     const answered = AbortSignal.any([c.req.raw.signal, AbortSignal.timeout(answerTimeout)]);
     try {
-      const pdf = await pdfOf(uuid, answered);
+      const pdf = await pdfOf(uuid, answered, fileUuid);
       const headers = {
         'Content-Type': 'application/pdf',
         'Content-Disposition': disposition(pdf.name),

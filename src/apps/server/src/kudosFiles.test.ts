@@ -324,3 +324,54 @@ describe('what the route refuses', () => {
     assert.equal((await problemOf(gone)).code, 'kudos_unreachable');
   });
 });
+
+describe('the file of the excerpt the reader opened', () => {
+  const SECOND = 'a33bf297-ffff-4000-8000-000000000002';
+  const SECOND_URL = `https://kudos.dfo.no/dokument/${DOC}/filer/${SECOND}.pdf`;
+  const second = { url: SECOND_URL, filename: 'Vedlegg.pdf', size: PDF.byteLength };
+  const twoFiles = () =>
+    kudos({
+      [RECORD_URL]: () => recordWith([theFile, second]),
+      [PDF_URL]: () => pdfResponse(),
+      [SECOND_URL]: () => pdfResponse(),
+    });
+
+  test('the file route serves the file the record lists under the document', async () => {
+    const { calls, get } = twoFiles();
+    const res = await get(`${DOC}?file=${SECOND.toUpperCase()}`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-disposition') ?? '', /filename="Vedlegg\.pdf"/);
+    assert.deepEqual(new Uint8Array(await res.arrayBuffer()), PDF);
+    assert.deepEqual(
+      calls.map((c) => c.url),
+      [RECORD_URL, SECOND_URL],
+    );
+  });
+
+  test('the file route refuses a file the record does not list', async () => {
+    const { calls, get } = twoFiles();
+    const unlisted = await get(`${DOC}?file=a33bf297-0000-4000-8000-00000000dead`);
+    assert.equal(unlisted.status, 404);
+    assert.equal((await problemOf(unlisted)).code, 'kudos_file_not_listed');
+    assert.deepEqual(
+      calls.map((c) => c.url),
+      [RECORD_URL],
+    );
+    // A file named by anything but a uuid is refused before Kudos is asked.
+    for (const file of ['x', `${SECOND}.pdf`, '..%2F..%2Fapi', `${SECOND}%2F..`]) {
+      const res = await get(`${DOC}?file=${file}`);
+      assert.equal(res.status, 400, file);
+      assert.equal((await problemOf(res)).code, 'bad_file');
+    }
+    assert.equal(calls.length, 1);
+  });
+
+  test('without a file it serves the document’s first PDF, as before', async () => {
+    const { calls, get } = twoFiles();
+    assert.equal((await get(DOC)).status, 200);
+    assert.deepEqual(
+      calls.map((c) => c.url),
+      [RECORD_URL, PDF_URL],
+    );
+  });
+});

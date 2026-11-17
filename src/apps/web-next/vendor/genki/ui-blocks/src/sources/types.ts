@@ -6,6 +6,8 @@ export interface SourceExcerpt {
   /** Its section path, «Kapittel 3 › 3.4 Digitalisering». */
   heading?: string | undefined;
   page?: number | undefined;
+  /** The page the excerpt ends on, when it runs on past `page`: «side 12–13». */
+  pageEnd?: number | undefined;
   /** A «Les side N» link is drawn only when this opens that page, `#page=N`. */
   url?: string | undefined;
   textUnavailable?: boolean | undefined;

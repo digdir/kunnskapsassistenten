@@ -263,4 +263,30 @@ describe('the whole file of a Kudos document', () => {
     expect(hostProfileFor(ME).documentFile).toBe(kudosDocumentFile);
     expect(profileFor(ME).documentFile).toBe(kudosDocumentFile);
   });
+
+  it('the next client asks for the excerpt’s file and says which file it got', async () => {
+    const FILE = 'a33bf297-bce1-48b8-989d-1f0d21815626';
+    const file = `https://kudos.dfo.no/dokument/${UUID}/filer/${FILE}.pdf`;
+    const calls = answering(200);
+    expect(await kudosDocumentFile(`kudos:${UUID}`, signal(), { file })).toEqual({
+      url: `/api/next/kudos/files/${UUID}?file=${FILE}`,
+      mediaType: 'application/pdf',
+      source: file,
+    });
+    // A file of another document, another host, or no file number: the document's first PDF,
+    // with no word of which file it is, so the view opens it at its start.
+    for (const other of [
+      `https://kudos.dfo.no/dokument/a33bf297-0000-4000-8000-000000000000/filer/${FILE}.pdf`,
+      `https://example.org/dokument/${UUID}/filer/${FILE}.pdf`,
+      `https://kudos.dfo.no/dokument/${UUID}/filer/x.pdf`,
+    ])
+      expect(await kudosDocumentFile(`kudos:${UUID}`, signal(), { file: other })).toEqual({
+        url: `/api/next/kudos/files/${UUID}`,
+        mediaType: 'application/pdf',
+      });
+    expect(calls.map(({ url }) => url)).toEqual([
+      `/api/next/kudos/files/${UUID}?file=${FILE}`,
+      ...Array.from({ length: 3 }, () => `/api/next/kudos/files/${UUID}`),
+    ]);
+  });
 });
