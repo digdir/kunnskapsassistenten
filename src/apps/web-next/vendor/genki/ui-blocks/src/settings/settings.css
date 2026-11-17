@@ -163,7 +163,7 @@
     align-items: start;
     padding-block: var(--genai-settings-row-padding-block, var(--ds-size-4));
     border-block-start: var(--genai-settings-border-width, var(--ds-border-width-default)) solid
-      var(--genai-settings-divider-color, var(--ds-color-neutral-surface-tinted));
+      var(--genai-settings-divider-color, var(--ds-color-neutral-border-subtle));
   }
 
   .uib-settings-row[data-end] {
@@ -294,7 +294,7 @@
     align-items: start;
     padding-block: var(--genai-settings-memory-padding-block, var(--ds-size-3));
     border-block-start: var(--genai-settings-border-width, var(--ds-border-width-default)) solid
-      var(--genai-settings-divider-color, var(--ds-color-neutral-surface-tinted));
+      var(--genai-settings-divider-color, var(--ds-color-neutral-border-subtle));
   }
 
   .uib-settings-memory > .uib-settings-row-text {

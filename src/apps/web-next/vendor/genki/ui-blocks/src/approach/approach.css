@@ -54,7 +54,7 @@
   .uib-approach[data-summary='totals'] .uib-approach-card {
     --dsc-card-border-color: var(
       --genai-approach-bar-border-color,
-      var(--ds-color-neutral-surface-tinted)
+      var(--ds-color-neutral-border-subtle)
     );
     --dsc-card-border-radius: var(--genai-approach-bar-radius, var(--ds-border-radius-xl));
 
@@ -125,6 +125,43 @@
     font-size: var(--genai-approach-bar-font-size, var(--ds-font-size-2));
   }
 
+  /* ── `variant="sections"`: the dev boards' card (dev-fremgangsmate-1 and -2) ── */
+
+  /* Card and Details as Designsystemet draws them, as the Kildeliste is; all text one size. */
+  .uib-approach[data-variant='sections'] .uib-approach-card {
+    padding: 0;
+  }
+  .uib-approach[data-variant='sections'] .uib-approach-title {
+    font-weight: var(--genai-approach-title-font-weight, var(--ds-font-weight-medium));
+  }
+  .uib-approach[data-variant='sections'] .uib-approach-content {
+    font-size: var(--genai-approach-sections-font-size, var(--ds-font-size-2));
+    line-height: var(--genai-approach-sections-line-height, var(--ds-line-height-md));
+  }
+  .uib-approach-divider {
+    margin-block: var(--genai-approach-divider-spacing, var(--ds-size-4));
+  }
+  /* «Prosess»: a step larger than the text, as the filter's heading over it. */
+  .uib-approach-heading {
+    margin: 0 0 var(--genai-approach-heading-spacing, var(--ds-size-2));
+    font-size: var(--genai-approach-heading-font-size, var(--ds-font-size-3));
+    font-weight: var(--genai-approach-heading-font-weight, var(--ds-font-weight-semibold));
+  }
+  .uib-approach-process {
+    margin: 0;
+    padding-inline-start: var(--genai-approach-process-indent, var(--ds-size-6));
+    font-size: inherit;
+  }
+  .uib-approach-process > li {
+    font-size: inherit;
+  }
+  .uib-approach-process > li + li {
+    margin-block-start: var(--genai-approach-process-gap, var(--ds-size-2));
+  }
+  .uib-approach[data-variant='sections'] .uib-approach-footer {
+    margin-block-start: var(--genai-approach-sections-footer-spacing, var(--ds-size-4));
+  }
+
   /* ── `variant="list"`: the dev boards' «Fremgangsmåte» tool (dev-verktoy-1 to -3) ── */
 
   .uib-approach[data-variant='list'] {
@@ -154,7 +191,7 @@
     align-items: start;
     padding-block: var(--genai-approach-list-item-padding-block, var(--ds-size-2));
     border-block-start: var(--genai-approach-scope-border-width, var(--ds-border-width-default))
-      solid var(--genai-approach-list-divider-color, var(--ds-color-neutral-surface-tinted));
+      solid var(--genai-approach-list-divider-color, var(--ds-color-neutral-border-subtle));
   }
 
   /* Done is a check on success's tint, the design's green in the theme's own success tokens. */
@@ -228,17 +265,14 @@
     margin: 0;
   }
 
-  .uib-approach[data-variant='list'] > .uib-approach-scope {
-    padding: 0;
-    margin: 0;
-    border: 0;
-  }
+  /* What the answer read from, over the steps, Designsystemet's Divider between. */
+  .uib-approach-scope-divider {
+    --dsc-divider-border-width: var(
+      --genai-approach-scope-border-width,
+      var(--ds-border-width-default)
+    );
 
-  /* What the answer read from, over the steps, a line between. */
-  .uib-approach-scope {
-    padding-block-end: var(--genai-approach-scope-padding-block-end, var(--ds-size-2));
-    margin-block-end: var(--genai-approach-scope-margin-block-end, var(--ds-size-2));
-    border-block-end: var(--genai-approach-scope-border-width, var(--ds-border-width-default)) solid
-      var(--genai-approach-bar-border-color, var(--ds-color-neutral-surface-tinted));
+    margin-block: var(--genai-approach-scope-padding-block-end, var(--ds-size-2))
+      var(--genai-approach-scope-margin-block-end, var(--ds-size-2));
   }
 }

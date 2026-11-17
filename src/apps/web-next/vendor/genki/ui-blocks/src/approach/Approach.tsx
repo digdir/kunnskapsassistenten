@@ -1,7 +1,7 @@
-import { Card, Details, Link, List, Spinner } from '@digdir/designsystemet-react';
+import { Card, Details, Divider, Link, List, Spinner } from '@digdir/designsystemet-react';
 import { useFormat } from '@genai/i18n/react';
 import { CheckmarkIcon, RobotIcon } from '@navikt/aksel-icons';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useT } from './i18n.js';
 import { linesOf, type ApproachLine } from './runs.js';
 
@@ -67,10 +67,17 @@ export interface ApproachProps {
   /**
    * `list`: the steps as the dev boards' «Fremgangsmåte» tool (dev-verktoy-1 to -3), with no card
    * and nothing that folds: «Slik jobbet assistenten med svaret», then each step with a mark, its
-   * title and a line under it, its `description` or the excerpts it read. `card`, the default: the
-   * card above the answer.
+   * title and a line under it, its `description` or the excerpts it read. `sections`: the dev
+   * boards' card (dev-fremgangsmate-1 and -2), Card and Details as Designsystemet draws them, with
+   * the `filter` first when given, then «Prosess» over the numbered steps, each with one line under
+   * it, and the time at the foot. `card`, the default: the card above the answer.
    */
-  variant?: 'card' | 'list' | undefined;
+  variant?: 'card' | 'list' | 'sections' | undefined;
+  /**
+   * In the `sections` variant: what the answer was asked with, over the steps and a divider, such
+   * as `FilterBasis`. Left out for a service with no filter: the card starts at «Prosess».
+   */
+  filter?: ReactNode;
 }
 
 const useSeconds = (
@@ -195,6 +202,9 @@ const StepBody = ({
   );
 };
 
+/** A step without its description, which the `sections` variant has already drawn as its line. */
+const withoutDescription = ({ description: _drawn, ...step }: ApproachStep): ApproachStep => step;
+
 /** How the assistant worked on an answer, as a card above it, open while it works. */
 export const Approach = ({
   steps,
@@ -212,8 +222,10 @@ export const Approach = ({
   note,
   scope,
   variant = 'card',
+  filter,
 }: ApproachProps) => {
   const t = useT();
+  const processId = useId();
   const [ownOpen, setOwnOpen] = useOwnOpen(working);
   const isOpen = open ?? ownOpen;
   const toggle = (next: boolean) => {
@@ -321,6 +333,89 @@ export const Approach = ({
       </div>
     );
 
+  if (variant === 'sections')
+    return (
+      <div className="uib-approach" data-variant="sections">
+        <Card data-color="neutral" variant="default" className="uib-approach-card">
+          <Details
+            aria-label={t('approach.title')}
+            open={isOpen}
+            onToggle={(event) => toggle((event.target as HTMLDetailsElement).open)}
+          >
+            <Details.Summary>
+              <span className="uib-approach-summary">
+                <RobotIcon aria-hidden />
+                <span className="uib-approach-title">{t('approach.title')}</span>
+              </span>
+            </Details.Summary>
+            <Details.Content className="uib-approach-content">
+              {filter ? (
+                <>
+                  {filter}
+                  <Divider className="uib-approach-divider" />
+                </>
+              ) : null}
+              <p id={processId} className="uib-approach-heading">
+                {t('approach.process')}
+              </p>
+              <List.Ordered className="uib-approach-process" aria-labelledby={processId}>
+                {lines.map((line) => {
+                  const { step } = line;
+                  const detail =
+                    step.description ??
+                    (line.excerpts > 0
+                      ? t('approach.excerptsRead', { count: line.excerpts })
+                      : undefined);
+                  return (
+                    <List.Item
+                      key={line.key}
+                      data-status={step.status}
+                      aria-current={step.status === 'active' ? 'step' : undefined}
+                    >
+                      <span className="uib-approach-step-title">
+                        {line.count > 1
+                          ? t('approach.repeated', { title: step.title, count: line.count })
+                          : step.title}
+                      </span>
+                      {step.status === 'done' ? (
+                        <span className="uib-visually-hidden">
+                          {' '}
+                          {t('approach.hiddenStatus', { status: t('approach.done') })}
+                        </span>
+                      ) : (
+                        <span className="uib-approach-step-status">
+                          {' '}
+                          {t('approach.shownStatus', { status: t(`approach.${step.status}`) })}
+                        </span>
+                      )}
+                      {step.status === 'waiting' ? null : (
+                        <>
+                          {detail ? (
+                            <p className="uib-approach-step-description">{detail}</p>
+                          ) : null}
+                          <StepBody
+                            step={withoutDescription(step)}
+                            onShowRead={onShowRead}
+                            onExplainMissing={onExplainMissing}
+                          />
+                        </>
+                      )}
+                    </List.Item>
+                  );
+                })}
+              </List.Ordered>
+              <p className="uib-approach-footer">
+                {working
+                  ? t('approach.workingFor', { count: seconds })
+                  : t('approach.tookOnly', { count: seconds })}
+              </p>
+            </Details.Content>
+          </Details>
+        </Card>
+        {live}
+      </div>
+    );
+
   return (
     <div className="uib-approach" data-summary={summaryPlace}>
       <Card data-color="neutral" variant="default" className="uib-approach-card">
@@ -346,7 +441,12 @@ export const Approach = ({
             </span>
           </Details.Summary>
           <Details.Content className="uib-approach-content">
-            {scope ? <div className="uib-approach-scope">{scope}</div> : null}
+            {scope ? (
+              <>
+                <div className="uib-approach-scope">{scope}</div>
+                <Divider className="uib-approach-scope-divider" />
+              </>
+            ) : null}
             <List.Ordered className="uib-approach-steps">
               {lines.map((line) => {
                 const { step } = line;

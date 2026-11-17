@@ -5,6 +5,8 @@ const nbApproach = defineNamespace({
   title: 'Fremgangsmåte',
   // Over the steps in the `list` variant, the dev boards' tool.
   caption: 'Slik jobbet assistenten med svaret',
+  // Over the steps in the `sections` variant (dev-fremgangsmate-1 and -2).
+  process: 'Prosess',
   done: 'ferdig',
   active: 'pågår',
   waiting: 'venter',
@@ -35,6 +37,7 @@ const nbApproach = defineNamespace({
 const enApproach = {
   title: 'Approach',
   caption: 'How the assistant worked on the answer',
+  process: 'Process',
   done: 'done',
   active: 'in progress',
   waiting: 'waiting',

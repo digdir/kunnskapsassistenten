@@ -244,9 +244,18 @@
   }
 
   /* Each field a row under a hairline, as the design's. */
-  .uib-filter-row {
-    border-block-end: var(--genai-filter-row-border-width, var(--ds-border-width-default)) solid
-      var(--genai-filter-row-border-color, var(--ds-color-neutral-surface-tinted));
+  /* Designsystemet's Divider under each row, flush with the rows. */
+  .uib-filter-row-divider {
+    --dsc-divider-border-width: var(
+      --genai-filter-row-border-width,
+      var(--ds-border-width-default)
+    );
+    --dsc-divider-border-color: var(
+      --genai-filter-row-border-color,
+      var(--ds-color-neutral-border-subtle)
+    );
+
+    margin: 0;
   }
 
   .uib-filter-row-heading {
@@ -332,7 +341,7 @@
     align-items: center;
     padding-block: var(--genai-filter-checkbox-padding-block, var(--ds-size-2));
     border-block-end: var(--genai-filter-row-border-width, var(--ds-border-width-default)) solid
-      var(--genai-filter-row-border-color, var(--ds-color-neutral-surface-tinted));
+      var(--genai-filter-row-border-color, var(--ds-color-neutral-border-subtle));
   }
 
   /* The board's 20 px box, on the input, which sets its own size. */
@@ -360,6 +369,48 @@
     color: var(--genai-filter-count-color, var(--ds-color-neutral-text-subtle));
     font-size: var(--genai-filter-count-font-size, var(--ds-font-size-1));
     font-variant-numeric: tabular-nums;
+  }
+
+  /* ── «Filteret svaret bygger på» at the top of Fremgangsmåte (FilterBasis) ── */
+
+  .uib-filter-basis {
+    display: flex;
+    flex-direction: column;
+    gap: var(--genai-filter-basis-gap, var(--ds-size-3));
+    font-size: var(--genai-filter-basis-font-size, var(--ds-font-size-2));
+    line-height: var(--genai-filter-basis-line-height, var(--ds-line-height-md));
+  }
+  .uib-filter-basis-heading {
+    margin: 0;
+    font-size: var(--genai-filter-basis-heading-font-size, var(--ds-font-size-3));
+    font-weight: var(--genai-filter-basis-heading-font-weight, var(--ds-font-weight-semibold));
+  }
+  .uib-filter-basis-lead {
+    margin: 0;
+  }
+  /* Two columns for the whole list, the labels as wide as the widest, the values the rest. */
+  .uib-filter-basis-fields {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: var(--genai-filter-basis-column-gap, var(--ds-size-6));
+    row-gap: var(--genai-filter-basis-row-gap, var(--ds-size-2));
+    align-items: center;
+    margin: 0;
+  }
+  .uib-filter-basis-row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+  }
+  .uib-filter-basis-row > dt {
+    font-weight: var(--genai-filter-basis-label-font-weight, var(--ds-font-weight-semibold));
+  }
+  .uib-filter-basis-row > dd {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--genai-filter-basis-values-gap, var(--ds-size-2));
+    margin: 0;
   }
 
   /* ── What an answer read from (FilterRead), and the line under the field (FilterNext) ── */

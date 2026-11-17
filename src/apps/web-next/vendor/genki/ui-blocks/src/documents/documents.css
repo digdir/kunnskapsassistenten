@@ -101,7 +101,7 @@
     box-sizing: border-box;
     inline-size: 100%;
     border: var(--genai-documents-scope-border-width, var(--ds-border-width-default)) solid
-      var(--genai-documents-scope-border-color, var(--ds-color-neutral-surface-tinted));
+      var(--genai-documents-scope-border-color, var(--ds-color-neutral-border-subtle));
     border-radius: var(--genai-documents-scope-radius, var(--ds-border-radius-xl));
   }
 
@@ -210,7 +210,7 @@
     align-items: start;
     padding-block: var(--genai-documents-scope-document-padding-block, var(--ds-size-2));
     border-block-end: var(--genai-documents-scope-border-width, var(--ds-border-width-default))
-      solid var(--genai-documents-scope-border-color, var(--ds-color-neutral-surface-tinted));
+      solid var(--genai-documents-scope-border-color, var(--ds-color-neutral-border-subtle));
   }
 
   .uib-documents-scope-document > .ds-input {

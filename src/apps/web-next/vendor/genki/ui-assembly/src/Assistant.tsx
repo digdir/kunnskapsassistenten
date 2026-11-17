@@ -25,6 +25,7 @@ import {
   EmptyState,
   ErrorState,
   Filter,
+  FilterBasis,
   FilterRead,
   NotFoundState,
   Settings,
@@ -102,8 +103,12 @@ const sourcesTool = {
 // `compact-filter`: a field's ticks in one column, so the filter fits its narrow panel.
 const oneColumnTicks = { '--genai-filter-checkboxes-columns': '1' } as CSSProperties;
 
-// The next look's footnote marks, 16 px as dev-kilder-hoyre draws them.
-const nextFootnotes = { '--genai-answer-footnote-size': 'var(--ds-size-4)' } as CSSProperties;
+// The next look's footnote marks, 16 px as dev-kilder-hoyre draws them, and the reader's question
+// a lighter grey than the summaries of Fremgangsmåte, Kilder and the Kildeliste.
+const nextFootnotes = {
+  '--genai-answer-footnote-size': 'var(--ds-size-4)',
+  '--genai-conversation-question-background': 'var(--ds-color-neutral-background-tinted)',
+} as CSSProperties;
 
 // The tools' icons in the next look, as the dev-verktoy boards draw them: Fremgangsmåte's robot,
 // Kilder's page with a magnifier. Notater's pencil waits for the block.
@@ -239,6 +244,7 @@ const approachOf = (
   const changed =
     asked && before?.scope?.selection ? !sameSelection(before.scope.selection, asked) : false;
   const count = turn.scope?.documents;
+  const used = turn.answer?.sources?.length;
   // Beside the tool, the card says only how many documents the answer read from.
   const scope =
     asked && place !== 'compact' ? (
@@ -246,6 +252,9 @@ const approachOf = (
     ) : asked && count !== undefined ? (
       <FilterRead selection={{}} count={count} />
     ) : undefined;
+  // The next look's card is the dev boards' (dev-fremgangsmate-1 and -2): the filter the answer
+  // built on, when the service has one, then the process. Its tool is the dev-verktoy boards' list.
+  const card = next && !tool;
   return (
     <>
       <Approach
@@ -253,11 +262,23 @@ const approachOf = (
         working={busy}
         startedAt={approach.startedAt}
         {...(approach.finishedAt ? { finishedAt: approach.finishedAt } : {})}
-        {...(turn.answer?.sources ? { used: turn.answer.sources.length } : {})}
-        // The next look's tool is the dev-verktoy boards' list; its card is their bar.
-        {...(next ? (tool ? { variant: 'list' as const } : { summary: 'totals' as const }) : {})}
-        {...(changed ? { note: t('filter.changed') } : {})}
-        {...(scope ? { scope } : {})}
+        {...(used === undefined || card ? {} : { used })}
+        {...(card ? { variant: 'sections' as const } : next ? { variant: 'list' as const } : {})}
+        {...(card && asked
+          ? {
+              filter: (
+                <FilterBasis
+                  selection={asked}
+                  fields={a.facets}
+                  count={count}
+                  used={used}
+                  previous={changed ? before?.scope?.selection : undefined}
+                />
+              ),
+            }
+          : {})}
+        {...(changed && !card ? { note: t('filter.changed') } : {})}
+        {...(scope && !card ? { scope } : {})}
       />
       {a.level === 'detailed' && place !== 'compact' ? (
         // No block draws the detailed level yet: the step frames as genki sent them, for now.
@@ -437,8 +458,11 @@ export const AssistantView = ({
           onFetchAgain={a.fetchAgain}
           assistantName={name}
           answerColor="neutral"
-          // The next look's answer has no card and no name over it (dev-kilder-hoyre).
-          {...(next ? { answerVariant: 'plain' as const, answerLabel: false } : {})}
+          // The next look's answer has no card and no name over it (dev-kilder-hoyre), and the
+          // reader's question is a neutral grey, not the accent's tint.
+          {...(next
+            ? { answerVariant: 'plain' as const, answerLabel: false, questionColor: 'neutral' }
+            : {})}
           // The next look names the thread once, in the main card's `h1`.
           {...(a.named && !next ? { title: a.named, titleRepeatsQuestion: a.repeatsQuestion } : {})}
           target={a.answerTarget}
@@ -480,13 +504,10 @@ export const AssistantView = ({
     // The catalogue keeps follow-ups to the current look.
     const followUps = a.option('chat', 'followUps') ? a.profile?.followUps : undefined;
     const disclaimer = a.option('chat', 'disclaimer');
-    // While a question is written, the next look hides the greeting and suggestions in place.
-    const typing = next && start && a.draft !== '';
     return (
       <div
         className="uia-chat"
         data-start={start || undefined}
-        data-typing={typing || undefined}
         data-in-panel={inPanel || undefined}
         // In the next look the docked field stands on the main card's ground, not the page's.
         style={next ? { ...nextFootnotes, ...(inPanel ? {} : cardGround) } : undefined}
