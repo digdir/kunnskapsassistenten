@@ -210,7 +210,6 @@ const readThreadFilters = (stored: unknown): ReadonlyMap<string, FilterSelection
 const storeThreadFilters = (filters: ReadonlyMap<string, FilterSelection>) =>
   Object.fromEntries(filters);
 
-/** The first sentence of a service's description, as the picker's line under a variant, if short. */
 /** An excerpt's own file: its http(s) `url` before `#page=N`, when it has a page. */
 const excerptFileOf = (
   excerpt: { page?: number | undefined; url?: string | undefined } | undefined,
@@ -219,6 +218,7 @@ const excerptFileOf = (
     ? excerpt.url.split('#', 1)[0]
     : undefined;
 
+/** The first sentence of a service's description, as the picker's line under a variant, if short. */
 const firstSentence = (text: string | undefined) => {
   const sentence = text?.split(/(?<=[.!?])\s/)[0]?.trim();
   return sentence && sentence.length <= 140 ? sentence : undefined;

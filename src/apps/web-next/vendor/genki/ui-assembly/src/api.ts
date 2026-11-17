@@ -232,6 +232,9 @@ interface ApiMessage {
 const corpusOf = (tags: readonly string[]) =>
   tags.find((tag) => tag.startsWith('corpus:'))?.slice('corpus:'.length) || undefined;
 
+const wholePage = (value: unknown) =>
+  typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
+
 /**
  * One source as the blocks take it. A title it lacks stays empty, for the blocks to name in the
  * reader's language. An excerpt without an id gets one of its own, the same on every read, since
@@ -239,9 +242,6 @@ const corpusOf = (tags: readonly string[]) =>
  * conversation»). `at` is the source's place in the answer's list, which keeps two sources without
  * a document id apart.
  */
-const wholePage = (value: unknown) =>
-  typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
-
 export const sourceFromWire = (raw: WireSource, corpus?: CorpusProfile, at = 0): SourceDocument => {
   const documentId = raw.documentId ?? raw.document_id;
   const url = raw.url ?? (documentId ? documentLink(corpus, documentId) : undefined);
